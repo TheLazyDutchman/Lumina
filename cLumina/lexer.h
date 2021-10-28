@@ -14,15 +14,19 @@ void freeLexer(Lexer* lexer);
 
 enum Tokentype {
 	NUMBER,
-	END_OF_FILE,
+	PLUS,
+	MINUS,
+	END_OF_FILE
 };
 
 static const char* const tokenTypes[] = {
 	[NUMBER] = "NUMBER",
+	[PLUS] = "PLUS",
+	[MINUS] = "MINUS",
 	[END_OF_FILE] = "END OF FILE",
 };
 
-_Static_assert(sizeof(tokenTypes) / sizeof(tokenTypes[0]) == END_OF_FILE + 1, "Exhaustive handling of tokenTypes in string conversion\n");
+_Static_assert(sizeof(tokenTypes) / sizeof(tokenTypes[0]) == 4, "Exhaustive handling of tokenTypes in string conversion\n");
 
 typedef struct Token {
 	char *fileName;

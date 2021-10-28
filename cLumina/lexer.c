@@ -98,10 +98,21 @@ Token *nextToken(Lexer* lexer){
 	} else if (*lexer->current == '\0') {
 		token->type = END_OF_FILE;
 	}
-	else {
-		printf("%s:%d:%d [ERROR]: could not recognize char %d '%s'\n", lexer->fileName, lexer->line, lexer->column, *lexer->current, lexer->current);
-		return NULL;
+
+	switch (*lexer->current) {
+		case '+':
+			token->type = PLUS;
+			advance(lexer);
+			break;
+		case '-':
+			token->type = MINUS;
+			advance(lexer);
+			break;
+		default:
+			printf("%s:%d:%d [ERROR]: could not recognize char %d '%s'\n", lexer->fileName, lexer->line, lexer->column, *lexer->current, lexer->current);
+			return NULL;
 	}
+
 	int len = lexer->current - start;
 	token->word = malloc(len + 1);
 	memcpy(token->word, start, len);
