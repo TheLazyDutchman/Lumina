@@ -9,21 +9,29 @@ typedef struct Lexer {
 	int column;
 } Lexer;
 
-Lexer initLexer(char *filename);
-void freeLexer(Lexer lexer);
+Lexer *initLexer(char *filename);
+void freeLexer(Lexer* lexer);
 
 enum Tokentype {
-	NUMBER
+	NUMBER,
+	END_OF_FILE,
 };
+
+static const char* const tokenTypes[] = {
+	[NUMBER] = "NUMBER",
+	[END_OF_FILE] = "END OF FILE",
+};
+
+_Static_assert(sizeof(tokenTypes) / sizeof(tokenTypes[0]) == END_OF_FILE + 1, "Exhaustive handling of tokenTypes in string conversion\n");
 
 typedef struct Token {
 	char *fileName;
-	char *start;
-	char *end;
+	char *word;
 	int line;
 	enum Tokentype type;
 } Token;
 
-Token nextToken(Lexer lexer);
+Token *nextToken(Lexer* lexer);
+void freeToken(Token* token);
 
 #endif

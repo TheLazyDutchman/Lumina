@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <string.h>
 
 #include "lexer.h"
 
@@ -30,71 +31,86 @@ char* readFile(char *fileName) {
 
 	if (fread(buffer, 1, len, fd) != len) {
 		printf("[ERROR] could not read file '%s'\n", fileName);
+		return NULL;
 	}
 	
 	fclose(fd);
+	printf("[FILE] read file '%s'\n", fileName);
+	return buffer;
 }
 
-Lexer initLexer(char *fileName) {
-	Lexer lexer;
+Lexer *initLexer(char *fileName) {
+	Lexer *lexer = malloc(sizeof(Lexer));
 		
-	lexer.fileName = fileName;
-	lexer.buffer = readFile(fileName);
-	lexer.current = lexer.buffer;
+	lexer->fileName = fileName;
+	lexer->buffer = readFile(fileName);
+	lexer->current = lexer->buffer;
 
-	lexer.line = 0;
-	lexer.column = 0;
+	lexer->line = 0;
+	lexer->column = 0;
 
 	return lexer;
 }
 
-void freeLexer(Lexer lexer){
-	free(lexer.buffer);
-	lexer.fileName = NULL;
-	lexer.buffer = NULL;
-	lexer.current = NULL;
-	lexer.line = 0;
-	lexer.column = 0;
+void freeLexer(Lexer* lexer){
+	free(lexer->buffer);
+	free(lexer);
 }
 
-char peek(Lexer lexer){
-	return *(lexer.current + 1);
+char peek(Lexer* lexer){
+	return *(lexer->current + 1);
 }
 
-char advance(Lexer lexer){
-	lexer.column++;
-	if (*lexer.current == '\n') {
-		lexer.column = 0;
-		lexer.line++;
+char advance(Lexer* lexer){
+	lexer->column++;
+	if (*lexer->current == '\n') {
+		lexer->column = 0;
+		lexer->line++;
 	}
-	return *(lexer.current++);
+	return *(lexer->current++);
 }
 
-Token nextToken(Lexer lexer){
-	while (*lexer.current == ' ') {
+Token *nextToken(Lexer* lexer){
+	while (*lexer->current == ' ' || *lexer->current == '\n') {
 		advance(lexer);
 	}
 
-	Token token;
-	token.fileName = lexer.fileName;
-	token.start = lexer.current;
+	Token *token = malloc(sizeof(token));
+	token->fileName = lexer->fileName;
+	token->line = lexer->line;
+	char *start = lexer->current;
 
-	if (isdigit(*lexer.current)) {
-		token.type = NUMBER;
+	if (isdigit(*lexer->current)) {
+		token->type = NUMBER;
 
-		while(isdigit(advance(lexer))) {}
+		while(isdigit(*lexer->current)) {
+			advance(lexer);
+		}
 		
-		if (*lexer.current == '.') {
+		if (*lexer->current == '.') {
 			
-			while(isdigit(advance(lexer))) {}
+			while(isdigit(*lexer->current)) {
+				advance(lexer);
+			}
 
 		}
 
+	} else if (*lexer->current == '\0') {
+		token->type = END_OF_FILE;
 	}
 	else {
-		printf("%s:%d:%d [ERROR]: could not recognize word\n", lexer.fileName, lexer.line, lexer.column);
+		printf("%s:%d:%d [ERROR]: could not recognize char %d '%s'\n", lexer->fileName, lexer->line, lexer->column, *lexer->current, lexer->current);
+		return NULL;
 	}
-	token.end = lexer.current;
+	int len = lexer->current - start;
+	token->word = malloc(len + 1);
+	memcpy(token->word, start, len);
+	token->word[len] = '\0';
 
 	return token;
+}
+
+void freeToken(Token* token) {
+	free(token->word);
+	free(token);
 }

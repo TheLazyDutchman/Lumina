@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = 
 compiler: cLumina.o lexer.o
-	$(CC) -o cLumina cLumina.o lexer.o $(CFLAGS)
+	$(CC) -o ../lumina cLumina.o lexer.o $(CFLAGS)
 
 cLumina.o: cLumina.c cLumina.h lexer.h
 	$(CC) -c cLumina.c $(CFLAGS)
