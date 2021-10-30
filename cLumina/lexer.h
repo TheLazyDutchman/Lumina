@@ -16,7 +16,8 @@ enum Tokentype {
 	NUMBER,
 	PLUS,
 	MINUS,
-	END_OF_FILE
+	END_OF_FILE,
+	TOKEN_TYPES_NUM
 };
 
 static const char* const tokenTypes[] = {
@@ -26,7 +27,7 @@ static const char* const tokenTypes[] = {
 	[END_OF_FILE] = "END OF FILE",
 };
 
-_Static_assert(sizeof(tokenTypes) / sizeof(tokenTypes[0]) == 4, "Exhaustive handling of tokenTypes in string conversion\n");
+_Static_assert(TOKEN_TYPES_NUM == 4, "Exhaustive handling of tokenTypes in string conversion\n");
 
 typedef struct Token {
 	char *fileName;
