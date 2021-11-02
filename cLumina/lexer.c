@@ -81,7 +81,7 @@ Token *nextToken(Lexer* lexer){
 	char *start = lexer->current;
 
 	if (isdigit(*lexer->current)) {
-		token->type = NUMBER;
+		token->type = TOKEN_NUMBER;
 
 		while(isdigit(*lexer->current)) {
 			advance(lexer);
@@ -96,16 +96,16 @@ Token *nextToken(Lexer* lexer){
 		}
 
 	} else if (*lexer->current == '\0') {
-		token->type = END_OF_FILE;
+		token->type = TOKEN_END_OF_FILE;
 	}
 
 	switch (*lexer->current) {
 		case '+':
-			token->type = PLUS;
+			token->type = TOKEN_PLUS;
 			advance(lexer);
 			break;
 		case '-':
-			token->type = MINUS;
+			token->type = TOKEN_MINUS;
 			advance(lexer);
 			break;
 		default:
