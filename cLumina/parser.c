@@ -16,11 +16,22 @@ Parser* initParser(char* fileName, ParseFlag flags) {
 
 void freeParser(Parser* parser) {
 	freeLexer(parser->lexer);
+
+	if (parser->last != NULL) {
+		freeToken(parser->last);
+	}
+	if (parser->current != NULL) {
+		freeToken(parser->current);
+	}
+
 	free(parser);
 }
 
 Token* next(Parser* parser) {
-	freeToken(parser->last);
+	if (parser->last != NULL) {
+		freeToken(parser->last);
+	}
+
 	parser->last = parser->current;
 	parser->current = nextToken(parser->lexer);
 	return parser->current;
@@ -52,7 +63,7 @@ ParseRule parseTable[] = {
 };
 
 void parseError(Token token, char* message) {
-	printf("%s:%d ERROR: ", token.fileName, token.line);
+	printf("%s:%d ERROR at '%s': ", token.fileName, token.line, token.word);
 	printf("%s", message);
 	printf("\n");
 
@@ -67,12 +78,18 @@ Token parsePrecedence(Parser* parser, Precedence precedence) {
 		parseError(token, "unexpected token");
 	}
 
+	if (rule.prefix == NULL) {
+		parseError(token, "unexpected token");
+	}
+
+	rule.prefix(parser);
+
 	return token;
 }
 
 void dumpNumber(Parser* parser, Token value) {
 	if (parser->flags & FLAG_DUMP) {
-		printf("%s:%d number '%s'\n", value.fileName, value.line, value.word);
+		printf("%s:%d: number '%s'\n", value.fileName, value.line, value.word);
 	}
 }
 
@@ -89,7 +106,7 @@ void number(Parser* parser) {
 
 void dumpBinary(Parser* parser, Token operator) {
 	if (parser->flags & FLAG_DUMP) {
-		printf("%s:%d binary '%s'\n", operator.fileName, operator.line, operator.word);
+		printf("%s:%d: binary '%s'\n", operator.fileName, operator.line, tokenTypes[operator.type]);
 	}
 }
 
@@ -123,7 +140,7 @@ void binary(Parser* parser) {
 
 void dumpUnary(Parser* parser, Token operator) {
 	if (parser->flags & FLAG_DUMP) {
-		printf("%s:%d: unary '%s'\n", operator.fileName, operator.line, operator.word);
+		printf("%s:%d: unary '%s'\n", operator.fileName, operator.line, tokenTypes[operator.type]);
 	}
 }
 

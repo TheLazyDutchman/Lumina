@@ -22,7 +22,5 @@ int main(int argc, char *argv[]) {
 	Parser* parser = initParser(fileName, flags);
 	parse(parser);
 
-	freeParser(parser);
-
 	return 0;
 }

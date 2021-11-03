@@ -86,33 +86,24 @@ Token *nextToken(Lexer* lexer){
 		while(isdigit(*lexer->current)) {
 			advance(lexer);
 		}
-		
-		if (*lexer->current == '.') {
-			
-			while(isdigit(*lexer->current)) {
+	} else {
+		switch (*lexer->current) {
+			case '+':
+				token->type = TOKEN_PLUS;
 				advance(lexer);
-			}
-
+				break;
+			case '-':
+				token->type = TOKEN_MINUS;
+				advance(lexer);
+				break;
+			case '\0':
+				token->type = TOKEN_END_OF_FILE;
+				break;
+			default:
+				printf("%s:%d:%d [ERROR]: could not recognize char %d '%c'\n", lexer->fileName, lexer->line, lexer->column, *lexer->current, *lexer->current);
+				return NULL;
 		}
-
-	} else if (*lexer->current == '\0') {
-		token->type = TOKEN_END_OF_FILE;
 	}
-
-	switch (*lexer->current) {
-		case '+':
-			token->type = TOKEN_PLUS;
-			advance(lexer);
-			break;
-		case '-':
-			token->type = TOKEN_MINUS;
-			advance(lexer);
-			break;
-		default:
-			printf("%s:%d:%d [ERROR]: could not recognize char %d '%s'\n", lexer->fileName, lexer->line, lexer->column, *lexer->current, lexer->current);
-			return NULL;
-	}
-
 	int len = lexer->current - start;
 	token->word = malloc(len + 1);
 	memcpy(token->word, start, len);
