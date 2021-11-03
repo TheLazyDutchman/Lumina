@@ -15,7 +15,11 @@ int main(int argc, char *argv[]) {
 
 	char *fileName = argv[1];
 
-	Parser* parser = initParser(fileName);
+	ParseFlag flags;
+
+	flags |= FLAG_DUMP;
+
+	Parser* parser = initParser(fileName, flags);
 	parse(parser);
 
 	freeParser(parser);

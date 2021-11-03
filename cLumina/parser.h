@@ -3,13 +3,18 @@
 
 #include "lexer.h"
 
+typedef enum {
+	FLAG_DUMP = 1,
+} ParseFlag;
+
 typedef struct {
 	Lexer* lexer;
 	Token* current;
 	Token* last;
+	ParseFlag flags;
 } Parser;
 
-Parser* initParser(char* fileName);
+Parser* initParser(char* fileName, ParseFlag flags);
 void freeParser(Parser* parser);
 
 void number(Parser* parser);

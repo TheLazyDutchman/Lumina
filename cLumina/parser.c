@@ -3,12 +3,13 @@
 
 #include "parser.h"
 
-Parser* initParser(char* fileName) {
+Parser* initParser(char* fileName, ParseFlag flags) {
 	Parser* parser;
 
 	parser->lexer = initLexer(fileName);
 	parser->current = NULL;
 	parser->last = NULL;
+	parser->flags = flags;
 	
 	return parser;
 }
@@ -68,13 +69,28 @@ Token parsePrecedence(Parser* parser, Precedence precedence) {
 
 	return token;
 }
+
+void dumpNumber(Parser* parser, Token value) {
+	if (parser->flags & FLAG_DUMP) {
+		printf("%s:%d number '%s'\n", value.fileName, value.line, value.word);
+	}
+}
+
 void number(Parser* parser) {
 	Token value = *parser->current;
 	if (value.type != TOKEN_NUMBER) {
 		printf("incorrect reference in parseTable: '%s' points to number\n", tokenTypes[value.type]);
 	}
 
+	dumpNumber(parser, value);
+
 	//TODO: compile integer constant
+}
+
+void dumpBinary(Parser* parser, Token operator) {
+	if (parser->flags & FLAG_DUMP) {
+		printf("%s:%d binary '%s'\n", operator.fileName, operator.line, operator.word);
+	}
 }
 
 void binary(Parser* parser) {
@@ -95,11 +111,19 @@ void binary(Parser* parser) {
 
 	switch (operator.type) {
 		case TOKEN_PLUS:
+			dumpBinary(parser, operator);
 			//TODO: compile binary plus operation
 			break;
 		case TOKEN_MINUS:
+			dumpBinary(parser, operator);
 			//TODO: compile binary minus operation
 			break;
+	}
+}
+
+void dumpUnary(Parser* parser, Token operator) {
+	if (parser->flags & FLAG_DUMP) {
+		printf("%s:%d: unary '%s'\n", operator.fileName, operator.line, operator.word);
 	}
 }
 
@@ -110,6 +134,7 @@ void unary(Parser* parser) {
 
 	switch (operator.type) {
 		case TOKEN_MINUS:
+			dumpUnary(parser, operator);
 			//TODO: compile unary minus operation
 			break;
 		default:
