@@ -192,5 +192,9 @@ void expression(Parser* parser) {
 
 
 void parse(Parser* parser) {
+	writeHeader(parser->outputFile);
+
 	expression(parser);
+
+	writeFooter(parser->outputFile);
 }

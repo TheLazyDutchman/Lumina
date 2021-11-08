@@ -1,5 +1,11 @@
 #include "compiler.h"
 
+void writeHeader(FILE* output) {
+	fprintf(output, "section .text\n");
+	fprintf(output, "global _start\n");
+	fprintf(output, "_start:\n");
+}
+
 void writeNumber(FILE* output, int value) {
 	fprintf(output, "	;; -- number --\n");
 	fprintf(output, "	mov rax, %d\n", value);
@@ -27,4 +33,10 @@ void writeNegative(FILE* output) {
 	fprintf(output, "	pop rax\n");
 	fprintf(output, "	neg rax\n");
 	fprintf(output, "	push rax\n\n");
+}
+
+void writeFooter(FILE* output) {
+	fprintf(output, "	mov rax, 60\n");
+	fprintf(output, "	xor rdi, rdi\n");
+	fprintf(output, "	syscall\n");
 }
