@@ -10,6 +10,8 @@ Parser* initParser(char* fileName, ParseFlag flags) {
 	parser->current = NULL;
 	parser->last = NULL;
 	parser->flags = flags;
+
+	parser->outputFile = fopen("a.out", "w");
 	
 	return parser;
 }
@@ -23,6 +25,8 @@ void freeParser(Parser* parser) {
 	if (parser->current != NULL) {
 		freeToken(parser->current);
 	}
+
+	fclose(parser->outputFile);
 
 	free(parser);
 }

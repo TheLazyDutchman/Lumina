@@ -2,6 +2,7 @@
 #define cLumina_parser_header
 
 #include "lexer.h"
+#include "compiler.h"
 
 typedef enum {
 	FLAG_DUMP = 1,
@@ -12,6 +13,8 @@ typedef struct {
 	Token* current;
 	Token* last;
 	ParseFlag flags;
+
+	FILE* outputFile;
 } Parser;
 
 Parser* initParser(char* fileName, ParseFlag flags);

@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = 
-compiler: cLumina.o lexer.o parser.o
+compiler: cLumina.o lexer.o parser.o compiler.o
 	$(CC) -o ../lumina cLumina.o lexer.o parser.o $(CFLAGS)
 
 cLumina.o: cLumina.c cLumina.h parser.h
@@ -9,5 +9,8 @@ cLumina.o: cLumina.c cLumina.h parser.h
 lexer.o: lexer.c lexer.h
 	$(CC) -c lexer.c  $(CFLAGS)
 
-parser.o: parser.c parser.h lexer.h
+parser.o: parser.c parser.h lexer.h compiler.h
 	$(CC) -c parser.c $(CFLAGS)
+
+compiler.o: compiler.c compiler.h
+	$(CC) -c compiler.c $(CFLAGS)
