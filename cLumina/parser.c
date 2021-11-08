@@ -140,11 +140,15 @@ void binary(Parser* parser) {
 	switch (operator.type) {
 		case TOKEN_PLUS:
 			dumpBinary(parser, operator);
-			//TODO: compile binary plus operation
+
+			writeAdd(parser->outputFile);
+
 			break;
 		case TOKEN_MINUS:
 			dumpBinary(parser, operator);
-			//TODO: compile binary minus operation
+
+			writeSubtract(parser->outputFile);
+
 			break;
 	}
 }
