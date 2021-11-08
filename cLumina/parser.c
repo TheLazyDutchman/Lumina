@@ -167,7 +167,9 @@ void unary(Parser* parser) {
 	switch (operator.type) {
 		case TOKEN_MINUS:
 			dumpUnary(parser, operator);
-			//TODO: compile unary minus operation
+
+			writeNegative(parser->outputFile);
+
 			break;
 		default:
 			printf("incorrect reference in parseTable: '%s' points to unary\n", tokenTypes[operator.type]);

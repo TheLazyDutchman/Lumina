@@ -24,4 +24,7 @@ void writeSubtract(FILE* output) {
 
 void writeNegative(FILE* output) {
 	fprintf(output, "	;; -- negative --\n");
+	fprintf(output, "	pop rax\n");
+	fprintf(output, "	neg rax\n");
+	fprintf(output, "	push rax\n\n");
 }
