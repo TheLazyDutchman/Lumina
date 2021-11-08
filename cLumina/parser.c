@@ -105,7 +105,14 @@ void number(Parser* parser) {
 
 	dumpNumber(parser, value);
 
-	//TODO: compile integer constant
+	char* result;
+
+	int numberValue = strtol(value.word, &result, 10);
+	if (*result != '\0') {
+		parseError(value, "could not convert string '%s' to int");
+	}
+
+	writeNumber(parser->outputFile, numberValue);
 }
 
 void dumpBinary(Parser* parser, Token operator) {
