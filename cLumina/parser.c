@@ -10,7 +10,7 @@ Parser* initParser(char* fileName, ParseFlag flags) {
 	parser->current = NULL;
 	parser->flags = flags;
 
-	parser->outputFile = fopen("a.out", "w");
+	parser->outputFile = fopen("output.asm", "w");
 	
 	return parser;
 }
@@ -21,6 +21,8 @@ void freeParser(Parser* parser) {
 	if (parser->current != NULL) {
 		freeToken(parser->current);
 	}
+
+	fclose(parser->outputFile);
 
 	free(parser);
 }
