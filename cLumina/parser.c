@@ -4,11 +4,10 @@
 #include "parser.h"
 
 Parser* initParser(char* fileName, ParseFlag flags) {
-	Parser* parser;
+	Parser* parser = malloc(sizeof(Parser));
 
 	parser->lexer = initLexer(fileName);
 	parser->current = NULL;
-	parser->last = NULL;
 	parser->flags = flags;
 
 	parser->outputFile = fopen("a.out", "w");
@@ -19,24 +18,18 @@ Parser* initParser(char* fileName, ParseFlag flags) {
 void freeParser(Parser* parser) {
 	freeLexer(parser->lexer);
 
-	if (parser->last != NULL) {
-		freeToken(parser->last);
-	}
 	if (parser->current != NULL) {
 		freeToken(parser->current);
 	}
-
-	fclose(parser->outputFile);
 
 	free(parser);
 }
 
 Token* next(Parser* parser) {
-	if (parser->last != NULL) {
-		freeToken(parser->last);
+	if (parser->current != NULL) {
+		freeToken(parser->current);
 	}
 
-	parser->last = parser->current;
 	parser->current = nextToken(parser->lexer);
 	return parser->current;
 }

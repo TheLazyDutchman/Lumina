@@ -34,6 +34,7 @@ int main(int argc, char *argv[]) {
 
 	Parser* parser = initParser(fileName, flags);
 	parse(parser);
+	freeParser(parser);
 
 	//TODO: freeParser causes a segfault (probably tries to free a null pointer somewhere
 
