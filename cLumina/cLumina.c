@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,14 +43,19 @@ pid_t createChild(char* program, char** args) {
 int main(int argc, char *argv[]) {
 	ParseFlag flags = 0;
 	char* fileName = NULL;
+	bool runFile = false;
 
 	argv++;
 	while (*argv != NULL) {
 		if (strcmp(*argv, "-dump") == 0) {
 			flags |= FLAG_DUMP;
 		}
+		else if (strcmp(*argv, "-r") == 0) {
+			runFile = true;
+		}
 		else {
 			fileName = *argv;
+			break;
 		}
 		argv++;
 	}
@@ -87,6 +93,10 @@ int main(int argc, char *argv[]) {
 	if (waitpid(linker_pid, &linkerStatus, WUNTRACED | WCONTINUED) == -1) {
 		printf("[ERROR] problem occurred while running linker\n");
 		exit(1);
+	}
+
+	if (runFile) {
+		createChild(outputName, argv);
 	}
 
 	free(outputName);
