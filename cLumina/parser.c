@@ -3,14 +3,14 @@
 
 #include "parser.h"
 
-Parser* initParser(char* fileName, ParseFlag flags) {
+Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 	Parser* parser = malloc(sizeof(Parser));
 
-	parser->lexer = initLexer(fileName);
+	parser->lexer = initLexer(inputName);
 	parser->current = NULL;
 	parser->flags = flags;
 
-	parser->outputFile = fopen("output.asm", "w");
+	parser->outputFile = fopen(outputName, "w");
 	
 	return parser;
 }

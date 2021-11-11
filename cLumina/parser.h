@@ -17,7 +17,7 @@ typedef struct {
 	FILE* outputFile;
 } Parser;
 
-Parser* initParser(char* fileName, ParseFlag flags);
+Parser* initParser(char* inputName, char* outputName, ParseFlag flags);
 void freeParser(Parser* parser);
 
 void number(Parser* parser);

@@ -40,6 +40,27 @@ pid_t createChild(char* program, char** args) {
 	return child_pid;
 }
 
+char* getFileNameWithExtension(const char* fileName, const char* extension) {
+	int fileLen = strlen(fileName);
+	int extLen = 0;
+	if (extension != NULL) {
+		extLen = strlen(extension);
+	}
+
+	char* dotPos = rindex(fileName, '.');
+	char* slashPos = rindex(fileName, '/'); //TODO: I don't think all filepaths use '/', this should be more general
+	if (dotPos > slashPos) {
+		fileLen = dotPos - fileName;
+	}
+
+	char* buffer = malloc(fileLen + extLen);
+
+	memcpy(buffer, fileName, fileLen);
+	memcpy(buffer + fileLen, extension, extLen);
+
+	return buffer;
+}
+
 int main(int argc, char *argv[]) {
 	ParseFlag flags = 0;
 	char* fileName = NULL;
@@ -66,11 +87,13 @@ int main(int argc, char *argv[]) {
 		exit(1);
 	}
 
-	Parser* parser = initParser(fileName, flags);
+	char* assemblyFile = getFileNameWithExtension(fileName, ".asm");
+
+	Parser* parser = initParser(fileName, assemblyFile, flags);
 	parse(parser);
 	freeParser(parser);
 
-	char *nasmArgs[5] = {"nasm", "-f", "elf64", "output.asm", NULL};
+	char *nasmArgs[5] = {"nasm", "-f", "elf64", assemblyFile, NULL};
 	int nasmStatus;
 	
 	pid_t nasm_pid = createChild("nasm", nasmArgs);
@@ -80,12 +103,11 @@ int main(int argc, char *argv[]) {
 		exit(1);
 	}
 
-	char* outputName = strdup(fileName);
-	char* lastDot = rindex(outputName, '.');
-	int outputLen = lastDot - outputName;
-	outputName[outputLen] = '\0';
+	char* objectFile = getFileNameWithExtension(assemblyFile, ".o");
 
-	char *linkerArgs[6] = {"ld", "-s", "-o", outputName, "output.o", NULL};
+	char* executable = getFileNameWithExtension(objectFile, NULL);
+
+	char *linkerArgs[6] = {"ld", "-s", "-o", executable, objectFile, NULL};
 	int linkerStatus;
 
 	pid_t linker_pid = createChild("ld", linkerArgs);
@@ -96,10 +118,12 @@ int main(int argc, char *argv[]) {
 	}
 
 	if (runFile) {
-		createChild(outputName, argv);
+		createChild(executable, argv);
 	}
 
-	free(outputName);
+	free(assemblyFile);
+	free(objectFile);
+	free(executable);
 
 	return 0;
 
