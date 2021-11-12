@@ -12,6 +12,12 @@ void writeNumber(FILE* output, int value) {
 	fprintf(output, "	push rax\n\n");
 }
 
+void writeCharacter(FILE* output, char value) {
+	fprintf(output, "	;; -- character --\n");
+	fprintf(output, "	mov rax, %d\n", value);
+	fprintf(output, "	push rax\n\n");
+}
+
 void writeAdd(FILE* output) {
 	fprintf(output, "	;; -- add --\n");
 	fprintf(output, "	pop rbx\n");
@@ -36,6 +42,13 @@ void writeNegative(FILE* output) {
 }
 
 void writeFooter(FILE* output) {
+	//temporarily write final result as a single character to stdout
+	fprintf(output, "	mov rax, 1\n");
+	fprintf(output, "	mov rdi, 1\n");
+	fprintf(output, "	mov rsi, rsp\n");
+	fprintf(output, "	mov rdx, 1\n");
+	fprintf(output, "	syscall\n");
+
 	fprintf(output, "	mov rax, 60\n");
 	fprintf(output, "	xor rdi, rdi\n");
 	fprintf(output, "	syscall\n");
