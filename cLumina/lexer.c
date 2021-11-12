@@ -70,6 +70,12 @@ char advance(Lexer* lexer){
 	return *(lexer->current++);
 }
 
+void lexerError(Lexer* lexer, const char* message) {
+	printf("%s:%d:%d: ERROR: ", lexer->fileName, lexer->line, lexer->column);
+	printf("%s", message);
+	printf(" (at '%c')\n", *lexer->current);
+}
+
 Token *nextToken(Lexer* lexer){
 	while (*lexer->current == ' ' || *lexer->current == '\n') {
 		advance(lexer);
@@ -90,6 +96,16 @@ Token *nextToken(Lexer* lexer){
 		token->type = TOKEN_NUMBER;
 
 		while(isdigit(*lexer->current)) {
+			advance(lexer);
+		}
+	} else if (*lexer->current == '"' || *lexer->current == '\'') {
+		token->type = TOKEN_CHAR;
+
+		char charStart = advance(lexer);
+		advance(lexer);
+		if (*lexer->current != charStart) {
+			lexerError(lexer, "expected character end");
+		} else {
 			advance(lexer);
 		}
 	} else {

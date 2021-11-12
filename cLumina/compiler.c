@@ -12,6 +12,12 @@ void writeNumber(FILE* output, int value) {
 	fprintf(output, "	push rax\n\n");
 }
 
+void writeCharacter(FILE* output, char value) {
+	fprintf(output, "	;; -- character --\n");
+	fprintf(output, "	mov rax, %d\n", value);
+	fprintf(output, "	push rax\n\n");
+}
+
 void writeAdd(FILE* output) {
 	fprintf(output, "	;; -- add --\n");
 	fprintf(output, "	pop rbx\n");

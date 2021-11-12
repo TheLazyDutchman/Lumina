@@ -7,6 +7,7 @@ void writeHeader(FILE* output);
 void writeFooter(FILE* output);
 
 void writeNumber(FILE* output, int value);
+void writeCharacter(FILE* output, char value);
 
 void writeAdd(FILE* output);
 void writeSubtract(FILE* output);

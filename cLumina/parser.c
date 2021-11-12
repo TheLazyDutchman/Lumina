@@ -52,10 +52,11 @@ typedef struct {
 	Precedence precedence;
 } ParseRule;
 
-_Static_assert(TOKEN_TYPES_NUM == 4, "Exhaustive handling of token types in parsing");
+_Static_assert(TOKEN_TYPES_NUM == 5, "Exhaustive handling of token types in parsing");
 
 ParseRule parseTable[] = {
 	[TOKEN_NUMBER] = {number, NULL, PREC_PRIMARY},
+	[TOKEN_CHAR] = {character, NULL, PREC_PRIMARY},
 	[TOKEN_PLUS] = {NULL, binary, PREC_TERM},
 	[TOKEN_MINUS] = {unary, binary, PREC_UNARY},
 	[TOKEN_END_OF_FILE] = {NULL, NULL, PREC_NONE}
@@ -108,6 +109,25 @@ void number(Parser* parser) {
 	}
 
 	writeNumber(parser->outputFile, numberValue);
+}
+
+void dumpCharacter(Parser* parser, Token value) {
+	if (parser->flags & FLAG_DUMP) {
+		printf("%s:%d: character '%c'\n", value.fileName, value.line, value.word[1]);
+	}
+}
+
+void character(Parser* parser) {
+	Token value = *parser->current;
+	if (value.type != TOKEN_CHAR) {
+		printf("incorrect reference in parseTable: '%s' points to character\n", tokenTypes[value.type]);
+	}
+
+	dumpCharacter(parser, value);
+
+	char charValue = value.word[1];
+
+	writeCharacter(parser->outputFile, charValue);
 }
 
 void dumpBinary(Parser* parser, Token operator) {
