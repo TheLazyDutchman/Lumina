@@ -42,6 +42,13 @@ void writeNegative(FILE* output) {
 }
 
 void writeFooter(FILE* output) {
+	//temporarily write final result as a single character to stdout
+	fprintf(output, "	mov rax, 1\n");
+	fprintf(output, "	mov rdi, 1\n");
+	fprintf(output, "	mov rsi, rsp\n");
+	fprintf(output, "	mov rdx, 1\n");
+	fprintf(output, "	syscall\n");
+
 	fprintf(output, "	mov rax, 60\n");
 	fprintf(output, "	xor rdi, rdi\n");
 	fprintf(output, "	syscall\n");
