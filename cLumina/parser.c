@@ -3,13 +3,14 @@
 
 #include "parser.h"
 
-Parser* initParser(char* fileName, ParseFlag flags) {
-	Parser* parser;
+Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
+	Parser* parser = malloc(sizeof(Parser));
 
-	parser->lexer = initLexer(fileName);
+	parser->lexer = initLexer(inputName);
 	parser->current = NULL;
-	parser->last = NULL;
 	parser->flags = flags;
+
+	parser->outputFile = fopen(outputName, "w");
 	
 	return parser;
 }
@@ -17,22 +18,20 @@ Parser* initParser(char* fileName, ParseFlag flags) {
 void freeParser(Parser* parser) {
 	freeLexer(parser->lexer);
 
-	if (parser->last != NULL) {
-		freeToken(parser->last);
-	}
 	if (parser->current != NULL) {
 		freeToken(parser->current);
 	}
+
+	fclose(parser->outputFile);
 
 	free(parser);
 }
 
 Token* next(Parser* parser) {
-	if (parser->last != NULL) {
-		freeToken(parser->last);
+	if (parser->current != NULL) {
+		freeToken(parser->current);
 	}
 
-	parser->last = parser->current;
 	parser->current = nextToken(parser->lexer);
 	return parser->current;
 }
@@ -101,7 +100,14 @@ void number(Parser* parser) {
 
 	dumpNumber(parser, value);
 
-	//TODO: compile integer constant
+	char* result;
+
+	int numberValue = strtol(value.word, &result, 10);
+	if (*result != '\0') {
+		parseError(value, "could not convert string '%s' to int");
+	}
+
+	writeNumber(parser->outputFile, numberValue);
 }
 
 void dumpBinary(Parser* parser, Token operator) {
@@ -129,11 +135,15 @@ void binary(Parser* parser) {
 	switch (operator.type) {
 		case TOKEN_PLUS:
 			dumpBinary(parser, operator);
-			//TODO: compile binary plus operation
+
+			writeAdd(parser->outputFile);
+
 			break;
 		case TOKEN_MINUS:
 			dumpBinary(parser, operator);
-			//TODO: compile binary minus operation
+
+			writeSubtract(parser->outputFile);
+
 			break;
 	}
 }
@@ -152,7 +162,9 @@ void unary(Parser* parser) {
 	switch (operator.type) {
 		case TOKEN_MINUS:
 			dumpUnary(parser, operator);
-			//TODO: compile unary minus operation
+
+			writeNegative(parser->outputFile);
+
 			break;
 		default:
 			printf("incorrect reference in parseTable: '%s' points to unary\n", tokenTypes[operator.type]);
@@ -175,5 +187,9 @@ void expression(Parser* parser) {
 
 
 void parse(Parser* parser) {
+	writeHeader(parser->outputFile);
+
 	expression(parser);
+
+	writeFooter(parser->outputFile);
 }
