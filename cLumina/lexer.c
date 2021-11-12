@@ -73,6 +73,12 @@ char advance(Lexer* lexer){
 Token *nextToken(Lexer* lexer){
 	while (*lexer->current == ' ' || *lexer->current == '\n') {
 		advance(lexer);
+
+		if (*lexer->current == '/' && peek(lexer) == '/') {
+			while (*lexer->current != '\n') {
+				advance(lexer);
+			}
+		}
 	}
 
 	Token *token = malloc(sizeof(token));
