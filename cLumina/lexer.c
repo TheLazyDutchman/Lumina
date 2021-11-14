@@ -76,6 +76,12 @@ void lexerError(Lexer* lexer, const char* message) {
 	printf(" (at '%c')\n", *lexer->current);
 }
 
+void lexIdentifier(Lexer* lexer) {
+	while (isalnum(*lexer->current)) {
+			advance(lexer);
+	}
+}
+
 Token *nextToken(Lexer* lexer){
 	while (*lexer->current == ' ' || *lexer->current == '\n') {
 		advance(lexer);
@@ -98,6 +104,21 @@ Token *nextToken(Lexer* lexer){
 		while(isdigit(*lexer->current)) {
 			advance(lexer);
 		}
+	} else if (isalpha(*lexer->current)) {
+		switch (*lexer->current) {
+			case 'v':
+				if (advance(lexer) != 'a') {
+					lexIdentifier(lexer);
+				}
+				if (advance(lexer) != 'r') {
+					lexIdentifier(lexer);
+				}
+				token->type = TOKEN_VAR;
+				break;
+			default:
+				lexIdentifier(lexer);
+		}
+
 	} else if (*lexer->current == '"' || *lexer->current == '\'') {
 		token->type = TOKEN_CHAR;
 
