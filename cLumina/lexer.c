@@ -118,6 +118,10 @@ Token *nextToken(Lexer* lexer){
 				token->type = TOKEN_MINUS;
 				advance(lexer);
 				break;
+			case ';':
+				token->type = TOKEN_SEMICOLON;
+				advance(lexer);
+				break;
 			case '\0':
 				token->type = TOKEN_END_OF_FILE;
 				break;
