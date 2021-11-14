@@ -109,12 +109,18 @@ Token *nextToken(Lexer* lexer){
 	} else if (isalpha(*lexer->current)) {
 		switch (*lexer->current) {
 			case 'v':
-				if (advance(lexer) != 'a') {
+				advance(lexer);
+				if (*lexer->current != 'a') {
 					lexIdentifier(lexer, token);
+					break;
 				}
-				if (advance(lexer) != 'r') {
+
+				advance(lexer);
+				if (*lexer->current != 'r') {
 					lexIdentifier(lexer, token);
+					break;
 				}
+				advance(lexer);
 				token->type = TOKEN_VAR;
 				break;
 			default:
@@ -143,6 +149,10 @@ Token *nextToken(Lexer* lexer){
 				break;
 			case ';':
 				token->type = TOKEN_SEMICOLON;
+				advance(lexer);
+				break;
+			case '=':
+				token->type = TOKEN_EQUAL;
 				advance(lexer);
 				break;
 			case '\0':

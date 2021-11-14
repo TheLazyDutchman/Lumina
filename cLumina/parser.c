@@ -56,13 +56,14 @@ typedef struct {
 	Precedence precedence;
 } ParseRule;
 
-_Static_assert(TOKEN_TYPES_NUM == 8, "Exhaustive handling of token types in parsing");
+_Static_assert(TOKEN_TYPES_NUM == 9, "Exhaustive handling of token types in parsing");
 
 ParseRule parseTable[] = {
 	[TOKEN_NUMBER] = {number, NULL, PREC_PRIMARY},
 	[TOKEN_CHAR] = {character, NULL, PREC_PRIMARY},
 	[TOKEN_PLUS] = {NULL, binary, PREC_TERM},
 	[TOKEN_MINUS] = {unary, binary, PREC_UNARY},
+	[TOKEN_EQUAL] = {NULL, NULL, PREC_ASSIGNMENT},
 	[TOKEN_SEMICOLON] = {NULL, NULL, PREC_STATEMENT},
 	[TOKEN_VAR] = {NULL, NULL, PREC_ASSIGNMENT},
 	[TOKEN_IDENTIFIER] = {NULL, NULL, PREC_PRIMARY},
@@ -95,13 +96,15 @@ Token parsePrecedence(Parser* parser, Precedence precedence) {
 	return token;
 }
 
-void consumeToken(Parser* parser, Tokentype type, char* message) {
+Token consumeToken(Parser* parser, Tokentype type, char* message) {
 	Token token = *parser->current;
 	if (token.type != type) {
 		parseError(parser, token, message);
 	}
 
 	next(parser);
+
+	return token;
 }
 
 void dumpNumber(Parser* parser, Token value) {
@@ -230,9 +233,34 @@ void expression(Parser* parser) {
 	}
 }
 
-void statement(Parser* parser) {
+void dumpIdentifier(Parser* parser, Token token) {
+	if (parser->flags & FLAG_DUMP) {
+		printf("%s:%d: identifier '%s'\n", token.fileName, token.line, token.word);
+	}
+}
+
+void variableDefinition(Parser* parser) {
+	Token identifier = consumeToken(parser, TOKEN_IDENTIFIER, "expected variable name in definition");
+
+	dumpIdentifier(parser, identifier);
+
+	consumeToken(parser, TOKEN_EQUAL, "expected '=' after variable name in definition");
+
 	expression(parser);
-	consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after expression");
+	consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after variable definition");
+
+	//TODO: add variable to compiler
+}
+
+void statement(Parser* parser) {
+	if (parser->current->type == TOKEN_VAR) {
+		next(parser);
+
+		variableDefinition(parser);
+	} else {
+		expression(parser);
+		consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after expression");
+	}
 }
 
 void parse(Parser* parser) {

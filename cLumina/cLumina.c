@@ -44,7 +44,7 @@ char* getFileNameWithExtension(const char* fileName, const char* extension) {
 	int fileLen = strlen(fileName);
 	int extLen = 0;
 	if (extension != NULL) {
-		extLen = strlen(extension);
+		extLen = strlen(extension) + 1;
 	}
 
 	char* dotPos = rindex(fileName, '.');
