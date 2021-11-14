@@ -76,10 +76,12 @@ void lexerError(Lexer* lexer, const char* message) {
 	printf(" (at '%c')\n", *lexer->current);
 }
 
-void lexIdentifier(Lexer* lexer) {
+void lexIdentifier(Lexer* lexer, Token* token) {
 	while (isalnum(*lexer->current)) {
 			advance(lexer);
 	}
+
+	token->type = TOKEN_IDENTIFIER;
 }
 
 Token *nextToken(Lexer* lexer){
@@ -108,15 +110,15 @@ Token *nextToken(Lexer* lexer){
 		switch (*lexer->current) {
 			case 'v':
 				if (advance(lexer) != 'a') {
-					lexIdentifier(lexer);
+					lexIdentifier(lexer, token);
 				}
 				if (advance(lexer) != 'r') {
-					lexIdentifier(lexer);
+					lexIdentifier(lexer, token);
 				}
 				token->type = TOKEN_VAR;
 				break;
 			default:
-				lexIdentifier(lexer);
+				lexIdentifier(lexer, token);
 		}
 
 	} else if (*lexer->current == '"' || *lexer->current == '\'') {
