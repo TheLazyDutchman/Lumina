@@ -1,1 +1,1 @@
-'a' + 2 //this should become 'c'
+'a' + 2; //this should become 'c'

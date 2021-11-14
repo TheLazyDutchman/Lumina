@@ -10,7 +10,7 @@ char* readFile(char *fileName) {
 	
 	if (fd == NULL) {
 		printf("[ERROR] could not open file '%s'\n", fileName);
-		return NULL;
+		exit(1);
 	}
 
 	fseek(fd, 0, SEEK_END);
@@ -19,19 +19,19 @@ char* readFile(char *fileName) {
 
 	if (len == -1L) {
 		printf("[ERROR] could not read size of file '%s'\n", fileName);
-		return NULL;
+		exit(1);
 	}
 
 	char *buffer = malloc(len);
 
 	if (buffer == NULL) {
 		printf("[ERROR] could not allocate enough memory to read file '%s'\n", fileName);
-		return NULL;
+		exit(1);
 	}
 
 	if (fread(buffer, 1, len, fd) != len) {
 		printf("[ERROR] could not read file '%s'\n", fileName);
-		return NULL;
+		exit(1);
 	}
 	
 	fclose(fd);

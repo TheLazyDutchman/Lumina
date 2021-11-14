@@ -12,7 +12,7 @@ typedef struct Lexer {
 Lexer *initLexer(char *filename);
 void freeLexer(Lexer* lexer);
 
-enum Tokentype {
+typedef enum Tokentype {
 	TOKEN_NUMBER,
 	TOKEN_PLUS,
 	TOKEN_MINUS,
@@ -20,7 +20,7 @@ enum Tokentype {
 	TOKEN_SEMICOLON,
 	TOKEN_END_OF_FILE,
 	TOKEN_TYPES_NUM
-};
+} Tokentype;
 
 static const char* const tokenTypes[] = {
 	[TOKEN_NUMBER] = "NUMBER",
@@ -37,7 +37,7 @@ typedef struct Token {
 	char *fileName;
 	char *word;
 	int line;
-	enum Tokentype type;
+	Tokentype type;
 } Token;
 
 Token *nextToken(Lexer* lexer);

@@ -91,6 +91,11 @@ int main(int argc, char *argv[]) {
 
 	Parser* parser = initParser(fileName, assemblyFile, flags);
 	parse(parser);
+
+	if (parser->hadError) {
+		exit(1);
+	}
+
 	freeParser(parser);
 
 	char *nasmArgs[5] = {"nasm", "-f", "elf64", assemblyFile, NULL};

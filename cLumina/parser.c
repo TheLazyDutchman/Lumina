@@ -7,10 +7,12 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 	Parser* parser = malloc(sizeof(Parser));
 
 	parser->lexer = initLexer(inputName);
-	parser->current = NULL;
+	parser->current = nextToken(parser->lexer);
 	parser->flags = flags;
 
 	parser->outputFile = fopen(outputName, "w");
+
+	parser->hadError = false;
 	
 	return parser;
 }
@@ -64,29 +66,39 @@ ParseRule parseTable[] = {
 	[TOKEN_END_OF_FILE] = {NULL, NULL, PREC_NONE}
 };
 
-void parseError(Token token, char* message) {
+void parseError(Parser* parser, Token token, char* message) {
 	printf("%s:%d ERROR at '%s': ", token.fileName, token.line, token.word);
 	printf("%s", message);
 	printf("\n");
 
+	parser->hadError = true;
 	//TODO: enter panic mode
 }
 
 Token parsePrecedence(Parser* parser, Precedence precedence) {
-	Token token = *next(parser);
+	Token token = *parser->current;
 	ParseRule rule = parseTable[token.type];
 
 	if (rule.precedence < precedence) {
-		parseError(token, "unexpected token");
+		parseError(parser, token, "unexpected token");
 	}
 
 	if (rule.prefix == NULL) {
-		parseError(token, "unexpected token");
+		parseError(parser, token, "unexpected token");
 	}
 
 	rule.prefix(parser);
 
 	return token;
+}
+
+void consumeToken(Parser* parser, Tokentype type, char* message) {
+	Token token = *parser->current;
+	if (token.type != type) {
+		parseError(parser, token, message);
+	}
+
+	next(parser);
 }
 
 void dumpNumber(Parser* parser, Token value) {
@@ -107,7 +119,7 @@ void number(Parser* parser) {
 
 	int numberValue = strtol(value.word, &result, 10);
 	if (*result != '\0') {
-		parseError(value, "could not convert string '%s' to int");
+		parseError(parser, value, "could not convert string '%s' to int");
 	}
 
 	writeNumber(parser->outputFile, numberValue);
@@ -152,6 +164,8 @@ void binary(Parser* parser) {
 			printf("incorrect reference in parseTable: '%s' points to binary\n", tokenTypes[operator.type]);
 	}
 
+	next(parser);
+
 	parsePrecedence(parser, precedence);
 
 	switch (operator.type) {
@@ -179,6 +193,8 @@ void dumpUnary(Parser* parser, Token operator) {
 void unary(Parser* parser) {
 	Token operator = *parser->current;
 
+	next(parser);
+
 	parsePrecedence(parser, PREC_UNARY);
 
 	switch (operator.type) {
@@ -199,19 +215,29 @@ void expression(Parser* parser) {
 	while (next(parser)->type != TOKEN_END_OF_FILE) {
 		ParseRule rule = parseTable[parser->current->type];
 
+		if (rule.precedence < PREC_EXPR) {
+			break;
+		}
+
 		if (rule.infix == NULL) {
-			parseError(*parser->current, "unexpected token");
+			parseError(parser, *parser->current, "unexpected token");
 		}
 
 		rule.infix(parser);
 	}
 }
 
+void statement(Parser* parser) {
+	expression(parser);
+	consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after expression");
+}
 
 void parse(Parser* parser) {
 	writeHeader(parser->outputFile);
 
-	expression(parser);
+	while (parser->current->type != TOKEN_END_OF_FILE) {
+		statement(parser);
+	}
 
 	writeFooter(parser->outputFile);
 }
