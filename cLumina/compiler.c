@@ -20,6 +20,11 @@ void writeHeader(Compiler* compiler) {
 	fprintf(compiler->output, "_start:\n");
 }
 
+void writePop(Compiler* compiler, int amount) {
+	fprintf(compiler->output, "	;; -- pop --\n");
+	fprintf(compiler->output, "	add rsp, %d\n", 8*amount);
+}
+
 void writeNumber(Compiler* compiler, int value) {
 	fprintf(compiler->output, "	;; -- number --\n");
 	fprintf(compiler->output, "	mov rax, %d\n", value);

@@ -13,6 +13,7 @@ void freeCompiler(Compiler* compiler);
 
 void writeHeader(Compiler* compiler);
 void writeFooter(Compiler* compiler);
+void writePop(Compiler* compiler, int amount);
 
 void writeNumber(Compiler* compiler, int value);
 void writeCharacter(Compiler* compiler, char value);
