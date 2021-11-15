@@ -24,12 +24,16 @@ void writeNumber(Compiler* compiler, int value) {
 	fprintf(compiler->output, "	;; -- number --\n");
 	fprintf(compiler->output, "	mov rax, %d\n", value);
 	fprintf(compiler->output, "	push rax\n\n");
+
+	compiler->currentStackSize++;
 }
 
 void writeCharacter(Compiler* compiler, char value) {
 	fprintf(compiler->output, "	;; -- character --\n");
 	fprintf(compiler->output, "	mov rax, %d\n", value);
 	fprintf(compiler->output, "	push rax\n\n");
+
+	compiler->currentStackSize++;
 }
 
 void writeAdd(Compiler* compiler) {
@@ -38,6 +42,8 @@ void writeAdd(Compiler* compiler) {
 	fprintf(compiler->output, "	pop rax\n");
 	fprintf(compiler->output, "	add rax, rbx\n");
 	fprintf(compiler->output, "	push rax\n\n");
+
+	compiler->currentStackSize--;
 }
 
 void writeSubtract(Compiler* compiler) {
@@ -46,6 +52,8 @@ void writeSubtract(Compiler* compiler) {
 	fprintf(compiler->output, "	pop rax\n");
 	fprintf(compiler->output, "	sub rax, rbx\n");
 	fprintf(compiler->output, "	push rax\n\n");
+
+	compiler->currentStackSize--;
 }
 
 void writeNegative(Compiler* compiler) {
@@ -62,6 +70,8 @@ void writeFooter(Compiler* compiler) {
 	fprintf(compiler->output, "	mov rsi, rsp\n");
 	fprintf(compiler->output, "	mov rdx, 1\n");
 	fprintf(compiler->output, "	syscall\n");
+
+	compiler->currentStackSize--;
 
 	fprintf(compiler->output, "	mov rax, 60\n");
 	fprintf(compiler->output, "	xor rdi, rdi\n");
