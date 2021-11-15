@@ -22,7 +22,7 @@ void writeHeader(Compiler* compiler) {
 
 void writePop(Compiler* compiler, int amount) {
 	fprintf(compiler->output, "	;; -- pop --\n");
-	fprintf(compiler->output, "	add rsp, %d\n", 8*amount);
+	fprintf(compiler->output, "	add rsp, %d\n\n", 8*amount);
 
 	compiler->currentStackSize -= amount;
 }
@@ -41,6 +41,14 @@ void writeCharacter(Compiler* compiler, char value) {
 	fprintf(compiler->output, "	push rax\n\n");
 
 	compiler->currentStackSize++;
+}
+
+void writeIdentifier(Compiler* compiler, int offset) {
+	fprintf(compiler->output, "	;; -- identifier --\n");
+	fprintf(compiler->output, "	mov rax, rsp\n");
+	fprintf(compiler->output, "	mov rbx, %d\n", 8 * offset);
+	fprintf(compiler->output, "	sub rax, rbx\n");
+	fprintf(compiler->output, "	push [rax]\n\n");
 }
 
 void writeAdd(Compiler* compiler) {

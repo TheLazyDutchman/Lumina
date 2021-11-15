@@ -11,12 +11,15 @@ typedef struct {
 Compiler* initCompiler(FILE* output);
 void freeCompiler(Compiler* compiler);
 
+void initializeVariable(Compiler* compiler, char* name);
+
 void writeHeader(Compiler* compiler);
 void writeFooter(Compiler* compiler);
 void writePop(Compiler* compiler, int amount);
 
 void writeNumber(Compiler* compiler, int value);
 void writeCharacter(Compiler* compiler, char value);
+void writeIdentifier(Compiler* compiler, int offset);
 
 void writeAdd(Compiler* compiler);
 void writeSubtract(Compiler* compiler);
