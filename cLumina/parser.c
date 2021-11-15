@@ -12,6 +12,8 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 
 	parser->outputFile = fopen(outputName, "w");
 
+	parser->compiler = initCompiler(parser->outputFile);
+
 	parser->hadError = false;
 	
 	return parser;
@@ -23,6 +25,8 @@ void freeParser(Parser* parser) {
 	if (parser->current != NULL) {
 		freeToken(parser->current);
 	}
+
+	freeCompiler(parser->compiler);
 
 	fclose(parser->outputFile);
 
@@ -128,7 +132,7 @@ void number(Parser* parser) {
 		parseError(parser, value, "could not convert string '%s' to int");
 	}
 
-	writeNumber(parser->outputFile, numberValue);
+	writeNumber(parser->compiler, numberValue);
 }
 
 void dumpCharacter(Parser* parser, Token value) {
@@ -147,7 +151,7 @@ void character(Parser* parser) {
 
 	char charValue = value.word[1];
 
-	writeCharacter(parser->outputFile, charValue);
+	writeCharacter(parser->compiler, charValue);
 }
 
 void dumpBinary(Parser* parser, Token operator) {
@@ -178,13 +182,13 @@ void binary(Parser* parser) {
 		case TOKEN_PLUS:
 			dumpBinary(parser, operator);
 
-			writeAdd(parser->outputFile);
+			writeAdd(parser->compiler);
 
 			break;
 		case TOKEN_MINUS:
 			dumpBinary(parser, operator);
 
-			writeSubtract(parser->outputFile);
+			writeSubtract(parser->compiler);
 
 			break;
 	}
@@ -207,7 +211,7 @@ void unary(Parser* parser) {
 		case TOKEN_MINUS:
 			dumpUnary(parser, operator);
 
-			writeNegative(parser->outputFile);
+			writeNegative(parser->compiler);
 
 			break;
 		default:
@@ -264,11 +268,11 @@ void statement(Parser* parser) {
 }
 
 void parse(Parser* parser) {
-	writeHeader(parser->outputFile);
+	writeHeader(parser->compiler);
 
 	while (parser->current->type != TOKEN_END_OF_FILE) {
 		statement(parser);
 	}
 
-	writeFooter(parser->outputFile);
+	writeFooter(parser->compiler);
 }

@@ -16,6 +16,7 @@ typedef struct {
 	Token* last;
 	ParseFlag flags;
 
+	Compiler* compiler;
 	FILE* outputFile;
 
 	bool hadError;

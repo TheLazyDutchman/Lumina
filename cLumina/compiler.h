@@ -3,14 +3,22 @@
 
 #include <stdio.h>
 
-void writeHeader(FILE* output);
-void writeFooter(FILE* output);
+typedef struct {
+	FILE* output;
+	size_t currentStackSize;
+} Compiler;
 
-void writeNumber(FILE* output, int value);
-void writeCharacter(FILE* output, char value);
+Compiler* initCompiler(FILE* output);
+void freeCompiler(Compiler* compiler);
 
-void writeAdd(FILE* output);
-void writeSubtract(FILE* output);
-void writeNegative(FILE* output);
+void writeHeader(Compiler* compiler);
+void writeFooter(Compiler* compiler);
+
+void writeNumber(Compiler* compiler, int value);
+void writeCharacter(Compiler* compiler, char value);
+
+void writeAdd(Compiler* compiler);
+void writeSubtract(Compiler* compiler);
+void writeNegative(Compiler* compiler);
 
 #endif
