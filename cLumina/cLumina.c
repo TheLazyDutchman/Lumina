@@ -44,7 +44,7 @@ char* getFileNameWithExtension(const char* fileName, const char* extension) {
 	int fileLen = strlen(fileName);
 	int extLen = 0;
 	if (extension != NULL) {
-		extLen = strlen(extension) + 1;
+		extLen = strlen(extension);
 	}
 
 	char* dotPos = rindex(fileName, '.');
@@ -53,10 +53,11 @@ char* getFileNameWithExtension(const char* fileName, const char* extension) {
 		fileLen = dotPos - fileName;
 	}
 
-	char* buffer = malloc(fileLen + extLen);
+	char* buffer = malloc(fileLen + extLen + 1);
 
 	memcpy(buffer, fileName, fileLen);
 	memcpy(buffer + fileLen, extension, extLen);
+	buffer[fileLen + extLen] = '\0';
 
 	return buffer;
 }
