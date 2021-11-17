@@ -17,17 +17,17 @@ void freeCompiler(Compiler* compiler) {
 	free(compiler);
 }
 
-void defineVariable(Compiler* compiler, char* name) {
-	char* buffer = strdup(name);
+void defineVariable(Compiler* compiler, char* name, int nameLen) {
+	char* buffer = strndup(name, nameLen);
 
 	addVariable(compiler->variableList, buffer, compiler->currentStackSize);
 }
 
-uint16_t findVariable(Compiler* compiler, char* name) {
+uint16_t findVariable(Compiler* compiler, char* name, int nameLen) {
 	VariableList list = *compiler->variableList;
 
 	for (int i = 0; i < list.size; i++) {
-		if (strcmp(list.variables[i]->name, name) == 0) {
+		if (strncmp(list.variables[i]->name, name, nameLen) == 0) {
 			return compiler->currentStackSize - list.variables[i]->position;
 		}
 	}

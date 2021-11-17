@@ -160,7 +160,7 @@ void identifier(Parser* parser) {
 		printf("incorrect reference in parseTable: '%s' points to identifier\n", tokenTypes[identifier.type]);
 	}
 
-	uint16_t offset = findVariable(parser->compiler, identifier.word);
+	uint16_t offset = findVariable(parser->compiler, identifier.word, identifier.wordLen);
 
 	if (offset == -1) {
 		parseError(parser, identifier, "variable '%s' is undefined");
@@ -271,7 +271,7 @@ void variableDefinition(Parser* parser) {
 	expression(parser);
 	consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after variable definition");
 
-	defineVariable(parser->compiler, identifier.word);
+	defineVariable(parser->compiler, identifier.word, identifier.wordLen);
 }
 
 void statement(Parser* parser) {
