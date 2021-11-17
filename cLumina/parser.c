@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "parser.h"
 
@@ -75,9 +76,12 @@ ParseRule parseTable[] = {
 };
 
 void parseError(Parser* parser, Token token, char* message) {
-	printf("%s:%d ERROR at '%s': ", token.fileName, token.line, token.word);
+	char* word = strndup(token.word, token.wordLen);
+	printf("%s:%d ERROR at '%s': ", token.fileName, token.line, word);
 	printf("%s", message);
 	printf("\n");
+
+	free(word);
 
 	parser->hadError = true;
 	//TODO: enter panic mode
@@ -128,7 +132,7 @@ void number(Parser* parser) {
 	char* result;
 
 	int numberValue = strtol(value.word, &result, 10);
-	if (*result != '\0') {
+	if (result - value.word != value.wordLen) {
 		parseError(parser, value, "could not convert string '%s' to int");
 	}
 
@@ -261,8 +265,6 @@ void dumpIdentifier(Parser* parser, Token token) {
 
 void variableDefinition(Parser* parser) {
 	Token identifier = consumeToken(parser, TOKEN_IDENTIFIER, "expected variable name in definition");
-
-	printf("identifier: %s, current %s\n", identifier.word, parser->current->word);
 
 	dumpIdentifier(parser, identifier);
 

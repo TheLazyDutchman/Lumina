@@ -95,7 +95,7 @@ Token *nextToken(Lexer* lexer){
 		}
 	}
 
-	Token *token = malloc(sizeof(token));
+	Token *token = malloc(sizeof(Token));
 	token->fileName = lexer->fileName;
 	token->line = lexer->line;
 	token->word = lexer->current;
