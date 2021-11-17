@@ -68,7 +68,7 @@ void writeIdentifier(Compiler* compiler, int offset) {
 	fprintf(compiler->output, "	;; -- identifier --\n");
 	fprintf(compiler->output, "	mov rax, rsp\n");
 	fprintf(compiler->output, "	mov rbx, %d\n", 8 * offset);
-	fprintf(compiler->output, "	sub rax, rbx\n");
+	fprintf(compiler->output, "	add rax, rbx\n");
 	fprintf(compiler->output, "	mov rax, [rax]\n");
 	fprintf(compiler->output, "	push rax\n\n");
 }
