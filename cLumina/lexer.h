@@ -42,6 +42,7 @@ _Static_assert(TOKEN_TYPES_NUM == 9, "Exhaustive handling of tokenTypes in strin
 typedef struct Token {
 	char *fileName;
 	char *word;
+	int wordLen;
 	int line;
 	Tokentype type;
 } Token;
