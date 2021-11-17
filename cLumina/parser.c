@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "parser.h"
 
@@ -75,9 +76,12 @@ ParseRule parseTable[] = {
 };
 
 void parseError(Parser* parser, Token token, char* message) {
-	printf("%s:%d ERROR at '%s': ", token.fileName, token.line, token.word);
+	char* word = strndup(token.word, token.wordLen);
+	printf("%s:%d ERROR at '%s': ", token.fileName, token.line, word);
 	printf("%s", message);
 	printf("\n");
+
+	free(word);
 
 	parser->hadError = true;
 	//TODO: enter panic mode
@@ -128,7 +132,7 @@ void number(Parser* parser) {
 	char* result;
 
 	int numberValue = strtol(value.word, &result, 10);
-	if (*result != '\0') {
+	if (result - value.word != value.wordLen) {
 		parseError(parser, value, "could not convert string '%s' to int");
 	}
 
@@ -160,7 +164,7 @@ void identifier(Parser* parser) {
 		printf("incorrect reference in parseTable: '%s' points to identifier\n", tokenTypes[identifier.type]);
 	}
 
-	uint16_t offset = findVariable(parser->compiler, identifier.word);
+	uint16_t offset = findVariable(parser->compiler, identifier.word, identifier.wordLen);
 
 	if (offset == -1) {
 		parseError(parser, identifier, "variable '%s' is undefined");
@@ -262,8 +266,6 @@ void dumpIdentifier(Parser* parser, Token token) {
 void variableDefinition(Parser* parser) {
 	Token identifier = consumeToken(parser, TOKEN_IDENTIFIER, "expected variable name in definition");
 
-	printf("identifier: %s, current %s\n", identifier.word, parser->current->word);
-
 	dumpIdentifier(parser, identifier);
 
 	consumeToken(parser, TOKEN_EQUAL, "expected '=' after variable name in definition");
@@ -271,7 +273,7 @@ void variableDefinition(Parser* parser) {
 	expression(parser);
 	consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after variable definition");
 
-	defineVariable(parser->compiler, identifier.word);
+	defineVariable(parser->compiler, identifier.word, identifier.wordLen);
 }
 
 void statement(Parser* parser) {

@@ -14,8 +14,8 @@ typedef struct {
 Compiler* initCompiler(FILE* output);
 void freeCompiler(Compiler* compiler);
 
-void defineVariable(Compiler* compiler, char* name);
-uint16_t findVariable(Compiler* compiler, char* name);
+void defineVariable(Compiler* compiler, char* name, int nameLen);
+uint16_t findVariable(Compiler* compiler, char* name, int nameLen);
 
 void writeHeader(Compiler* compiler);
 void writeFooter(Compiler* compiler);

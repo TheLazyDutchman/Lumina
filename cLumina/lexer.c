@@ -95,10 +95,10 @@ Token *nextToken(Lexer* lexer){
 		}
 	}
 
-	Token *token = malloc(sizeof(token));
+	Token *token = malloc(sizeof(Token));
 	token->fileName = lexer->fileName;
 	token->line = lexer->line;
-	char *start = lexer->current;
+	token->word = lexer->current;
 
 	if (isdigit(*lexer->current)) {
 		token->type = TOKEN_NUMBER;
@@ -163,15 +163,11 @@ Token *nextToken(Lexer* lexer){
 				return NULL;
 		}
 	}
-	int len = lexer->current - start;
-	token->word = malloc(len + 1);
-	memcpy(token->word, start, len);
-	token->word[len] = '\0';
+	token->wordLen = lexer->current - token->word;
 
 	return token;
 }
 
 void freeToken(Token* token) {
-	free(token->word);
 	free(token);
 }
