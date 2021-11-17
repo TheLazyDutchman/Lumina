@@ -27,6 +27,7 @@ void freeParser(Parser* parser);
 
 void number(Parser* parser);
 void character(Parser* parser);
+void identifier(Parser* parser);
 void unary(Parser* parser);
 void binary(Parser* parser);
 void expression(Parser* parser);

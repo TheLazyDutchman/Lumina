@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "compiler.h"
 
@@ -6,12 +7,32 @@ Compiler* initCompiler(FILE* output) {
 	Compiler* compiler = malloc(sizeof(Compiler));
 	compiler->output = output;
 	compiler->currentStackSize = 0;
+	compiler->variableList = initVariableList();
 
 	return compiler;
 }
 
 void freeCompiler(Compiler* compiler) {
+	freeVariableList(compiler->variableList);
 	free(compiler);
+}
+
+void defineVariable(Compiler* compiler, char* name) {
+	char* buffer = strdup(name);
+
+	addVariable(compiler->variableList, buffer, compiler->currentStackSize);
+}
+
+uint16_t findVariable(Compiler* compiler, char* name) {
+	VariableList list = *compiler->variableList;
+
+	for (int i = 0; i < list.size; i++) {
+		if (strcmp(list.variables[i]->name, name) == 0) {
+			return compiler->currentStackSize - list.variables[i]->position;
+		}
+	}
+	
+	return -1;
 }
 
 void writeHeader(Compiler* compiler) {
@@ -48,7 +69,8 @@ void writeIdentifier(Compiler* compiler, int offset) {
 	fprintf(compiler->output, "	mov rax, rsp\n");
 	fprintf(compiler->output, "	mov rbx, %d\n", 8 * offset);
 	fprintf(compiler->output, "	sub rax, rbx\n");
-	fprintf(compiler->output, "	push [rax]\n\n");
+	fprintf(compiler->output, "	mov rax, [rax]\n");
+	fprintf(compiler->output, "	push rax\n\n");
 }
 
 void writeAdd(Compiler* compiler) {

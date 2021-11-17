@@ -3,15 +3,19 @@
 
 #include <stdio.h>
 
+#include "variable.h"
+
 typedef struct {
 	FILE* output;
 	size_t currentStackSize;
+	VariableList* variableList;
 } Compiler;
 
 Compiler* initCompiler(FILE* output);
 void freeCompiler(Compiler* compiler);
 
-void initializeVariable(Compiler* compiler, char* name);
+void defineVariable(Compiler* compiler, char* name);
+uint16_t findVariable(Compiler* compiler, char* name);
 
 void writeHeader(Compiler* compiler);
 void writeFooter(Compiler* compiler);

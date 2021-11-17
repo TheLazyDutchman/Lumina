@@ -70,7 +70,7 @@ ParseRule parseTable[] = {
 	[TOKEN_EQUAL] = {NULL, NULL, PREC_ASSIGNMENT},
 	[TOKEN_SEMICOLON] = {NULL, NULL, PREC_STATEMENT},
 	[TOKEN_VAR] = {NULL, NULL, PREC_ASSIGNMENT},
-	[TOKEN_IDENTIFIER] = {NULL, NULL, PREC_PRIMARY},
+	[TOKEN_IDENTIFIER] = {identifier, NULL, PREC_PRIMARY},
 	[TOKEN_END_OF_FILE] = {NULL, NULL, PREC_NONE}
 };
 
@@ -152,6 +152,22 @@ void character(Parser* parser) {
 	char charValue = value.word[1];
 
 	writeCharacter(parser->compiler, charValue);
+}
+
+void identifier(Parser* parser) {
+	Token identifier = *parser->current;
+	if (identifier.type != TOKEN_IDENTIFIER) {
+		printf("incorrect reference in parseTable: '%s' points to identifier\n", tokenTypes[identifier.type]);
+	}
+
+	uint16_t offset = findVariable(parser->compiler, identifier.word);
+
+	if (offset == -1) {
+		parseError(parser, identifier, "variable '%s' is undefined");
+		return;
+	}
+
+	writeIdentifier(parser->compiler, offset);
 }
 
 void dumpBinary(Parser* parser, Token operator) {
@@ -246,6 +262,8 @@ void dumpIdentifier(Parser* parser, Token token) {
 void variableDefinition(Parser* parser) {
 	Token identifier = consumeToken(parser, TOKEN_IDENTIFIER, "expected variable name in definition");
 
+	printf("identifier: %s, current %s\n", identifier.word, parser->current->word);
+
 	dumpIdentifier(parser, identifier);
 
 	consumeToken(parser, TOKEN_EQUAL, "expected '=' after variable name in definition");
@@ -253,7 +271,7 @@ void variableDefinition(Parser* parser) {
 	expression(parser);
 	consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after variable definition");
 
-	//TODO: add variable to compiler
+	defineVariable(parser->compiler, identifier.word);
 }
 
 void statement(Parser* parser) {
@@ -264,6 +282,7 @@ void statement(Parser* parser) {
 	} else {
 		expression(parser);
 		consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after expression");
+		writePop(parser->compiler, 1);
 	}
 }
 
