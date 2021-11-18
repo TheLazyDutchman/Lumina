@@ -116,6 +116,11 @@ Token *nextToken(Lexer* lexer){
 				}
 
 				advance(lexer);
+				if (isalnum(*lexer->current)) {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
 				token->type = TOKEN_IF;
 				break;
 			case 'v':
@@ -131,6 +136,11 @@ Token *nextToken(Lexer* lexer){
 					break;
 				}
 				advance(lexer);
+
+				if (isalnum(*lexer->current)) {
+					lexIdentifier(lexer, token);
+					break;
+				}
 				token->type = TOKEN_VAR;
 				break;
 			default:
