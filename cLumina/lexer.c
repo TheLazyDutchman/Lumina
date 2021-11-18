@@ -108,6 +108,16 @@ Token *nextToken(Lexer* lexer){
 		}
 	} else if (isalpha(*lexer->current)) {
 		switch (*lexer->current) {
+			case 'i':
+				advance(lexer);
+				if (*lexer->current != 'f') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				token->type = TOKEN_IF;
+				break;
 			case 'v':
 				advance(lexer);
 				if (*lexer->current != 'a') {
@@ -151,9 +161,24 @@ Token *nextToken(Lexer* lexer){
 				token->type = TOKEN_SEMICOLON;
 				advance(lexer);
 				break;
-			case '=':
-				token->type = TOKEN_EQUAL;
+			case '{':
+				token->type = TOKEN_LBRACE;
 				advance(lexer);
+				break;
+			case '}':
+				token->type = TOKEN_RBRACE;
+				advance(lexer);
+				break;
+			case '=':
+				advance(lexer);
+
+				if (*lexer->current == '=') {
+					advance(lexer);
+					token->type = TOKEN_EQUALEQUAL;
+					break;
+				}
+
+				token->type = TOKEN_EQUAL;
 				break;
 			case '\0':
 				token->type = TOKEN_END_OF_FILE;
