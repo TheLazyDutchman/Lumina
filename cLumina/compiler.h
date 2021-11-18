@@ -3,14 +3,30 @@
 
 #include <stdio.h>
 
-void writeHeader(FILE* output);
-void writeFooter(FILE* output);
+#include "variable.h"
 
-void writeNumber(FILE* output, int value);
-void writeCharacter(FILE* output, char value);
+typedef struct {
+	FILE* output;
+	size_t currentStackSize;
+	VariableList* variableList;
+} Compiler;
 
-void writeAdd(FILE* output);
-void writeSubtract(FILE* output);
-void writeNegative(FILE* output);
+Compiler* initCompiler(FILE* output);
+void freeCompiler(Compiler* compiler);
+
+void defineVariable(Compiler* compiler, char* name, int nameLen);
+uint16_t findVariable(Compiler* compiler, char* name, int nameLen);
+
+void writeHeader(Compiler* compiler);
+void writeFooter(Compiler* compiler);
+void writePop(Compiler* compiler, int amount);
+
+void writeNumber(Compiler* compiler, int value);
+void writeCharacter(Compiler* compiler, char value);
+void writeIdentifier(Compiler* compiler, int offset);
+
+void writeAdd(Compiler* compiler);
+void writeSubtract(Compiler* compiler);
+void writeNegative(Compiler* compiler);
 
 #endif

@@ -53,10 +53,11 @@ char* getFileNameWithExtension(const char* fileName, const char* extension) {
 		fileLen = dotPos - fileName;
 	}
 
-	char* buffer = malloc(fileLen + extLen);
+	char* buffer = malloc(fileLen + extLen + 1);
 
 	memcpy(buffer, fileName, fileLen);
 	memcpy(buffer + fileLen, extension, extLen);
+	buffer[fileLen + extLen] = '\0';
 
 	return buffer;
 }
@@ -91,6 +92,11 @@ int main(int argc, char *argv[]) {
 
 	Parser* parser = initParser(fileName, assemblyFile, flags);
 	parse(parser);
+
+	if (parser->hadError) {
+		exit(1);
+	}
+
 	freeParser(parser);
 
 	char *nasmArgs[5] = {"nasm", "-f", "elf64", assemblyFile, NULL};

@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "parser.h"
 
@@ -7,10 +8,14 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 	Parser* parser = malloc(sizeof(Parser));
 
 	parser->lexer = initLexer(inputName);
-	parser->current = NULL;
+	parser->current = nextToken(parser->lexer);
 	parser->flags = flags;
 
 	parser->outputFile = fopen(outputName, "w");
+
+	parser->compiler = initCompiler(parser->outputFile);
+
+	parser->hadError = false;
 	
 	return parser;
 }
@@ -21,6 +26,8 @@ void freeParser(Parser* parser) {
 	if (parser->current != NULL) {
 		freeToken(parser->current);
 	}
+
+	freeCompiler(parser->compiler);
 
 	fclose(parser->outputFile);
 
@@ -40,6 +47,8 @@ typedef void (*ParseFn)(Parser*);
 
 typedef enum {
 	PREC_NONE,
+	PREC_STATEMENT,
+	PREC_ASSIGNMENT,
 	PREC_EXPR,
 	PREC_TERM,
 	PREC_UNARY,
@@ -52,37 +61,56 @@ typedef struct {
 	Precedence precedence;
 } ParseRule;
 
-_Static_assert(TOKEN_TYPES_NUM == 5, "Exhaustive handling of token types in parsing");
+_Static_assert(TOKEN_TYPES_NUM == 9, "Exhaustive handling of token types in parsing");
 
 ParseRule parseTable[] = {
 	[TOKEN_NUMBER] = {number, NULL, PREC_PRIMARY},
 	[TOKEN_CHAR] = {character, NULL, PREC_PRIMARY},
 	[TOKEN_PLUS] = {NULL, binary, PREC_TERM},
 	[TOKEN_MINUS] = {unary, binary, PREC_UNARY},
+	[TOKEN_EQUAL] = {NULL, NULL, PREC_ASSIGNMENT},
+	[TOKEN_SEMICOLON] = {NULL, NULL, PREC_STATEMENT},
+	[TOKEN_VAR] = {NULL, NULL, PREC_ASSIGNMENT},
+	[TOKEN_IDENTIFIER] = {identifier, NULL, PREC_PRIMARY},
 	[TOKEN_END_OF_FILE] = {NULL, NULL, PREC_NONE}
 };
 
-void parseError(Token token, char* message) {
-	printf("%s:%d ERROR at '%s': ", token.fileName, token.line, token.word);
+void parseError(Parser* parser, Token token, char* message) {
+	char* word = strndup(token.word, token.wordLen);
+	printf("%s:%d ERROR at '%s': ", token.fileName, token.line, word);
 	printf("%s", message);
 	printf("\n");
 
+	free(word);
+
+	parser->hadError = true;
 	//TODO: enter panic mode
 }
 
 Token parsePrecedence(Parser* parser, Precedence precedence) {
-	Token token = *next(parser);
+	Token token = *parser->current;
 	ParseRule rule = parseTable[token.type];
 
 	if (rule.precedence < precedence) {
-		parseError(token, "unexpected token");
+		parseError(parser, token, "unexpected token");
 	}
 
 	if (rule.prefix == NULL) {
-		parseError(token, "unexpected token");
+		parseError(parser, token, "unexpected token");
 	}
 
 	rule.prefix(parser);
+
+	return token;
+}
+
+Token consumeToken(Parser* parser, Tokentype type, char* message) {
+	Token token = *parser->current;
+	if (token.type != type) {
+		parseError(parser, token, message);
+	}
+
+	next(parser);
 
 	return token;
 }
@@ -104,11 +132,11 @@ void number(Parser* parser) {
 	char* result;
 
 	int numberValue = strtol(value.word, &result, 10);
-	if (*result != '\0') {
-		parseError(value, "could not convert string '%s' to int");
+	if (result - value.word != value.wordLen) {
+		parseError(parser, value, "could not convert string '%s' to int");
 	}
 
-	writeNumber(parser->outputFile, numberValue);
+	writeNumber(parser->compiler, numberValue);
 }
 
 void dumpCharacter(Parser* parser, Token value) {
@@ -127,7 +155,23 @@ void character(Parser* parser) {
 
 	char charValue = value.word[1];
 
-	writeCharacter(parser->outputFile, charValue);
+	writeCharacter(parser->compiler, charValue);
+}
+
+void identifier(Parser* parser) {
+	Token identifier = *parser->current;
+	if (identifier.type != TOKEN_IDENTIFIER) {
+		printf("incorrect reference in parseTable: '%s' points to identifier\n", tokenTypes[identifier.type]);
+	}
+
+	uint16_t offset = findVariable(parser->compiler, identifier.word, identifier.wordLen);
+
+	if (offset == -1) {
+		parseError(parser, identifier, "variable '%s' is undefined");
+		return;
+	}
+
+	writeIdentifier(parser->compiler, offset);
 }
 
 void dumpBinary(Parser* parser, Token operator) {
@@ -150,19 +194,21 @@ void binary(Parser* parser) {
 			printf("incorrect reference in parseTable: '%s' points to binary\n", tokenTypes[operator.type]);
 	}
 
+	next(parser);
+
 	parsePrecedence(parser, precedence);
 
 	switch (operator.type) {
 		case TOKEN_PLUS:
 			dumpBinary(parser, operator);
 
-			writeAdd(parser->outputFile);
+			writeAdd(parser->compiler);
 
 			break;
 		case TOKEN_MINUS:
 			dumpBinary(parser, operator);
 
-			writeSubtract(parser->outputFile);
+			writeSubtract(parser->compiler);
 
 			break;
 	}
@@ -177,13 +223,15 @@ void dumpUnary(Parser* parser, Token operator) {
 void unary(Parser* parser) {
 	Token operator = *parser->current;
 
+	next(parser);
+
 	parsePrecedence(parser, PREC_UNARY);
 
 	switch (operator.type) {
 		case TOKEN_MINUS:
 			dumpUnary(parser, operator);
 
-			writeNegative(parser->outputFile);
+			writeNegative(parser->compiler);
 
 			break;
 		default:
@@ -197,19 +245,55 @@ void expression(Parser* parser) {
 	while (next(parser)->type != TOKEN_END_OF_FILE) {
 		ParseRule rule = parseTable[parser->current->type];
 
+		if (rule.precedence < PREC_EXPR) {
+			break;
+		}
+
 		if (rule.infix == NULL) {
-			parseError(*parser->current, "unexpected token");
+			parseError(parser, *parser->current, "unexpected token");
 		}
 
 		rule.infix(parser);
 	}
 }
 
+void dumpIdentifier(Parser* parser, Token token) {
+	if (parser->flags & FLAG_DUMP) {
+		printf("%s:%d: identifier '%s'\n", token.fileName, token.line, token.word);
+	}
+}
 
-void parse(Parser* parser) {
-	writeHeader(parser->outputFile);
+void variableDefinition(Parser* parser) {
+	Token identifier = consumeToken(parser, TOKEN_IDENTIFIER, "expected variable name in definition");
+
+	dumpIdentifier(parser, identifier);
+
+	consumeToken(parser, TOKEN_EQUAL, "expected '=' after variable name in definition");
 
 	expression(parser);
+	consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after variable definition");
 
-	writeFooter(parser->outputFile);
+	defineVariable(parser->compiler, identifier.word, identifier.wordLen);
+}
+
+void statement(Parser* parser) {
+	if (parser->current->type == TOKEN_VAR) {
+		next(parser);
+
+		variableDefinition(parser);
+	} else {
+		expression(parser);
+		consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after expression");
+		writePop(parser->compiler, 1);
+	}
+}
+
+void parse(Parser* parser) {
+	writeHeader(parser->compiler);
+
+	while (parser->current->type != TOKEN_END_OF_FILE) {
+		statement(parser);
+	}
+
+	writeFooter(parser->compiler);
 }

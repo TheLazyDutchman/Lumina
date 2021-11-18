@@ -10,7 +10,7 @@ char* readFile(char *fileName) {
 	
 	if (fd == NULL) {
 		printf("[ERROR] could not open file '%s'\n", fileName);
-		return NULL;
+		exit(1);
 	}
 
 	fseek(fd, 0, SEEK_END);
@@ -19,19 +19,19 @@ char* readFile(char *fileName) {
 
 	if (len == -1L) {
 		printf("[ERROR] could not read size of file '%s'\n", fileName);
-		return NULL;
+		exit(1);
 	}
 
 	char *buffer = malloc(len);
 
 	if (buffer == NULL) {
 		printf("[ERROR] could not allocate enough memory to read file '%s'\n", fileName);
-		return NULL;
+		exit(1);
 	}
 
 	if (fread(buffer, 1, len, fd) != len) {
 		printf("[ERROR] could not read file '%s'\n", fileName);
-		return NULL;
+		exit(1);
 	}
 	
 	fclose(fd);
@@ -76,6 +76,14 @@ void lexerError(Lexer* lexer, const char* message) {
 	printf(" (at '%c')\n", *lexer->current);
 }
 
+void lexIdentifier(Lexer* lexer, Token* token) {
+	while (isalnum(*lexer->current)) {
+			advance(lexer);
+	}
+
+	token->type = TOKEN_IDENTIFIER;
+}
+
 Token *nextToken(Lexer* lexer){
 	while (*lexer->current == ' ' || *lexer->current == '\n') {
 		advance(lexer);
@@ -87,10 +95,10 @@ Token *nextToken(Lexer* lexer){
 		}
 	}
 
-	Token *token = malloc(sizeof(token));
+	Token *token = malloc(sizeof(Token));
 	token->fileName = lexer->fileName;
 	token->line = lexer->line;
-	char *start = lexer->current;
+	token->word = lexer->current;
 
 	if (isdigit(*lexer->current)) {
 		token->type = TOKEN_NUMBER;
@@ -98,6 +106,27 @@ Token *nextToken(Lexer* lexer){
 		while(isdigit(*lexer->current)) {
 			advance(lexer);
 		}
+	} else if (isalpha(*lexer->current)) {
+		switch (*lexer->current) {
+			case 'v':
+				advance(lexer);
+				if (*lexer->current != 'a') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 'r') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+				advance(lexer);
+				token->type = TOKEN_VAR;
+				break;
+			default:
+				lexIdentifier(lexer, token);
+		}
+
 	} else if (*lexer->current == '"' || *lexer->current == '\'') {
 		token->type = TOKEN_CHAR;
 
@@ -118,6 +147,14 @@ Token *nextToken(Lexer* lexer){
 				token->type = TOKEN_MINUS;
 				advance(lexer);
 				break;
+			case ';':
+				token->type = TOKEN_SEMICOLON;
+				advance(lexer);
+				break;
+			case '=':
+				token->type = TOKEN_EQUAL;
+				advance(lexer);
+				break;
 			case '\0':
 				token->type = TOKEN_END_OF_FILE;
 				break;
@@ -126,15 +163,11 @@ Token *nextToken(Lexer* lexer){
 				return NULL;
 		}
 	}
-	int len = lexer->current - start;
-	token->word = malloc(len + 1);
-	memcpy(token->word, start, len);
-	token->word[len] = '\0';
+	token->wordLen = lexer->current - token->word;
 
 	return token;
 }
 
 void freeToken(Token* token) {
-	free(token->word);
 	free(token);
 }

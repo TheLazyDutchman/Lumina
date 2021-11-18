@@ -1,55 +1,118 @@
+#include <stdlib.h>
+#include <string.h>
+
 #include "compiler.h"
 
-void writeHeader(FILE* output) {
-	fprintf(output, "section .text\n");
-	fprintf(output, "global _start\n");
-	fprintf(output, "_start:\n");
+Compiler* initCompiler(FILE* output) {
+	Compiler* compiler = malloc(sizeof(Compiler));
+	compiler->output = output;
+	compiler->currentStackSize = 0;
+	compiler->variableList = initVariableList();
+
+	return compiler;
 }
 
-void writeNumber(FILE* output, int value) {
-	fprintf(output, "	;; -- number --\n");
-	fprintf(output, "	mov rax, %d\n", value);
-	fprintf(output, "	push rax\n\n");
+void freeCompiler(Compiler* compiler) {
+	freeVariableList(compiler->variableList);
+	free(compiler);
 }
 
-void writeCharacter(FILE* output, char value) {
-	fprintf(output, "	;; -- character --\n");
-	fprintf(output, "	mov rax, %d\n", value);
-	fprintf(output, "	push rax\n\n");
+void defineVariable(Compiler* compiler, char* name, int nameLen) {
+	char* buffer = strndup(name, nameLen);
+
+	addVariable(compiler->variableList, buffer, compiler->currentStackSize);
 }
 
-void writeAdd(FILE* output) {
-	fprintf(output, "	;; -- add --\n");
-	fprintf(output, "	pop rbx\n");
-	fprintf(output, "	pop rax\n");
-	fprintf(output, "	add rax, rbx\n");
-	fprintf(output, "	push rax\n\n");
+uint16_t findVariable(Compiler* compiler, char* name, int nameLen) {
+	VariableList list = *compiler->variableList;
+
+	for (int i = 0; i < list.size; i++) {
+		if (strncmp(list.variables[i]->name, name, nameLen) == 0) {
+			return compiler->currentStackSize - list.variables[i]->position;
+		}
+	}
+	
+	return -1;
 }
 
-void writeSubtract(FILE* output) {
-	fprintf(output, "	;; -- subtract --\n");
-	fprintf(output, "	pop rbx\n");
-	fprintf(output, "	pop rax\n");
-	fprintf(output, "	sub rax, rbx\n");
-	fprintf(output, "	push rax\n\n");
+void writeHeader(Compiler* compiler) {
+	fprintf(compiler->output, "section .text\n");
+	fprintf(compiler->output, "global _start\n");
+	fprintf(compiler->output, "_start:\n");
 }
 
-void writeNegative(FILE* output) {
-	fprintf(output, "	;; -- negative --\n");
-	fprintf(output, "	pop rax\n");
-	fprintf(output, "	neg rax\n");
-	fprintf(output, "	push rax\n\n");
+void writePop(Compiler* compiler, int amount) {
+	fprintf(compiler->output, "	;; -- pop --\n");
+	fprintf(compiler->output, "	add rsp, %d\n\n", 8*amount);
+
+	compiler->currentStackSize -= amount;
 }
 
-void writeFooter(FILE* output) {
+void writeNumber(Compiler* compiler, int value) {
+	fprintf(compiler->output, "	;; -- number --\n");
+	fprintf(compiler->output, "	mov rax, %d\n", value);
+	fprintf(compiler->output, "	push rax\n\n");
+
+	compiler->currentStackSize++;
+}
+
+void writeCharacter(Compiler* compiler, char value) {
+	fprintf(compiler->output, "	;; -- character --\n");
+	fprintf(compiler->output, "	mov rax, %d\n", value);
+	fprintf(compiler->output, "	push rax\n\n");
+
+	compiler->currentStackSize++;
+}
+
+void writeIdentifier(Compiler* compiler, int offset) {
+	fprintf(compiler->output, "	;; -- identifier --\n");
+	fprintf(compiler->output, "	mov rax, rsp\n");
+	fprintf(compiler->output, "	mov rbx, %d\n", 8 * offset);
+	fprintf(compiler->output, "	add rax, rbx\n");
+	fprintf(compiler->output, "	mov rax, [rax]\n");
+	fprintf(compiler->output, "	push rax\n\n");
+
+	compiler->currentStackSize++;
+}
+
+void writeAdd(Compiler* compiler) {
+	fprintf(compiler->output, "	;; -- add --\n");
+	fprintf(compiler->output, "	pop rbx\n");
+	fprintf(compiler->output, "	pop rax\n");
+	fprintf(compiler->output, "	add rax, rbx\n");
+	fprintf(compiler->output, "	push rax\n\n");
+
+	compiler->currentStackSize--;
+}
+
+void writeSubtract(Compiler* compiler) {
+	fprintf(compiler->output, "	;; -- subtract --\n");
+	fprintf(compiler->output, "	pop rbx\n");
+	fprintf(compiler->output, "	pop rax\n");
+	fprintf(compiler->output, "	sub rax, rbx\n");
+	fprintf(compiler->output, "	push rax\n\n");
+
+	compiler->currentStackSize--;
+}
+
+void writeNegative(Compiler* compiler) {
+	fprintf(compiler->output, "	;; -- negative --\n");
+	fprintf(compiler->output, "	pop rax\n");
+	fprintf(compiler->output, "	neg rax\n");
+	fprintf(compiler->output, "	push rax\n\n");
+}
+
+void writeFooter(Compiler* compiler) {
 	//temporarily write final result as a single character to stdout
-	fprintf(output, "	mov rax, 1\n");
-	fprintf(output, "	mov rdi, 1\n");
-	fprintf(output, "	mov rsi, rsp\n");
-	fprintf(output, "	mov rdx, 1\n");
-	fprintf(output, "	syscall\n");
+	fprintf(compiler->output, "	mov rax, 1\n");
+	fprintf(compiler->output, "	mov rdi, 1\n");
+	fprintf(compiler->output, "	mov rsi, rsp\n");
+	fprintf(compiler->output, "	mov rdx, 1\n");
+	fprintf(compiler->output, "	syscall\n");
 
-	fprintf(output, "	mov rax, 60\n");
-	fprintf(output, "	xor rdi, rdi\n");
-	fprintf(output, "	syscall\n");
+	compiler->currentStackSize--;
+
+	fprintf(compiler->output, "	mov rax, 60\n");
+	fprintf(compiler->output, "	xor rdi, rdi\n");
+	fprintf(compiler->output, "	syscall\n");
 }
