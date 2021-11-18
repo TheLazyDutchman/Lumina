@@ -51,8 +51,8 @@ typedef enum {
 	PREC_STATEMENT,
 	PREC_IF_STATEMENT,
 	PREC_ASSIGNMENT,
-	PREC_EXPR,
 	PREC_COMPARISON,
+	PREC_EXPR,
 	PREC_TERM,
 	PREC_UNARY,
 	PREC_PRIMARY
@@ -285,10 +285,20 @@ void variableDefinition(Parser* parser) {
 	defineVariable(parser->compiler, identifier.word, identifier.wordLen);
 }
 
+void condition(Parser* parser) {
+	expression(parser);
+
+	Token operator = consumeToken(parser, TOKEN_EQUALEQUAL, "expected '==' in comparison");
+
+	expression(parser);
+
+	writeCompare(parser->compiler);
+}
+
 void ifStatement(Parser* parser) {
 	consumeToken(parser, TOKEN_LPAREN, "expected '(' after 'if' keyword");
 
-	//TODO: parse condition
+	condition(parser);
 	
 	consumeToken(parser, TOKEN_RPAREN, "expected ')' after condition");
 
