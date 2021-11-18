@@ -48,6 +48,24 @@ void writePop(Compiler* compiler, int amount) {
 	compiler->currentStackSize -= amount;
 }
 
+void writeAddress(Compiler* compiler, char* address) {
+	fprintf(compiler->output, "%s:\n", address);
+}
+
+void writeCompare(Compiler* compiler) {
+	fprintf(compiler->output, "	;; -- comparison --\n");
+	fprintf(compiler->output, "	pop rbx\n");
+	fprintf(compiler->output, "	pop rax\n");
+	fprintf(compiler->output, "	cmp rax, rbx\n\n");
+	
+	compiler->currentStackSize -= 2;
+}
+
+void writeJumpNotEqual(Compiler* compiler, char* header) {
+	fprintf(compiler->output, "	;; -- jump if not equal --\n");
+	fprintf(compiler->output, "	jne %s\n\n", header);
+}
+
 void writeNumber(Compiler* compiler, int value) {
 	fprintf(compiler->output, "	;; -- number --\n");
 	fprintf(compiler->output, "	mov rax, %d\n", value);

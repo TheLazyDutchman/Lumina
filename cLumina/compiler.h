@@ -21,6 +21,10 @@ void writeHeader(Compiler* compiler);
 void writeFooter(Compiler* compiler);
 void writePop(Compiler* compiler, int amount);
 
+void writeAddres(Compiler* compiler, char* address);
+void writeCompare(Compiler* compiler);
+void writeJumpNotEqual(Compiler* compiler, char* address);
+
 void writeNumber(Compiler* compiler, int value);
 void writeCharacter(Compiler* compiler, char value);
 void writeIdentifier(Compiler* compiler, int offset);
