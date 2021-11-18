@@ -3,7 +3,7 @@ lumina is a programming hobby language
 
 
 it is planned to be:
-* [ ] compiled
+* [x] compiled
 * [ ] turing complete
 * [ ] statically typed
 * [ ] self hosted
