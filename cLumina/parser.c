@@ -285,11 +285,30 @@ void variableDefinition(Parser* parser) {
 	defineVariable(parser->compiler, identifier.word, identifier.wordLen);
 }
 
+void ifStatement(Parser* parser) {
+	consumeToken(parser, TOKEN_LPAREN, "expected '(' after 'if' keyword");
+
+	//TODO: parse condition
+	
+	consumeToken(parser, TOKEN_RPAREN, "expected ')' after condition");
+
+	consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'if' block");
+
+	block(parser);
+}
+
+void block(Parser* parser) {
+}
+
 void statement(Parser* parser) {
 	if (parser->current->type == TOKEN_VAR) {
 		next(parser);
 
 		variableDefinition(parser);
+	} else if (parser->current->type == TOKEN_VAR) {
+		next(parser);
+
+		ifStatement(parser);
 	} else {
 		expression(parser);
 		consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after expression");

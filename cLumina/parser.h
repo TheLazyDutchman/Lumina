@@ -31,6 +31,7 @@ void identifier(Parser* parser);
 void unary(Parser* parser);
 void binary(Parser* parser);
 void expression(Parser* parser);
+void block(Parser* parser);
 void statement(Parser* parser);
 
 void parse(Parser* parser);
