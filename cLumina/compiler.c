@@ -3,11 +3,12 @@
 
 #include "compiler.h"
 
-Compiler* initCompiler(FILE* output) {
+Compiler* initCompiler(FILE* output, Compiler* outer) {
 	Compiler* compiler = malloc(sizeof(Compiler));
 	compiler->output = output;
 	compiler->currentStackSize = 0;
 	compiler->variableList = initVariableList();
+	compiler->outer = outer;
 
 	return compiler;
 }
@@ -31,8 +32,17 @@ uint16_t findVariable(Compiler* compiler, char* name, int nameLen) {
 			return compiler->currentStackSize - list.variables[i]->position;
 		}
 	}
+
+	if (compiler->outer == NULL) {
+		return -1;
+	}
+
+	int offset = findVariable(compiler->outer, name, nameLen);
+	if (offset == -1) {
+		return -1;
+	}
 	
-	return -1;
+	return offset + compiler->currentStackSize;
 }
 
 void writeHeader(Compiler* compiler) {

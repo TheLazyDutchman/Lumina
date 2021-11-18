@@ -5,13 +5,14 @@
 
 #include "variable.h"
 
-typedef struct {
+typedef struct Compiler{
 	FILE* output;
 	size_t currentStackSize;
 	VariableList* variableList;
+	struct Compiler* outer;
 } Compiler;
 
-Compiler* initCompiler(FILE* output);
+Compiler* initCompiler(FILE* output, Compiler* outer);
 void freeCompiler(Compiler* compiler);
 
 void defineVariable(Compiler* compiler, char* name, int nameLen);

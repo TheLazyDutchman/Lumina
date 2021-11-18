@@ -13,7 +13,7 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 
 	parser->outputFile = fopen(outputName, "w");
 
-	parser->compiler = initCompiler(parser->outputFile);
+	parser->compiler = initCompiler(parser->outputFile, NULL);
 
 	parser->hadError = false;
 	
