@@ -71,6 +71,8 @@ void writeIdentifier(Compiler* compiler, int offset) {
 	fprintf(compiler->output, "	add rax, rbx\n");
 	fprintf(compiler->output, "	mov rax, [rax]\n");
 	fprintf(compiler->output, "	push rax\n\n");
+
+	compiler->currentStackSize++;
 }
 
 void writeAdd(Compiler* compiler) {
