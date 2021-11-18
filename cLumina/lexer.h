@@ -18,6 +18,8 @@ typedef enum Tokentype {
 	TOKEN_MINUS,
 	TOKEN_EQUAL,
 	TOKEN_EQUALEQUAL,
+	TOKEN_LPAREN,
+	TOKEN_RPAREN,
 	TOKEN_LBRACE,
 	TOKEN_RBRACE,
 	TOKEN_CHAR,
@@ -35,6 +37,8 @@ static const char* const tokenTypes[] = {
 	[TOKEN_MINUS] = "MINUS",
 	[TOKEN_EQUAL] = "EQUAL",
 	[TOKEN_EQUALEQUAL] = "EQUALEQUAL",
+	[TOKEN_LPAREN] = "LPAREN",
+	[TOKEN_RPAREN] = "RPAREN",
 	[TOKEN_LBRACE] = "LBRACE",
 	[TOKEN_RBRACE] = "RBRACE",
 	[TOKEN_CHAR] = "CHARACTER",
@@ -45,7 +49,7 @@ static const char* const tokenTypes[] = {
 	[TOKEN_END_OF_FILE] = "END OF FILE",
 };
 
-_Static_assert(TOKEN_TYPES_NUM == 13, "Exhaustive handling of tokenTypes in string conversion\n");
+_Static_assert(TOKEN_TYPES_NUM == 15, "Exhaustive handling of tokenTypes in string conversion\n");
 
 typedef struct Token {
 	char *fileName;

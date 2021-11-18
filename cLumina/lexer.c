@@ -171,6 +171,14 @@ Token *nextToken(Lexer* lexer){
 				token->type = TOKEN_SEMICOLON;
 				advance(lexer);
 				break;
+			case '(':
+				token->type = TOKEN_LPAREN;
+				advance(lexer);
+				break;
+			case ')':
+				token->type = TOKEN_RPAREN;
+				advance(lexer);
+				break;
 			case '{':
 				token->type = TOKEN_LBRACE;
 				advance(lexer);
