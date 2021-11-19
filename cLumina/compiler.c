@@ -9,6 +9,7 @@ Compiler* initCompiler(FILE* output, Compiler* outer) {
 	compiler->currentStackSize = 0;
 	compiler->variableList = initVariableList();
 	compiler->outer = outer;
+	compiler->numIfs = 0;
 
 	return compiler;
 }
@@ -58,8 +59,8 @@ void writePop(Compiler* compiler, int amount) {
 	compiler->currentStackSize -= amount;
 }
 
-void writeAddress(Compiler* compiler, char* address) {
-	fprintf(compiler->output, "%s:\n", address);
+void writeAddress(Compiler* compiler, char* address, uint32_t id) {
+	fprintf(compiler->output, "%s_%d:\n", address, id);
 }
 
 void writeCompare(Compiler* compiler) {
@@ -71,9 +72,9 @@ void writeCompare(Compiler* compiler) {
 	compiler->currentStackSize -= 2;
 }
 
-void writeJumpNotEqual(Compiler* compiler, char* header) {
+void writeJumpNotEqual(Compiler* compiler, char* header, uint32_t id) {
 	fprintf(compiler->output, "	;; -- jump if not equal --\n");
-	fprintf(compiler->output, "	jne %s\n\n", header);
+	fprintf(compiler->output, "	jne %s_%d\n\n", header, id);
 }
 
 void writeNumber(Compiler* compiler, int value) {

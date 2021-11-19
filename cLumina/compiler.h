@@ -10,6 +10,7 @@ typedef struct Compiler{
 	size_t currentStackSize;
 	VariableList* variableList;
 	struct Compiler* outer;
+	uint32_t numIfs;
 } Compiler;
 
 Compiler* initCompiler(FILE* output, Compiler* outer);
@@ -22,9 +23,9 @@ void writeHeader(Compiler* compiler);
 void writeFooter(Compiler* compiler);
 void writePop(Compiler* compiler, int amount);
 
-void writeAddres(Compiler* compiler, char* address);
+void writeAddress(Compiler* compiler, char* address, uint32_t id);
 void writeCompare(Compiler* compiler);
-void writeJumpNotEqual(Compiler* compiler, char* address);
+void writeJumpNotEqual(Compiler* compiler, char* address, uint32_t id);
 
 void writeNumber(Compiler* compiler, int value);
 void writeCharacter(Compiler* compiler, char value);

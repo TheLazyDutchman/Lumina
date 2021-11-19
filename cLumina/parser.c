@@ -302,9 +302,14 @@ void ifStatement(Parser* parser) {
 	
 	consumeToken(parser, TOKEN_RPAREN, "expected ')' after condition");
 
+	writeJumpNotEqual(parser->compiler, "addr_if", parser->compiler->numIfs);
+
 	consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'if' block");
 
 	block(parser);
+
+	writeAddress(parser->compiler, "addr_if", parser->compiler->numIfs);
+	parser->compiler->numIfs++;
 }
 
 void block(Parser* parser) {
