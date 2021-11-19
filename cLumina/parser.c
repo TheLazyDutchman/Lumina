@@ -308,6 +308,18 @@ void ifStatement(Parser* parser) {
 }
 
 void block(Parser* parser) {
+	Compiler* scopeCompiler = initCompiler(parser->outputFile, parser->compiler);
+	parser->compiler = scopeCompiler;
+
+	while (parser->current->type != TOKEN_END_OF_FILE || parser->current->type != TOKEN_RBRACE) {
+		statement(parser);
+	}
+
+	int numLocalVariables = scopeCompiler->variableList->size;
+	writePop(scopeCompiler, numLocalVariables);
+
+	parser->compiler = scopeCompiler->outer;
+	freeCompiler(scopeCompiler);
 }
 
 void statement(Parser* parser) {
