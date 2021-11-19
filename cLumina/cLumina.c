@@ -124,7 +124,14 @@ int main(int argc, char *argv[]) {
 	}
 
 	if (runFile) {
-		createChild(executable, argv);
+		int fileStatus;
+
+		pid_t file_pid = createChild(executable, argv);
+
+		if (waitpid(file_pid, &fileStatus, WUNTRACED | WCONTINUED) == -1) {
+			printf("[ERROR] problem occurred while running file\n");
+			exit(1);
+		}
 	}
 
 	free(assemblyFile);
