@@ -13,7 +13,7 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 
 	parser->outputFile = fopen(outputName, "w");
 
-	parser->compiler = initCompiler(parser->outputFile);
+	parser->compiler = initCompiler(parser->outputFile, NULL);
 
 	parser->hadError = false;
 	
@@ -47,8 +47,11 @@ typedef void (*ParseFn)(Parser*);
 
 typedef enum {
 	PREC_NONE,
+	PREC_BLOCK,
 	PREC_STATEMENT,
+	PREC_IF_STATEMENT,
 	PREC_ASSIGNMENT,
+	PREC_COMPARISON,
 	PREC_EXPR,
 	PREC_TERM,
 	PREC_UNARY,
@@ -61,7 +64,7 @@ typedef struct {
 	Precedence precedence;
 } ParseRule;
 
-_Static_assert(TOKEN_TYPES_NUM == 9, "Exhaustive handling of token types in parsing");
+_Static_assert(TOKEN_TYPES_NUM == 15, "Exhaustive handling of token types in parsing");
 
 ParseRule parseTable[] = {
 	[TOKEN_NUMBER] = {number, NULL, PREC_PRIMARY},
@@ -69,8 +72,14 @@ ParseRule parseTable[] = {
 	[TOKEN_PLUS] = {NULL, binary, PREC_TERM},
 	[TOKEN_MINUS] = {unary, binary, PREC_UNARY},
 	[TOKEN_EQUAL] = {NULL, NULL, PREC_ASSIGNMENT},
+	[TOKEN_EQUALEQUAL] = {NULL, NULL, PREC_COMPARISON},
+	[TOKEN_LPAREN] = {NULL, NULL, PREC_BLOCK},
+	[TOKEN_RPAREN] = {NULL, NULL, PREC_BLOCK},
+	[TOKEN_LBRACE] = {NULL, NULL, PREC_BLOCK},
+	[TOKEN_RBRACE] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_SEMICOLON] = {NULL, NULL, PREC_STATEMENT},
 	[TOKEN_VAR] = {NULL, NULL, PREC_ASSIGNMENT},
+	[TOKEN_IF] = {NULL, NULL, PREC_IF_STATEMENT},
 	[TOKEN_IDENTIFIER] = {identifier, NULL, PREC_PRIMARY},
 	[TOKEN_END_OF_FILE] = {NULL, NULL, PREC_NONE}
 };
@@ -276,11 +285,59 @@ void variableDefinition(Parser* parser) {
 	defineVariable(parser->compiler, identifier.word, identifier.wordLen);
 }
 
+void condition(Parser* parser) {
+	expression(parser);
+
+	Token operator = consumeToken(parser, TOKEN_EQUALEQUAL, "expected '==' in comparison");
+
+	expression(parser);
+
+	writeCompare(parser->compiler);
+}
+
+void ifStatement(Parser* parser) {
+	consumeToken(parser, TOKEN_LPAREN, "expected '(' after 'if' keyword");
+
+	condition(parser);
+	
+	consumeToken(parser, TOKEN_RPAREN, "expected ')' after condition");
+
+	writeJumpNotEqual(parser->compiler, "addr_if", parser->compiler->numIfs);
+
+	consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'if' block");
+
+	block(parser);
+
+	writeAddress(parser->compiler, "addr_if", parser->compiler->numIfs);
+	parser->compiler->numIfs++;
+}
+
+void block(Parser* parser) {
+	Compiler* scopeCompiler = initCompiler(parser->outputFile, parser->compiler);
+	parser->compiler = scopeCompiler;
+
+	while (parser->current->type != TOKEN_END_OF_FILE && parser->current->type != TOKEN_RBRACE) {
+		statement(parser);
+	}
+
+	consumeToken(parser, TOKEN_RBRACE, "expected '}' after block");
+
+	int numLocalVariables = scopeCompiler->variableList->size;
+	writePop(scopeCompiler, numLocalVariables);
+
+	parser->compiler = scopeCompiler->outer;
+	freeCompiler(scopeCompiler);
+}
+
 void statement(Parser* parser) {
 	if (parser->current->type == TOKEN_VAR) {
 		next(parser);
 
 		variableDefinition(parser);
+	} else if (parser->current->type == TOKEN_IF) {
+		next(parser);
+
+		ifStatement(parser);
 	} else {
 		expression(parser);
 		consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after expression");

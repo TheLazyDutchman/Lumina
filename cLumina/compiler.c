@@ -3,11 +3,13 @@
 
 #include "compiler.h"
 
-Compiler* initCompiler(FILE* output) {
+Compiler* initCompiler(FILE* output, Compiler* outer) {
 	Compiler* compiler = malloc(sizeof(Compiler));
 	compiler->output = output;
 	compiler->currentStackSize = 0;
 	compiler->variableList = initVariableList();
+	compiler->outer = outer;
+	compiler->numIfs = 0;
 
 	return compiler;
 }
@@ -31,8 +33,17 @@ uint16_t findVariable(Compiler* compiler, char* name, int nameLen) {
 			return compiler->currentStackSize - list.variables[i]->position;
 		}
 	}
+
+	if (compiler->outer == NULL) {
+		return -1;
+	}
+
+	int offset = findVariable(compiler->outer, name, nameLen);
+	if (offset == -1) {
+		return -1;
+	}
 	
-	return -1;
+	return offset + compiler->currentStackSize;
 }
 
 void writeHeader(Compiler* compiler) {
@@ -46,6 +57,24 @@ void writePop(Compiler* compiler, int amount) {
 	fprintf(compiler->output, "	add rsp, %d\n\n", 8*amount);
 
 	compiler->currentStackSize -= amount;
+}
+
+void writeAddress(Compiler* compiler, char* address, uint32_t id) {
+	fprintf(compiler->output, "%s_%d:\n", address, id);
+}
+
+void writeCompare(Compiler* compiler) {
+	fprintf(compiler->output, "	;; -- comparison --\n");
+	fprintf(compiler->output, "	pop rbx\n");
+	fprintf(compiler->output, "	pop rax\n");
+	fprintf(compiler->output, "	cmp rax, rbx\n\n");
+	
+	compiler->currentStackSize -= 2;
+}
+
+void writeJumpNotEqual(Compiler* compiler, char* header, uint32_t id) {
+	fprintf(compiler->output, "	;; -- jump if not equal --\n");
+	fprintf(compiler->output, "	jne %s_%d\n\n", header, id);
 }
 
 void writeNumber(Compiler* compiler, int value) {

@@ -85,7 +85,7 @@ void lexIdentifier(Lexer* lexer, Token* token) {
 }
 
 Token *nextToken(Lexer* lexer){
-	while (*lexer->current == ' ' || *lexer->current == '\n') {
+	while (isspace(*lexer->current)) {
 		advance(lexer);
 
 		if (*lexer->current == '/' && peek(lexer) == '/') {
@@ -108,6 +108,21 @@ Token *nextToken(Lexer* lexer){
 		}
 	} else if (isalpha(*lexer->current)) {
 		switch (*lexer->current) {
+			case 'i':
+				advance(lexer);
+				if (*lexer->current != 'f') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (isalnum(*lexer->current)) {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				token->type = TOKEN_IF;
+				break;
 			case 'v':
 				advance(lexer);
 				if (*lexer->current != 'a') {
@@ -121,6 +136,11 @@ Token *nextToken(Lexer* lexer){
 					break;
 				}
 				advance(lexer);
+
+				if (isalnum(*lexer->current)) {
+					lexIdentifier(lexer, token);
+					break;
+				}
 				token->type = TOKEN_VAR;
 				break;
 			default:
@@ -151,9 +171,32 @@ Token *nextToken(Lexer* lexer){
 				token->type = TOKEN_SEMICOLON;
 				advance(lexer);
 				break;
-			case '=':
-				token->type = TOKEN_EQUAL;
+			case '(':
+				token->type = TOKEN_LPAREN;
 				advance(lexer);
+				break;
+			case ')':
+				token->type = TOKEN_RPAREN;
+				advance(lexer);
+				break;
+			case '{':
+				token->type = TOKEN_LBRACE;
+				advance(lexer);
+				break;
+			case '}':
+				token->type = TOKEN_RBRACE;
+				advance(lexer);
+				break;
+			case '=':
+				advance(lexer);
+
+				if (*lexer->current == '=') {
+					advance(lexer);
+					token->type = TOKEN_EQUALEQUAL;
+					break;
+				}
+
+				token->type = TOKEN_EQUAL;
 				break;
 			case '\0':
 				token->type = TOKEN_END_OF_FILE;
