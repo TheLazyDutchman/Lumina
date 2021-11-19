@@ -35,4 +35,6 @@ void writeAdd(Compiler* compiler);
 void writeSubtract(Compiler* compiler);
 void writeNegative(Compiler* compiler);
 
+void writePrint(Compiler* compiler); //temporary print function
+
 #endif

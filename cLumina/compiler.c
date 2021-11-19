@@ -132,16 +132,18 @@ void writeNegative(Compiler* compiler) {
 }
 
 void writeFooter(Compiler* compiler) {
-	//temporarily write final result as a single character to stdout
+	fprintf(compiler->output, "	mov rax, 60\n");
+	fprintf(compiler->output, "	xor rdi, rdi\n");
+	fprintf(compiler->output, "	syscall\n");
+}
+
+void writePrint(Compiler* compiler) {
+	fprintf(compiler->output, "	;; -- print character on the top of the stack --\n");
 	fprintf(compiler->output, "	mov rax, 1\n");
 	fprintf(compiler->output, "	mov rdi, 1\n");
 	fprintf(compiler->output, "	mov rsi, rsp\n");
 	fprintf(compiler->output, "	mov rdx, 1\n");
 	fprintf(compiler->output, "	syscall\n");
 
-	compiler->currentStackSize--;
-
-	fprintf(compiler->output, "	mov rax, 60\n");
-	fprintf(compiler->output, "	xor rdi, rdi\n");
-	fprintf(compiler->output, "	syscall\n");
-}
+	writePop(compiler, 1);
+}	
