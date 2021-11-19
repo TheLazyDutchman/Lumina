@@ -11,8 +11,9 @@
 #include "parser.h"
 
 void usage() {
-	printf("usage: cLumina [-dump] [-r] <inputFile>\n");
+	printf("usage: cLumina [-dump] [-debug] [-r] <inputFile>\n");
 	printf("	-dump: dumps the lexer output to stdout\n");
+	printf("	-debug: generate a file that can be debugged by gdb\n");
 	printf("	-r: run the generated executable after compilation finished\n");
 }
 
@@ -66,6 +67,7 @@ int main(int argc, char *argv[]) {
 	ParseFlag flags = 0;
 	char* fileName = NULL;
 	bool runFile = false;
+	bool debug = false;
 
 	argv++;
 	while (*argv != NULL) {
@@ -74,6 +76,9 @@ int main(int argc, char *argv[]) {
 		}
 		else if (strcmp(*argv, "-r") == 0) {
 			runFile = true;
+		}
+		else if (strcmp(*argv, "-debug") == 0) {
+			debug = true;
 		}
 		else {
 			fileName = *argv;
@@ -99,10 +104,18 @@ int main(int argc, char *argv[]) {
 
 	freeParser(parser);
 
-	char *nasmArgs[5] = {"nasm", "-f", "elf64", assemblyFile, NULL};
+	char* nasmDebugArgs[] = {"nasm", "-f", "elf64", "-F", "dwarf", "-g", assemblyFile, NULL};
+	char* nasmArgs[] = {"nasm", "-f", "elf64", assemblyFile, NULL};
+
 	int nasmStatus;
+
+	pid_t nasm_pid;
 	
-	pid_t nasm_pid = createChild("nasm", nasmArgs);
+	if (debug) {
+		nasm_pid = createChild("nasm", nasmDebugArgs);
+	} else {
+		nasm_pid = createChild("nasm", nasmArgs);
+	}
 
 	if (waitpid(nasm_pid, &nasmStatus, WUNTRACED | WCONTINUED) == -1) {
 		printf("[ERROR] problem occurred while running nasm\n");
@@ -113,7 +126,7 @@ int main(int argc, char *argv[]) {
 
 	char* executable = getFileNameWithExtension(objectFile, NULL);
 
-	char *linkerArgs[6] = {"ld", "-s", "-o", executable, objectFile, NULL};
+	char *linkerArgs[] = {"ld", "-o", executable, objectFile, NULL};
 	int linkerStatus;
 
 	pid_t linker_pid = createChild("ld", linkerArgs);
