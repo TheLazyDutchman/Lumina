@@ -73,8 +73,8 @@ ParseRule parseTable[] = {
 	[TOKEN_MINUS] = {unary, binary, PREC_UNARY},
 	[TOKEN_EQUAL] = {NULL, NULL, PREC_ASSIGNMENT},
 	[TOKEN_EQUALEQUAL] = {NULL, NULL, PREC_COMPARISON},
-	[TOKEN_LPAREN] = {NULL, NULL, PREC_EXPR},
-	[TOKEN_RPAREN] = {NULL, NULL, PREC_EXPR},
+	[TOKEN_LPAREN] = {NULL, NULL, PREC_BLOCK},
+	[TOKEN_RPAREN] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_LBRACE] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_RBRACE] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_SEMICOLON] = {NULL, NULL, PREC_STATEMENT},
@@ -316,9 +316,11 @@ void block(Parser* parser) {
 	Compiler* scopeCompiler = initCompiler(parser->outputFile, parser->compiler);
 	parser->compiler = scopeCompiler;
 
-	while (parser->current->type != TOKEN_END_OF_FILE || parser->current->type != TOKEN_RBRACE) {
+	while (parser->current->type != TOKEN_END_OF_FILE && parser->current->type != TOKEN_RBRACE) {
 		statement(parser);
 	}
+
+	consumeToken(parser, TOKEN_RBRACE, "expected '}' after block");
 
 	int numLocalVariables = scopeCompiler->variableList->size;
 	writePop(scopeCompiler, numLocalVariables);
@@ -332,7 +334,7 @@ void statement(Parser* parser) {
 		next(parser);
 
 		variableDefinition(parser);
-	} else if (parser->current->type == TOKEN_VAR) {
+	} else if (parser->current->type == TOKEN_IF) {
 		next(parser);
 
 		ifStatement(parser);

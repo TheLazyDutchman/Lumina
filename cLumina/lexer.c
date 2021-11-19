@@ -85,7 +85,7 @@ void lexIdentifier(Lexer* lexer, Token* token) {
 }
 
 Token *nextToken(Lexer* lexer){
-	while (*lexer->current == ' ' || *lexer->current == '\n') {
+	while (isspace(*lexer->current)) {
 		advance(lexer);
 
 		if (*lexer->current == '/' && peek(lexer) == '/') {
