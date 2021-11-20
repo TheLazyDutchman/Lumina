@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <dirent.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 int filterExtension(const struct dirent *file) {
 	if (!file) {
@@ -19,6 +21,25 @@ int filterExtension(const struct dirent *file) {
 	}
 
 	return 0;
+}
+
+void testFile(char* fileName) {
+	int filedes[2];
+	if (pipe(filedes) == -1) {
+		perror("pipe");
+		exit(1);
+	}
+
+	pid_t pid = fork();
+
+	if (pid == -1) {
+		perror("fork");
+		exit(1);
+	} else if (pid == 0) {
+		execl("../lumina", "lumina", "-r", fileName, (char*)0);
+		perror("execl");
+		_exit(1);
+	}
 }
 
 int main(int argc, char** argv) {
