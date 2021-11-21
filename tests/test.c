@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <dirent.h>
@@ -36,10 +37,36 @@ void testFile(char* fileName) {
 		perror("fork");
 		exit(1);
 	} else if (pid == 0) {
+		while ((dup2(filedes[1], STDOUT_FILENO) == -1) && (errno == EINTR)) {}
+		close(filedes[1]);
+		close(filedes[0]);
+
 		execl("../lumina", "lumina", "-r", fileName, (char*)0);
 		perror("execl");
 		_exit(1);
 	}
+	close(filedes[1]);
+
+	char buffer[4096];
+	while (1) {
+		ssize_t count = read(filedes[0], buffer, sizeof(buffer));
+		if (count == -1) {
+			if (errno == EINTR) {
+				continue;
+			} else {
+				perror("read");
+				exit(1);
+			}
+		} else if (count == 0) {
+			break;
+		} else {
+			char* output = strndup(buffer, count);
+			printf("output: %s\n", output);
+			free(output);
+		}
+	}
+	close(filedes[0]);
+	wait(0);
 }
 
 int main(int argc, char** argv) {
@@ -53,7 +80,15 @@ int main(int argc, char** argv) {
 	}
 
 	while (n--) {
-		printf("%s\n", nameList[n]->d_name);
+		printf("[TESTING] %s\n", nameList[n]->d_name);
+
+		char* fileName = malloc(sizeof("../tests/") + sizeof(nameList[n]->d_name) + 1); //file can only be relative to compiler for now
+		strcpy(fileName, "../tests/");
+		strcpy(fileName + sizeof("../tests/") - 1, nameList[n]->d_name);
+
+		testFile(fileName);
+		
+		free(fileName);
 		free(nameList[n]);
 	}
 
