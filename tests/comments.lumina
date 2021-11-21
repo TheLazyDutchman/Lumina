@@ -1,4 +1,4 @@
-1 + 0; //this is a comment
+print(1 + '0'); //this is a comment
 //this is also a comment
 
--2;
+print(-2 + '9');

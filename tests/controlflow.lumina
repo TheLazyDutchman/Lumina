@@ -2,5 +2,12 @@ var a = 10;
 var b = 20;
 
 if (a == b) {
-	100 + a;
+	print('a');
 }
+print('b');
+
+if (a == 10) {
+	print('c');
+}
+
+print('d');
