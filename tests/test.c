@@ -71,8 +71,13 @@ void testFile(char* fileName) {
 	}
 
 	char buffer[4096];
+	char reference[4096];
 	while (1) {
 		ssize_t count = read(filedes[0], buffer, sizeof(buffer));
+		if (testFile != NULL) {
+			ssize_t refCount = fread(reference, 1, count, testFile);
+		}
+
 		if (count == -1) {
 			if (errno == EINTR) {
 				continue;
@@ -84,9 +89,14 @@ void testFile(char* fileName) {
 			break;
 		} else {
 			char* output = strndup(buffer, count);
+
 			if (testFile == NULL) {
 				printf("%s", output);
+			} else if (strncmp(buffer, reference, count) != 0) {
+				printf("the output is not the same as the expected output:\nexpected: %s\n\nactual: %s\n\n", reference, buffer);
+				//TODO: store that this file had an error
 			}
+
 			free(output);
 		}
 	}
