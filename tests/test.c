@@ -35,7 +35,7 @@ char* getFileNameWithExtension(const char* fileName, const char* extension) {
 		buffer = strdup(fileName);
 	}
 
-	char* dotPos = strrchr(fileName, '.');
+	char* dotPos = strrchr(buffer, '.');
 	strcpy(dotPos, extension);
 
 	return buffer;
@@ -63,6 +63,12 @@ void testFile(char* fileName) {
 		_exit(1);
 	}
 	close(filedes[1]);
+	
+	char* testFileName = getFileNameWithExtension(fileName, ".test");
+	FILE* testFile = fopen(testFileName, "r");
+	if (testFile == NULL) {
+		printf("could not find file '%s' - dumping the output without testing:\n\n", testFileName);
+	}
 
 	char buffer[4096];
 	while (1) {
@@ -78,10 +84,18 @@ void testFile(char* fileName) {
 			break;
 		} else {
 			char* output = strndup(buffer, count);
-			printf("output: %s\n", output);
+			if (testFile == NULL) {
+				printf("%s", output);
+			}
 			free(output);
 		}
 	}
+
+	if (testFile == NULL) {
+		printf("\n\n");
+	}
+
+	free(testFileName);
 	close(filedes[0]);
 	wait(0);
 }
