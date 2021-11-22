@@ -24,6 +24,23 @@ int filterExtension(const struct dirent *file) {
 	return 0;
 }
 
+char* getFileNameWithExtension(const char* fileName, const char* extension) {
+	char* curExtension = strrchr(fileName, '.');
+	char* buffer;
+
+	if (strlen(curExtension) < strlen(extension)) {
+		buffer = malloc(strlen(fileName) - strlen(curExtension) + strlen(extension));
+		strcpy(buffer, fileName);
+	} else {
+		buffer = strdup(fileName);
+	}
+
+	char* dotPos = strrchr(fileName, '.');
+	strcpy(dotPos, extension);
+
+	return buffer;
+}
+
 void testFile(char* fileName) {
 	int filedes[2];
 	if (pipe(filedes) == -1) {
