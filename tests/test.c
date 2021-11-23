@@ -78,11 +78,11 @@ void testFile(char* fileName, bool flagRecord) {
 	}
 
 	char buffer[4096];
-	char reference[4096];
+	char testBuffer[4096];
 	while (1) {
 		ssize_t count = read(filedes[0], buffer, sizeof(buffer));
 		if (testFile != NULL && !flagRecord) {
-			ssize_t refCount = fread(reference, 1, count, testFile);
+			ssize_t refCount = fread(testBuffer, 1, count, testFile);
 		}
 
 		if (count == -1) {
@@ -96,13 +96,14 @@ void testFile(char* fileName, bool flagRecord) {
 			break;
 		} else {
 			char* output = strndup(buffer, count);
+			char* reference = strndup(testBuffer, count);
 
 			if (testFile == NULL) {
 				printf("%s", output);
 			} else if (flagRecord) {
 				fprintf(testFile, "%s", output);
-			} else if (strncmp(buffer, reference, count) != 0) {
-				printf("the output is not the same as the expected output:\nexpected: %s\n\nactual: %s\n\n", reference, buffer);
+			} else if (strncmp(output, reference, count) != 0) {
+				printf("the output is not the same as the expected output:\nexpected: %s\n\nactual: %s\n\n", reference, output);
 				//TODO: store that this file had an error
 			}
 
@@ -124,7 +125,7 @@ int main(int argc, char** argv) {
 
 	bool flagRecord = false;
 
-	while (*argv--) {
+	while (*++argv) {
 		if (strcmp(*argv, "-record") == 0) {
 			flagRecord = true;
 		}
