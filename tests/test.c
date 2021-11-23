@@ -7,6 +7,13 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+typedef enum {
+	FAIL,
+	IGNORE,
+	SUCCESS,
+	RECORD
+} ReturnType;
+
 int filterExtension(const struct dirent *file) {
 	if (!file) {
 		return 0;
@@ -42,12 +49,14 @@ char* getFileNameWithExtension(const char* fileName, const char* extension) {
 	return buffer;
 }
 
-void testFile(char* fileName, bool flagRecord) {
+ReturnType testFile(char* fileName, bool flagRecord) {
 	int filedes[2];
 	if (pipe(filedes) == -1) {
 		perror("pipe");
 		exit(1);
 	}
+
+	ReturnType answer = SUCCESS;
 
 	pid_t pid = fork();
 
@@ -69,12 +78,14 @@ void testFile(char* fileName, bool flagRecord) {
 	FILE* testFile;
 	if (flagRecord) {
 		testFile = fopen(testFileName, "w");
+		answer = RECORD;
 	} else {
 		testFile = fopen(testFileName, "r");
 	}
 
 	if (testFile == NULL) {
 		printf("could not find file '%s' - dumping the output without testing:\n\n", testFileName);
+		answer = IGNORE;
 	}
 
 	char buffer[4096];
@@ -104,7 +115,7 @@ void testFile(char* fileName, bool flagRecord) {
 				fprintf(testFile, "%s", output);
 			} else if (strncmp(output, reference, count) != 0) {
 				printf("the output is not the same as the expected output:\nexpected: %s\n\nactual: %s\n\n", reference, output);
-				//TODO: store that this file had an error
+				answer = FAIL;
 			}
 
 			free(output);
@@ -114,10 +125,15 @@ void testFile(char* fileName, bool flagRecord) {
 	if (testFile == NULL) {
 		printf("\n\n");
 	}
+	if (answer == SUCCESS) {
+		printf("success: %s\n", fileName);
+	}
 
 	free(testFileName);
 	close(filedes[0]);
 	wait(0);
+
+	return answer;
 }
 
 int main(int argc, char** argv) {
@@ -138,6 +154,11 @@ int main(int argc, char** argv) {
 		exit(EXIT_FAILURE);
 	}
 
+	int total = 0;
+	int success = 0;
+	int fail = 0;
+	int ignore = 0;
+
 	while (n--) {
 		printf("[TESTING] %s\n", nameList[n]->d_name);
 
@@ -145,13 +166,27 @@ int main(int argc, char** argv) {
 		strcpy(fileName, "../tests/");
 		strcpy(fileName + sizeof("../tests/") - 1, nameList[n]->d_name);
 
-		testFile(fileName, flagRecord);
+		ReturnType answer = testFile(fileName, flagRecord);
+		total++;
+		switch (answer) {
+			case SUCCESS:
+				success++;
+				break;
+			case FAIL:
+				fail++;
+				break;
+			case IGNORE:
+				ignore++;
+				break;
+		}
 		
 		free(fileName);
 		free(nameList[n]);
 	}
 
 	free(nameList);
+
+	printf("total: %d, success: %d/%d, ignored: %d/%d, failed: %d/%d\n", total, success, total, ignore, total, fail, total);
 
 	return 0;
 }
