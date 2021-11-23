@@ -141,52 +141,61 @@ int main(int argc, char** argv) {
 
 	bool flagRecord = false;
 
+	char* targetName = NULL;
+
 	while (*++argv) {
 		if (strcmp(*argv, "-record") == 0) {
 			flagRecord = true;
+		} else if (strcmp(*argv, "-f") ==0) {
+			targetName = *++argv;
 		}
 	}
 
-	int n = scandir(".", &nameList, filterExtension, alphasort);
+	if (targetName == NULL) {
+		int n = scandir(".", &nameList, filterExtension, alphasort);
 
-	if (n == -1) {
-		perror("open dir");
-		exit(EXIT_FAILURE);
-	}
-
-	int total = 0;
-	int success = 0;
-	int fail = 0;
-	int ignore = 0;
-
-	while (n--) {
-		printf("[TESTING] %s\n", nameList[n]->d_name);
-
-		char* fileName = malloc(sizeof("../tests/") + sizeof(nameList[n]->d_name) + 1); //file can only be relative to compiler for now
-		strcpy(fileName, "../tests/");
-		strcpy(fileName + sizeof("../tests/") - 1, nameList[n]->d_name);
-
-		ReturnType answer = testFile(fileName, flagRecord);
-		total++;
-		switch (answer) {
-			case SUCCESS:
-				success++;
-				break;
-			case FAIL:
-				fail++;
-				break;
-			case IGNORE:
-				ignore++;
-				break;
+		if (n == -1) {
+			perror("open dir");
+			exit(EXIT_FAILURE);
 		}
-		
-		free(fileName);
-		free(nameList[n]);
+
+		int total = 0;
+		int success = 0;
+		int fail = 0;
+		int ignore = 0;
+
+		while (n--) {
+			printf("[TESTING] %s\n", nameList[n]->d_name);
+
+			char* fileName = malloc(sizeof("../tests/") + sizeof(nameList[n]->d_name) + 1); //file can only be relative to compiler for now
+			strcpy(fileName, "../tests/");
+			strcpy(fileName + sizeof("../tests/") - 1, nameList[n]->d_name);
+
+			ReturnType answer = testFile(fileName, flagRecord);
+			total++;
+			switch (answer) {
+				case SUCCESS:
+					success++;
+					break;
+				case FAIL:
+					fail++;
+					break;
+				case IGNORE:
+					ignore++;
+					break;
+			}
+			
+			free(fileName);
+			free(nameList[n]);
+		}
+
+		free(nameList);
+
+		printf("\033[0;32msuccess: %d/%d\033[0m, \033[0;33mignored: %d/%d\033[0m, \033[0;31mfailed: %d/%d\033[0m\n", success, total, ignore, total, fail, total);
+
+	} else {
+		testFile(targetName, flagRecord);
 	}
-
-	free(nameList);
-
-	printf("\033[0;32msuccess: %d/%d\033[0m, \033[0;33mignored: %d/%d\033[0m, \033[0;31mfailed: %d/%d\033[0m\n", success, total, ignore, total, fail, total);
 
 	return 0;
 }
