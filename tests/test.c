@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <dirent.h>
@@ -41,7 +42,7 @@ char* getFileNameWithExtension(const char* fileName, const char* extension) {
 	return buffer;
 }
 
-void testFile(char* fileName) {
+void testFile(char* fileName, bool flagRecord) {
 	int filedes[2];
 	if (pipe(filedes) == -1) {
 		perror("pipe");
@@ -65,7 +66,13 @@ void testFile(char* fileName) {
 	close(filedes[1]);
 	
 	char* testFileName = getFileNameWithExtension(fileName, ".test");
-	FILE* testFile = fopen(testFileName, "r");
+	FILE* testFile;
+	if (flagRecord) {
+		testFile = fopen(testFileName, "w");
+	} else {
+		testFile = fopen(testFileName, "r");
+	}
+
 	if (testFile == NULL) {
 		printf("could not find file '%s' - dumping the output without testing:\n\n", testFileName);
 	}
@@ -74,7 +81,7 @@ void testFile(char* fileName) {
 	char reference[4096];
 	while (1) {
 		ssize_t count = read(filedes[0], buffer, sizeof(buffer));
-		if (testFile != NULL) {
+		if (testFile != NULL && !flagRecord) {
 			ssize_t refCount = fread(reference, 1, count, testFile);
 		}
 
@@ -92,6 +99,8 @@ void testFile(char* fileName) {
 
 			if (testFile == NULL) {
 				printf("%s", output);
+			} else if (flagRecord) {
+				fprintf(testFile, "%s", output);
 			} else if (strncmp(buffer, reference, count) != 0) {
 				printf("the output is not the same as the expected output:\nexpected: %s\n\nactual: %s\n\n", reference, buffer);
 				//TODO: store that this file had an error
@@ -113,6 +122,14 @@ void testFile(char* fileName) {
 int main(int argc, char** argv) {
 	struct dirent **nameList;
 
+	bool flagRecord = false;
+
+	while (*argv--) {
+		if (strcmp(*argv, "-record") == 0) {
+			flagRecord = true;
+		}
+	}
+
 	int n = scandir(".", &nameList, filterExtension, alphasort);
 
 	if (n == -1) {
@@ -127,7 +144,7 @@ int main(int argc, char** argv) {
 		strcpy(fileName, "../tests/");
 		strcpy(fileName + sizeof("../tests/") - 1, nameList[n]->d_name);
 
-		testFile(fileName);
+		testFile(fileName, flagRecord);
 		
 		free(fileName);
 		free(nameList[n]);
