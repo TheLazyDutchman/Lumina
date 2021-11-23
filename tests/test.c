@@ -84,7 +84,7 @@ ReturnType testFile(char* fileName, bool flagRecord) {
 	}
 
 	if (testFile == NULL) {
-		printf("could not find file '%s' - dumping the output without testing:\n\n", testFileName);
+		printf("\033[0;33mcould not find file '%s' - dumping the output without testing\033[0m:\n\n", testFileName);
 		answer = IGNORE;
 	}
 
@@ -114,7 +114,7 @@ ReturnType testFile(char* fileName, bool flagRecord) {
 			} else if (flagRecord) {
 				fprintf(testFile, "%s", output);
 			} else if (strncmp(output, reference, count) != 0) {
-				printf("the output is not the same as the expected output:\nexpected: %s\n\nactual: %s\n\n", reference, output);
+				printf("\033[0;31mthe output is not the same as the expected output\033[0m:\nexpected: %s\n\nactual: %s\n\n", reference, output);
 				answer = FAIL;
 			}
 
@@ -126,7 +126,7 @@ ReturnType testFile(char* fileName, bool flagRecord) {
 		printf("\n\n");
 	}
 	if (answer == SUCCESS) {
-		printf("success: %s\n", fileName);
+		printf("\033[1;32msuccess: %s\n\033[0m", fileName);
 	}
 
 	free(testFileName);
@@ -186,7 +186,7 @@ int main(int argc, char** argv) {
 
 	free(nameList);
 
-	printf("total: %d, success: %d/%d, ignored: %d/%d, failed: %d/%d\n", total, success, total, ignore, total, fail, total);
+	printf("\033[0;32msuccess: %d/%d\033[0m, \033[0;33mignored: %d/%d\033[0m, \033[0;31mfailed: %d/%d\033[0m\n", success, total, ignore, total, fail, total);
 
 	return 0;
 }
