@@ -84,6 +84,13 @@ ParseRule parseTable[] = {
 	[TOKEN_END_OF_FILE] = {NULL, NULL, PREC_NONE}
 };
 
+void panic(Parser* parser) {
+	Tokentype type = parser->current->type;
+	while (type != TOKEN_SEMICOLON && type != TOKEN_RBRACE && type != TOKEN_RPAREN && type != TOKEN_END_OF_FILE) {
+		type = next(parser)->type;
+	}
+}
+
 void parseError(Parser* parser, Token token, char* message) {
 	char* word = strndup(token.word, token.wordLen);
 	printf("%s:%d ERROR at '%s': ", token.fileName, token.line, word);
@@ -93,7 +100,8 @@ void parseError(Parser* parser, Token token, char* message) {
 	free(word);
 
 	parser->hadError = true;
-	//TODO: enter panic mode
+
+	panic(parser);
 }
 
 Token parsePrecedence(Parser* parser, Precedence precedence) {
@@ -338,6 +346,15 @@ void statement(Parser* parser) {
 		next(parser);
 
 		ifStatement(parser);
+	} else if (parser->current->type == TOKEN_IDENTIFIER && strncmp(parser->current->word, "print", parser->current->wordLen) == 0) { //temporary print function
+		next(parser);
+
+		consumeToken(parser, TOKEN_LPAREN, "expected '(' after function name");
+		expression(parser);
+		consumeToken(parser, TOKEN_RPAREN, "expected ')' after function parameters");
+
+		writePrint(parser->compiler);
+		consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after function call");
 	} else {
 		expression(parser);
 		consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after expression");

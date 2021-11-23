@@ -1,4 +1,4 @@
-var a = 10;
+var a = 'a';
 var b = 20;
 
-a + b;
+print(a + b);
