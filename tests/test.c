@@ -192,9 +192,15 @@ int main(int argc, char** argv) {
 		free(nameList);
 
 		printf("\033[0;32msuccess: %d/%d\033[0m, \033[0;33mignored: %d/%d\033[0m, \033[0;31mfailed: %d/%d\033[0m\n", success, total, ignore, total, fail, total);
-
+		
+		if (fail > 0) {
+			exit(1);
+		}
 	} else {
-		testFile(targetName, flagRecord);
+		ReturnType answer = testFile(targetName, flagRecord);
+		if (answer == FAIL) {
+			exit(1);
+		}
 	}
 
 	return 0;
