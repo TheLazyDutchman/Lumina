@@ -109,7 +109,8 @@ void writeAssignment(Compiler* compiler, int offset) {
 	fprintf(compiler->output, "	mov rax, rsp\n");
 	fprintf(compiler->output, "	mov rbx, %d\n", 8 * offset);
 	fprintf(compiler->output, "	add rax, rbx\n");
-	fprintf(compiler->output, "	mov [rax]n");
+	fprintf(compiler->output, "	mov rbx, [rsp]\n");
+	fprintf(compiler->output, "	mov [rax], rbx\n\n");
 }
 
 void writeAdd(Compiler* compiler) {

@@ -154,6 +154,8 @@ void number(Parser* parser) {
 	}
 
 	writeNumber(parser->compiler, numberValue);
+
+	next(parser);
 }
 
 void dumpCharacter(Parser* parser, Token value) {
@@ -173,6 +175,8 @@ void character(Parser* parser) {
 	char charValue = value.word[1];
 
 	writeCharacter(parser->compiler, charValue);
+
+	next(parser);
 }
 
 void identifier(Parser* parser) {
@@ -181,14 +185,29 @@ void identifier(Parser* parser) {
 		printf("incorrect reference in parseTable: '%s' points to identifier\n", tokenTypes[identifier.type]);
 	}
 
-	uint16_t offset = findVariable(parser->compiler, identifier.word, identifier.wordLen);
+	if (next(parser)->type == TOKEN_EQUAL) {
+		next(parser);
 
-	if (offset == -1) {
-		parseError(parser, identifier, "variable '%s' is undefined");
-		return;
+		expression(parser);
+
+		uint16_t offset = findVariable(parser->compiler, identifier.word, identifier.wordLen);
+
+		if (offset == -1) {
+			parseError(parser, identifier, "variable '%s' is undefined");
+			return;
+		}
+
+		writeAssignment(parser->compiler, offset);
+	} else {
+		uint16_t offset = findVariable(parser->compiler, identifier.word, identifier.wordLen);
+
+		if (offset == -1) {
+			parseError(parser, identifier, "variable '%s' is undefined");
+			return;
+		}
+
+		writeIdentifier(parser->compiler, offset);
 	}
-
-	writeIdentifier(parser->compiler, offset);
 }
 
 void dumpBinary(Parser* parser, Token operator) {
@@ -259,7 +278,7 @@ void unary(Parser* parser) {
 void expression(Parser* parser) {
 	parsePrecedence(parser, PREC_EXPR);
 
-	while (next(parser)->type != TOKEN_END_OF_FILE) {
+	while (parser->current->type != TOKEN_END_OF_FILE) {
 		ParseRule rule = parseTable[parser->current->type];
 
 		if (rule.precedence < PREC_EXPR) {
