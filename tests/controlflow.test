@@ -1,0 +1,4 @@
+bcd[FILE] read file '../tests/controlflow.lumina'
+[CMD] nasm -f elf64 ../tests/controlflow.asm
+[CMD] ld -o ../tests/controlflow ../tests/controlflow.o
+[CMD] ../tests/controlflow.lumina

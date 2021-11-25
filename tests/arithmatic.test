@@ -1,0 +1,4 @@
+96[FILE] read file '../tests/arithmatic.lumina'
+[CMD] nasm -f elf64 ../tests/arithmatic.asm
+[CMD] ld -o ../tests/arithmatic ../tests/arithmatic.o
+[CMD] ../tests/arithmatic.lumina
