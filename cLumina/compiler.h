@@ -30,6 +30,7 @@ void writeJumpNotEqual(Compiler* compiler, char* address, uint32_t id);
 void writeNumber(Compiler* compiler, int value);
 void writeCharacter(Compiler* compiler, char value);
 void writeIdentifier(Compiler* compiler, int offset);
+void writeAssignment(Compiler* compiler, int offset);
 
 void writeAdd(Compiler* compiler);
 void writeSubtract(Compiler* compiler);

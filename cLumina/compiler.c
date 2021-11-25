@@ -104,6 +104,14 @@ void writeIdentifier(Compiler* compiler, int offset) {
 	compiler->currentStackSize++;
 }
 
+void writeAssignment(Compiler* compiler, int offset) {
+	fprintf(compiler->output, "	;; -- assignment --\n");
+	fprintf(compiler->output, "	mov rax, rsp\n");
+	fprintf(compiler->output, "	mov rbx, %d\n", 8 * offset);
+	fprintf(compiler->output, "	add rax, rbx\n");
+	fprintf(compiler->output, "	mov [rax]n");
+}
+
 void writeAdd(Compiler* compiler) {
 	fprintf(compiler->output, "	;; -- add --\n");
 	fprintf(compiler->output, "	pop rbx\n");
