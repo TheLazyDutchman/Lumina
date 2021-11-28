@@ -25,13 +25,15 @@ pid_t createChild(char* program, char** args, bool suppressOutput) {
 		exit(1);
 	}
 
-	if (child_pid > 0 && !suppressOutput) {
-		printf("[CMD]");
-		while (*args != NULL) {
-			printf(" %s", *args);
-			args++;
+	if (child_pid > 0) {
+		if (!suppressOutput) {
+			printf("[CMD]");
+			while (*args != NULL) {
+				printf(" %s", *args);
+				args++;
+			}
+			printf("\n");
 		}
-		printf("\n");
 	}
 	else {
 		execvp(program, args);

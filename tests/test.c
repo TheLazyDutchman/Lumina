@@ -68,7 +68,7 @@ ReturnType testFile(char* fileName, bool flagRecord) {
 		close(filedes[1]);
 		close(filedes[0]);
 
-		execl("../lumina", "lumina", "-r", fileName, (char*)0);
+		execl("../lumina", "lumina", "-s", "-r", fileName, (char*)0);
 		perror("execl");
 		_exit(1);
 	}
@@ -104,6 +104,17 @@ ReturnType testFile(char* fileName, bool flagRecord) {
 				exit(1);
 			}
 		} else if (count == 0) {
+			if (testFile != NULL && !flagRecord) {
+				size_t numLeft = fread(testBuffer, 1, sizeof(testBuffer), testFile); 
+				if (numLeft != 0) {
+					char* reference = strndup(testBuffer, numLeft);
+
+					printf("\033[0;31mthe output ended earlier than the expected output\033[0m:\nexpected: %s\n\n", reference);
+					answer = FAIL;
+
+					free(reference);
+				}
+			}
 			break;
 		} else {
 			char* output = strndup(buffer, count);
@@ -119,6 +130,7 @@ ReturnType testFile(char* fileName, bool flagRecord) {
 			}
 
 			free(output);
+			free(reference);
 		}
 	}
 
@@ -167,9 +179,9 @@ int main(int argc, char** argv) {
 		while (n--) {
 			printf("[TESTING] %s\n", nameList[n]->d_name);
 
-			char* fileName = malloc(sizeof("../tests/") + sizeof(nameList[n]->d_name) + 1); //file can only be relative to compiler for now
-			strcpy(fileName, "../tests/");
-			strcpy(fileName + sizeof("../tests/") - 1, nameList[n]->d_name);
+			char* fileName = malloc(sizeof("./") + sizeof(nameList[n]->d_name) + 1); //file must be executable 
+			strcpy(fileName, "./");
+			strcpy(fileName + sizeof("./") - 1, nameList[n]->d_name);
 
 			ReturnType answer = testFile(fileName, flagRecord);
 			total++;

@@ -1,4 +1,1 @@
-cf[FILE] read file '../tests/characters.lumina'
-[CMD] nasm -f elf64 ../tests/characters.asm
-[CMD] ld -o ../tests/characters ../tests/characters.o
-[CMD] ../tests/characters.lumina
+cf
