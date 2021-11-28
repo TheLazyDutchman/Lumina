@@ -35,7 +35,6 @@ char* readFile(char *fileName) {
 	}
 	
 	fclose(fd);
-	printf("[FILE] read file '%s'\n", fileName);
 	return buffer;
 }
 
