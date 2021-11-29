@@ -325,32 +325,41 @@ void condition(Parser* parser) {
 }
 
 void whileStatement(Parser* parser) {
+	uint32_t whileId = parser->compiler->numWhiles++;
+
+	writeAddress(parser->compiler, "addr_while_condition", whileId);
 	consumeToken(parser, TOKEN_LPAREN, "expected '(' after 'while' keyword");
 
 	condition(parser);
 
 	consumeToken(parser, TOKEN_RPAREN, "expected ')' after condition");
 
+	writeJumpNotEqual(parser->compiler, "addr_while_end", whileId);
+
 	consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'while' block");
 
 	block(parser);
+
+	writeJump(parser->compiler, "addr_while_condition", whileId);
+	writeAddress(parser->compiler, "addr_while_end", whileId);
 }
 
 void ifStatement(Parser* parser) {
+	uint32_t ifId = parser->compiler->numIfs++;
+
 	consumeToken(parser, TOKEN_LPAREN, "expected '(' after 'if' keyword");
 
 	condition(parser);
 	
 	consumeToken(parser, TOKEN_RPAREN, "expected ')' after condition");
 
-	writeJumpNotEqual(parser->compiler, "addr_if", parser->compiler->numIfs);
+	writeJumpNotEqual(parser->compiler, "addr_if", ifId);
 
 	consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'if' block");
 
 	block(parser);
 
-	writeAddress(parser->compiler, "addr_if", parser->compiler->numIfs);
-	parser->compiler->numIfs++;
+	writeAddress(parser->compiler, "addr_if", ifId);
 }
 
 void block(Parser* parser) {

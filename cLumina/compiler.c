@@ -9,7 +9,14 @@ Compiler* initCompiler(FILE* output, Compiler* outer) {
 	compiler->currentStackSize = 0;
 	compiler->variableList = initVariableList();
 	compiler->outer = outer;
-	compiler->numIfs = 0;
+
+	if (outer == NULL) {
+		compiler->numIfs = 0;
+		compiler->numWhiles = 0;
+	} else {
+		compiler->numIfs = outer->numIfs;
+		compiler->numWhiles = outer->numWhiles;
+	}
 
 	return compiler;
 }

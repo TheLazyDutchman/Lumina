@@ -5,6 +5,8 @@ if (a == b) {
 	print('a');
 }
 print('b');
+print('
+');
 
 if (a == 10) {
 	var c = 'a';
@@ -17,4 +19,5 @@ if (a == 10) {
 	}
 }
 
+print(10);
 print('d');

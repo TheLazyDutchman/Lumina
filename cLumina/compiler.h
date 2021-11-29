@@ -11,6 +11,7 @@ typedef struct Compiler{
 	VariableList* variableList;
 	struct Compiler* outer;
 	uint32_t numIfs;
+	uint32_t numWhiles;
 } Compiler;
 
 Compiler* initCompiler(FILE* output, Compiler* outer);
