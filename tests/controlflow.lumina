@@ -7,7 +7,14 @@ if (a == b) {
 print('b');
 
 if (a == 10) {
-	print('c');
+	var c = 'a';
+	while (b == 20) {
+		print(c);
+		c = c + 1;
+		if (c == 'z') {
+			b == 0;
+		}
+	}
 }
 
 print('d');
