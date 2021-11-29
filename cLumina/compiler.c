@@ -72,6 +72,11 @@ void writeCompare(Compiler* compiler) {
 	compiler->currentStackSize -= 2;
 }
 
+void writeJump(Compiler* compiler, char* address, uint32_t id) {
+	fprintf(compiler->output, "	;; -- jump --\n");
+	fprintf(compiler->output, "	jmp %s_%d\n\n", address, id);
+}
+
 void writeJumpNotEqual(Compiler* compiler, char* header, uint32_t id) {
 	fprintf(compiler->output, "	;; -- jump if not equal --\n");
 	fprintf(compiler->output, "	jne %s_%d\n\n", header, id);
