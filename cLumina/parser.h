@@ -32,6 +32,7 @@ void unary(Parser* parser);
 void binary(Parser* parser);
 void expression(Parser* parser);
 void condition(Parser* parser);
+void whileStatement(Parser* parser);
 void ifStatement(Parser* parser);
 void variableDefinition(Parser* parser);
 void block(Parser* parser);

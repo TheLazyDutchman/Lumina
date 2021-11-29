@@ -324,6 +324,18 @@ void condition(Parser* parser) {
 	writeCompare(parser->compiler);
 }
 
+void whileStatement(Parser* parser) {
+	consumeToken(parser, TOKEN_LPAREN, "expected '(' after 'while' keyword");
+
+	condition(parser);
+
+	consumeToken(parser, TOKEN_RPAREN, "expected ')' after condition");
+
+	consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'while' block");
+
+	block(parser);
+}
+
 void ifStatement(Parser* parser) {
 	consumeToken(parser, TOKEN_LPAREN, "expected '(' after 'if' keyword");
 
@@ -363,6 +375,10 @@ void statement(Parser* parser) {
 		next(parser);
 
 		variableDefinition(parser);
+	} else if (parser->current->type == TOKEN_WHILE) {
+		next(parser);
+
+		whileStatement(parser);
 	} else if (parser->current->type == TOKEN_IF) {
 		next(parser);
 
