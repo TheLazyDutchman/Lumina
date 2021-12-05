@@ -116,6 +116,8 @@ Token parsePrecedence(Parser* parser, Precedence precedence) {
 
 	if (rule.prefix == NULL) {
 		parseError(parser, token, "unexpected token");
+
+		return token;
 	}
 
 	rule.prefix(parser);
@@ -289,6 +291,8 @@ void expression(Parser* parser) {
 
 		if (rule.infix == NULL) {
 			parseError(parser, *parser->current, "unexpected token");
+
+			break;
 		}
 
 		rule.infix(parser);
