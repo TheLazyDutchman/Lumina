@@ -1,19 +1,12 @@
 CC = gcc
 CFLAGS = 
-compiler: cLumina.o lexer.o parser.o compiler.o variable.o
-	$(CC) -o ../lumina cLumina.o lexer.o parser.o compiler.o variable.o $(CFLAGS)
+SRCS = $(wildcard *.c)
+OBJS = $(patsubst %.c, %.o, $(SRCS))
 
-cLumina.o: cLumina.c cLumina.h parser.h
-	$(CC) -c cLumina.c $(CFLAGS)
+all: cLumina
 
-lexer.o: lexer.c lexer.h
-	$(CC) -c lexer.c  $(CFLAGS)
+cLumina: $(OBJS)
+	$(CC) $^ -o $@
 
-parser.o: parser.c parser.h lexer.h compiler.h
-	$(CC) -c parser.c $(CFLAGS)
-
-compiler.o: compiler.c compiler.h variable.h
-	$(CC) -c compiler.c $(CFLAGS)
-
-variable.o: variable.c variable.h
-	$(CC) -c variable.c $(CFLAGS)
+%.o: %.c
+	$(CC) $(CFLAGS) -c $^ -o $@
