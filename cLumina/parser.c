@@ -49,6 +49,7 @@ typedef enum {
 	PREC_NONE,
 	PREC_BLOCK,
 	PREC_STATEMENT,
+	PREC_WHILE_STATEMENT,
 	PREC_IF_STATEMENT,
 	PREC_ASSIGNMENT,
 	PREC_COMPARISON,
@@ -64,7 +65,7 @@ typedef struct {
 	Precedence precedence;
 } ParseRule;
 
-_Static_assert(TOKEN_TYPES_NUM == 15, "Exhaustive handling of token types in parsing");
+_Static_assert(TOKEN_TYPES_NUM == 16, "Exhaustive handling of token types in parsing");
 
 ParseRule parseTable[] = {
 	[TOKEN_NUMBER] = {number, NULL, PREC_PRIMARY},
@@ -80,6 +81,7 @@ ParseRule parseTable[] = {
 	[TOKEN_SEMICOLON] = {NULL, NULL, PREC_STATEMENT},
 	[TOKEN_VAR] = {NULL, NULL, PREC_ASSIGNMENT},
 	[TOKEN_IF] = {NULL, NULL, PREC_IF_STATEMENT},
+	[TOKEN_WHILE] = {NULL, NULL, PREC_WHILE_STATEMENT},
 	[TOKEN_IDENTIFIER] = {identifier, NULL, PREC_PRIMARY},
 	[TOKEN_END_OF_FILE] = {NULL, NULL, PREC_NONE}
 };
@@ -114,6 +116,8 @@ Token parsePrecedence(Parser* parser, Precedence precedence) {
 
 	if (rule.prefix == NULL) {
 		parseError(parser, token, "unexpected token");
+
+		return token;
 	}
 
 	rule.prefix(parser);
@@ -154,6 +158,8 @@ void number(Parser* parser) {
 	}
 
 	writeNumber(parser->compiler, numberValue);
+
+	next(parser);
 }
 
 void dumpCharacter(Parser* parser, Token value) {
@@ -173,6 +179,8 @@ void character(Parser* parser) {
 	char charValue = value.word[1];
 
 	writeCharacter(parser->compiler, charValue);
+
+	next(parser);
 }
 
 void identifier(Parser* parser) {
@@ -181,14 +189,29 @@ void identifier(Parser* parser) {
 		printf("incorrect reference in parseTable: '%s' points to identifier\n", tokenTypes[identifier.type]);
 	}
 
-	uint16_t offset = findVariable(parser->compiler, identifier.word, identifier.wordLen);
+	if (next(parser)->type == TOKEN_EQUAL) {
+		next(parser);
 
-	if (offset == -1) {
-		parseError(parser, identifier, "variable '%s' is undefined");
-		return;
+		expression(parser);
+
+		uint16_t offset = findVariable(parser->compiler, identifier.word, identifier.wordLen);
+
+		if (offset == -1) {
+			parseError(parser, identifier, "variable '%s' is undefined");
+			return;
+		}
+
+		writeAssignment(parser->compiler, offset);
+	} else {
+		uint16_t offset = findVariable(parser->compiler, identifier.word, identifier.wordLen);
+
+		if (offset == -1) {
+			parseError(parser, identifier, "variable '%s' is undefined");
+			return;
+		}
+
+		writeIdentifier(parser->compiler, offset);
 	}
-
-	writeIdentifier(parser->compiler, offset);
 }
 
 void dumpBinary(Parser* parser, Token operator) {
@@ -259,7 +282,7 @@ void unary(Parser* parser) {
 void expression(Parser* parser) {
 	parsePrecedence(parser, PREC_EXPR);
 
-	while (next(parser)->type != TOKEN_END_OF_FILE) {
+	while (parser->current->type != TOKEN_END_OF_FILE) {
 		ParseRule rule = parseTable[parser->current->type];
 
 		if (rule.precedence < PREC_EXPR) {
@@ -268,6 +291,8 @@ void expression(Parser* parser) {
 
 		if (rule.infix == NULL) {
 			parseError(parser, *parser->current, "unexpected token");
+
+			break;
 		}
 
 		rule.infix(parser);
@@ -303,21 +328,42 @@ void condition(Parser* parser) {
 	writeCompare(parser->compiler);
 }
 
+void whileStatement(Parser* parser) {
+	uint32_t whileId = parser->compiler->numWhiles++;
+
+	writeAddress(parser->compiler, "addr_while_condition", whileId);
+	consumeToken(parser, TOKEN_LPAREN, "expected '(' after 'while' keyword");
+
+	condition(parser);
+
+	consumeToken(parser, TOKEN_RPAREN, "expected ')' after condition");
+
+	writeJumpNotEqual(parser->compiler, "addr_while_end", whileId);
+
+	consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'while' block");
+
+	block(parser);
+
+	writeJump(parser->compiler, "addr_while_condition", whileId);
+	writeAddress(parser->compiler, "addr_while_end", whileId);
+}
+
 void ifStatement(Parser* parser) {
+	uint32_t ifId = parser->compiler->numIfs++;
+
 	consumeToken(parser, TOKEN_LPAREN, "expected '(' after 'if' keyword");
 
 	condition(parser);
 	
 	consumeToken(parser, TOKEN_RPAREN, "expected ')' after condition");
 
-	writeJumpNotEqual(parser->compiler, "addr_if", parser->compiler->numIfs);
+	writeJumpNotEqual(parser->compiler, "addr_if", ifId);
 
 	consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'if' block");
 
 	block(parser);
 
-	writeAddress(parser->compiler, "addr_if", parser->compiler->numIfs);
-	parser->compiler->numIfs++;
+	writeAddress(parser->compiler, "addr_if", ifId);
 }
 
 void block(Parser* parser) {
@@ -342,6 +388,10 @@ void statement(Parser* parser) {
 		next(parser);
 
 		variableDefinition(parser);
+	} else if (parser->current->type == TOKEN_WHILE) {
+		next(parser);
+
+		whileStatement(parser);
 	} else if (parser->current->type == TOKEN_IF) {
 		next(parser);
 

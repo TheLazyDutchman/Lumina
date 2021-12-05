@@ -1,4 +1,1 @@
-17[FILE] read file '../tests/comments.lumina'
-[CMD] nasm -f elf64 ../tests/comments.asm
-[CMD] ld -o ../tests/comments ../tests/comments.o
-[CMD] ../tests/comments.lumina
+17

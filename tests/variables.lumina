@@ -1,4 +1,10 @@
 var a = 'a';
-var b = 20;
 
-print(a + b);
+print(a);
+
+var b = a + 2;
+
+print(b);
+
+a = '4';
+print(a);

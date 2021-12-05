@@ -11,6 +11,7 @@ typedef struct Compiler{
 	VariableList* variableList;
 	struct Compiler* outer;
 	uint32_t numIfs;
+	uint32_t numWhiles;
 } Compiler;
 
 Compiler* initCompiler(FILE* output, Compiler* outer);
@@ -25,11 +26,13 @@ void writePop(Compiler* compiler, int amount);
 
 void writeAddress(Compiler* compiler, char* address, uint32_t id);
 void writeCompare(Compiler* compiler);
+void writeJump(Compiler* compiler, char* address, uint32_t id);
 void writeJumpNotEqual(Compiler* compiler, char* address, uint32_t id);
 
 void writeNumber(Compiler* compiler, int value);
 void writeCharacter(Compiler* compiler, char value);
 void writeIdentifier(Compiler* compiler, int offset);
+void writeAssignment(Compiler* compiler, int offset);
 
 void writeAdd(Compiler* compiler);
 void writeSubtract(Compiler* compiler);
