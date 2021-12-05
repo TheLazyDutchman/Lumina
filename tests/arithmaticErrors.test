@@ -1,0 +1,7 @@
+./arithmaticErrors.lumina:0 ERROR at '+': unexpected token
+./arithmaticErrors.lumina:2 ERROR at '20': unexpected token
+./arithmaticErrors.lumina:4 ERROR at ';': unexpected token
+./arithmaticErrors.lumina:4 ERROR at ';': unexpected token
+./arithmaticErrors.lumina:6 ERROR at ';': unexpected token
+./arithmaticErrors.lumina:6 ERROR at ';': unexpected token
+./arithmaticErrors.lumina:9 ERROR at '': expected ';' after expression

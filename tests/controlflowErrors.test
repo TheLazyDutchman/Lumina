@@ -1,0 +1,17 @@
+./controlflowErrors.lumina:0 ERROR at ';': expected '(' after 'if' keyword
+./controlflowErrors.lumina:1 ERROR at 'if': unexpected token
+./controlflowErrors.lumina:1 ERROR at 'if': unexpected token
+./controlflowErrors.lumina:1 ERROR at ')': expected '==' in comparison
+./controlflowErrors.lumina:1 ERROR at '{': unexpected token
+./controlflowErrors.lumina:1 ERROR at '{': unexpected token
+./controlflowErrors.lumina:2 ERROR at ';': expected ')' after condition
+./controlflowErrors.lumina:3 ERROR at '}': expected '{' before 'if' block
+./controlflowErrors.lumina:5 ERROR at ';': unexpected token
+./controlflowErrors.lumina:5 ERROR at ';': unexpected token
+./controlflowErrors.lumina:5 ERROR at ';': expected '==' in comparison
+./controlflowErrors.lumina:7 ERROR at 'while': unexpected token
+./controlflowErrors.lumina:7 ERROR at 'while': unexpected token
+./controlflowErrors.lumina:7 ERROR at ';': unexpected token
+./controlflowErrors.lumina:7 ERROR at ';': unexpected token
+./controlflowErrors.lumina:8 ERROR at '': expected '}' after block
+./controlflowErrors.lumina:8 ERROR at '': expected '}' after block
