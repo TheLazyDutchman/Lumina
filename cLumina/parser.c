@@ -164,6 +164,8 @@ void number(Parser* parser) {
 
 	writeNumber(parser->compiler, numberValue);
 
+	parser->lastType = initType("int");
+
 	next(parser);
 }
 
@@ -184,6 +186,8 @@ void character(Parser* parser) {
 	char charValue = value.word[1];
 
 	writeCharacter(parser->compiler, charValue);
+
+	parser->lastType = initType("char");
 
 	next(parser);
 }
