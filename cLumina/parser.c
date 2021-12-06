@@ -234,6 +234,7 @@ void dumpBinary(Parser* parser, Token operator) {
 
 void binary(Parser* parser) {
 	Token operator = *parser->current;
+	Type value1 = *parser->lastType;
 
 	Precedence precedence;
 
@@ -254,12 +255,39 @@ void binary(Parser* parser) {
 		case TOKEN_PLUS:
 			dumpBinary(parser, operator);
 
+			if (strcmp(value1.name, "int") != 0 || strcmp(value1.name, "char") != 0) {
+				parseError(parser, *value1.token, "can not add something that is not 'int' or 'char'");
+				return;
+			}
+			if (strcmp(parser->lastType->name, "int") != 0 || strcmp(parser->lastType->name, "char") != 0) {
+				parseError(parser, *parser->lastType->token, "can not add something that is not 'int' or 'char'");
+				return;
+			}
+
+			if (strcmp(value1.name, "char") == 0 && strcmp(parser->lastType->name, "char") == 0) {
+				parseError(parser, *parser->lastType->token, "can not add 2 characters together");
+				return;
+			}
+
 			writeAdd(parser->compiler);
 
 			break;
 		case TOKEN_MINUS:
 			dumpBinary(parser, operator);
 
+			if (strcmp(value1.name, "int") != 0 || strcmp(value1.name, "char") != 0) {
+				parseError(parser, *value1.token, "can not subtract something that is not 'int' or 'char'");
+				return;
+			}
+			if (strcmp(parser->lastType->name, "int") != 0 || strcmp(parser->lastType->name, "char") != 0) {
+				parseError(parser, *parser->lastType->token, "can not subtract something that is not 'int' or 'char'");
+				return;
+			}
+
+			if (strcmp(value1.name, "int") == 0 && strcmp(parser->lastType->name, "char") == 0) {
+				parseError(parser, *parser->lastType->token, "can not subtract a 'char' from an 'int'");
+				return;
+			}
 			writeSubtract(parser->compiler);
 
 			break;
