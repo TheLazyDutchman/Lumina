@@ -117,12 +117,14 @@ Token parsePrecedence(Parser* parser, Precedence precedence) {
 
 	if (rule.precedence < precedence) {
 		parseError(parser, token, "unexpected token");
+
+		return token; // the function returns here to avoid a segfault when an inexisting prefix function is called
 	}
 
 	if (rule.prefix == NULL) {
 		parseError(parser, token, "unexpected token");
 
-		return token;
+		return token; // the function returns here to avoid a segfault when an inexisting prefix function is called
 	}
 
 	rule.prefix(parser);
@@ -160,11 +162,12 @@ void number(Parser* parser) {
 	int numberValue = strtol(value.word, &result, 10);
 	if (result - value.word != value.wordLen) {
 		parseError(parser, value, "could not convert string '%s' to int");
+		return;
 	}
 
 	writeNumber(parser->compiler, numberValue);
 
-	parser->lastType = initType("int");
+	parser->lastType = initType("int", parser->current);
 
 	next(parser);
 }
@@ -187,7 +190,7 @@ void character(Parser* parser) {
 
 	writeCharacter(parser->compiler, charValue);
 
-	parser->lastType = initType("char");
+	parser->lastType = initType("char", parser->current);
 
 	next(parser);
 }
@@ -279,6 +282,11 @@ void unary(Parser* parser) {
 	switch (operator.type) {
 		case TOKEN_MINUS:
 			dumpUnary(parser, operator);
+
+			if (strcmp(parser->lastType->name, "int") != 0) {
+				parseError(parser, *parser->lastType->token, "cannot take the negative of type '%s'");
+				return;
+			}
 
 			writeNegative(parser->compiler);
 
