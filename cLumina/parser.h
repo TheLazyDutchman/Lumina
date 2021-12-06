@@ -5,6 +5,7 @@
 
 #include "lexer.h"
 #include "compiler.h"
+#include "type.h"
 
 typedef enum {
 	FLAG_DUMP = 1,
@@ -13,7 +14,7 @@ typedef enum {
 typedef struct {
 	Lexer* lexer;
 	Token* current;
-	Token* last;
+	Type* lastType;
 	ParseFlag flags;
 
 	Compiler* compiler;

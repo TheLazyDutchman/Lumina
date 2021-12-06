@@ -9,6 +9,7 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 
 	parser->lexer = initLexer(inputName);
 	parser->current = nextToken(parser->lexer);
+	parser->lastType = NULL;
 	parser->flags = flags;
 
 	parser->outputFile = fopen(outputName, "w");
@@ -25,6 +26,10 @@ void freeParser(Parser* parser) {
 
 	if (parser->current != NULL) {
 		freeToken(parser->current);
+	}
+
+	if (parser->lastType != NULL) {
+		freeType(parser->lastType);
 	}
 
 	freeCompiler(parser->compiler);
