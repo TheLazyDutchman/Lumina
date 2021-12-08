@@ -26,10 +26,26 @@ void freeCompiler(Compiler* compiler) {
 	free(compiler);
 }
 
-void defineVariable(Compiler* compiler, char* name, int nameLen) {
+void defineVariable(Compiler* compiler, char* name, int nameLen, Type *type) {
 	char* buffer = strndup(name, nameLen);
 
-	addVariable(compiler->variableList, buffer, compiler->currentStackSize);
+	addVariable(compiler->variableList, buffer, compiler->currentStackSize, type);
+}
+
+Type *findVariableType(Compiler* compiler, char* name, int nameLen) {
+	VariableList list = *compiler->variableList;
+
+	for (int i = 0; i < list.size; i++) {
+		if (strncmp(list.variables[i]->name, name, nameLen) == 0) {
+			return list.variables[i]->type;
+		}
+	}
+
+	if (compiler->outer == NULL) {
+		return NULL;
+	}
+
+	return findVariableType(compiler->outer, name, nameLen);
 }
 
 uint16_t findVariable(Compiler* compiler, char* name, int nameLen) {

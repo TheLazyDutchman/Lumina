@@ -5,10 +5,10 @@
 
 typedef struct {
 	char* name;
-	Token *token;
+	Token token;
 } Type;
 
-Type *initType(char* name, Token *token);
+Type *initType(const char* name, Token token);
 void freeType(Type *type);
 
 #endif

@@ -3,9 +3,12 @@
 
 #include <stdint.h>
 
+#include "type.h"
+
 typedef struct {
 	char* name;
 	uint16_t position;
+	Type *type;
 } Variable;
 
 typedef struct {
@@ -17,6 +20,6 @@ typedef struct {
 VariableList* initVariableList();
 void freeVariableList(VariableList* list);
 
-void addVariable(VariableList* list, char* name, uint16_t position);
+void addVariable(VariableList* list, char* name, uint16_t position, Type *type);
 
 #endif

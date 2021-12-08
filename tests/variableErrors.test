@@ -1,3 +1,0 @@
-./variableErrors.lumina:2 ERROR at ';': expected '=' after variable name in definition
-./variableErrors.lumina:3 ERROR at 'var': unexpected token
-./variableErrors.lumina:4 ERROR at ';': unexpected token

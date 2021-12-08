@@ -168,7 +168,7 @@ void number(Parser* parser) {
 
 	writeNumber(parser->compiler, numberValue);
 
-	parser->lastType = initType("int", parser->current);
+	parser->lastType = initType("int", value);
 
 	next(parser);
 }
@@ -191,7 +191,7 @@ void character(Parser* parser) {
 
 	writeCharacter(parser->compiler, charValue);
 
-	parser->lastType = initType("char", parser->current);
+	parser->lastType = initType("char", value);
 
 	next(parser);
 }
@@ -224,6 +224,11 @@ void identifier(Parser* parser) {
 		}
 
 		writeIdentifier(parser->compiler, offset);
+
+		freeType(parser->lastType);
+		
+		Type *type = findVariableType(parser->compiler, identifier.word, identifier.wordLen);
+		parser->lastType = initType(type->name, identifier);
 	}
 }
 
@@ -257,16 +262,16 @@ void binary(Parser* parser) {
 			dumpBinary(parser, operator);
 
 			if (strcmp(value1.name, "int") != 0 && strcmp(value1.name, "char") != 0) {
-				parseError(parser, *value1.token, "can not add something that is not 'int' or 'char'");
+				parseError(parser, value1.token, "can not add something that is not 'int' or 'char'");
 				return;
 			}
 			if (strcmp(parser->lastType->name, "int") != 0 && strcmp(parser->lastType->name, "char") != 0) {
-				parseError(parser, *parser->lastType->token, "can not add something that is not 'int' or 'char'");
+				parseError(parser, parser->lastType->token, "can not add something that is not 'int' or 'char'");
 				return;
 			}
 
 			if (strcmp(value1.name, "char") == 0 && strcmp(parser->lastType->name, "char") == 0) {
-				parseError(parser, *parser->lastType->token, "can not add 2 characters together");
+				parseError(parser, parser->lastType->token, "can not add 2 characters together");
 				return;
 			}
 
@@ -275,11 +280,11 @@ void binary(Parser* parser) {
 			if (strcmp(value1.name, "char") == 0 || strcmp(parser->lastType->name, "char") == 0) {
 				freeType(parser->lastType);
 
-				parser->lastType == initType("char", parser->current);
+				parser->lastType == initType("char", operator);
 			} else {
 				freeType(parser->lastType);
 
-				parser->lastType == initType("int", parser->current);
+				parser->lastType == initType("int", operator);
 			}
 
 			break;
@@ -287,16 +292,16 @@ void binary(Parser* parser) {
 			dumpBinary(parser, operator);
 
 			if (strcmp(value1.name, "int") != 0 && strcmp(value1.name, "char") != 0) {
-				parseError(parser, *value1.token, "can not subtract something that is not 'int' or 'char'");
+				parseError(parser, value1.token, "can not subtract something that is not 'int' or 'char'");
 				return;
 			}
 			if (strcmp(parser->lastType->name, "int") != 0 && strcmp(parser->lastType->name, "char") != 0) {
-				parseError(parser, *parser->lastType->token, "can not subtract something that is not 'int' or 'char'");
+				parseError(parser, parser->lastType->token, "can not subtract something that is not 'int' or 'char'");
 				return;
 			}
 
 			if (strcmp(value1.name, "int") == 0 && strcmp(parser->lastType->name, "char") == 0) {
-				parseError(parser, *parser->lastType->token, "can not subtract a 'char' from an 'int'");
+				parseError(parser, parser->lastType->token, "can not subtract a 'char' from an 'int'");
 				return;
 			}
 
@@ -305,11 +310,11 @@ void binary(Parser* parser) {
 			if (strcmp(value1.name, "char") == 0 && strcmp(parser->lastType->name, "int") == 0) {
 				freeType(parser->lastType);
 
-				parser->lastType == initType("char", parser->current);
+				parser->lastType == initType("char", operator);
 			} else {
 				freeType(parser->lastType);
 
-				parser->lastType == initType("int", parser->current);
+				parser->lastType == initType("int", operator);
 			}
 
 			break;
@@ -334,7 +339,7 @@ void unary(Parser* parser) {
 			dumpUnary(parser, operator);
 
 			if (strcmp(parser->lastType->name, "int") != 0) {
-				parseError(parser, *parser->lastType->token, "cannot take the negative of type '%s'");
+				parseError(parser, parser->lastType->token, "cannot take the negative of type '%s'");
 				return;
 			}
 
@@ -382,7 +387,9 @@ void variableDefinition(Parser* parser) {
 	expression(parser);
 	consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after variable definition");
 
-	defineVariable(parser->compiler, identifier.word, identifier.wordLen);
+	Type *type = initType(parser->lastType->name, identifier);
+
+	defineVariable(parser->compiler, identifier.word, identifier.wordLen, type);
 }
 
 void condition(Parser* parser) {

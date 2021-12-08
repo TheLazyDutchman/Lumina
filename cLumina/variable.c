@@ -2,16 +2,18 @@
 
 #include "variable.h"
 
-Variable* initVariable(char* name, uint16_t position) {
+Variable* initVariable(char* name, uint16_t position, Type *type) {
 	Variable* var = malloc(sizeof(Variable));
 	var->name = name;
 	var->position = position;
+	var->type = type;
 
 	return var;
 }
 
 void freeVariable(Variable* variable) {
 	free(variable->name);
+	freeType(variable->type);
 	free(variable);
 }
 
@@ -33,8 +35,8 @@ void freeVariableList(VariableList* list) {
 	free(list);
 }
 
-void addVariable(VariableList* list, char* name, uint16_t position) {
-	list->variables[list->size] = initVariable(name, position);
+void addVariable(VariableList* list, char* name, uint16_t position, Type *type) {
+	list->variables[list->size] = initVariable(name, position, type);
 
 	list->size++;
 

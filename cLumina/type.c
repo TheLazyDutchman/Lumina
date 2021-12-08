@@ -3,7 +3,7 @@
 
 #include "type.h"
 
-Type *initType(char* name, Token *token) {
+Type *initType(const char* name, Token token) {
 	Type *type = malloc(sizeof(Type));
 
 	type->name = strdup(name);
