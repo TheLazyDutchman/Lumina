@@ -14,6 +14,5 @@ Type *initType(char* name, Token *token) {
 
 void freeType(Type *type) {
 	free(type->name);
-	freeToken(type->token);
 	free(type);
 }

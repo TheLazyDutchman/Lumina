@@ -186,6 +186,7 @@ Token *nextToken(Lexer* lexer){
 		advance(lexer);
 		if (*lexer->current != charStart) {
 			lexerError(lexer, "expected character end");
+			token->type = TOKEN_ERROR;
 		} else {
 			advance(lexer);
 		}
@@ -234,7 +235,8 @@ Token *nextToken(Lexer* lexer){
 				token->type = TOKEN_END_OF_FILE;
 				break;
 			default:
-				printf("%s:%d:%d [ERROR]: could not recognize char %d '%c'\n", lexer->fileName, lexer->line, lexer->column, *lexer->current, *lexer->current);
+				lexerError(lexer, "could not recognize character");
+				token->type = TOKEN_ERROR;
 				return NULL;
 		}
 	}

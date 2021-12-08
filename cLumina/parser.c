@@ -70,7 +70,7 @@ typedef struct {
 	Precedence precedence;
 } ParseRule;
 
-_Static_assert(TOKEN_TYPES_NUM == 16, "Exhaustive handling of token types in parsing");
+_Static_assert(TOKEN_TYPES_NUM == 17, "Exhaustive handling of token types in parsing");
 
 ParseRule parseTable[] = {
 	[TOKEN_NUMBER] = {number, NULL, PREC_PRIMARY},
@@ -88,7 +88,8 @@ ParseRule parseTable[] = {
 	[TOKEN_IF] = {NULL, NULL, PREC_IF_STATEMENT},
 	[TOKEN_WHILE] = {NULL, NULL, PREC_WHILE_STATEMENT},
 	[TOKEN_IDENTIFIER] = {identifier, NULL, PREC_PRIMARY},
-	[TOKEN_END_OF_FILE] = {NULL, NULL, PREC_NONE}
+	[TOKEN_END_OF_FILE] = {NULL, NULL, PREC_NONE},
+	[TOKEN_ERROR] = {NULL, NULL, PREC_NONE}
 };
 
 void panic(Parser* parser) {
