@@ -6,7 +6,7 @@ OBJS = $(patsubst %.c, %.o, $(SRCS))
 all: cLumina
 
 cLumina: $(OBJS)
-	$(CC) $^ -o $@
+	$(CC) $^ -o ../lumina
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $^ -o $@
