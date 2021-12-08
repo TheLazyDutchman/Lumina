@@ -4,3 +4,7 @@ var b;
 var c = 10;
 var d = ;
 var c = 20;
+var e = 'a';
+var f = 'd';
+
+e + f;

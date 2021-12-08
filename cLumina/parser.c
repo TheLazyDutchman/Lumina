@@ -225,10 +225,14 @@ void identifier(Parser* parser) {
 
 		writeIdentifier(parser->compiler, offset);
 
-		freeType(parser->lastType);
+		if (parser->lastType != NULL) {
+			freeType(parser->lastType);
+		}
 		
 		Type *type = findVariableType(parser->compiler, identifier.word, identifier.wordLen);
-		parser->lastType = initType(type->name, identifier);
+		if (type != NULL) {
+			parser->lastType = initType(type->name, identifier);
+		}
 	}
 }
 
@@ -387,7 +391,12 @@ void variableDefinition(Parser* parser) {
 	expression(parser);
 	consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after variable definition");
 
-	Type *type = initType(parser->lastType->name, identifier);
+	char* typeName = "NULL";
+	if (parser->lastType != NULL) {
+		typeName = parser->lastType->name;
+	}
+
+	Type *type = initType(typeName, identifier);
 
 	defineVariable(parser->compiler, identifier.word, identifier.wordLen, type);
 }
