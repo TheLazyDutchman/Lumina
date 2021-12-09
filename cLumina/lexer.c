@@ -220,6 +220,28 @@ Token *nextToken(Lexer* lexer){
 				token->type = TOKEN_RBRACE;
 				advance(lexer);
 				break;
+			case '<':
+				advance(lexer);
+
+				if (*lexer->current == '=') {
+					advance(lexer);
+					token->type = TOKEN_LESSEQUAL;
+					break;
+				}
+
+				token->type = TOKEN_LESS;
+				break;
+			case '>':
+				advance(lexer);
+
+				if (*lexer->current == '=') {
+					advance(lexer);
+					token->type = TOKEN_GREATEREQUAL;
+					break;
+				}
+
+				token->type = TOKEN_GREATER;
+				break;
 			case '=':
 				advance(lexer);
 
