@@ -95,6 +95,31 @@ void writeCompare(Compiler* compiler) {
 	compiler->currentStackSize -= 2;
 }
 
+void writeLess(Compiler* compiler) {
+	fprintf(compiler->output, "	;; -- less --\n");
+	fprintf(compiler->output, "	pop rbx\n");
+	fprintf(compiler->output, "	pop rax\n");
+	fprintf(compiler->output, "	cmp rax, rbx\n");
+
+	//select sign flag
+	fprintf(compiler->output, "	pushf\n");
+	fprintf(compiler->output, "	pop rax\n");
+	fprintf(compiler->output, "	shr rax, 7\n");
+	fprintf(compiler->output, "	and rax, 1\n");
+
+	//select overflow flag
+	fprintf(compiler->output, "	pushf\n");
+	fprintf(compiler->output, "	pop rbx\n");
+	fprintf(compiler->output, "	shr rbx, 11\n");
+	fprintf(compiler->output, "	and rbx, 1\n");
+
+	fprintf(compiler->output, "	xor rax, rbx\n");
+	fprintf(compiler->output, "	not rax\n");
+	fprintf(compiler->output, "	push rax\n\n");
+
+	compiler->currentStackSize--;
+}
+
 void writeJump(Compiler* compiler, char* address, uint32_t id) {
 	fprintf(compiler->output, "	;; -- jump --\n");
 	fprintf(compiler->output, "	jmp %s_%d\n\n", address, id);

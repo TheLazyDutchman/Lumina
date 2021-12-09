@@ -27,6 +27,7 @@ void writePop(Compiler* compiler, int amount);
 
 void writeAddress(Compiler* compiler, char* address, uint32_t id);
 void writeCompare(Compiler* compiler);
+void writeLess(Compiler* compiler);
 void writeJump(Compiler* compiler, char* address, uint32_t id);
 void writeJumpNotEqual(Compiler* compiler, char* address, uint32_t id);
 

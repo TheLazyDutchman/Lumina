@@ -78,11 +78,11 @@ ParseRule parseTable[] = {
 	[TOKEN_PLUS] = {NULL, binary, PREC_TERM},
 	[TOKEN_MINUS] = {unary, binary, PREC_UNARY},
 	[TOKEN_EQUAL] = {NULL, NULL, PREC_ASSIGNMENT},
-	[TOKEN_LESS] = {NULL, NULL, PREC_COMPARISON},
-	[TOKEN_GREATER] = {NULL, NULL, PREC_COMPARISON},
-	[TOKEN_LESSEQUAL] = {NULL, NULL, PREC_COMPARISON},
-	[TOKEN_GREATEREQUAL] = {NULL, NULL, PREC_COMPARISON},
-	[TOKEN_EQUALEQUAL] = {NULL, NULL, PREC_COMPARISON},
+	[TOKEN_LESS] = {NULL, binary, PREC_COMPARISON},
+	[TOKEN_GREATER] = {NULL, binary, PREC_COMPARISON},
+	[TOKEN_LESSEQUAL] = {NULL, binary, PREC_COMPARISON},
+	[TOKEN_GREATEREQUAL] = {NULL, binary, PREC_COMPARISON},
+	[TOKEN_EQUALEQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_LPAREN] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_RPAREN] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_LBRACE] = {NULL, NULL, PREC_BLOCK},
@@ -257,6 +257,13 @@ void binary(Parser* parser) {
 		case TOKEN_MINUS:
 			precedence = PREC_TERM + 1;
 			break;
+		case TOKEN_LESS:
+		case TOKEN_GREATER:
+		case TOKEN_LESSEQUAL:
+		case TOKEN_GREATEREQUAL:
+		case TOKEN_EQUALEQUAL:
+			precedence = PREC_COMPARISON + 1;
+			break;
 		default:
 			printf("incorrect reference in parseTable: '%s' points to binary\n", tokenTypes[operator.type]);
 	}
@@ -318,13 +325,27 @@ void binary(Parser* parser) {
 			if (strcmp(value1.name, "char") == 0 && strcmp(parser->lastType->name, "int") == 0) {
 				freeType(parser->lastType);
 
-				parser->lastType == initType("char", operator);
+				parser->lastType = initType("char", operator);
 			} else {
 				freeType(parser->lastType);
 
-				parser->lastType == initType("int", operator);
+				parser->lastType = initType("int", operator);
 			}
 
+			break;
+		case TOKEN_LESS:
+			dumpBinary(parser, operator);
+
+			if (strcmp(value1.name, parser->lastType->name) != 0) {
+				parseError(parser, operator, "can not compare two values with different type");
+				return;
+			}
+
+			writeLess(parser->compiler);
+
+			freeType(parser->lastType);
+
+			parser->lastType = initType("bool", operator);
 			break;
 	}
 }
