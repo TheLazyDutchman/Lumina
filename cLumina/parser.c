@@ -207,7 +207,7 @@ void identifier(Parser* parser) {
 
 		expression(parser);
 
-		uint16_t offset = findVariable(parser->compiler, identifier.word, identifier.wordLen);
+		int16_t offset = findVariable(parser->compiler, identifier.word, identifier.wordLen);
 
 		if (offset == -1) {
 			parseError(parser, identifier, "variable '%s' is undefined");
@@ -216,7 +216,7 @@ void identifier(Parser* parser) {
 
 		writeAssignment(parser->compiler, offset);
 	} else {
-		uint16_t offset = findVariable(parser->compiler, identifier.word, identifier.wordLen);
+		int16_t offset = findVariable(parser->compiler, identifier.word, identifier.wordLen);
 
 		if (offset == -1) {
 			parseError(parser, identifier, "variable '%s' is undefined");

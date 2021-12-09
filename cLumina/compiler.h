@@ -18,7 +18,7 @@ Compiler* initCompiler(FILE* output, Compiler* outer);
 void freeCompiler(Compiler* compiler);
 
 void defineVariable(Compiler* compiler, char* name, int nameLen, Type *type);
-uint16_t findVariable(Compiler* compiler, char* name, int nameLen);
+int16_t findVariable(Compiler* compiler, char* name, int nameLen);
 Type *findVariableType(Compiler* compiler, char* name, int nameLen);
 
 void writeHeader(Compiler* compiler);

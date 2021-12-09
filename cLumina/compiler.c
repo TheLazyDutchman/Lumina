@@ -48,7 +48,7 @@ Type *findVariableType(Compiler* compiler, char* name, int nameLen) {
 	return findVariableType(compiler->outer, name, nameLen);
 }
 
-uint16_t findVariable(Compiler* compiler, char* name, int nameLen) {
+int16_t findVariable(Compiler* compiler, char* name, int nameLen) {
 	VariableList list = *compiler->variableList;
 
 	for (int i = 0; i < list.size; i++) {
@@ -61,7 +61,7 @@ uint16_t findVariable(Compiler* compiler, char* name, int nameLen) {
 		return -1;
 	}
 
-	int offset = findVariable(compiler->outer, name, nameLen);
+	int16_t offset = findVariable(compiler->outer, name, nameLen);
 	if (offset == -1) {
 		return -1;
 	}
