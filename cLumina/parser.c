@@ -122,14 +122,20 @@ Token parsePrecedence(Parser* parser, Precedence precedence) {
 
 	if (rule.precedence < precedence) {
 		parseError(parser, token, "unexpected token");
+		next(parser);
 
-		return token; // the function returns here to avoid a segfault when an inexisting prefix function is called
+		token.type = TOKEN_ERROR;
+
+		return token; 
 	}
 
 	if (rule.prefix == NULL) {
 		parseError(parser, token, "unexpected token");
+		next(parser);
 
-		return token; // the function returns here to avoid a segfault when an inexisting prefix function is called
+		token.type = TOKEN_ERROR;
+
+		return token;
 	}
 
 	rule.prefix(parser);
@@ -141,6 +147,9 @@ Token consumeToken(Parser* parser, Tokentype type, char* message) {
 	Token token = *parser->current;
 	if (token.type != type) {
 		parseError(parser, token, message);
+
+		token.type = TOKEN_ERROR;
+		return token;
 	}
 
 	next(parser);
@@ -395,7 +404,9 @@ void unary(Parser* parser) {
 }
 
 void expression(Parser* parser) {
-	parsePrecedence(parser, PREC_EXPR);
+	if (parsePrecedence(parser, PREC_EXPR).type == TOKEN_ERROR) {
+		return;
+	}
 
 	while (parser->current->type != TOKEN_END_OF_FILE) {
 		ParseRule rule = parseTable[parser->current->type];
@@ -448,10 +459,16 @@ void whileStatement(Parser* parser) {
 
 	expression(parser);
 
+	if (parser->lastType == NULL) {
+		return;
+	}
+
 	if (strcmp(parser->lastType->name, "bool") != 0) {
 		parseError(parser, parser->lastType->token, "expected while condition to be of type boolean");
 		return;
 	}
+
+	writeCondition(parser->compiler);
 
 	consumeToken(parser, TOKEN_RPAREN, "expected ')' after condition");
 
@@ -468,14 +485,22 @@ void whileStatement(Parser* parser) {
 void ifStatement(Parser* parser) {
 	uint32_t ifId = parser->compiler->numIfs++;
 
-	consumeToken(parser, TOKEN_LPAREN, "expected '(' after 'if' keyword");
+	if (consumeToken(parser, TOKEN_LPAREN, "expected '(' after 'if' keyword").type == TOKEN_ERROR) {
+		return;
+	}
 
 	expression(parser);
+
+	if (parser->lastType == NULL) {
+		return;
+	}
 	
 	if (strcmp(parser->lastType->name, "bool") != 0) {
 		parseError(parser, parser->lastType->token, "expected if condition to be of type boolean");
 		return;
 	}
+
+	writeCondition(parser->compiler);
 	
 	consumeToken(parser, TOKEN_RPAREN, "expected ')' after condition");
 

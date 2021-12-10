@@ -137,6 +137,14 @@ void writeEqual(Compiler* compiler) {
 	compiler->currentStackSize--;
 }
 
+void writeCondition(Compiler* compiler) {
+	fprintf(compiler->output, "	;; -- condition --\n");
+	fprintf(compiler->output, "	pop rax\n");
+	fprintf(compiler->output, "	cmp rax, 1\n\n");
+	
+	compiler->currentStackSize--;
+}
+
 void writeJump(Compiler* compiler, char* address, uint32_t id) {
 	fprintf(compiler->output, "	;; -- jump --\n");
 	fprintf(compiler->output, "	jmp %s_%d\n\n", address, id);
