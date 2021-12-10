@@ -120,7 +120,7 @@ void writeLess(Compiler* compiler) {
 	compiler->currentStackSize--;
 }
 
-void writeGreater(Compiler* compiler) {
+void writeEqual(Compiler* compiler) {
 	fprintf(compiler->output, "	;; -- equal --\n");
 	fprintf(compiler->output, "	pop rbx\n");
 	fprintf(compiler->output, "	pop rax\n");

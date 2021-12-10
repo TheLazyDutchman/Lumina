@@ -347,6 +347,20 @@ void binary(Parser* parser) {
 
 			parser->lastType = initType("bool", operator);
 			break;
+		case TOKEN_EQUALEQUAL:
+			dumpBinary(parser, operator);
+
+			if (strcmp(value1.name, parser->lastType->name) != 0) {
+				parseError(parser, operator, "can not compare two values with different type");
+				return;
+			}
+
+			writeEqual(parser->compiler);
+
+			freeType(parser->lastType);
+
+			parser->lastType = initType("bool", operator);
+			break;
 	}
 }
 
@@ -426,23 +440,18 @@ void variableDefinition(Parser* parser) {
 	defineVariable(parser->compiler, identifier.word, identifier.wordLen, type);
 }
 
-void condition(Parser* parser) {
-	expression(parser);
-
-	Token operator = consumeToken(parser, TOKEN_EQUALEQUAL, "expected '==' in comparison");
-
-	expression(parser);
-
-	writeCompare(parser->compiler);
-}
-
 void whileStatement(Parser* parser) {
 	uint32_t whileId = parser->compiler->numWhiles++;
 
 	writeAddress(parser->compiler, "addr_while_condition", whileId);
 	consumeToken(parser, TOKEN_LPAREN, "expected '(' after 'while' keyword");
 
-	condition(parser);
+	expression(parser);
+
+	if (strcmp(parser->lastType->name, "bool") != 0) {
+		parseError(parser, parser->lastType->token, "expected while condition to be of type boolean");
+		return;
+	}
 
 	consumeToken(parser, TOKEN_RPAREN, "expected ')' after condition");
 
@@ -461,7 +470,12 @@ void ifStatement(Parser* parser) {
 
 	consumeToken(parser, TOKEN_LPAREN, "expected '(' after 'if' keyword");
 
-	condition(parser);
+	expression(parser);
+	
+	if (strcmp(parser->lastType->name, "bool") != 0) {
+		parseError(parser, parser->lastType->token, "expected if condition to be of type boolean");
+		return;
+	}
 	
 	consumeToken(parser, TOKEN_RPAREN, "expected ')' after condition");
 
