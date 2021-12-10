@@ -120,6 +120,23 @@ void writeLess(Compiler* compiler) {
 	compiler->currentStackSize--;
 }
 
+void writeGreater(Compiler* compiler) {
+	fprintf(compiler->output, "	;; -- equal --\n");
+	fprintf(compiler->output, "	pop rbx\n");
+	fprintf(compiler->output, "	pop rax\n");
+	fprintf(compiler->output, "	cmp rax, rbx\n");
+
+	//select zero flag
+	fprintf(compiler->output, "	pushf\n");
+	fprintf(compiler->output, "	pop rax\n");
+	fprintf(compiler->output, "	shr rax, 6\n");
+	fprintf(compiler->output, "	and rax, 1\n");
+
+	fprintf(compiler->output, "	push rax\n\n");
+
+	compiler->currentStackSize--;
+}
+
 void writeJump(Compiler* compiler, char* address, uint32_t id) {
 	fprintf(compiler->output, "	;; -- jump --\n");
 	fprintf(compiler->output, "	jmp %s_%d\n\n", address, id);
