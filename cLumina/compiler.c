@@ -117,27 +117,33 @@ void writeGreater(Compiler* compiler) {
 	fprintf(compiler->output, "	pop rax\n");
 	fprintf(compiler->output, "	cmp rax, rbx\n");
 
-	//select sign flag
 	fprintf(compiler->output, "	pushf\n");
 	fprintf(compiler->output, "	pop rax\n");
+
+	fprintf(compiler->output, "	pushf\n");
+	fprintf(compiler->output, "	pop rbx\n");
+
+	fprintf(compiler->output, "	pushf\n");
+	fprintf(compiler->output, "	pop rcx\n");
+
+	//select sign flag
 	fprintf(compiler->output, "	shr rax, 7\n");
 	fprintf(compiler->output, "	and rax, 1\n");
 
 	//select overflow flag
-	fprintf(compiler->output, "	pushf\n");
-	fprintf(compiler->output, "	pop rbx\n");
 	fprintf(compiler->output, "	shr rbx, 11\n");
 	fprintf(compiler->output, "	and rbx, 1\n");
 
+	//select zero flag
+	fprintf(compiler->output, "	shr rcx, 6\n");
+	fprintf(compiler->output, "	and rcx, 1\n");
+
 	fprintf(compiler->output, "	xor rax, rbx\n");
 
-	//select zero flag
-	fprintf(compiler->output, "	pushf\n");
-	fprintf(compiler->output, "	pop rbx\n");
-	fprintf(compiler->output, "	shr rbx, 6\n");
-	fprintf(compiler->output, "	and rbx, 1\n");
-
-	fprintf(compiler->output, "	nor rax, rbx\n");
+	fprintf(compiler->output, "	or rax, rcx\n");
+	fprintf(compiler->output, "	mov rbx, 1\n");
+	fprintf(compiler->output, "	sub rbx, rax\n");
+	fprintf(compiler->output, "	push rbx\n");
 
 	compiler->currentStackSize--;
 }

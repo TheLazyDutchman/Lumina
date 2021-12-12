@@ -1,7 +1,26 @@
-var a = 'a' < 'b';
+var a = 'a';
+var z = 'z';
 
-print(a);
+if (a < z) {
+	print('1');
+}
 
-print('a' == 'b');
+if (z < a) {
+	print('2');
+}
 
-print('x' == 'x');
+if (a > z) {
+	print('3');
+}
+
+if (z > a) {
+	print('4');
+}
+
+if (a == z) {
+	print('5');
+}
+
+if (z == z) {
+	print('6');
+}
