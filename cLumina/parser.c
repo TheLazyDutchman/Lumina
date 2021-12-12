@@ -356,6 +356,20 @@ void binary(Parser* parser) {
 
 			parser->lastType = initType("bool", operator);
 			break;
+		case TOKEN_GREATER:
+			dumpBinary(parser, operator);
+
+			if (strcmp(value1.name, parser->lastType->name) != 0) {
+				parseError(parser, operator, "can not compare two values with different type");
+				return;
+			}
+
+			writeGreater(parser->compiler);
+
+			freeType(parser->lastType);
+
+			parser->lastType = initType("bool", operator);
+			break;
 		case TOKEN_EQUALEQUAL:
 			dumpBinary(parser, operator);
 
