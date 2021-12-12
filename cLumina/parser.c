@@ -452,7 +452,7 @@ void variableDefinition(Parser* parser) {
 }
 
 void whileStatement(Parser* parser) {
-	uint32_t whileId = parser->compiler->numWhiles++;
+	uint32_t whileId = parser->numWhiles++;
 
 	writeAddress(parser->compiler, "addr_while_condition", whileId);
 	consumeToken(parser, TOKEN_LPAREN, "expected '(' after 'while' keyword");
@@ -483,7 +483,7 @@ void whileStatement(Parser* parser) {
 }
 
 void ifStatement(Parser* parser) {
-	uint32_t ifId = parser->compiler->numIfs++;
+	uint32_t ifId = parser->numIfs++;
 
 	if (consumeToken(parser, TOKEN_LPAREN, "expected '(' after 'if' keyword").type == TOKEN_ERROR) {
 		return;

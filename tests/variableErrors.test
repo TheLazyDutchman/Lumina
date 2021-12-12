@@ -1,5 +1,16 @@
 ./variableErrors.lumina:0 ERROR at 'a': variable '%s' is undefined
 ./variableErrors.lumina:2 ERROR at ';': expected '=' after variable name in definition
-./variableErrors.lumina:3 ERROR at 'var': unexpected token
+./variableErrors.lumina:2 ERROR at ';': unexpected token
+./variableErrors.lumina:3 ERROR at 'var': expected ';' after variable definition
+./variableErrors.lumina:3 ERROR at ';': unexpected token
+./variableErrors.lumina:4 ERROR at 'var': expected ';' after expression
 ./variableErrors.lumina:4 ERROR at ';': unexpected token
-./variableErrors.lumina:9 ERROR at 'f': can not add 2 characters together
+./variableErrors.lumina:5 ERROR at 'var': expected ';' after expression
+./variableErrors.lumina:5 ERROR at ';': unexpected token
+./variableErrors.lumina:6 ERROR at 'var': expected ';' after expression
+./variableErrors.lumina:6 ERROR at ';': unexpected token
+./variableErrors.lumina:7 ERROR at 'var': expected ';' after expression
+./variableErrors.lumina:7 ERROR at ';': unexpected token
+./variableErrors.lumina:9 ERROR at 'e': expected ';' after expression
+./variableErrors.lumina:9 ERROR at ';': unexpected token
+./variableErrors.lumina:10 ERROR at '': expected ';' after expression

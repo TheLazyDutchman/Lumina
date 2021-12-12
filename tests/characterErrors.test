@@ -2,3 +2,4 @@
 ./characterErrors.lumina:2 ERROR at '"a"': can not subtract a 'char' from an 'int'
 ./characterErrors.lumina:4:2: ERROR: expected character end (at ';')
 ./characterErrors.lumina:4 ERROR at ''a': unexpected token
+./characterErrors.lumina:5 ERROR at '': expected ';' after expression

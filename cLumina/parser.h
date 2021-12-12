@@ -20,6 +20,9 @@ typedef struct {
 	Compiler* compiler;
 	FILE* outputFile;
 
+	int numIfs;
+	int numWhiles;
+
 	bool hadError;
 } Parser;
 
