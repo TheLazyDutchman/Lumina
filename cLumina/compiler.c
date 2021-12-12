@@ -111,6 +111,37 @@ void writeLess(Compiler* compiler) {
 	compiler->currentStackSize--;
 }
 
+void writeGreater(Compiler* compiler) {
+	fprintf(compiler->output, "	;; -- greater --\n");
+	fprintf(compiler->output, "	pop rbx\n");
+	fprintf(compiler->output, "	pop rax\n");
+	fprintf(compiler->output, "	cmp rax, rbx\n");
+
+	//select sign flag
+	fprintf(compiler->output, "	pushf\n");
+	fprintf(compiler->output, "	pop rax\n");
+	fprintf(compiler->output, "	shr rax, 7\n");
+	fprintf(compiler->output, "	and rax, 1\n");
+
+	//select overflow flag
+	fprintf(compiler->output, "	pushf\n");
+	fprintf(compiler->output, "	pop rbx\n");
+	fprintf(compiler->output, "	shr rbx, 11\n");
+	fprintf(compiler->output, "	and rbx, 1\n");
+
+	fprintf(compiler->output, "	xor rax, rbx\n");
+
+	//select zero flag
+	fprintf(compiler->output, "	pushf\n");
+	fprintf(compiler->output, "	pop rbx\n");
+	fprintf(compiler->output, "	shr rbx, 6\n");
+	fprintf(compiler->output, "	and rbx, 1\n");
+
+	fprintf(compiler->output, "	nor rax, rbx\n");
+
+	compiler->currentStackSize--;
+}
+
 void writeEqual(Compiler* compiler) {
 	fprintf(compiler->output, "	;; -- equal --\n");
 	fprintf(compiler->output, "	pop rbx\n");
