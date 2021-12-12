@@ -106,7 +106,6 @@ void writeLess(Compiler* compiler) {
 	fprintf(compiler->output, "	and rbx, 1\n");
 
 	fprintf(compiler->output, "	xor rax, rbx\n");
-	fprintf(compiler->output, "	not rax\n");
 	fprintf(compiler->output, "	push rax\n\n");
 
 	compiler->currentStackSize--;
