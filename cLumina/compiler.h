@@ -27,7 +27,9 @@ void writeAddress(Compiler* compiler, char* address, uint32_t id);
 void writeCompare(Compiler* compiler);
 
 void writeLess(Compiler* compiler);
+void writeLessEqual(Compiler* compiler);
 void writeGreater(Compiler* compiler);
+void writeGreaterEqual(Compiler* compiler);
 void writeEqual(Compiler* compiler);
 void writeCondition(Compiler* compiler);
 

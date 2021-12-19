@@ -1,4 +1,5 @@
 var a = 'a';
+var b = 'b';
 var z = 'z';
 
 if (a < z) {
@@ -23,4 +24,28 @@ if (a == z) {
 
 if (z == z) {
 	print('6');
+}
+
+if (a <= b) {
+	print('7');
+}
+
+if (b <= a) {
+	print('8');
+}
+
+if (a <= a) {
+	print('9');
+}
+
+if (b >= a) {
+	print('1');
+}
+
+if (a >= b) {
+	print('2');
+}
+
+if (a >= a) {
+	print('3');
 }
