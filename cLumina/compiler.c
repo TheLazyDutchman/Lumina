@@ -8,6 +8,7 @@ Compiler* initCompiler(FILE* output, Compiler* outer) {
 	compiler->output = output;
 	compiler->currentStackSize = 0;
 	compiler->variableList = initVariableList();
+	compiler->functionList = initFunctionList();
 	compiler->outer = outer;
 
 	return compiler;
@@ -15,6 +16,7 @@ Compiler* initCompiler(FILE* output, Compiler* outer) {
 
 void freeCompiler(Compiler* compiler) {
 	freeVariableList(compiler->variableList);
+	freeFunctionList(compiler->functionList);
 	free(compiler);
 }
 

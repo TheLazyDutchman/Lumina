@@ -4,11 +4,13 @@
 #include <stdio.h>
 
 #include "variable.h"
+#include "function.h"
 
 typedef struct Compiler{
 	FILE* output;
 	size_t currentStackSize;
 	VariableList* variableList;
+	FunctionList* functionList;
 	struct Compiler* outer;
 } Compiler;
 
