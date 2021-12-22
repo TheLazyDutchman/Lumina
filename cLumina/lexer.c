@@ -107,6 +107,33 @@ Token *nextToken(Lexer* lexer){
 		}
 	} else if (isalpha(*lexer->current)) {
 		switch (*lexer->current) {
+			case 'f':
+				advance(lexer);
+				if (*lexer->current != 'u') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 'n') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 'c') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (isalnum(*lexer->current)) {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				token->type = TOKEN_FUNC;
+				break;
 			case 'i':
 				advance(lexer);
 				if (*lexer->current != 'f') {
@@ -252,6 +279,10 @@ Token *nextToken(Lexer* lexer){
 				}
 
 				token->type = TOKEN_EQUAL;
+				break;
+			case ',':
+				token->type = TOKEN_COMMA;
+				advance(lexer);
 				break;
 			case '\0':
 				token->type = TOKEN_END_OF_FILE;

@@ -54,9 +54,11 @@ typedef enum {
 	PREC_NONE,
 	PREC_BLOCK,
 	PREC_STATEMENT,
+	PREC_FUNC,
 	PREC_WHILE_STATEMENT,
 	PREC_IF_STATEMENT,
 	PREC_ASSIGNMENT,
+	PREC_ARG,
 	PREC_EXPR,
 	PREC_COMPARISON,
 	PREC_TERM,
@@ -70,7 +72,7 @@ typedef struct {
 	Precedence precedence;
 } ParseRule;
 
-_Static_assert(TOKEN_TYPES_NUM == 21, "Exhaustive handling of token types in parsing");
+_Static_assert(TOKEN_TYPES_NUM == 23, "Exhaustive handling of token types in parsing");
 
 ParseRule parseTable[] = {
 	[TOKEN_NUMBER] = {number, NULL, PREC_PRIMARY},
@@ -91,6 +93,8 @@ ParseRule parseTable[] = {
 	[TOKEN_VAR] = {NULL, NULL, PREC_ASSIGNMENT},
 	[TOKEN_IF] = {NULL, NULL, PREC_IF_STATEMENT},
 	[TOKEN_WHILE] = {NULL, NULL, PREC_WHILE_STATEMENT},
+	[TOKEN_FUNC] = {NULL, NULL, PREC_FUNC},
+	[TOKEN_COMMA] = {NULL, NULL, PREC_ARG},
 	[TOKEN_IDENTIFIER] = {identifier, NULL, PREC_PRIMARY},
 	[TOKEN_END_OF_FILE] = {NULL, NULL, PREC_NONE},
 	[TOKEN_ERROR] = {NULL, NULL, PREC_NONE}

@@ -31,6 +31,8 @@ typedef enum Tokentype {
 	TOKEN_VAR,
 	TOKEN_IF,
 	TOKEN_WHILE,
+	TOKEN_FUNC,
+	TOKEN_COMMA,
 	TOKEN_IDENTIFIER,
 	TOKEN_END_OF_FILE,
 	TOKEN_ERROR,
@@ -56,12 +58,14 @@ static const char* const tokenTypes[] = {
 	[TOKEN_VAR] = "VAR",
 	[TOKEN_IF] = "IF",
 	[TOKEN_WHILE] = "WHILE",
+	[TOKEN_FUNC] = "FUNC",
+	[TOKEN_COMMA] = "COMMA",
 	[TOKEN_IDENTIFIER] = "IDENTIFIER",
 	[TOKEN_END_OF_FILE] = "END OF FILE",
 	[TOKEN_ERROR] = "ERROR",
 };
 
-_Static_assert(TOKEN_TYPES_NUM == 21, "Exhaustive handling of tokenTypes in string conversion\n");
+_Static_assert(TOKEN_TYPES_NUM == 23, "Exhaustive handling of tokenTypes in string conversion\n");
 
 typedef struct Token {
 	char *fileName;
