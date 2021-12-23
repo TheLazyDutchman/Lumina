@@ -22,6 +22,7 @@ typedef struct {
 
 	int numIfs;
 	int numWhiles;
+	int numFuncs;
 
 	bool hadError;
 } Parser;

@@ -16,6 +16,10 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 
 	parser->compiler = initCompiler(parser->outputFile, NULL);
 
+	parser->numIfs = 0;
+	parser->numWhiles = 0;
+	parser->numFuncs = 0;
+
 	parser->hadError = false;
 	
 	return parser;
@@ -559,6 +563,29 @@ void ifStatement(Parser* parser) {
 	writeAddress(parser->compiler, "addr_if", ifId);
 }
 
+void functionDefinition(Parser* parser) {
+	uint32_t funcId = parser->numFuncs++;
+
+	if (consumeToken(parser, TOKEN_IDENTIFIER, "expected function name").type == TOKEN_ERROR) { return; }
+
+	if (consumeToken(parser, TOKEN_LPAREN, "expected '(' after function name").type == TOKEN_ERROR) { return; }
+
+	//parse arguments
+	
+	if (consumeToken(parser, TOKEN_RPAREN, "expected ')' after function arguments").type == TOKEN_ERROR) { return; }
+
+	//define function
+
+	if (consumeToken(parser, TOKEN_LBRACE, "expected '{' before function block").type == TOKEN_ERROR) { return;}
+
+	writeJump(parser->compiler, "addr_func_end", funcId);
+	writeAddress(parser->compiler, "addr_func", funcId);
+
+	block(parser);
+
+	writeAddress(parser->compiler, "addr_func_end", funcId);
+}
+
 void block(Parser* parser) {
 	Compiler* scopeCompiler = initCompiler(parser->outputFile, parser->compiler);
 	parser->compiler = scopeCompiler;
@@ -589,6 +616,10 @@ void statement(Parser* parser) {
 		next(parser);
 
 		ifStatement(parser);
+	} else if (parser->current->type == TOKEN_FUNC) {
+		next(parser);
+
+		functionDefinition(parser);
 	} else if (parser->current->type == TOKEN_IDENTIFIER && strncmp(parser->current->word, "print", parser->current->wordLen) == 0) { //temporary print function
 		next(parser);
 
