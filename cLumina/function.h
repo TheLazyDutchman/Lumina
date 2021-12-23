@@ -20,6 +20,6 @@ typedef struct {
 FunctionList* initFunctionList();
 void freeFunctionList(FunctionList* list);
 
-void addFunction(FunctionList* list, char* name, uint16_t id, Type *returnType);
+void addFunction(FunctionList* list, char* name, uint16_t id);
 
 #endif

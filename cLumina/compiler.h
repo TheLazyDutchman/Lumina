@@ -21,6 +21,8 @@ void defineVariable(Compiler* compiler, char* name, int nameLen, Type *type);
 int16_t findVariable(Compiler* compiler, char* name, int nameLen);
 Type *findVariableType(Compiler* compiler, char* name, int nameLen);
 
+void defineFunction(Compiler* compiler, char* name, int nameLen, int id);
+
 void writeHeader(Compiler* compiler);
 void writeFooter(Compiler* compiler);
 void writePop(Compiler* compiler, int amount);

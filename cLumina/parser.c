@@ -566,7 +566,9 @@ void ifStatement(Parser* parser) {
 void functionDefinition(Parser* parser) {
 	uint32_t funcId = parser->numFuncs++;
 
-	if (consumeToken(parser, TOKEN_IDENTIFIER, "expected function name").type == TOKEN_ERROR) { return; }
+	Token name = consumeToken(parser, TOKEN_IDENTIFIER, "expected function name");
+
+	if (name.type == TOKEN_ERROR) { return;}
 
 	if (consumeToken(parser, TOKEN_LPAREN, "expected '(' after function name").type == TOKEN_ERROR) { return; }
 
@@ -574,7 +576,7 @@ void functionDefinition(Parser* parser) {
 	
 	if (consumeToken(parser, TOKEN_RPAREN, "expected ')' after function arguments").type == TOKEN_ERROR) { return; }
 
-	//define function
+	defineFunction(parser->compiler, name.word, name.wordLen);
 
 	if (consumeToken(parser, TOKEN_LBRACE, "expected '{' before function block").type == TOKEN_ERROR) { return;}
 

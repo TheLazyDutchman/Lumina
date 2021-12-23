@@ -63,6 +63,12 @@ int16_t findVariable(Compiler* compiler, char* name, int nameLen) {
 	return offset + compiler->currentStackSize;
 }
 
+void defineFunction(Compiler* compiler, char* name, int nameLen, int id) {
+	char* buffer = strndup(name, nameLen);
+
+	addFunction(compiler->functionList, buffer, id);
+}
+
 void writeHeader(Compiler* compiler) {
 	fprintf(compiler->output, "section .text\n");
 	fprintf(compiler->output, "global _start\n");

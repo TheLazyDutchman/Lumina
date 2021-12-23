@@ -2,11 +2,10 @@
 
 #include "function.h"
 
-Function* initFunction(char* name, uint16_t id, Type *returnType) {
+Function* initFunction(char* name, uint16_t id) {
 	Function* var = malloc(sizeof(Function));
 	var->name = name;
 	var->id = id;
-	var->returnType = returnType;
 
 	return var;
 }
@@ -35,8 +34,8 @@ void freeFunctionList(FunctionList* list) {
 	free(list);
 }
 
-void addFunction(FunctionList* list, char* name, uint16_t id, Type *returnType) {
-	list->functions[list->size] = initFunction(name, id, returnType);
+void addFunction(FunctionList* list, char* name, uint16_t id) {
+	list->functions[list->size] = initFunction(name, id);
 
 	list->size++;
 
