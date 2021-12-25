@@ -69,6 +69,22 @@ void defineFunction(Compiler* compiler, char* name, int nameLen, int id) {
 	addFunction(compiler->functionList, buffer, id);
 }
 
+int16_t findFunction(Compiler* compiler, char* name, int nameLen) {
+	FunctionList list = *compiler->functionList;
+
+	for (int i = 0; i < list.size; i++) {
+		if (strncmp(list.functions[i]->name, name, nameLen) == 0) {
+			return list.functions[i]->id;
+		}
+	}
+
+	if (compiler->outer == NULL) { return -1; }
+
+	int16_t id = findFunction(compiler->outer, name, nameLen);
+
+	if (id == -1) { return -1;}
+}
+
 void writeHeader(Compiler* compiler) {
 	fprintf(compiler->output, "section .text\n");
 	fprintf(compiler->output, "global _start\n");
@@ -84,6 +100,15 @@ void writePop(Compiler* compiler, int amount) {
 
 void writeAddress(Compiler* compiler, char* address, uint32_t id) {
 	fprintf(compiler->output, "%s_%d:\n", address, id);
+}
+
+void writeCall(Compiler* compiler, uint32_t id) {
+	fprintf(compiler->output, "	;; -- function call -- \n");
+	fprintf(compiler->output, "	call addr_func_%d\n\n", id);
+}
+
+void writeReturn(Compiler* compiler) {
+	fprintf(compiler->output, "	ret\n\n");
 }
 
 void writeCompare(Compiler* compiler) {

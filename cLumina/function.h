@@ -8,7 +8,6 @@
 typedef struct {
 	char* name;
 	uint16_t id;
-	Type *returnType;
 } Function;
 
 typedef struct {

@@ -22,12 +22,15 @@ int16_t findVariable(Compiler* compiler, char* name, int nameLen);
 Type *findVariableType(Compiler* compiler, char* name, int nameLen);
 
 void defineFunction(Compiler* compiler, char* name, int nameLen, int id);
+int16_t findFunction(Compiler* compiler, char* name, int nameLen);
 
 void writeHeader(Compiler* compiler);
 void writeFooter(Compiler* compiler);
 void writePop(Compiler* compiler, int amount);
 
 void writeAddress(Compiler* compiler, char* address, uint32_t id);
+void writeCall(Compiler* compiler, uint32_t id);
+void writeReturn(Compiler* compiler);
 void writeCompare(Compiler* compiler);
 
 void writeLess(Compiler* compiler);

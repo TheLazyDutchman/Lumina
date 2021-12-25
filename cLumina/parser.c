@@ -223,7 +223,8 @@ void identifier(Parser* parser) {
 		printf("incorrect reference in parseTable: '%s' points to identifier\n", tokenTypes[identifier.type]);
 	}
 
-	if (next(parser)->type == TOKEN_EQUAL) {
+	Token nextToken = *next(parser);
+	if (nextToken.type == TOKEN_EQUAL) {
 		next(parser);
 
 		expression(parser);
@@ -236,6 +237,20 @@ void identifier(Parser* parser) {
 		}
 
 		writeAssignment(parser->compiler, offset);
+	} else if (nextToken.type == TOKEN_LPAREN) {
+		next(parser);
+		int16_t id = findFunction(parser->compiler, identifier.word, identifier.wordLen);
+
+		if (id == -1) {
+			parseError(parser, identifier, "function is undefined");
+			return;
+		}
+
+		//parse arguments
+
+		if (consumeToken(parser, TOKEN_RPAREN, "expected ')' after arguments").type == TOKEN_ERROR) { return; }
+
+		writeCall(parser->compiler, id);
 	} else {
 		int16_t offset = findVariable(parser->compiler, identifier.word, identifier.wordLen);
 
@@ -576,7 +591,7 @@ void functionDefinition(Parser* parser) {
 	
 	if (consumeToken(parser, TOKEN_RPAREN, "expected ')' after function arguments").type == TOKEN_ERROR) { return; }
 
-	defineFunction(parser->compiler, name.word, name.wordLen);
+	defineFunction(parser->compiler, name.word, name.wordLen, funcId);
 
 	if (consumeToken(parser, TOKEN_LBRACE, "expected '{' before function block").type == TOKEN_ERROR) { return;}
 
@@ -585,6 +600,7 @@ void functionDefinition(Parser* parser) {
 
 	block(parser);
 
+	writeReturn(parser->compiler);
 	writeAddress(parser->compiler, "addr_func_end", funcId);
 }
 

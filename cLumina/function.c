@@ -12,7 +12,6 @@ Function* initFunction(char* name, uint16_t id) {
 
 void freeFunction(Function* function) {
 	free(function->name);
-	freeType(function->returnType);
 	free(function);
 }
 
