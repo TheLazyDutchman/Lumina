@@ -6,6 +6,8 @@
 #include "variable.h"
 #include "function.h"
 
+const int callStackSize = 1024;
+
 typedef struct Compiler{
 	FILE* output;
 	size_t currentStackSize;
