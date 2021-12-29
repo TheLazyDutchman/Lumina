@@ -76,7 +76,7 @@ typedef struct {
 	Precedence precedence;
 } ParseRule;
 
-_Static_assert(TOKEN_TYPES_NUM == 23, "Exhaustive handling of token types in parsing");
+_Static_assert(TOKEN_TYPES_NUM == 24, "Exhaustive handling of token types in parsing");
 
 ParseRule parseTable[] = {
 	[TOKEN_NUMBER] = {number, NULL, PREC_PRIMARY},
@@ -89,6 +89,7 @@ ParseRule parseTable[] = {
 	[TOKEN_LESSEQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_GREATEREQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_EQUALEQUAL] = {NULL, binary, PREC_COMPARISON},
+	[TOKEN_RARROW] = {NULL, NULL, PREC_NONE},
 	[TOKEN_LPAREN] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_RPAREN] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_LBRACE] = {NULL, NULL, PREC_BLOCK},
@@ -592,6 +593,12 @@ void functionDefinition(Parser* parser) {
 	//parse arguments
 	
 	if (consumeToken(parser, TOKEN_RPAREN, "expected ')' after function arguments").type == TOKEN_ERROR) { return; }
+
+	Type *type = initType("null", name);
+
+	if (parser->current->type == TOKEN_RARROW) {
+		// parse type
+	}
 
 	defineFunction(parser->compiler, name.word, name.wordLen, funcId);
 

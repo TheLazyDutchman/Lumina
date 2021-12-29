@@ -224,8 +224,15 @@ Token *nextToken(Lexer* lexer){
 				advance(lexer);
 				break;
 			case '-':
-				token->type = TOKEN_MINUS;
 				advance(lexer);
+
+				if (*lexer->current == '>') {
+					advance(lexer);
+					token->type = TOKEN_RARROW;
+					break;
+				}
+
+				token->type = TOKEN_MINUS;
 				break;
 			case ';':
 				token->type = TOKEN_SEMICOLON;
