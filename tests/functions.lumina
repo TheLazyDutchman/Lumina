@@ -2,7 +2,15 @@ func alphabet() {
 	print('a');
 }
 
+func nums() {
+	var counter = '0';
+	while (counter <= '9') {
+		print(counter);
+		counter = counter + 1;
+	}
+}
+
 alphabet();
-alphabet();
+nums();
 alphabet();
 alphabet();
