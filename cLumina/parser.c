@@ -595,8 +595,7 @@ void functionDefinition(Parser* parser) {
 
 	if (consumeToken(parser, TOKEN_LBRACE, "expected '{' before function block").type == TOKEN_ERROR) { return;}
 
-	writeJump(parser->compiler, "addr_func_end", funcId);
-	writeAddress(parser->compiler, "addr_func", funcId);
+	writeBeginFunction(parser->compiler, funcId);
 
 	block(parser);
 

@@ -6,7 +6,7 @@
 #include "variable.h"
 #include "function.h"
 
-const int callStackSize = 1024;
+#define CALLSTACKSIZE 2048
 
 typedef struct Compiler{
 	FILE* output;
@@ -31,6 +31,7 @@ void writeFooter(Compiler* compiler);
 void writePop(Compiler* compiler, int amount);
 
 void writeAddress(Compiler* compiler, char* address, uint32_t id);
+void writeBeginFunction(Compiler* compiler, uint32_t id);
 void writeCall(Compiler* compiler, uint32_t id);
 void writeReturn(Compiler* compiler);
 void writeCompare(Compiler* compiler);

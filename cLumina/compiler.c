@@ -90,9 +90,8 @@ void writeHeader(Compiler* compiler) {
 	fprintf(compiler->output, "global _start\n");
 	fprintf(compiler->output, "_start:\n");
 	fprintf(compiler->output, "	;; -- initializing call stack --\n");
-	fprintf(compiler->output, "	mov [callrsp], rsp\n");
-	fprintf(compiler->output, "	lea rax, [callStack]\n");
-	fprintf(compiler->output, "	mov [callStackrsp], rax\n");
+	fprintf(compiler->output, "	lea rax, [callStack + %d]\n", CALLSTACKSIZE);
+	fprintf(compiler->output, "	mov [callrsp], rax\n");
 }
 
 void writePop(Compiler* compiler, int amount) {
@@ -106,13 +105,36 @@ void writeAddress(Compiler* compiler, char* address, uint32_t id) {
 	fprintf(compiler->output, "%s_%d:\n", address, id);
 }
 
+void writeBeginFunction(Compiler* compiler, uint32_t id) {
+	fprintf(compiler->output, "	;; -- function --\n");
+	fprintf(compiler->output, "	jmp addr_func_end_%d\n", id);
+	fprintf(compiler->output, "addr_func_%d:\n", id);
+}
+
 void writeCall(Compiler* compiler, uint32_t id) {
 	fprintf(compiler->output, "	;; -- function call -- \n");
-	fprintf(compiler->output, "	call addr_func_%d\n\n", id);
+	fprintf(compiler->output, "	;; -- push current address --\n");
+	// get current address
+	fprintf(compiler->output, "	mov rax, $ + 35\n"); //35 is the length of the assebly instructions in call
+	fprintf(compiler->output, "	mov rbx, [callrsp]\n");
+	fprintf(compiler->output, "	mov [rbx], rax\n");
+	// decrease callrsp
+	fprintf(compiler->output, "	sub rbx, 4\n");
+	fprintf(compiler->output, "	mov [callrsp], rbx\n");
+	
+	fprintf(compiler->output, "	;; -- jump --\n");
+	fprintf(compiler->output, "	jmp addr_func_%d\n\n", id);
 }
 
 void writeReturn(Compiler* compiler) {
-	fprintf(compiler->output, "	ret\n\n");
+	fprintf(compiler->output, "	;; -- return --\n");
+	fprintf(compiler->output, "	;; -- pop return address --\n");
+	fprintf(compiler->output, "	mov rax, [callrsp]\n");
+	fprintf(compiler->output, "	add rax, 4\n");
+	fprintf(compiler->output, "	mov [callrsp], rax\n");
+	// jump to address
+	fprintf(compiler->output, "	mov rax, [callrsp]\n");
+	fprintf(compiler->output, "	jmp [rax]\n");
 }
 
 void writeCompare(Compiler* compiler) {
@@ -354,8 +376,7 @@ void writeFooter(Compiler* compiler) {
 
 	fprintf(compiler->output, "section .bss\n");
 	fprintf(compiler->output, "	callrsp: resq 1\n");
-	fprintf(compiler->output, "	callStackrsp: resq 1\n");
-	fprintf(compiler->output, "	callStack: resq %d\n", callStackSize);
+	fprintf(compiler->output, "	callStack: resq %d\n", CALLSTACKSIZE);
 }
 
 void writePrint(Compiler* compiler) {
