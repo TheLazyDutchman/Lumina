@@ -594,13 +594,19 @@ void functionDefinition(Parser* parser) {
 	
 	if (consumeToken(parser, TOKEN_RPAREN, "expected ')' after function arguments").type == TOKEN_ERROR) { return; }
 
-	Type *type = initType("null", name);
+	Type *type;
 
 	if (parser->current->type == TOKEN_RARROW) {
-		// parse type
+		next(parser);
+
+		Token typeToken = consumeToken(parser, TOKEN_IDENTIFIER, "expected return type");
+		
+		type = initType(strndup(typeToken.word, typeToken.wordLen), typeToken);
+	} else {
+		type = initType("null", name);
 	}
 
-	defineFunction(parser->compiler, name.word, name.wordLen, funcId);
+	defineFunction(parser->compiler, name.word, name.wordLen, funcId, type);
 
 	if (consumeToken(parser, TOKEN_LBRACE, "expected '{' before function block").type == TOKEN_ERROR) { return;}
 

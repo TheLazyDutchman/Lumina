@@ -7,6 +7,7 @@
 
 typedef struct {
 	char* name;
+	Type *returnType;
 	uint16_t id;
 	uint16_t numCalls;
 } Function;
@@ -20,6 +21,6 @@ typedef struct {
 FunctionList* initFunctionList();
 void freeFunctionList(FunctionList* list);
 
-void addFunction(FunctionList* list, char* name, uint16_t id);
+void addFunction(FunctionList* list, char* name, uint16_t id, Type *returnType);
 
 #endif

@@ -63,10 +63,10 @@ int16_t findVariable(Compiler* compiler, char* name, int nameLen) {
 	return offset + compiler->currentStackSize;
 }
 
-void defineFunction(Compiler* compiler, char* name, int nameLen, int id) {
+void defineFunction(Compiler* compiler, char* name, int nameLen, int id, Type *type) {
 	char* buffer = strndup(name, nameLen);
 
-	addFunction(compiler->functionList, buffer, id);
+	addFunction(compiler->functionList, buffer, id, type);
 }
 
 int16_t findFunctionId(Compiler* compiler, char* name, int nameLen) {
