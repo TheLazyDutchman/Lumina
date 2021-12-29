@@ -239,18 +239,20 @@ void identifier(Parser* parser) {
 		writeAssignment(parser->compiler, offset);
 	} else if (nextToken.type == TOKEN_LPAREN) {
 		next(parser);
-		int16_t id = findFunction(parser->compiler, identifier.word, identifier.wordLen);
+		Function *func = findFunction(parser->compiler, identifier.word, identifier.wordLen);
 
-		if (id == -1) {
+		if (func == NULL) {
 			parseError(parser, identifier, "function is undefined");
 			return;
 		}
+
+		uint16_t numCalls = func->numCalls++;
 
 		//parse arguments
 
 		if (consumeToken(parser, TOKEN_RPAREN, "expected ')' after arguments").type == TOKEN_ERROR) { return; }
 
-		writeCall(parser->compiler, id);
+		writeCall(parser->compiler, func->id, numCalls);
 	} else {
 		int16_t offset = findVariable(parser->compiler, identifier.word, identifier.wordLen);
 

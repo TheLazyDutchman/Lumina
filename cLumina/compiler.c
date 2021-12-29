@@ -69,7 +69,7 @@ void defineFunction(Compiler* compiler, char* name, int nameLen, int id) {
 	addFunction(compiler->functionList, buffer, id);
 }
 
-int16_t findFunction(Compiler* compiler, char* name, int nameLen) {
+int16_t findFunctionId(Compiler* compiler, char* name, int nameLen) {
 	FunctionList list = *compiler->functionList;
 
 	for (int i = 0; i < list.size; i++) {
@@ -80,10 +80,23 @@ int16_t findFunction(Compiler* compiler, char* name, int nameLen) {
 
 	if (compiler->outer == NULL) { return -1; }
 
-	int16_t id = findFunction(compiler->outer, name, nameLen);
-
-	if (id == -1) { return -1;}
+	return findFunctionId(compiler->outer, name, nameLen);
 }
+
+Function *findFunction(Compiler* compiler, char* name, int nameLen) {
+	FunctionList list = *compiler->functionList;
+
+	for (int i = 0; i < list.size; i++) {
+		if (strncmp(list.functions[i]->name, name, nameLen) == 0) {
+			return list.functions[i];
+		}
+	}
+
+	if (compiler->outer == NULL) { return NULL; }
+
+	return findFunction(compiler->outer, name, nameLen);
+}
+
 
 void writeHeader(Compiler* compiler) {
 	fprintf(compiler->output, "section .text\n");
@@ -111,11 +124,11 @@ void writeBeginFunction(Compiler* compiler, uint32_t id) {
 	fprintf(compiler->output, "addr_func_%d:\n", id);
 }
 
-void writeCall(Compiler* compiler, uint32_t id) {
+void writeCall(Compiler* compiler, uint32_t id, uint16_t numCalls) {
 	fprintf(compiler->output, "	;; -- function call -- \n");
 	fprintf(compiler->output, "	;; -- push current address --\n");
 	// get current address
-	fprintf(compiler->output, "	mov rax, $ + 35\n"); //35 is the length of the assebly instructions in call
+	fprintf(compiler->output, "	mov rax, ret_func_%d_%d\n", id, numCalls);
 	fprintf(compiler->output, "	mov rbx, [callrsp]\n");
 	fprintf(compiler->output, "	mov [rbx], rax\n");
 	// decrease callrsp
@@ -123,7 +136,8 @@ void writeCall(Compiler* compiler, uint32_t id) {
 	fprintf(compiler->output, "	mov [callrsp], rbx\n");
 	
 	fprintf(compiler->output, "	;; -- jump --\n");
-	fprintf(compiler->output, "	jmp addr_func_%d\n\n", id);
+	fprintf(compiler->output, "	jmp addr_func_%d\n", id);
+	fprintf(compiler->output, "	ret_func_%d_%d: ;; first number is function id, second number id call id\n\n", id, numCalls);
 }
 
 void writeReturn(Compiler* compiler) {

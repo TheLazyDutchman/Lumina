@@ -3,11 +3,12 @@
 #include "function.h"
 
 Function* initFunction(char* name, uint16_t id) {
-	Function* var = malloc(sizeof(Function));
-	var->name = name;
-	var->id = id;
+	Function* func = malloc(sizeof(Function));
+	func->name = name;
+	func->id = id;
+	func->numCalls = 0;
 
-	return var;
+	return func;
 }
 
 void freeFunction(Function* function) {

@@ -8,6 +8,7 @@
 typedef struct {
 	char* name;
 	uint16_t id;
+	uint16_t numCalls;
 } Function;
 
 typedef struct {
