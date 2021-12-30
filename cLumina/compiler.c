@@ -11,6 +11,12 @@ Compiler* initCompiler(FILE* output, Compiler* outer) {
 	compiler->functionList = initFunctionList();
 	compiler->outer = outer;
 
+	if (outer != NULL) {
+		compiler->function = outer->function;
+	} else {
+		compiler->function = NULL;
+	}
+
 	return compiler;
 }
 

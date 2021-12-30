@@ -544,7 +544,7 @@ void whileStatement(Parser* parser) {
 
 	consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'while' block");
 
-	block(parser);
+	block(parser, NULL);
 
 	writeJump(parser->compiler, "addr_while_condition", whileId);
 	writeAddress(parser->compiler, "addr_while_end", whileId);
@@ -576,7 +576,7 @@ void ifStatement(Parser* parser) {
 
 	consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'if' block");
 
-	block(parser);
+	block(parser, NULL);
 
 	writeAddress(parser->compiler, "addr_if", ifId);
 }
@@ -612,14 +612,19 @@ void functionDefinition(Parser* parser) {
 
 	writeBeginFunction(parser->compiler, funcId);
 
-	block(parser);
+	block(parser, findFunction(parser->compiler, name.word, name.wordLen));
 
 	writeReturn(parser->compiler);
 	writeAddress(parser->compiler, "addr_func_end", funcId);
 }
 
-void block(Parser* parser) {
+void block(Parser* parser, Function *func) {
 	Compiler* scopeCompiler = initCompiler(parser->outputFile, parser->compiler);
+	
+	if (func != NULL) {
+		scopeCompiler->function = func;
+	}
+
 	parser->compiler = scopeCompiler;
 
 	while (parser->current->type != TOKEN_END_OF_FILE && parser->current->type != TOKEN_RBRACE) {

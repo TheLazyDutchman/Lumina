@@ -13,6 +13,7 @@ typedef struct Compiler{
 	size_t currentStackSize;
 	VariableList* variableList;
 	FunctionList* functionList;
+	Function *function;
 	struct Compiler* outer;
 } Compiler;
 
