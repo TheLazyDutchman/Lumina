@@ -642,6 +642,30 @@ void block(Parser* parser, Function *func) {
 	freeCompiler(scopeCompiler);
 }
 
+void returnStatement(Parser* parser) {
+	Function *func = parser->compiler->function;
+
+	if (func == NULL) {
+		parseError(parser, *parser->current, "can only return from a function");
+		return;
+	}
+
+	if (strcmp(func->returnType->name, "void") == 0) {
+		consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after return statement");
+		//write return
+	} else {
+		expression(parser);
+
+		if (strcmp(func->returnType->name, parser->lastType->name) != 0) {
+			parseError(parser, *parser->current, "incorrect return type");
+			printf("NOTE: expected: '%s', recieved: '%s'\n", func->returnType->name, parser->lastType->name);
+		}
+
+		consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after return statement");
+		//write return
+	}
+}
+
 void statement(Parser* parser) {
 	if (parser->current->type == TOKEN_VAR) {
 		next(parser);
@@ -659,6 +683,10 @@ void statement(Parser* parser) {
 		next(parser);
 
 		functionDefinition(parser);
+	} else if (parser->current->type == TOKEN_RETURN) {
+		next(parser);
+
+		returnStatement(parser);
 	} else if (parser->current->type == TOKEN_IDENTIFIER && strncmp(parser->current->word, "print", parser->current->wordLen) == 0) { //temporary print function
 		next(parser);
 

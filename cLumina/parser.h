@@ -42,6 +42,7 @@ void ifStatement(Parser* parser);
 void variableDefinition(Parser* parser);
 void block(Parser* parser, Function *func);
 void statement(Parser* parser);
+void returnStatement(Parser* parser);
 
 void parse(Parser* parser);
 
