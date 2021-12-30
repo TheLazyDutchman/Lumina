@@ -616,7 +616,10 @@ void functionDefinition(Parser* parser) {
 
 	block(parser, findFunction(parser->compiler, name.word, name.wordLen));
 
-	writeReturn(parser->compiler);
+	if (strcmp(type->name, "null") == 0) {
+		writeReturnEmpty(parser->compiler, parser->compiler->currentStackSize);
+	}
+
 	writeAddress(parser->compiler, "addr_func_end", funcId);
 }
 
@@ -650,9 +653,20 @@ void returnStatement(Parser* parser) {
 		return;
 	}
 
-	if (strcmp(func->returnType->name, "void") == 0) {
-		consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after return statement");
-		//write return
+	//calculate the amount of variables in the function, as they need to be dropped from the data stack
+	
+	uint16_t numVars = parser->compiler->currentStackSize;
+	Compiler* currentCompiler = parser->compiler->outer;
+
+	while (currentCompiler->function == func) {
+		numVars += currentCompiler->currentStackSize;
+		currentCompiler = currentCompiler->outer;
+	}
+
+	if (strcmp(func->returnType->name, "null") == 0) {
+		consumeToken(parser, TOKEN_SEMICOLON, "expected empty return in a 'null' function");
+
+		writeReturnEmpty(parser->compiler, numVars);
 	} else {
 		expression(parser);
 
@@ -662,7 +676,8 @@ void returnStatement(Parser* parser) {
 		}
 
 		consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after return statement");
-		//write return
+
+		writeReturnValue(parser->compiler, numVars);
 	}
 }
 

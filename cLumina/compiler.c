@@ -146,8 +146,30 @@ void writeCall(Compiler* compiler, uint32_t id, uint16_t numCalls) {
 	fprintf(compiler->output, "	ret_func_%d_%d: ;; first number is function id, second number id call id\n\n", id, numCalls);
 }
 
-void writeReturn(Compiler* compiler) {
+void writeReturnEmpty(Compiler* compiler, uint16_t numVars) {
 	fprintf(compiler->output, "	;; -- return --\n");
+
+	fprintf(compiler->output, "	;; -- pop local variables --\n");
+	fprintf(compiler->output, "	add rsp, %d\n", 8*numVars);
+
+	fprintf(compiler->output, "	;; -- return empty --\n");
+	fprintf(compiler->output, "	push 0\n");
+	
+	fprintf(compiler->output, "	;; -- jump to return address --\n");
+	fprintf(compiler->output, "	mov rax, [callrsp]\n");
+	fprintf(compiler->output, "	add rax, 4\n");
+	fprintf(compiler->output, "	mov [callrsp], rax\n");
+	// jump to address
+	fprintf(compiler->output, "	mov rax, [callrsp]\n");
+	fprintf(compiler->output, "	jmp [rax]\n");
+}
+
+void writeReturnValue(Compiler* compiler, uint16_t numVars) {
+	fprintf(compiler->output, "	;; -- return --\n");
+
+	fprintf(compiler->output, "	;; -- pop local variables --\n");
+	fprintf(compiler->output, "	add rsp, %d\n", 8*numVars);
+	
 	fprintf(compiler->output, "	;; -- pop return address --\n");
 	fprintf(compiler->output, "	mov rax, [callrsp]\n");
 	fprintf(compiler->output, "	add rax, 4\n");
