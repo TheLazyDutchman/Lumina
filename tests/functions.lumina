@@ -1,16 +1,16 @@
-func alphabet() {
-	print('a');
-}
+func nums() -> int {
+	var i = 0;
 
-func nums() {
-	var counter = '0';
-	while (counter <= '9') {
-		print(counter);
-		counter = counter + 1;
+	while (i < 10) {
+		print('0' + i);
+		i = i + 1;
+
+		if (i == 6) {
+			return 0;
+		}
 	}
+
+	return i;
 }
 
-alphabet();
 nums();
-alphabet();
-alphabet();

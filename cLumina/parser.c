@@ -636,6 +636,12 @@ void block(Parser* parser, Function *func) {
 		statement(parser);
 	}
 
+	if (scopeCompiler->function != scopeCompiler->outer->function &&// the outermost block of the function body
+		strcmp(func->returnType->name, "null") != 0 &&
+		!scopeCompiler->hasReturned) {
+		parseError(parser, *parser->current, "not al code paths return a value");
+	}
+
 	consumeToken(parser, TOKEN_RBRACE, "expected '}' after block");
 
 	int numLocalVariables = scopeCompiler->variableList->size;
@@ -679,6 +685,8 @@ void returnStatement(Parser* parser) {
 
 		writeReturnValue(parser->compiler, numVars);
 	}
+
+	parser->compiler->hasReturned = true;
 }
 
 void statement(Parser* parser) {

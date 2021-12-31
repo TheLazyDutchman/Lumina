@@ -2,6 +2,7 @@
 #define cLumina_compiler_header
 
 #include <stdio.h>
+#include <stdbool.h>
 
 #include "variable.h"
 #include "function.h"
@@ -14,6 +15,7 @@ typedef struct Compiler{
 	VariableList* variableList;
 	FunctionList* functionList;
 	Function *function;
+	bool hasReturned;
 	struct Compiler* outer;
 } Compiler;
 
