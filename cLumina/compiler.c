@@ -70,6 +70,18 @@ int16_t findVariable(Compiler* compiler, char* name, int nameLen) {
 	return offset + compiler->currentStackSize;
 }
 
+Variable *findLocalVariable(Compiler* compiler, char* name, int nameLen) {
+	VariableList list = *compiler->variableList;
+
+	for (int i = 0; i < list.size; i++) {
+		if (strncmp(list.variables[i]->name, name, nameLen) == 0) {
+			return list.variables[i];
+		}
+	}
+
+	return NULL;
+}
+
 void defineFunction(Compiler* compiler, char* name, int nameLen, int id, Type *type) {
 	char* buffer = strndup(name, nameLen);
 
@@ -102,6 +114,21 @@ Function *findFunction(Compiler* compiler, char* name, int nameLen) {
 	if (compiler->outer == NULL) { return NULL; }
 
 	return findFunction(compiler->outer, name, nameLen);
+}
+
+Function *findLocalFunction(Compiler* compiler, char* name, int nameLen) {
+	FunctionList list = *compiler->functionList;
+
+	for (int i = 0; i < list.size; i++) {
+		if (strncmp(list.functions[i]->name, name, nameLen) == 0) {
+			return list.functions[i];
+		}
+	}
+
+	if (compiler->outer == NULL) { return NULL; }
+	if (compiler->outer->function != compiler->function) { return NULL; }
+
+	return findLocalFunction(compiler->outer, name, nameLen);
 }
 
 

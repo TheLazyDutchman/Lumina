@@ -506,6 +506,9 @@ void variableDefinition(Parser* parser) {
 
 	dumpIdentifier(parser, identifier);
 
+	if (findLocalVariable(parser->compiler, identifier.word, identifier.wordLen) != NULL) { parseError(parser, identifier, "there already exists a variable with this name"); }
+	if (findLocalFunction(parser->compiler, identifier.word, identifier.wordLen) != NULL) { parseError(parser, identifier, "there already exists a function with this name"); }
+
 	consumeToken(parser, TOKEN_EQUAL, "expected '=' after variable name in definition");
 
 	expression(parser);
