@@ -195,8 +195,14 @@ void writeReturnEmpty(Compiler* compiler, uint16_t numVars) {
 void writeReturnValue(Compiler* compiler, uint16_t numVars) {
 	fprintf(compiler->output, "	;; -- return --\n");
 
+	fprintf(compiler->output, "	;; -- store return value --\n");
+	fprintf(compiler->output, "	pop rax\n");
+
 	fprintf(compiler->output, "	;; -- pop local variables --\n");
 	fprintf(compiler->output, "	add rsp, %d\n", 8*numVars);
+
+	fprintf(compiler->output, "	;; -- push return value --\n");
+	fprintf(compiler->output, "	push rax\n");
 	
 	fprintf(compiler->output, "	;; -- pop return address --\n");
 	fprintf(compiler->output, "	mov rax, [callrsp]\n");

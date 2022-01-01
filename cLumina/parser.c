@@ -256,6 +256,8 @@ void identifier(Parser* parser) {
 		if (consumeToken(parser, TOKEN_RPAREN, "expected ')' after arguments").type == TOKEN_ERROR) { return; }
 
 		writeCall(parser->compiler, func->id, numCalls);
+
+		parser->lastType = initType(func->returnType->name, identifier);
 	} else {
 		int16_t offset = findVariable(parser->compiler, identifier.word, identifier.wordLen);
 
