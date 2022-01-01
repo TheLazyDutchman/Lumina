@@ -82,10 +82,10 @@ Variable *findLocalVariable(Compiler* compiler, char* name, int nameLen) {
 	return NULL;
 }
 
-void defineFunction(Compiler* compiler, char* name, int nameLen, int id, Type *type) {
+void defineFunction(Compiler* compiler, char* name, int nameLen, int id, Type *type, TypeList *parameters) {
 	char* buffer = strndup(name, nameLen);
 
-	addFunction(compiler->functionList, buffer, id, type);
+	addFunction(compiler->functionList, buffer, id, type, parameters);
 }
 
 int16_t findFunctionId(Compiler* compiler, char* name, int nameLen) {

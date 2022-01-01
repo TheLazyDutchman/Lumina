@@ -27,7 +27,7 @@ int16_t findVariable(Compiler* compiler, char* name, int nameLen);
 Type *findVariableType(Compiler* compiler, char* name, int nameLen);
 Variable *findLocalVariable(Compiler* compiler, char* name, int nameLen);
 
-void defineFunction(Compiler* compiler, char* name, int nameLen, int id, Type *type);
+void defineFunction(Compiler* compiler, char* name, int nameLen, int id, Type *type, TypeList *parameters);
 int16_t findFunctionId(Compiler* compiler, char* name, int nameLen);
 Function *findFunction(Compiler* compiler, char* name, int nameLen);
 Function *findLocalFunction(Compiler* compiler, char* name, int nameLen);

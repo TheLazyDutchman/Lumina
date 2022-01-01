@@ -628,7 +628,7 @@ void functionDefinition(Parser* parser) {
 		type = initType("null", name);
 	}
 
-	defineFunction(parser->compiler, name.word, name.wordLen, funcId, type);
+	defineFunction(parser->compiler, name.word, name.wordLen, funcId, type, parameters);
 
 	if (consumeToken(parser, TOKEN_LBRACE, "expected '{' before function block").type == TOKEN_ERROR) { return;}
 
