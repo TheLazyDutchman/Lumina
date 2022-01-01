@@ -13,4 +13,12 @@ func nums() -> int {
 	return i;
 }
 
-nums();
+print(nums());
+
+func max(int a, int b) -> int{
+	if (a > b) {
+		return a;
+	}
+
+	return b;
+}

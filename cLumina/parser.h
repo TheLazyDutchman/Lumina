@@ -40,7 +40,7 @@ void condition(Parser* parser);
 void whileStatement(Parser* parser);
 void ifStatement(Parser* parser);
 void variableDefinition(Parser* parser);
-void block(Parser* parser, Function *func);
+void block(Parser* parser, Function *func, TypeList *parameters);
 void statement(Parser* parser);
 void returnStatement(Parser* parser);
 

@@ -551,7 +551,7 @@ void whileStatement(Parser* parser) {
 
 	consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'while' block");
 
-	block(parser, NULL);
+	block(parser, NULL, NULL);
 
 	writeJump(parser->compiler, "addr_while_condition", whileId);
 	writeAddress(parser->compiler, "addr_while_end", whileId);
@@ -583,7 +583,7 @@ void ifStatement(Parser* parser) {
 
 	consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'if' block");
 
-	block(parser, NULL);
+	block(parser, NULL, NULL);
 
 	writeAddress(parser->compiler, "addr_if", ifId);
 }
@@ -597,14 +597,20 @@ void functionDefinition(Parser* parser) {
 
 	if (consumeToken(parser, TOKEN_LPAREN, "expected '(' after function name").type == TOKEN_ERROR) { return; }
 
+	TypeList *parameters = initTypeList();
+
 	if (parser->current->type != TOKEN_RPAREN) {
 		Token type = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter type");
 		Token name = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter name");
+
+		addType(parameters, strndup(type.word, type.wordLen), name);
 
 		while (parser->current->type == TOKEN_COMMA) {
 			next(parser);
 			Token type = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter type");
 			Token name = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter name");
+
+			addType(parameters, strndup(type.word, type.wordLen), name);
 		}	
 	}
 	
@@ -628,7 +634,7 @@ void functionDefinition(Parser* parser) {
 
 	writeBeginFunction(parser->compiler, funcId);
 
-	block(parser, findFunction(parser->compiler, name.word, name.wordLen));
+	block(parser, findFunction(parser->compiler, name.word, name.wordLen), parameters);
 
 	if (strcmp(type->name, "null") == 0) {
 		writeReturnEmpty(parser->compiler, parser->compiler->currentStackSize);
@@ -637,11 +643,22 @@ void functionDefinition(Parser* parser) {
 	writeAddress(parser->compiler, "addr_func_end", funcId);
 }
 
-void block(Parser* parser, Function *func) {
+void block(Parser* parser, Function *func, TypeList *parameters) {
 	Compiler* scopeCompiler = initCompiler(parser->outputFile, parser->compiler);
 	
 	if (func != NULL) {
 		scopeCompiler->function = func;
+	}
+
+	if (parameters != NULL) {
+		int i = 0;
+		while (i < parameters->size) {
+			Type *parameter = parameters->types[i];
+
+			defineVariable(scopeCompiler, parameter->token.word, parameter->token.wordLen, parameter);
+
+			i++;
+		}
 	}
 
 	parser->compiler = scopeCompiler;
