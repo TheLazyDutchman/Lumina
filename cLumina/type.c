@@ -16,3 +16,32 @@ void freeType(Type *type) {
 	free(type->name);
 	free(type);
 }
+
+
+TypeList* initTypeList() {
+	TypeList* list = malloc(sizeof(TypeList));
+
+	list->size = 0;
+	list->maxSize = 8;
+	list->types = malloc(sizeof(Type*) * 8);
+
+	return list;
+}
+
+void freeTypeList(TypeList* list) {
+	for (int i = 0; i < list->size; i++) {
+		freeType(list->types[i]);
+	}
+	free(list->types);
+	free(list);
+}
+
+void addType(TypeList* list, char* name, Token token) {
+	list->types[list->size] = initType(name, token);
+
+	list->size++;
+
+	if (list->size == list->maxSize) {
+		list->types = realloc(list->types, list->maxSize * 2);
+	}
+}
