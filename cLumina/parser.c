@@ -595,7 +595,16 @@ void functionDefinition(Parser* parser) {
 
 	if (consumeToken(parser, TOKEN_LPAREN, "expected '(' after function name").type == TOKEN_ERROR) { return; }
 
-	//parse arguments
+	if (parser->current->type != TOKEN_RPAREN) {
+		Token type = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter type");
+		Token name = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter name");
+
+		while (parser->current->type == TOKEN_COMMA) {
+			next(parser);
+			Token type = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter type");
+			Token name = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter name");
+		}	
+	}
 	
 	if (consumeToken(parser, TOKEN_RPAREN, "expected ')' after function arguments").type == TOKEN_ERROR) { return; }
 
