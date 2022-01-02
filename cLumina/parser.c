@@ -692,6 +692,7 @@ void block(Parser* parser, Function *func, TypeList *parameters) {
 			//block will free the types, so we need to copy them first
 			Type *parameter = initType(parameters->types[i]->name, parameters->types[i]->token);
 
+			scopeCompiler->currentStackSize++;
 			defineVariable(scopeCompiler, parameter->token.word, parameter->token.wordLen, parameter);
 
 			i++;
@@ -708,12 +709,13 @@ void block(Parser* parser, Function *func, TypeList *parameters) {
 		strcmp(func->returnType->name, "null") != 0 &&
 		!scopeCompiler->hasReturned) {
 		parseError(parser, *parser->current, "not al code paths return a value");
+	} else {
+		//functions already handle this by returning
+		int numLocalVariables = scopeCompiler->variableList->size;
+		writePop(scopeCompiler, numLocalVariables);
 	}
 
 	consumeToken(parser, TOKEN_RBRACE, "expected '}' after block");
-
-	int numLocalVariables = scopeCompiler->variableList->size;
-	writePop(scopeCompiler, numLocalVariables);
 
 	parser->compiler = scopeCompiler->outer;
 	freeCompiler(scopeCompiler);
