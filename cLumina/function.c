@@ -15,6 +15,7 @@ Function* initFunction(char* name, uint16_t id, Type *returnType, TypeList *para
 
 void freeFunction(Function* function) {
 	free(function->name);
+	freeTypeList(function->parameters);
 	free(function);
 }
 

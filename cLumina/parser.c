@@ -251,7 +251,37 @@ void identifier(Parser* parser) {
 
 		uint16_t numCalls = func->numCalls++;
 
-		//parse arguments
+		if (func->parameters->size > 0) {
+			expression(parser);
+
+			if (strcmp(func->parameters->types[0]->name, parser->lastType->name) != 0) { 
+				parseError(parser, *parser->current, "incorrect type passed to function");
+				return;
+			}
+
+			int i = 0;
+			while (parser->current->type == TOKEN_COMMA) {
+				next(parser);
+
+				i++;
+				if (func->parameters->size < i + 1) { 
+					parseError( parser, *parser->current, "too many arguments passed to function"); 
+					return;
+				}
+
+				expression(parser);
+
+				if (strcmp(func->parameters->types[i]->name, parser->lastType->name) != 0) { 
+					parseError(parser, *parser->current, "incorrect type passed to function"); 
+					return;
+				}
+			}
+
+			if (i + 1 < func->parameters->size) {
+				parseError(parser, *parser->current, "too few arguments passed to function");
+				return;
+			}
+		}
 
 		if (consumeToken(parser, TOKEN_RPAREN, "expected ')' after arguments").type == TOKEN_ERROR) { return; }
 
@@ -603,14 +633,20 @@ void functionDefinition(Parser* parser) {
 		Token type = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter type");
 		Token name = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter name");
 
-		addType(parameters, strndup(type.word, type.wordLen), name);
+		char* typeName = strndup(type.word, type.wordLen);
+
+		addType(parameters, typeName, name);
+		free(typeName);
 
 		while (parser->current->type == TOKEN_COMMA) {
 			next(parser);
 			Token type = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter type");
 			Token name = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter name");
 
-			addType(parameters, strndup(type.word, type.wordLen), name);
+			char* typeName = strndup(type.word, type.wordLen);
+
+			addType(parameters, typeName, name);
+			free(typeName);
 		}	
 	}
 	
@@ -653,7 +689,8 @@ void block(Parser* parser, Function *func, TypeList *parameters) {
 	if (parameters != NULL) {
 		int i = 0;
 		while (i < parameters->size) {
-			Type *parameter = parameters->types[i];
+			//block will free the types, so we need to copy them first
+			Type *parameter = initType(parameters->types[i]->name, parameters->types[i]->token);
 
 			defineVariable(scopeCompiler, parameter->token.word, parameter->token.wordLen, parameter);
 

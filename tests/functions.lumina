@@ -22,3 +22,5 @@ func max(int a, int b) -> int{
 
 	return b;
 }
+
+print(max(3));
