@@ -232,14 +232,14 @@ void identifier(Parser* parser) {
 
 		expression(parser);
 
-		int16_t offset = findVariable(parser->compiler, identifier.word, identifier.wordLen);
+		Variable *var = findVariable(parser->compiler, identifier.word, identifier.wordLen);
 
-		if (offset == -1) {
+		if (var == NULL) {
 			parseError(parser, identifier, "variable '%s' is undefined");
 			return;
 		}
 
-		writeAssignment(parser->compiler, offset);
+		writeAssignment(parser->compiler, var->position, var->functionDepth);
 	} else if (nextToken.type == TOKEN_LPAREN) {
 		next(parser);
 		Function *func = findFunction(parser->compiler, identifier.word, identifier.wordLen);
@@ -286,20 +286,18 @@ void identifier(Parser* parser) {
 		if (consumeToken(parser, TOKEN_RPAREN, "expected ')' after arguments").type == TOKEN_ERROR) { return; }
 		parser->compiler->currentStackSize -= func->parameters->size;
 		
-		printf("before call: %ld\n", parser->compiler->currentStackSize);
 		writeCall(parser->compiler, func->id, numCalls);
-		printf("after call: %ld\n", parser->compiler->currentStackSize);
 
 		parser->lastType = initType(func->returnType->name, identifier);
 	} else {
-		int16_t offset = findVariable(parser->compiler, identifier.word, identifier.wordLen);
+		Variable *var = findVariable(parser->compiler, identifier.word, identifier.wordLen);
 
-		if (offset == -1) {
+		if (var == NULL) {
 			parseError(parser, identifier, "variable '%s' is undefined");
 			return;
 		}
 
-		writeIdentifier(parser->compiler, offset);
+		writeIdentifier(parser->compiler, var->position, var->functionDepth);
 
 		if (parser->lastType != NULL) {
 			freeType(parser->lastType);
@@ -671,7 +669,7 @@ void functionDefinition(Parser* parser) {
 
 	if (consumeToken(parser, TOKEN_LBRACE, "expected '{' before function block").type == TOKEN_ERROR) { return;}
 
-	writeBeginFunction(parser->compiler, funcId);
+	writeBeginFunction(parser->compiler, funcId, parameters->size);
 
 	block(parser, findFunction(parser->compiler, name.word, name.wordLen), parameters);
 
@@ -687,6 +685,7 @@ void block(Parser* parser, Function *func, TypeList *parameters) {
 	
 	if (func != NULL) {
 		scopeCompiler->function = func;
+		scopeCompiler->functionDepth++;
 	}
 
 	if (parameters != NULL) {

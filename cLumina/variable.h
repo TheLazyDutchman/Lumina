@@ -8,6 +8,7 @@
 typedef struct {
 	char* name;
 	uint16_t position;
+	uint16_t functionDepth;
 	Type *type;
 } Variable;
 
@@ -20,6 +21,6 @@ typedef struct {
 VariableList* initVariableList();
 void freeVariableList(VariableList* list);
 
-void addVariable(VariableList* list, char* name, uint16_t position, Type *type);
+void addVariable(VariableList* list, char* name, uint16_t position, uint16_t functionDepth, Type *type);
 
 #endif

@@ -16,6 +16,7 @@ typedef struct Compiler{
 	FunctionList* functionList;
 	Function *function;
 	bool hasReturned;
+	uint16_t functionDepth;
 	struct Compiler* outer;
 } Compiler;
 
@@ -23,7 +24,7 @@ Compiler* initCompiler(FILE* output, Compiler* outer);
 void freeCompiler(Compiler* compiler);
 
 void defineVariable(Compiler* compiler, char* name, int nameLen, Type *type);
-int16_t findVariable(Compiler* compiler, char* name, int nameLen);
+Variable *findVariable(Compiler* compiler, char* name, int nameLen);
 Type *findVariableType(Compiler* compiler, char* name, int nameLen);
 Variable *findLocalVariable(Compiler* compiler, char* name, int nameLen);
 
@@ -37,7 +38,7 @@ void writeFooter(Compiler* compiler);
 void writePop(Compiler* compiler, int amount);
 
 void writeAddress(Compiler* compiler, char* address, uint32_t id);
-void writeBeginFunction(Compiler* compiler, uint32_t id);
+void writeBeginFunction(Compiler* compiler, uint32_t id, size_t numParameters);
 void writeCall(Compiler* compiler, uint32_t id, uint16_t numCalls);
 void writeReturnEmpty(Compiler* compiler, uint16_t numVars);
 void writeReturnValue(Compiler* compiler, uint16_t numVars);
@@ -55,8 +56,8 @@ void writeJumpNotEqual(Compiler* compiler, char* address, uint32_t id);
 
 void writeNumber(Compiler* compiler, int value);
 void writeCharacter(Compiler* compiler, char value);
-void writeIdentifier(Compiler* compiler, int offset);
-void writeAssignment(Compiler* compiler, int offset);
+void writeIdentifier(Compiler* compiler, int offset, int currentDepth);
+void writeAssignment(Compiler* compiler, int offset, int currentDepth);
 
 void writeAdd(Compiler* compiler);
 void writeSubtract(Compiler* compiler);
