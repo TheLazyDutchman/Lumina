@@ -30,7 +30,18 @@ void freeCompiler(Compiler* compiler) {
 void defineVariable(Compiler* compiler, char* name, int nameLen, Type *type) {
 	char* buffer = strndup(name, nameLen);
 
-	addVariable(compiler->variableList, buffer, compiler->currentStackSize, type);
+	uint16_t position = compiler->currentStackSize - 1;
+	Compiler* outer = compiler->outer;
+	printf("stacksize: %ld\n", compiler->currentStackSize);
+	while (outer != NULL) {
+		printf("outer stacksize: %ld\n", outer->currentStackSize);
+		position += outer->currentStackSize;
+		outer = outer->outer;
+	}
+
+	printf("name: %.*s, pos: %d\n", nameLen, name, position);
+
+	addVariable(compiler->variableList, buffer, position, type);
 }
 
 Type *findVariableType(Compiler* compiler, char* name, int nameLen) {
@@ -54,7 +65,7 @@ int16_t findVariable(Compiler* compiler, char* name, int nameLen) {
 
 	for (int i = 0; i < list.size; i++) {
 		if (strncmp(list.variables[i]->name, name, nameLen) == 0) {
-			return compiler->currentStackSize - list.variables[i]->position;
+			return list.variables[i]->position;
 		}
 	}
 
@@ -67,7 +78,7 @@ int16_t findVariable(Compiler* compiler, char* name, int nameLen) {
 		return -1;
 	}
 	
-	return offset + compiler->currentStackSize;
+	return offset;
 }
 
 Variable *findLocalVariable(Compiler* compiler, char* name, int nameLen) {
@@ -139,6 +150,9 @@ void writeHeader(Compiler* compiler) {
 	fprintf(compiler->output, "	;; -- initializing call stack --\n");
 	fprintf(compiler->output, "	lea rax, [callStack + %d]\n", CALLSTACKSIZE);
 	fprintf(compiler->output, "	mov [callrsp], rax\n");
+	fprintf(compiler->output, "	mov rax, rsp\n");
+	fprintf(compiler->output, "	sub rax, 8\n");
+	fprintf(compiler->output, "	mov [basepointer], rax\n");
 }
 
 void writePop(Compiler* compiler, int amount) {
@@ -172,6 +186,8 @@ void writeCall(Compiler* compiler, uint32_t id, uint16_t numCalls) {
 	fprintf(compiler->output, "	;; -- jump --\n");
 	fprintf(compiler->output, "	jmp addr_func_%d\n", id);
 	fprintf(compiler->output, "	ret_func_%d_%d: ;; first number is function id, second number id call id\n\n", id, numCalls);
+
+	compiler->currentStackSize++;
 }
 
 void writeReturnEmpty(Compiler* compiler, uint16_t numVars) {
@@ -400,9 +416,9 @@ void writeCharacter(Compiler* compiler, char value) {
 
 void writeIdentifier(Compiler* compiler, int offset) {
 	fprintf(compiler->output, "	;; -- identifier --\n");
-	fprintf(compiler->output, "	mov rax, rsp\n");
+	fprintf(compiler->output, "	mov rax, [basepointer]\n");
 	fprintf(compiler->output, "	mov rbx, %d\n", 8 * offset);
-	fprintf(compiler->output, "	add rax, rbx\n");
+	fprintf(compiler->output, "	sub rax, rbx\n");
 	fprintf(compiler->output, "	mov rax, [rax]\n");
 	fprintf(compiler->output, "	push rax\n\n");
 
@@ -411,9 +427,9 @@ void writeIdentifier(Compiler* compiler, int offset) {
 
 void writeAssignment(Compiler* compiler, int offset) {
 	fprintf(compiler->output, "	;; -- assignment --\n");
-	fprintf(compiler->output, "	mov rax, rsp\n");
+	fprintf(compiler->output, "	mov rax, [basepointer]\n");
 	fprintf(compiler->output, "	mov rbx, %d\n", 8 * offset);
-	fprintf(compiler->output, "	add rax, rbx\n");
+	fprintf(compiler->output, "	sub rax, rbx\n");
 	fprintf(compiler->output, "	mov rbx, [rsp]\n");
 	fprintf(compiler->output, "	mov [rax], rbx\n\n");
 }
@@ -451,6 +467,7 @@ void writeFooter(Compiler* compiler) {
 	fprintf(compiler->output, "	syscall\n\n");
 
 	fprintf(compiler->output, "section .bss\n");
+	fprintf(compiler->output, "	basepointer: resq 1\n");
 	fprintf(compiler->output, "	callrsp: resq 1\n");
 	fprintf(compiler->output, "	callStack: resq %d\n", CALLSTACKSIZE);
 }

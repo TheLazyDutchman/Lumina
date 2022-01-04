@@ -284,8 +284,11 @@ void identifier(Parser* parser) {
 		}
 
 		if (consumeToken(parser, TOKEN_RPAREN, "expected ')' after arguments").type == TOKEN_ERROR) { return; }
-
+		parser->compiler->currentStackSize -= func->parameters->size;
+		
+		printf("before call: %ld\n", parser->compiler->currentStackSize);
 		writeCall(parser->compiler, func->id, numCalls);
+		printf("after call: %ld\n", parser->compiler->currentStackSize);
 
 		parser->lastType = initType(func->returnType->name, identifier);
 	} else {
