@@ -673,10 +673,6 @@ void functionDefinition(Parser* parser) {
 
 	block(parser, findFunction(parser->compiler, name.word, name.wordLen), parameters);
 
-	if (strcmp(type->name, "null") == 0) {
-		writeReturnEmpty(parser->compiler, parser->compiler->currentStackSize);
-	}
-
 	writeAddress(parser->compiler, "addr_func_end", funcId);
 }
 
@@ -701,18 +697,25 @@ void block(Parser* parser, Function *func, TypeList *parameters) {
 		}
 	}
 
+	if (func != NULL) {
+		scopeCompiler->currentStackSize++;
+	}
+
 	parser->compiler = scopeCompiler;
 
 	while (parser->current->type != TOKEN_END_OF_FILE && parser->current->type != TOKEN_RBRACE) {
 		statement(parser);
 	}
 
-	if (scopeCompiler->function != scopeCompiler->outer->function &&// the outermost block of the function body
-		strcmp(func->returnType->name, "null") != 0 &&
-		!scopeCompiler->hasReturned) {
-		parseError(parser, *parser->current, "not al code paths return a value");
+	if (scopeCompiler->function != scopeCompiler->outer->function) {// the outermost block of the function body
+		if (strcmp(func->returnType->name, "null") != 0) {
+			if (!scopeCompiler->hasReturned) {
+				parseError(parser, *parser->current, "not al code paths return a value");
+			}
+		} else {
+			writeReturnEmpty(parser->compiler, parser->compiler->currentStackSize);
+		}
 	} else {
-		//functions already handle this by returning
 		int numLocalVariables = scopeCompiler->variableList->size;
 		writePop(scopeCompiler, numLocalVariables);
 	}

@@ -33,3 +33,19 @@ print('0' + a);
 var b = max(3, 4);
 print('0' + b);
 
+print(10);
+
+func outer() {
+	var a = 5;
+	var b = 8;
+	
+	func inner() {
+		print('0' + max(a, b));
+		print('0' + a);
+		print('0' + b);
+	}
+
+	inner();
+}
+
+outer();
