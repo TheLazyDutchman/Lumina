@@ -249,10 +249,27 @@ Token *nextToken(Lexer* lexer){
 		token->type = TOKEN_CHAR;
 
 		char charStart = advance(lexer);
+
+		if (*lexer->current == '\\') {
+			advance(lexer);
+		}
+
 		advance(lexer);
 		if (*lexer->current != charStart) {
-			lexerError(lexer, "expected character end");
-			token->type = TOKEN_ERROR;
+			token->type = TOKEN_STR;
+
+			while(*lexer->current != charStart && *lexer->current != EOF) {
+				if (*lexer->current == '\\') {
+					advance(lexer);
+				}
+
+				advance(lexer);
+			}
+
+			if (*lexer->current == EOF) {
+				lexerError(lexer, "expected character end");
+				token->type = TOKEN_ERROR;
+			}
 		} else {
 			advance(lexer);
 		}
