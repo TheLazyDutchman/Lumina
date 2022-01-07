@@ -6,6 +6,7 @@
 #include "lexer.h"
 #include "compiler.h"
 #include "type.h"
+#include "string.h"
 
 typedef enum {
 	FLAG_DUMP = 1,
@@ -23,6 +24,8 @@ typedef struct {
 	int numIfs;
 	int numWhiles;
 	int numFuncs;
+
+	StringList *strings;
 
 	bool hadError;
 } Parser;

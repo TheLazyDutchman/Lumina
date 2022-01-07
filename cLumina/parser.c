@@ -20,6 +20,8 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 	parser->numWhiles = 0;
 	parser->numFuncs = 0;
 
+	parser->strings = initStringList();
+
 	parser->hadError = false;
 	
 	return parser;
@@ -37,6 +39,8 @@ void freeParser(Parser* parser) {
 	}
 
 	freeCompiler(parser->compiler);
+
+	freeStringList(parser->strings);
 
 	fclose(parser->outputFile);
 
