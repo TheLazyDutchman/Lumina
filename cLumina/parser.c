@@ -77,11 +77,12 @@ typedef struct {
 	Precedence precedence;
 } ParseRule;
 
-_Static_assert(TOKEN_TYPES_NUM == 25, "Exhaustive handling of token types in parsing");
+_Static_assert(TOKEN_TYPES_NUM == 26, "Exhaustive handling of token types in parsing");
 
 ParseRule parseTable[] = {
 	[TOKEN_NUMBER] = {number, NULL, PREC_PRIMARY},
 	[TOKEN_CHAR] = {character, NULL, PREC_PRIMARY},
+	[TOKEN_STR] = {string, NULL, PREC_PRIMARY},
 	[TOKEN_PLUS] = {NULL, binary, PREC_TERM},
 	[TOKEN_MINUS] = {unary, binary, PREC_UNARY},
 	[TOKEN_EQUAL] = {NULL, NULL, PREC_ASSIGNMENT},
@@ -216,6 +217,17 @@ void character(Parser* parser) {
 	writeCharacter(parser->compiler, charValue);
 
 	parser->lastType = initType("char", value);
+
+	next(parser);
+}
+
+void string(Parser* parser) {
+	Token value = *parser->current;
+	if (value.type != TOKEN_STR) {
+		printf("incorrect reference in parseTable: '%s' points to string\n", tokenTypes[value.type]);
+	}
+
+	parser->lastType = initType("str", value);
 
 	next(parser);
 }
