@@ -6,7 +6,7 @@
 
 #include "variable.h"
 #include "function.h"
-#include "string.h"
+#include "luminaString.h"
 
 #define CALLSTACKSIZE 2048
 

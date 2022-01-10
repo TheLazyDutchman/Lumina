@@ -6,7 +6,7 @@
 #include "lexer.h"
 #include "compiler.h"
 #include "type.h"
-#include "string.h"
+#include "luminaString.h"
 
 typedef enum {
 	FLAG_DUMP = 1,

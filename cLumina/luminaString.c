@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "string.h"
+#include "luminaString.h"
 
 String* initString(Token value) {
 	String* str = malloc(sizeof(String));
