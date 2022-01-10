@@ -231,6 +231,9 @@ void string(Parser* parser) {
 		printf("incorrect reference in parseTable: '%s' points to string\n", tokenTypes[value.type]);
 	}
 
+	uint16_t id = parser->strings->size;
+	addString(parser->strings, value);
+
 	parser->lastType = initType("str", value);
 
 	next(parser);
