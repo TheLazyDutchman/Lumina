@@ -513,7 +513,7 @@ void writeFooter(Compiler* compiler, StringList *strings) {
 	while (i < strings->size) {
 		Token value = strings->strings[i]->value;
 
-		printf("	string_%d: resq ", strings->strings[i]->id);
+		fprintf(compiler->output, "	string_%d: resq ", strings->strings[i]->id);
 		int j = 0;
 		while (j < value.wordLen) {
 			char *chr = value.word + j;
@@ -523,7 +523,13 @@ void writeFooter(Compiler* compiler, StringList *strings) {
 			if (*chr == '\\') { j++; }
 
 			j++;
+
+			if (j < value.wordLen) {
+				fprintf(compiler->output, ", ");
+			}
 		}
+
+		fprintf(compiler->output, "\n");
 
 		i++;
 	}
