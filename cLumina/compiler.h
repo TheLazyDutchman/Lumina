@@ -55,7 +55,8 @@ void writeJump(Compiler* compiler, char* address, uint32_t id);
 void writeJumpNotEqual(Compiler* compiler, char* address, uint32_t id);
 
 void writeNumber(Compiler* compiler, int value);
-void writeCharacter(Compiler* compiler, char value);
+void writeCharacter(Compiler* compiler, char* *value);
+void writeString(Compiler* compiler, int id);
 void writeIdentifier(Compiler* compiler, int offset, int currentDepth);
 void writeAssignment(Compiler* compiler, int offset, int currentDepth);
 

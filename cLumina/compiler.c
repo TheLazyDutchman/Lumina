@@ -29,6 +29,25 @@ void freeCompiler(Compiler* compiler) {
 	free(compiler);
 }
 
+void printEscapedCharacter(Compiler* compiler, char* *string) {
+	char chr = *(*string)++;
+
+	if (chr == '\\') {
+		char test = *(*string)++;
+
+		switch (test) {
+			case '0':
+				chr = '\0';
+			case 't':
+				chr = '\t';
+			case 'n':
+				chr = '\n';
+		}
+	}
+
+	fprintf(compiler->output, "0x%02X", chr);
+}
+
 void defineVariable(Compiler* compiler, char* name, int nameLen, Type *type) {
 	char* buffer = strndup(name, nameLen);
 
@@ -415,9 +434,19 @@ void writeNumber(Compiler* compiler, int value) {
 	compiler->currentStackSize++;
 }
 
-void writeCharacter(Compiler* compiler, char value) {
+void writeCharacter(Compiler* compiler, char* *value) {
 	fprintf(compiler->output, "	;; -- character --\n");
-	fprintf(compiler->output, "	mov rax, %d\n", value);
+	fprintf(compiler->output, "	mov rax, ");
+	printEscapedCharacter(compiler, value);
+	fprintf(compiler->output, "\n");
+	fprintf(compiler->output, "	push rax\n\n");
+
+	compiler->currentStackSize++;
+}
+
+void writeString(Compiler* compiler, int id) {
+	fprintf(compiler->output, "	;; -- string --\n");
+	fprintf(compiler->output, "	mov rax, string_%d\n", id);
 	fprintf(compiler->output, "	push rax\n\n");
 
 	compiler->currentStackSize++;

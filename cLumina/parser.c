@@ -216,9 +216,8 @@ void character(Parser* parser) {
 
 	dumpCharacter(parser, value);
 
-	char charValue = value.word[1];
-
-	writeCharacter(parser->compiler, charValue);
+	char *chr = value.word + 1;
+	writeCharacter(parser->compiler, &chr);
 
 	parser->lastType = initType("char", value);
 
