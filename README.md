@@ -10,17 +10,17 @@ it is planned to be:
 
 ## Arithmatic
 Currently, Lumina supports the following arithmatic operations
-* <int> + <int> -> <int>
-* <char> + <int> -> <char>
-* <int> + <char> -> <char>
-* <int> - <int> -> <int>
-* <char> - <int> -> <char>
-* - <int> -> <int>
+* (int) + (int) -> (int)
+* (char) + (int) -> (char)
+* (int) + (char) -> (char)
+* (int) - (int) -> (int)
+* (char) - (int) -> (char)
+* - (int) -> (int)
 
 ## Variables
 Variables in Lumina are defined as such
-'''Lumina
-var a = 10; //a is now of type <int>, this means that a = 'c' should give an error
+'''c
+var a = 10; //a is now of type (int), this means that a = 'c' should give an error
 a = 20;
 
 var b = 20;
@@ -30,7 +30,7 @@ var d = 'd';
 
 # Logic
 Lumina supports the following controlflow
-'''Lumina
+'''c
 var a = 10;
 var b = 20;
 if (a > b) {
@@ -47,13 +47,13 @@ while (c <= 'z') {
 # Functions
 Functions in Lumina should be used like this
 
-'''Lumina
+'''c
 func HelloWorld() {//takes no arguments and return nothing
 	print('H');
 }
 '''
 
-'''Lumina
+'''c
 func max(int a, int b) -> int {//takes two integers as arguments, and returns an integer
 	if (a > b) {
 		return a;
