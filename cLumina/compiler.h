@@ -6,6 +6,7 @@
 
 #include "variable.h"
 #include "function.h"
+#include "string.h"
 
 #define CALLSTACKSIZE 2048
 
@@ -34,7 +35,7 @@ Function *findFunction(Compiler* compiler, char* name, int nameLen);
 Function *findLocalFunction(Compiler* compiler, char* name, int nameLen);
 
 void writeHeader(Compiler* compiler);
-void writeFooter(Compiler* compiler);
+void writeFooter(Compiler* compiler, StringList *string);
 void writePop(Compiler* compiler, int amount);
 
 void writeAddress(Compiler* compiler, char* address, uint32_t id);

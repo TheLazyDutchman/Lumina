@@ -499,7 +499,7 @@ void writeNegative(Compiler* compiler) {
 	fprintf(compiler->output, "	push rax\n\n");
 }
 
-void writeFooter(Compiler* compiler) {
+void writeFooter(Compiler* compiler, StringList *strings) {
 	fprintf(compiler->output, "	mov rax, 60\n");
 	fprintf(compiler->output, "	xor rdi, rdi\n");
 	fprintf(compiler->output, "	syscall\n\n");
@@ -508,6 +508,25 @@ void writeFooter(Compiler* compiler) {
 	fprintf(compiler->output, "	basestack: resq %d\n", CALLSTACKSIZE);
 	fprintf(compiler->output, "	callrsp: resq 1\n");
 	fprintf(compiler->output, "	callStack: resq %d\n", CALLSTACKSIZE);
+
+	int i = 0;
+	while (i < strings->size) {
+		Token value = strings->strings[i]->value;
+
+		printf("	string_%d: resq ", strings->strings[i]->id);
+		int j = 0;
+		while (j < value.wordLen) {
+			char *chr = value.word + j;
+
+			printEscapedCharacter(compiler, &chr);
+
+			if (*chr == '\\') { j++; }
+
+			j++;
+		}
+
+		i++;
+	}
 }
 
 void writePrint(Compiler* compiler) {

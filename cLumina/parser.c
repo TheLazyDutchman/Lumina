@@ -826,5 +826,5 @@ void parse(Parser* parser) {
 		statement(parser);
 	}
 
-	writeFooter(parser->compiler);
+	writeFooter(parser->compiler, parser->strings);
 }
