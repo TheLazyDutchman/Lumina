@@ -270,6 +270,8 @@ Token *nextToken(Lexer* lexer){
 				lexerError(lexer, "expected character end");
 				token->type = TOKEN_ERROR;
 			}
+
+			advance(lexer);
 		} else {
 			advance(lexer);
 		}

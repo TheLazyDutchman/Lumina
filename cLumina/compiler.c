@@ -509,11 +509,12 @@ void writeFooter(Compiler* compiler, StringList *strings) {
 	fprintf(compiler->output, "	callrsp: resq 1\n");
 	fprintf(compiler->output, "	callStack: resq %d\n", CALLSTACKSIZE);
 
+	fprintf(compiler->output, "section .data\n");
 	int i = 0;
 	while (i < strings->size) {
 		Token value = strings->strings[i]->value;
 
-		fprintf(compiler->output, "	string_%d: resq ", strings->strings[i]->id);
+		fprintf(compiler->output, "	string_%d: db ", strings->strings[i]->id);
 		int j = 0;
 		while (j < value.wordLen) {
 			char *chr = value.word + j;
