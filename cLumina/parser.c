@@ -236,12 +236,26 @@ void string(Parser* parser) {
 	uint16_t id = parser->strings->size;
 	addString(parser->strings, value);
 
+	writeString(parser->compiler, id);
+
 	parser->lastType = initType("str", value);
 
 	next(parser);
 }
 
 void readIndex(Parser* parser) {
+	next(parser);
+
+	if (strcmp(parser->lastType->name, "str") != 0) { parseError(parser, parser->lastType->token, "we do not support array indexing for anything other than strings yet"); }
+
+	expression(parser);
+
+	writeReadIndex(parser->compiler);
+
+	freeType(parser->lastType);
+	parser->lastType = initType("char", *parser->current);
+
+	consumeToken(parser, TOKEN_RBRACKET, "expected ']' after index");
 }
 
 void identifier(Parser* parser) {

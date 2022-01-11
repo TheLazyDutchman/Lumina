@@ -29,10 +29,14 @@ void freeCompiler(Compiler* compiler) {
 	free(compiler);
 }
 
-void printEscapedCharacter(Compiler* compiler, char* *string) {
+uint16_t printEscapedCharacter(Compiler* compiler, char* *string) {
 	char chr = *(*string)++;
 
+	uint16_t length = 1;
+
 	if (chr == '\\') {
+		length = 2;
+
 		char test = *(*string)++;
 
 		switch (test) {
@@ -46,6 +50,8 @@ void printEscapedCharacter(Compiler* compiler, char* *string) {
 	}
 
 	fprintf(compiler->output, "0x%02X", chr);
+
+	return length;
 }
 
 void defineVariable(Compiler* compiler, char* name, int nameLen, Type *type) {
@@ -452,6 +458,17 @@ void writeString(Compiler* compiler, int id) {
 	compiler->currentStackSize++;
 }
 
+void writeReadIndex(Compiler* compiler) {
+	fprintf(compiler->output, "	;; -- read at index -- \n");
+	fprintf(compiler->output, "	pop rax ;; index\n");
+	fprintf(compiler->output, "	pop rbx ;; pointer\n");
+	fprintf(compiler->output, "	add rbx, rax\n");
+	fprintf(compiler->output, "	mov rbx, [rbx]\n");
+	fprintf(compiler->output, "	push rbx\n\n");
+
+	compiler->currentStackSize--;
+}
+
 void writeIdentifier(Compiler* compiler, int offset, int currentDepth) {
 	fprintf(compiler->output, "	;; -- identifier --\n");
 	fprintf(compiler->output, "	mov rax, [basestack + 8 * %d]\n", currentDepth);
@@ -515,22 +532,16 @@ void writeFooter(Compiler* compiler, StringList *strings) {
 		Token value = strings->strings[i]->value;
 
 		fprintf(compiler->output, "	string_%d: db ", strings->strings[i]->id);
-		int j = 0;
-		while (j < value.wordLen) {
+		int j = 1;
+		while (j < value.wordLen - 1) {
 			char *chr = value.word + j;
 
-			printEscapedCharacter(compiler, &chr);
+			j += printEscapedCharacter(compiler, &chr);
 
-			if (*chr == '\\') { j++; }
-
-			j++;
-
-			if (j < value.wordLen) {
-				fprintf(compiler->output, ", ");
-			}
+			fprintf(compiler->output, ", ");
 		}
 
-		fprintf(compiler->output, "\n");
+		fprintf(compiler->output, "0x00\n");
 
 		i++;
 	}
