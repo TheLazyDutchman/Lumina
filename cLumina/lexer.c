@@ -304,6 +304,14 @@ Token *nextToken(Lexer* lexer){
 				token->type = TOKEN_RPAREN;
 				advance(lexer);
 				break;
+			case '[':
+				token->type = TOKEN_LBRACKET;
+				advance(lexer);
+				break;
+			case ']':
+				token->type = TOKEN_RBRACKET;
+				advance(lexer);
+				break;
 			case '{':
 				token->type = TOKEN_LBRACE;
 				advance(lexer);

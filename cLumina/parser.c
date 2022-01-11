@@ -71,6 +71,7 @@ typedef enum {
 	PREC_EXPR,
 	PREC_COMPARISON,
 	PREC_TERM,
+	PREC_READ,
 	PREC_UNARY,
 	PREC_PRIMARY
 } Precedence;
@@ -81,7 +82,7 @@ typedef struct {
 	Precedence precedence;
 } ParseRule;
 
-_Static_assert(TOKEN_TYPES_NUM == 26, "Exhaustive handling of token types in parsing");
+_Static_assert(TOKEN_TYPES_NUM == 28, "Exhaustive handling of token types in parsing");
 
 ParseRule parseTable[] = {
 	[TOKEN_NUMBER] = {number, NULL, PREC_PRIMARY},
@@ -98,6 +99,8 @@ ParseRule parseTable[] = {
 	[TOKEN_RARROW] = {NULL, NULL, PREC_NONE},
 	[TOKEN_LPAREN] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_RPAREN] = {NULL, NULL, PREC_BLOCK},
+	[TOKEN_LBRACKET] = {NULL, readIndex, PREC_READ},
+	[TOKEN_RBRACKET] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_LBRACE] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_RBRACE] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_SEMICOLON] = {NULL, NULL, PREC_STATEMENT},
@@ -236,6 +239,9 @@ void string(Parser* parser) {
 	parser->lastType = initType("str", value);
 
 	next(parser);
+}
+
+void readIndex(Parser* parser) {
 }
 
 void identifier(Parser* parser) {
