@@ -42,10 +42,13 @@ uint16_t printEscapedCharacter(Compiler* compiler, char* *string) {
 		switch (test) {
 			case '0':
 				chr = '\0';
+				break;
 			case 't':
 				chr = '\t';
+				break;
 			case 'n':
 				chr = '\n';
+				break;
 		}
 	}
 

@@ -7,3 +7,11 @@ while (hello[i] > '\0') {
 
 	i = i + 1;
 }
+
+print('\n');
+
+while (hello[i] > '\0') {
+	print(hello[i]);
+
+	i = i + 1;
+}
