@@ -467,6 +467,7 @@ void writeReadIndex(Compiler* compiler) {
 	fprintf(compiler->output, "	pop rbx ;; pointer\n");
 	fprintf(compiler->output, "	add rbx, rax\n");
 	fprintf(compiler->output, "	mov rbx, [rbx]\n");
+	fprintf(compiler->output, "	and rbx, 255 ;; select the lowest character\n");
 	fprintf(compiler->output, "	push rbx\n\n");
 
 	compiler->currentStackSize--;
