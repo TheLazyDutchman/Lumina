@@ -1,3 +1,6 @@
 ./characterErrors.lumina:0 ERROR at ''a'': can not add 2 characters together
 ./characterErrors.lumina:2 ERROR at '"a"': can not subtract a 'char' from an 'int'
-./characterErrors.lumina:5:0: ERROR: expected character end (at '
+./characterErrors.lumina:5:0: ERROR: expected string end (at '
+')
+./characterErrors.lumina:4 ERROR at ''': unexpected token
+./characterErrors.lumina:6 ERROR at '': expected ';' after expression

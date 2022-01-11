@@ -264,7 +264,8 @@ Token *nextToken(Lexer* lexer){
 				}
 
 				if (*lexer->current == '\0') {
-					lexerError(lexer, "expected character end");
+					lexer->current--;
+					lexerError(lexer, "expected string end");
 					token->type = TOKEN_ERROR;
 					return token;
 				}
@@ -272,7 +273,8 @@ Token *nextToken(Lexer* lexer){
 				advance(lexer);
 
 				if (*lexer->current == '\0') {
-					lexerError(lexer, "expected character end");
+					lexer->current--;
+					lexerError(lexer, "expected string end");
 					token->type = TOKEN_ERROR;
 					return token;
 				}
