@@ -54,5 +54,6 @@ dkms.conf
 # Compiler output
 tests/*
 !tests/*.lumina
+!tests/*.test
 
 cLumina/test

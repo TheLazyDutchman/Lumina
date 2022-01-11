@@ -258,17 +258,24 @@ Token *nextToken(Lexer* lexer){
 		if (*lexer->current != charStart) {
 			token->type = TOKEN_STR;
 
-			while(*lexer->current != charStart && *lexer->current != EOF) {
+			while(*lexer->current != charStart) {
 				if (*lexer->current == '\\') {
 					advance(lexer);
 				}
 
-				advance(lexer);
-			}
+				if (*lexer->current == '\0') {
+					lexerError(lexer, "expected character end");
+					token->type = TOKEN_ERROR;
+					return token;
+				}
 
-			if (*lexer->current == EOF) {
-				lexerError(lexer, "expected character end");
-				token->type = TOKEN_ERROR;
+				advance(lexer);
+
+				if (*lexer->current == '\0') {
+					lexerError(lexer, "expected character end");
+					token->type = TOKEN_ERROR;
+					return token;
+				}
 			}
 
 			advance(lexer);
