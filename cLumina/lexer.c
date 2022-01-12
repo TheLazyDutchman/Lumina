@@ -136,7 +136,42 @@ Token *nextToken(Lexer* lexer){
 				break;
 			case 'i':
 				advance(lexer);
-				if (*lexer->current != 'f') {
+				if (*lexer->current != 'm') {
+					if (*lexer->current != 'f') {
+						lexIdentifier(lexer, token);
+						break;
+					}
+
+					advance(lexer);
+					if (isalnum(*lexer->current)) {
+						lexIdentifier(lexer, token);
+						break;
+					}
+
+					token->type = TOKEN_IF;
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 'p') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 'o') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 'r') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 't') {
 					lexIdentifier(lexer, token);
 					break;
 				}
@@ -147,7 +182,7 @@ Token *nextToken(Lexer* lexer){
 					break;
 				}
 
-				token->type = TOKEN_IF;
+				token->type = TOKEN_IMPORT;
 				break;
 			case 'r':
 				advance(lexer);
