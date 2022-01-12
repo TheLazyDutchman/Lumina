@@ -6,6 +6,7 @@
 #include "lexer.h"
 #include "compiler.h"
 #include "type.h"
+#include "luminaString.h"
 
 typedef enum {
 	FLAG_DUMP = 1,
@@ -24,6 +25,8 @@ typedef struct {
 	int numWhiles;
 	int numFuncs;
 
+	StringList *strings;
+
 	bool hadError;
 } Parser;
 
@@ -32,6 +35,8 @@ void freeParser(Parser* parser);
 
 void number(Parser* parser);
 void character(Parser* parser);
+void string(Parser* parser);
+void readIndex(Parser* parser);
 void identifier(Parser* parser);
 void unary(Parser* parser);
 void binary(Parser* parser);

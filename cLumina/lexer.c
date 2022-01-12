@@ -249,10 +249,38 @@ Token *nextToken(Lexer* lexer){
 		token->type = TOKEN_CHAR;
 
 		char charStart = advance(lexer);
+
+		if (*lexer->current == '\\') {
+			advance(lexer);
+		}
+
 		advance(lexer);
 		if (*lexer->current != charStart) {
-			lexerError(lexer, "expected character end");
-			token->type = TOKEN_ERROR;
+			token->type = TOKEN_STR;
+
+			while(*lexer->current != charStart) {
+				if (*lexer->current == '\\') {
+					advance(lexer);
+				}
+
+				if (*lexer->current == '\0') {
+					lexer->current--;
+					lexerError(lexer, "expected string end");
+					token->type = TOKEN_ERROR;
+					return token;
+				}
+
+				advance(lexer);
+
+				if (*lexer->current == '\0') {
+					lexer->current--;
+					lexerError(lexer, "expected string end");
+					token->type = TOKEN_ERROR;
+					return token;
+				}
+			}
+
+			advance(lexer);
 		} else {
 			advance(lexer);
 		}
@@ -283,6 +311,14 @@ Token *nextToken(Lexer* lexer){
 				break;
 			case ')':
 				token->type = TOKEN_RPAREN;
+				advance(lexer);
+				break;
+			case '[':
+				token->type = TOKEN_LBRACKET;
+				advance(lexer);
+				break;
+			case ']':
+				token->type = TOKEN_RBRACKET;
 				advance(lexer);
 				break;
 			case '{':

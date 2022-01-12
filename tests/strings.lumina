@@ -1,0 +1,30 @@
+var hello = "Hello, World!\n";
+
+var i = 0;
+
+while (i < 15) {
+	print(hello[i]);
+
+	i = i + 1;
+}
+
+print('\n');
+
+i = 0;
+
+while (hello[i] > '\0') {
+	print(hello[i]);
+
+	i = i + 1;
+}
+
+print('\n');
+
+i = 0;
+
+while (i < 15) {
+	print(hello[i]);
+
+	i = i + 1;
+}
+

@@ -6,6 +6,7 @@
 
 #include "variable.h"
 #include "function.h"
+#include "luminaString.h"
 
 #define CALLSTACKSIZE 2048
 
@@ -34,7 +35,7 @@ Function *findFunction(Compiler* compiler, char* name, int nameLen);
 Function *findLocalFunction(Compiler* compiler, char* name, int nameLen);
 
 void writeHeader(Compiler* compiler);
-void writeFooter(Compiler* compiler);
+void writeFooter(Compiler* compiler, StringList *string);
 void writePop(Compiler* compiler, int amount);
 
 void writeAddress(Compiler* compiler, char* address, uint32_t id);
@@ -55,7 +56,9 @@ void writeJump(Compiler* compiler, char* address, uint32_t id);
 void writeJumpNotEqual(Compiler* compiler, char* address, uint32_t id);
 
 void writeNumber(Compiler* compiler, int value);
-void writeCharacter(Compiler* compiler, char value);
+void writeCharacter(Compiler* compiler, char* *value);
+void writeString(Compiler* compiler, int id);
+void writeReadIndex(Compiler* compiler);
 void writeIdentifier(Compiler* compiler, int offset, int currentDepth);
 void writeAssignment(Compiler* compiler, int offset, int currentDepth);
 

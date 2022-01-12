@@ -2,4 +2,8 @@
 
 14 - "a";
 
+"hello" + "a";
+
+"Hello, World" + 10;
+
 'a;

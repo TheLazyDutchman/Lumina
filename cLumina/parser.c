@@ -20,6 +20,8 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 	parser->numWhiles = 0;
 	parser->numFuncs = 0;
 
+	parser->strings = initStringList();
+
 	parser->hadError = false;
 	
 	return parser;
@@ -37,6 +39,8 @@ void freeParser(Parser* parser) {
 	}
 
 	freeCompiler(parser->compiler);
+
+	freeStringList(parser->strings);
 
 	fclose(parser->outputFile);
 
@@ -67,6 +71,7 @@ typedef enum {
 	PREC_EXPR,
 	PREC_COMPARISON,
 	PREC_TERM,
+	PREC_READ,
 	PREC_UNARY,
 	PREC_PRIMARY
 } Precedence;
@@ -77,11 +82,12 @@ typedef struct {
 	Precedence precedence;
 } ParseRule;
 
-_Static_assert(TOKEN_TYPES_NUM == 25, "Exhaustive handling of token types in parsing");
+_Static_assert(TOKEN_TYPES_NUM == 28, "Exhaustive handling of token types in parsing");
 
 ParseRule parseTable[] = {
 	[TOKEN_NUMBER] = {number, NULL, PREC_PRIMARY},
 	[TOKEN_CHAR] = {character, NULL, PREC_PRIMARY},
+	[TOKEN_STR] = {string, NULL, PREC_PRIMARY},
 	[TOKEN_PLUS] = {NULL, binary, PREC_TERM},
 	[TOKEN_MINUS] = {unary, binary, PREC_UNARY},
 	[TOKEN_EQUAL] = {NULL, NULL, PREC_ASSIGNMENT},
@@ -93,6 +99,8 @@ ParseRule parseTable[] = {
 	[TOKEN_RARROW] = {NULL, NULL, PREC_NONE},
 	[TOKEN_LPAREN] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_RPAREN] = {NULL, NULL, PREC_BLOCK},
+	[TOKEN_LBRACKET] = {NULL, readIndex, PREC_READ},
+	[TOKEN_RBRACKET] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_LBRACE] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_RBRACE] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_SEMICOLON] = {NULL, NULL, PREC_STATEMENT},
@@ -211,13 +219,43 @@ void character(Parser* parser) {
 
 	dumpCharacter(parser, value);
 
-	char charValue = value.word[1];
-
-	writeCharacter(parser->compiler, charValue);
+	char *chr = value.word + 1;
+	writeCharacter(parser->compiler, &chr);
 
 	parser->lastType = initType("char", value);
 
 	next(parser);
+}
+
+void string(Parser* parser) {
+	Token value = *parser->current;
+	if (value.type != TOKEN_STR) {
+		printf("incorrect reference in parseTable: '%s' points to string\n", tokenTypes[value.type]);
+	}
+
+	uint16_t id = parser->strings->size;
+	addString(parser->strings, value);
+
+	writeString(parser->compiler, id);
+
+	parser->lastType = initType("str", value);
+
+	next(parser);
+}
+
+void readIndex(Parser* parser) {
+	next(parser);
+
+	if (strcmp(parser->lastType->name, "str") != 0) { parseError(parser, parser->lastType->token, "we do not support array indexing for anything other than strings yet"); }
+
+	expression(parser);
+
+	writeReadIndex(parser->compiler);
+
+	freeType(parser->lastType);
+	parser->lastType = initType("char", *parser->current);
+
+	consumeToken(parser, TOKEN_RBRACKET, "expected ']' after index");
 }
 
 void identifier(Parser* parser) {
@@ -808,5 +846,5 @@ void parse(Parser* parser) {
 		statement(parser);
 	}
 
-	writeFooter(parser->compiler);
+	writeFooter(parser->compiler, parser->strings);
 }
