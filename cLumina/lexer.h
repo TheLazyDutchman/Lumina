@@ -7,9 +7,11 @@ typedef struct Lexer {
 	char *current;
 	int line;
 	int column;
+
+	struct Lexer *outer;
 } Lexer;
 
-Lexer *initLexer(char *filename);
+Lexer *initLexer(char *filename, Lexer *outer);
 void freeLexer(Lexer* lexer);
 
 typedef enum Tokentype {

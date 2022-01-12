@@ -7,7 +7,7 @@
 Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 	Parser* parser = malloc(sizeof(Parser));
 
-	parser->lexer = initLexer(inputName);
+	parser->lexer = initLexer(inputName, NULL);
 	parser->current = nextToken(parser->lexer);
 	parser->lastType = NULL;
 	parser->flags = flags;
@@ -53,6 +53,15 @@ Token* next(Parser* parser) {
 	}
 
 	parser->current = nextToken(parser->lexer);
+
+	if (parser->current->type == TOKEN_END_OF_FILE && parser->lexer->outer != NULL) {
+		Lexer *current = parser->lexer;
+		parser->lexer = current->outer;
+		freeLexer(current);
+
+		return next(parser);
+	}
+
 	return parser->current;
 }
 
@@ -804,9 +813,19 @@ void returnStatement(Parser* parser) {
 }
 
 void importStatement(Parser* parser) {
-	Token fileName = consumeToken(parser, TOKEN_STR, "expected file name as string");
+	Token name = *parser->current;
+	if (name.type != TOKEN_STR) { 
+		parseError(parser, name, "expected file name as string"); 
+		return;
+	}
 
-	consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after import statement");
+	char* fileName = strndup(name.word + 1, name.wordLen - 2);
+
+	Lexer *importFile = initLexer(fileName, parser->lexer);
+	parser->lexer = importFile;
+	parser->current = nextToken(importFile);
+
+	free(fileName);
 }
 
 void statement(Parser* parser) {

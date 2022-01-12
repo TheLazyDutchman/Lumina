@@ -38,11 +38,23 @@ char* readFile(char *fileName) {
 	return buffer;
 }
 
-Lexer *initLexer(char *fileName) {
+Lexer *initLexer(char *fileName, Lexer *outer) {
 	Lexer *lexer = malloc(sizeof(Lexer));
-		
-	lexer->fileName = fileName;
-	lexer->buffer = readFile(fileName);
+
+	lexer->outer = outer;
+
+	if (lexer->outer == NULL) {	lexer->fileName = fileName; }
+	else {
+		int outerLen = rindex(lexer->outer->fileName, '/') - lexer->outer->fileName + 1;
+		char* buffer = malloc(outerLen + strlen(fileName));
+
+		strncpy(buffer, lexer->outer->fileName, outerLen);
+		strcpy(buffer + outerLen, fileName);
+
+		lexer->fileName = buffer;
+	}
+
+	lexer->buffer = readFile(lexer->fileName);
 	lexer->current = lexer->buffer;
 
 	lexer->line = 0;
