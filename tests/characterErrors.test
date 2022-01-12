@@ -1,6 +1,8 @@
 ./characterErrors.lumina:0 ERROR at ''a'': can not add 2 characters together
 ./characterErrors.lumina:2 ERROR at '"a"': can not subtract a 'char' from an 'int'
-./characterErrors.lumina:5:0: ERROR: expected string end (at '
+./characterErrors.lumina:4 ERROR at '"hello"': can not add something that is not 'int' or 'char'
+./characterErrors.lumina:6 ERROR at '"Hello, World"': can not add something that is not 'int' or 'char'
+./characterErrors.lumina:9:0: ERROR: expected string end (at '
 ')
-./characterErrors.lumina:4 ERROR at ''': unexpected token
-./characterErrors.lumina:6 ERROR at '': expected ';' after expression
+./characterErrors.lumina:8 ERROR at ''': unexpected token
+./characterErrors.lumina:10 ERROR at '': expected ';' after expression

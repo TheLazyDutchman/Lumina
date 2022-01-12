@@ -2,9 +2,10 @@
 
 #include "luminaString.h"
 
-String* initString(Token value) {
+String* initString(Token value, uint16_t id) {
 	String* str = malloc(sizeof(String));
 	str->value = value;
+	str->id = id;
 
 	return str;
 }
@@ -32,7 +33,7 @@ void freeStringList(StringList* list) {
 }
 
 void addString(StringList* list, Token token) {
-	list->strings[list->size] = initString(token);
+	list->strings[list->size] = initString(token, list->size);
 
 	list->size++;
 
