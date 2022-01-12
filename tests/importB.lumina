@@ -1,0 +1,3 @@
+import "importA.lumina"
+
+hello();

@@ -44,6 +44,7 @@ void expression(Parser* parser);
 void condition(Parser* parser);
 void whileStatement(Parser* parser);
 void ifStatement(Parser* parser);
+void importStatement(Parser* parser);
 void variableDefinition(Parser* parser);
 void block(Parser* parser, Function *func, TypeList *parameters);
 void statement(Parser* parser);

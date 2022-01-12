@@ -803,6 +803,12 @@ void returnStatement(Parser* parser) {
 	parser->compiler->hasReturned = true;
 }
 
+void importStatement(Parser* parser) {
+	Token fileName = consumeToken(parser, TOKEN_STR, "expected file name as string");
+
+	consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after import statement");
+}
+
 void statement(Parser* parser) {
 	if (parser->current->type == TOKEN_VAR) {
 		next(parser);
@@ -824,6 +830,10 @@ void statement(Parser* parser) {
 		next(parser);
 
 		returnStatement(parser);
+	} else if (parser->current->type == TOKEN_IMPORT) {
+		next(parser);
+
+		importStatement(parser);
 	} else if (parser->current->type == TOKEN_IDENTIFIER && strncmp(parser->current->word, "print", parser->current->wordLen) == 0) { //temporary print function
 		next(parser);
 
