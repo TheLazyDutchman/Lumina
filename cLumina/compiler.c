@@ -185,7 +185,26 @@ void writeHeader(Compiler* compiler) {
 	fprintf(compiler->output, "	pop rdi\n");
 	fprintf(compiler->output, "	pop rax\n");
 	fprintf(compiler->output, "	syscall\n");
+
+	fprintf(compiler->output, "	;; -- return --\n");
+
+	fprintf(compiler->output, "	;; -- store return value --\n");
+
+	fprintf(compiler->output, "	;; -- restore stackframe -- \n");
+	fprintf(compiler->output, "	pop rbx\n");
+	fprintf(compiler->output, " mov [basestack], rbx\n");
+
+	fprintf(compiler->output, "	;; -- push return value --\n");
 	fprintf(compiler->output, "	push rax\n");
+	
+	fprintf(compiler->output, "	;; -- pop return address --\n");
+	fprintf(compiler->output, "	mov rax, [callrsp]\n");
+	fprintf(compiler->output, "	add rax, 4\n");
+	fprintf(compiler->output, "	mov [callrsp], rax\n");
+	// jump to address
+	fprintf(compiler->output, "	mov rax, [callrsp]\n");
+	fprintf(compiler->output, "	jmp [rax]\n");
+
 	fprintf(compiler->output, "addr_func_end_0:\n");
 }
 
