@@ -29,6 +29,7 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 	int i = 0;
 	while (i < 7) {
 		addType(parameters, "any", *parser->current);
+		i++;
 	}
 
 	defineFunction(parser->compiler, name, nameLen, 0, returnType, parameters);

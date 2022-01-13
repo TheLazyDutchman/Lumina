@@ -186,6 +186,7 @@ void writeHeader(Compiler* compiler) {
 	fprintf(compiler->output, "	pop rax\n");
 	fprintf(compiler->output, "	syscall\n");
 	fprintf(compiler->output, "	push rax\n");
+	fprintf(compiler->output, "addr_func_end_0:\n");
 }
 
 void writePop(Compiler* compiler, int amount) {
