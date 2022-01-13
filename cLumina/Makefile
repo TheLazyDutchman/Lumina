@@ -10,3 +10,6 @@ cLumina: $(OBJS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $^ -o $@
+
+debug: $(SRCS)
+	gcc -g -o test $(SRCS)
