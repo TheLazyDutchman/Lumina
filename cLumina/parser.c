@@ -361,8 +361,6 @@ void identifier(Parser* parser) {
 			return;
 		}
 
-		printf("var: %s, pos: %d, funcDepth: %d\n", var->name, var->position, var->functionDepth);
-
 		writeIdentifier(parser->compiler, var->position, var->functionDepth);
 
 		if (parser->lastType != NULL) {
@@ -790,7 +788,8 @@ void block(Parser* parser, Function *func, TypeList *parameters) {
 				parseError(parser, *parser->current, "not al code paths return a value");
 			}
 		} else {
-			writeReturnEmpty(parser->compiler, parser->compiler->currentStackSize);
+			uint16_t numVars = parser->compiler->currentStackSize - func->parameters->size - 1;
+			writeReturnEmpty(parser->compiler, numVars, func->parameters->size);
 		}
 	} else {
 		int numLocalVariables = scopeCompiler->variableList->size;
@@ -813,7 +812,7 @@ void returnStatement(Parser* parser) {
 
 	//calculate the amount of variables in the function, as they need to be dropped from the data stack
 	
-	uint16_t numVars = parser->compiler->currentStackSize;
+	uint16_t numVars = parser->compiler->currentStackSize - func->parameters->size - 1;
 	Compiler* currentCompiler = parser->compiler->outer;
 
 	while (currentCompiler->function == func) {
@@ -824,7 +823,7 @@ void returnStatement(Parser* parser) {
 	if (strcmp(func->returnType->name, "null") == 0) {
 		consumeToken(parser, TOKEN_SEMICOLON, "expected empty return in a 'null' function");
 
-		writeReturnEmpty(parser->compiler, numVars);
+		writeReturnEmpty(parser->compiler, numVars, func->parameters->size);
 	} else {
 		expression(parser);
 
@@ -835,7 +834,7 @@ void returnStatement(Parser* parser) {
 
 		consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after return statement");
 
-		writeReturnValue(parser->compiler, numVars);
+		writeReturnValue(parser->compiler, numVars, func->parameters->size);
 	}
 
 	parser->compiler->hasReturned = true;

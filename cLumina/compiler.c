@@ -252,15 +252,18 @@ void writeCall(Compiler* compiler, uint32_t id, uint16_t numCalls) {
 	compiler->currentStackSize++;
 }
 
-void writeReturnEmpty(Compiler* compiler, uint16_t numVars) {
+void writeReturnEmpty(Compiler* compiler, uint16_t numVars, uint16_t numParameters) {
 	fprintf(compiler->output, "	;; -- return --\n");
+
+	fprintf(compiler->output, "	;; -- pop local variables --\n");
+	fprintf(compiler->output, "	add rsp, %d\n", 8 * numVars);
 
 	fprintf(compiler->output, "	;; -- restore stackframe -- \n");
 	fprintf(compiler->output, "	pop rax\n");
 	fprintf(compiler->output, " mov [basestack + 8 * %d], rax\n", compiler->functionDepth);
 
-	fprintf(compiler->output, "	;; -- pop local variables --\n");
-	fprintf(compiler->output, "	add rsp, %d\n", 8 * (numVars - 1));
+	fprintf(compiler->output, "	;; -- pop parameters --\n");
+	fprintf(compiler->output, "	add rsp, %d\n", 8 * numParameters);
 
 	fprintf(compiler->output, "	;; -- return empty --\n");
 	fprintf(compiler->output, "	push 0\n");
@@ -274,18 +277,21 @@ void writeReturnEmpty(Compiler* compiler, uint16_t numVars) {
 	fprintf(compiler->output, "	jmp [rax]\n");
 }
 
-void writeReturnValue(Compiler* compiler, uint16_t numVars) {
+void writeReturnValue(Compiler* compiler, uint16_t numVars, uint16_t numParameters) {
 	fprintf(compiler->output, "	;; -- return --\n");
 
 	fprintf(compiler->output, "	;; -- store return value --\n");
 	fprintf(compiler->output, "	pop rax\n");
 
+	fprintf(compiler->output, "	;; -- pop local variables --\n");
+	fprintf(compiler->output, "	add rsp, %d\n", 8 * numVars);
+
 	fprintf(compiler->output, "	;; -- restore stackframe -- \n");
 	fprintf(compiler->output, "	pop rbx\n");
 	fprintf(compiler->output, " mov [basestack + 8 * %d], rbx\n", compiler->functionDepth);
 
-	fprintf(compiler->output, "	;; -- pop local variables --\n");
-	fprintf(compiler->output, "	add rsp, %d\n", 8 * (numVars - 1));
+	fprintf(compiler->output, "	;; -- pop parameters --\n");
+	fprintf(compiler->output, "	add rsp, %d\n", 8 * numParameters);
 
 	fprintf(compiler->output, "	;; -- push return value --\n");
 	fprintf(compiler->output, "	push rax\n");

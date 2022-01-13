@@ -41,8 +41,8 @@ void writePop(Compiler* compiler, int amount);
 void writeAddress(Compiler* compiler, char* address, uint32_t id);
 void writeBeginFunction(Compiler* compiler, uint32_t id, size_t numParameters);
 void writeCall(Compiler* compiler, uint32_t id, uint16_t numCalls);
-void writeReturnEmpty(Compiler* compiler, uint16_t numVars);
-void writeReturnValue(Compiler* compiler, uint16_t numVars);
+void writeReturnEmpty(Compiler* compiler, uint16_t numVars, uint16_t numParameters);
+void writeReturnValue(Compiler* compiler, uint16_t numVars, uint16_t numParameters);
 void writeCompare(Compiler* compiler);
 
 void writeLess(Compiler* compiler);
