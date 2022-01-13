@@ -1,0 +1,7 @@
+func strlen(str string) -> int{
+	var i = 0;
+	while (string[i] > '\0') {
+		i = i + 1;
+	}
+	return i;
+}

@@ -7,7 +7,7 @@
 Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 	Parser* parser = malloc(sizeof(Parser));
 
-	parser->lexer = initLexer(inputName);
+	parser->lexer = initLexer(inputName, NULL);
 	parser->current = nextToken(parser->lexer);
 	parser->lastType = NULL;
 	parser->flags = flags;
@@ -18,7 +18,23 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 
 	parser->numIfs = 0;
 	parser->numWhiles = 0;
-	parser->numFuncs = 0;
+	
+	// defining sycall built-in
+	char *name = "syscall";
+	int nameLen = strlen(name);
+	int id = 0;
+	Type *returnType = initType("any", *parser->current);
+
+	TypeList *parameters = initTypeList();
+	int i = 0;
+	while (i < 7) {
+		addType(parameters, "any", *parser->current);
+		i++;
+	}
+
+	defineFunction(parser->compiler, name, nameLen, 0, returnType, parameters);
+
+	parser->numFuncs = 1; // this is because there is a predefined built-in syscall function, which has id 0
 
 	parser->strings = initStringList();
 
@@ -53,6 +69,15 @@ Token* next(Parser* parser) {
 	}
 
 	parser->current = nextToken(parser->lexer);
+
+	if (parser->current->type == TOKEN_END_OF_FILE && parser->lexer->outer != NULL) {
+		Lexer *current = parser->lexer;
+		parser->lexer = current->outer;
+		freeLexer(current);
+
+		return next(parser);
+	}
+
 	return parser->current;
 }
 
@@ -82,7 +107,7 @@ typedef struct {
 	Precedence precedence;
 } ParseRule;
 
-_Static_assert(TOKEN_TYPES_NUM == 28, "Exhaustive handling of token types in parsing");
+_Static_assert(TOKEN_TYPES_NUM == 29, "Exhaustive handling of token types in parsing");
 
 ParseRule parseTable[] = {
 	[TOKEN_NUMBER] = {number, NULL, PREC_PRIMARY},
@@ -91,7 +116,7 @@ ParseRule parseTable[] = {
 	[TOKEN_PLUS] = {NULL, binary, PREC_TERM},
 	[TOKEN_MINUS] = {unary, binary, PREC_UNARY},
 	[TOKEN_EQUAL] = {NULL, NULL, PREC_ASSIGNMENT},
-	[TOKEN_LESS] = {NULL, binary, PREC_COMPARISON},
+	[TOKEN_LESS] = {typeCast, binary, PREC_COMPARISON},
 	[TOKEN_GREATER] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_LESSEQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_GREATEREQUAL] = {NULL, binary, PREC_COMPARISON},
@@ -108,6 +133,7 @@ ParseRule parseTable[] = {
 	[TOKEN_IF] = {NULL, NULL, PREC_IF_STATEMENT},
 	[TOKEN_WHILE] = {NULL, NULL, PREC_WHILE_STATEMENT},
 	[TOKEN_FUNC] = {NULL, NULL, PREC_FUNC},
+	[TOKEN_IMPORT] = {NULL, NULL, PREC_STATEMENT},
 	[TOKEN_RETURN] = {NULL, NULL, PREC_RETURN_STATEMENT},
 	[TOKEN_COMMA] = {NULL, NULL, PREC_ARG},
 	[TOKEN_IDENTIFIER] = {identifier, NULL, PREC_PRIMARY},
@@ -544,6 +570,17 @@ void unary(Parser* parser) {
 	}
 }
 
+void typeCast(Parser* parser) {
+	next(parser);
+	Token typeName = consumeToken(parser, TOKEN_IDENTIFIER, "expected type name in type cast");
+	consumeToken(parser, TOKEN_GREATER, "expected '>' after type name");
+
+	parsePrecedence(parser, PREC_PRIMARY);
+
+	freeType(parser->lastType);
+	parser->lastType = initType(strndup(typeName.word, typeName.wordLen), typeName);
+}
+
 void expression(Parser* parser) {
 	if (parsePrecedence(parser, PREC_EXPR).type == TOKEN_ERROR) {
 		return;
@@ -751,7 +788,8 @@ void block(Parser* parser, Function *func, TypeList *parameters) {
 				parseError(parser, *parser->current, "not al code paths return a value");
 			}
 		} else {
-			writeReturnEmpty(parser->compiler, parser->compiler->currentStackSize);
+			uint16_t numVars = parser->compiler->currentStackSize - func->parameters->size - 1;
+			writeReturnEmpty(parser->compiler, numVars, func->parameters->size);
 		}
 	} else {
 		int numLocalVariables = scopeCompiler->variableList->size;
@@ -774,7 +812,7 @@ void returnStatement(Parser* parser) {
 
 	//calculate the amount of variables in the function, as they need to be dropped from the data stack
 	
-	uint16_t numVars = parser->compiler->currentStackSize;
+	uint16_t numVars = parser->compiler->currentStackSize - func->parameters->size - 1;
 	Compiler* currentCompiler = parser->compiler->outer;
 
 	while (currentCompiler->function == func) {
@@ -785,7 +823,7 @@ void returnStatement(Parser* parser) {
 	if (strcmp(func->returnType->name, "null") == 0) {
 		consumeToken(parser, TOKEN_SEMICOLON, "expected empty return in a 'null' function");
 
-		writeReturnEmpty(parser->compiler, numVars);
+		writeReturnEmpty(parser->compiler, numVars, func->parameters->size);
 	} else {
 		expression(parser);
 
@@ -796,10 +834,26 @@ void returnStatement(Parser* parser) {
 
 		consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after return statement");
 
-		writeReturnValue(parser->compiler, numVars);
+		writeReturnValue(parser->compiler, numVars, func->parameters->size);
 	}
 
 	parser->compiler->hasReturned = true;
+}
+
+void importStatement(Parser* parser) {
+	Token name = *parser->current;
+	if (name.type != TOKEN_STR) { 
+		parseError(parser, name, "expected file name as string"); 
+		return;
+	}
+
+	char* fileName = strndup(name.word + 1, name.wordLen - 2);
+
+	Lexer *importFile = initLexer(fileName, parser->lexer);
+	parser->lexer = importFile;
+	parser->current = nextToken(importFile);
+
+	free(fileName);
 }
 
 void statement(Parser* parser) {
@@ -823,15 +877,10 @@ void statement(Parser* parser) {
 		next(parser);
 
 		returnStatement(parser);
-	} else if (parser->current->type == TOKEN_IDENTIFIER && strncmp(parser->current->word, "print", parser->current->wordLen) == 0) { //temporary print function
+	} else if (parser->current->type == TOKEN_IMPORT) {
 		next(parser);
 
-		consumeToken(parser, TOKEN_LPAREN, "expected '(' after function name");
-		expression(parser);
-		consumeToken(parser, TOKEN_RPAREN, "expected ')' after function parameters");
-
-		writePrint(parser->compiler);
-		consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after function call");
+		importStatement(parser);
 	} else {
 		expression(parser);
 		consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after expression");

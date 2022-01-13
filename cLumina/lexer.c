@@ -38,11 +38,23 @@ char* readFile(char *fileName) {
 	return buffer;
 }
 
-Lexer *initLexer(char *fileName) {
+Lexer *initLexer(char *fileName, Lexer *outer) {
 	Lexer *lexer = malloc(sizeof(Lexer));
-		
-	lexer->fileName = fileName;
-	lexer->buffer = readFile(fileName);
+
+	lexer->outer = outer;
+
+	if (lexer->outer == NULL) {	lexer->fileName = fileName; }
+	else {
+		int outerLen = rindex(lexer->outer->fileName, '/') - lexer->outer->fileName + 1;
+		char* buffer = malloc(outerLen + strlen(fileName));
+
+		strncpy(buffer, lexer->outer->fileName, outerLen);
+		strcpy(buffer + outerLen, fileName);
+
+		lexer->fileName = buffer;
+	}
+
+	lexer->buffer = readFile(lexer->fileName);
 	lexer->current = lexer->buffer;
 
 	lexer->line = 0;
@@ -136,7 +148,42 @@ Token *nextToken(Lexer* lexer){
 				break;
 			case 'i':
 				advance(lexer);
-				if (*lexer->current != 'f') {
+				if (*lexer->current != 'm') {
+					if (*lexer->current != 'f') {
+						lexIdentifier(lexer, token);
+						break;
+					}
+
+					advance(lexer);
+					if (isalnum(*lexer->current)) {
+						lexIdentifier(lexer, token);
+						break;
+					}
+
+					token->type = TOKEN_IF;
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 'p') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 'o') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 'r') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 't') {
 					lexIdentifier(lexer, token);
 					break;
 				}
@@ -147,7 +194,7 @@ Token *nextToken(Lexer* lexer){
 					break;
 				}
 
-				token->type = TOKEN_IF;
+				token->type = TOKEN_IMPORT;
 				break;
 			case 'r':
 				advance(lexer);

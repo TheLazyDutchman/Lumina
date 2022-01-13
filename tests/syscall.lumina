@@ -1,0 +1,1 @@
+syscall(<any>1, <any>1, <any>"Hello, World!", <any>13, <any>0, <any>0, <any>0);
