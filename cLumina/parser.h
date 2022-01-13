@@ -40,6 +40,7 @@ void readIndex(Parser* parser);
 void identifier(Parser* parser);
 void unary(Parser* parser);
 void binary(Parser* parser);
+void typeCast(Parser* parser);
 void expression(Parser* parser);
 void condition(Parser* parser);
 void whileStatement(Parser* parser);

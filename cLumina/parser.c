@@ -116,7 +116,7 @@ ParseRule parseTable[] = {
 	[TOKEN_PLUS] = {NULL, binary, PREC_TERM},
 	[TOKEN_MINUS] = {unary, binary, PREC_UNARY},
 	[TOKEN_EQUAL] = {NULL, NULL, PREC_ASSIGNMENT},
-	[TOKEN_LESS] = {NULL, binary, PREC_COMPARISON},
+	[TOKEN_LESS] = {typeCast, binary, PREC_COMPARISON},
 	[TOKEN_GREATER] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_LESSEQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_GREATEREQUAL] = {NULL, binary, PREC_COMPARISON},
@@ -568,6 +568,17 @@ void unary(Parser* parser) {
 		default:
 			printf("incorrect reference in parseTable: '%s' points to unary\n", tokenTypes[operator.type]);
 	}
+}
+
+void typeCast(Parser* parser) {
+	next(parser);
+	Token typeName = consumeToken(parser, TOKEN_IDENTIFIER, "expected type name in type cast");
+	consumeToken(parser, TOKEN_GREATER, "expected '>' after type name");
+
+	parsePrecedence(parser, PREC_PRIMARY);
+
+	freeType(parser->lastType);
+	parser->lastType = initType(strndup(typeName.word, typeName.wordLen), typeName);
 }
 
 void expression(Parser* parser) {
