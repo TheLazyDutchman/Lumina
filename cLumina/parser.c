@@ -881,15 +881,6 @@ void statement(Parser* parser) {
 		next(parser);
 
 		importStatement(parser);
-	//} else if (parser->current->type == TOKEN_IDENTIFIER && strncmp(parser->current->word, "print", parser->current->wordLen) == 0) { //temporary print function
-	//	next(parser);
-//
-//		consumeToken(parser, TOKEN_LPAREN, "expected '(' after function name");
-//		expression(parser);
-//		consumeToken(parser, TOKEN_RPAREN, "expected ')' after function parameters");
-
-//		writePrint(parser->compiler);
-//		consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after function call");
 	} else {
 		expression(parser);
 		consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after expression");
