@@ -173,6 +173,19 @@ void writeHeader(Compiler* compiler) {
 	fprintf(compiler->output, "	lea rax, [callStack + %d]\n", CALLSTACKSIZE);
 	fprintf(compiler->output, "	mov [callrsp], rax\n");
 	fprintf(compiler->output, "	mov [basestack], rsp\n");
+
+	fprintf(compiler->output, "	;; -- syscall builtin --\n");
+	fprintf(compiler->output, "	jmp addr_func_end_0\n");
+	fprintf(compiler->output, "addr_func_0:\n");
+	fprintf(compiler->output, "	pop r9\n");
+	fprintf(compiler->output, "	pop r8\n");
+	fprintf(compiler->output, "	pop r10\n");
+	fprintf(compiler->output, "	pop rdx\n");
+	fprintf(compiler->output, "	pop rsi\n");
+	fprintf(compiler->output, "	pop rdi\n");
+	fprintf(compiler->output, "	pop rax\n");
+	fprintf(compiler->output, "	syscall\n");
+	fprintf(compiler->output, "	push rax\n");
 }
 
 void writePop(Compiler* compiler, int amount) {

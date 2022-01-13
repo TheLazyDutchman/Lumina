@@ -18,7 +18,22 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 
 	parser->numIfs = 0;
 	parser->numWhiles = 0;
-	parser->numFuncs = 0;
+	
+	// defining sycall built-in
+	char *name = "syscall";
+	int nameLen = strlen(name);
+	int id = 0;
+	Type *returnType = initType("any", *parser->current);
+
+	TypeList *parameters = initTypeList();
+	int i = 0;
+	while (i < 7) {
+		addType(parameters, "any", *parser->current);
+	}
+
+	defineFunction(parser->compiler, name, nameLen, 0, returnType, parameters);
+
+	parser->numFuncs = 1; // this is because there is a predefined built-in syscall function, which has id 0
 
 	parser->strings = initStringList();
 
