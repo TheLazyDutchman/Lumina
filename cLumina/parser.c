@@ -318,7 +318,8 @@ void identifier(Parser* parser) {
 		if (func->parameters->size > 0) {
 			expression(parser);
 
-			if (strcmp(func->parameters->types[0]->name, parser->lastType->name) != 0) { 
+			if (strcmp(func->parameters->types[0]->name, parser->lastType->name) != 0 &&
+					strcmp(func->parameters->types[0]->name, "any") != 0) { 
 				parseError(parser, *parser->current, "incorrect type passed to function");
 				return;
 			}
@@ -335,7 +336,8 @@ void identifier(Parser* parser) {
 
 				expression(parser);
 
-				if (strcmp(func->parameters->types[i]->name, parser->lastType->name) != 0) { 
+				if (strcmp(func->parameters->types[i]->name, parser->lastType->name) != 0 &&
+						strcmp(func->parameters->types[i]->name, "any") != 0) { 
 					parseError(parser, *parser->current, "incorrect type passed to function"); 
 					return;
 				}
