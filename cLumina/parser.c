@@ -143,9 +143,10 @@ ParseRule parseTable[] = {
 
 void panic(Parser* parser) {
 	Tokentype type = parser->current->type;
-	while (type != TOKEN_SEMICOLON && type != TOKEN_RBRACE && type != TOKEN_RPAREN && type != TOKEN_END_OF_FILE) {
+	while (type != TOKEN_SEMICOLON && type != TOKEN_RBRACE && type != TOKEN_END_OF_FILE) {
 		type = next(parser)->type;
 	}
+	next(parser);
 }
 
 void parseError(Parser* parser, Token token, char* message) {
@@ -616,8 +617,15 @@ void variableDefinition(Parser* parser) {
 
 	dumpIdentifier(parser, identifier);
 
-	if (findLocalVariable(parser->compiler, identifier.word, identifier.wordLen) != NULL) { parseError(parser, identifier, "there already exists a variable with this name"); }
-	if (findLocalFunction(parser->compiler, identifier.word, identifier.wordLen) != NULL) { parseError(parser, identifier, "there already exists a function with this name"); }
+	if (findLocalVariable(parser->compiler, identifier.word, identifier.wordLen) != NULL) { 
+		parseError(parser, identifier, "there already exists a variable with this name"); 
+		return;
+	}
+
+	if (findLocalFunction(parser->compiler, identifier.word, identifier.wordLen) != NULL) { 
+		parseError(parser, identifier, "there already exists a function with this name"); 
+		return;
+	}
 
 	consumeToken(parser, TOKEN_EQUAL, "expected '=' after variable name in definition");
 
@@ -744,7 +752,7 @@ void functionDefinition(Parser* parser) {
 
 	defineFunction(parser->compiler, name.word, name.wordLen, funcId, type, parameters);
 
-	if (consumeToken(parser, TOKEN_LBRACE, "expected '{' before function block").type == TOKEN_ERROR) { return;}
+	consumeToken(parser, TOKEN_LBRACE, "expected '{' before function block");
 
 	writeBeginFunction(parser->compiler, funcId, parameters->size);
 
@@ -788,6 +796,7 @@ void block(Parser* parser, Function *func, TypeList *parameters) {
 		if (strcmp(func->returnType->name, "null") != 0) {
 			if (!scopeCompiler->hasReturned) {
 				parseError(parser, *parser->current, "not al code paths return a value");
+				return;
 			}
 		} else {
 			uint16_t numVars = parser->compiler->currentStackSize - func->parameters->size - 1;
