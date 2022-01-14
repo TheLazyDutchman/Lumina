@@ -7,35 +7,35 @@ var SYSFSTAT = 5;
 var SYSLSTAT = 6;
 var SYSPOLL = 7;
 
-func read(int fd, ptr buf, int count) -> int length {
+func read(int fd, ptr buf, int count) -> int {
 	return <int>syscall(SYSREAD, fd, buf, count, 0, 0, 0); 
 }
 
-func write(int fd, ptr buf, int count) -> int length {
+func write(int fd, ptr buf, int count) -> int {
 	return <int>syscall(SYSWRITE, fd, buf, count, 0, 0, 0); 
 }
 
-func open(char fileName, int flags, int mode) -> fd filePointer {
+func open(char fileName, int flags, int mode) -> fd {
 	return <fd>syscall(SYSOPEN, fileName, flags, mode, 0, 0, 0); 
 }
 
-func close(int fd) -> int returnCode {
+func close(int fd) -> int {
 	return <int>syscall(SYSCLOSE, fd, 0, 0, 0, 0, 0); 
 }
 
-func stat(str fileName, ptr statBuf) -> int returnCode {
+func stat(str fileName, ptr statBuf) -> int {
 	return <int>syscall(SYSSTAT, fileName, statBuf, 0, 0, 0, 0); 
 }
 
-func fstat(int fd, ptr statBuf) -> int returnCode {
+func fstat(int fd, ptr statBuf) -> int {
 	return <int>syscall(SYSFSTAT, fd, statBuf, 0, 0, 0, 0); 
 }
 
-func lstat(char fileName, ptr statBuf) -> int returnCode {
+func lstat(char fileName, ptr statBuf) -> int {
 	return <int>syscall(SYSLSTAT, fileName, statBuf, 0, 0, 0, 0); 
 }
 
-func poll(ptr ufds, int nfds, int timeout) -> int count {
+func poll(ptr ufds, int nfds, int timeout) -> int {
 	return <int>syscall(SYSPOLL, ufds, nfds, timeout, 0, 0, 0); 
 }
 

@@ -6,4 +6,4 @@ stdLib: $(OBJS)
 	ls
 
 %.test: %.lumina
-	$(CC) -check $^
+	$(CC) -check ./$^
