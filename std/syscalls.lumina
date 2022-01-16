@@ -1,41 +1,131 @@
-var SYSREAD = 0;
-var SYSWRITE = 1;
-var SYSOPEN = 2;
-var SYSCLOSE = 3;
-var SYSSTAT = 4;
-var SYSFSTAT = 5;
-var SYSLSTAT = 6;
-var SYSPOLL = 7;
-
-func read(int fd, ptr buf, int count) -> int {
-	return <int>syscall(SYSREAD, fd, buf, count, 0, 0, 0); 
-}
-
-func write(int fd, ptr buf, int count) -> int {
-	return <int>syscall(SYSWRITE, fd, buf, count, 0, 0, 0); 
-}
-
-func open(char fileName, int flags, int mode) -> fd {
-	return <fd>syscall(SYSOPEN, fileName, flags, mode, 0, 0, 0); 
-}
-
-func close(int fd) -> int {
-	return <int>syscall(SYSCLOSE, fd, 0, 0, 0, 0, 0); 
-}
-
-func stat(str fileName, ptr statBuf) -> int {
-	return <int>syscall(SYSSTAT, fileName, statBuf, 0, 0, 0, 0); 
-}
-
-func fstat(int fd, ptr statBuf) -> int {
-	return <int>syscall(SYSFSTAT, fd, statBuf, 0, 0, 0, 0); 
-}
-
-func lstat(char fileName, ptr statBuf) -> int {
-	return <int>syscall(SYSLSTAT, fileName, statBuf, 0, 0, 0, 0); 
-}
-
-func poll(ptr ufds, int nfds, int timeout) -> int {
-	return <int>syscall(SYSPOLL, ufds, nfds, timeout, 0, 0, 0); 
-}
-
+read
+write
+open
+close
+stat
+fstat
+lstat
+poll
+lseek
+mmap
+mprotect
+munmap
+brk
+rt_sigaction
+rt_sigprocmask
+rt_sigreturn
+ioctl
+pread64
+pwrite64
+readv
+writev
+access
+pipe
+select
+sched_yield
+mremap
+msync
+mincore
+madvise
+shmget
+shmat
+shmctl
+dup
+dup2
+pause
+nanosleep
+getitimer
+alarm
+setitimer
+getpid
+sendfile
+socket
+connect
+accept
+sendto
+recvfrom
+sendmsg
+recvmsg
+shitdown
+bind
+listen
+getsockname
+getpeername
+socketpair
+setsockopt
+getsockopt
+clone
+fork
+vfork
+execve
+exit
+wait4
+kill
+uname
+semget
+semop
+semctl
+shmdt
+msgget
+msgsnd
+msgrcv
+msgctl
+fcntl
+flock
+fsync
+fdatasync
+truncate
+ftruncate
+getdents
+getcwd
+chdir
+fchdir
+rename
+mkdir
+rmdir
+creat
+link
+unlink
+symlink
+readlink
+chmod
+fchmod
+chown
+fchown
+lchown
+umask
+gettimeofday
+getrlimit
+getrusage
+sysinfo
+times
+ptrace
+getuid
+syslog
+getgid
+setuid
+setgid
+geteuid
+getegid
+setpgid
+getppid
+getpgrp
+setsid
+setreuid
+setregid
+getgroups
+setgroups
+setresuid
+getresuid
+setresgid
+getresgid
+getpgid
+setfsuid
+setfsgid
+getsid
+capget
+capset
+rt_sigpening
+rt_sigtimedwait
+rt_sigqueueinfo
+rt_sigsuspend
