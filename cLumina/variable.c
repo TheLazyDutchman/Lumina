@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "variable.h"
 
@@ -42,6 +43,6 @@ void addVariable(VariableList* list, char* name, uint16_t position, uint16_t fun
 	list->size++;
 
 	if (list->size == list->maxSize) {
-		list->variables = realloc(list->variables, list->maxSize * 2);
+		list->variables = reallocarray(list->variables, sizeof(Variable*), list->maxSize * 2);
 	}
 }

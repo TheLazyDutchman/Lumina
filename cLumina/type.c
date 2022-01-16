@@ -42,6 +42,6 @@ void addType(TypeList* list, char* name, Token token) {
 	list->size++;
 
 	if (list->size == list->maxSize) {
-		list->types = realloc(list->types, list->maxSize * 2);
+		list->types = reallocarray(list->types, sizeof(Type*), list->maxSize * 2);
 	}
 }
