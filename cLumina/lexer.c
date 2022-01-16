@@ -88,7 +88,7 @@ void lexerError(Lexer* lexer, const char* message) {
 }
 
 void lexIdentifier(Lexer* lexer, Token* token) {
-	while (isalnum(*lexer->current)) {
+	while (isalnum(*lexer->current) || *lexer->current == '_') {
 			advance(lexer);
 	}
 
