@@ -1,131 +1,658 @@
-read
-write
-open
-close
-stat
-fstat
-lstat
-poll
-lseek
-mmap
-mprotect
-munmap
-brk
-rt_sigaction
-rt_sigprocmask
-rt_sigreturn
-ioctl
-pread64
-pwrite64
-readv
-writev
-access
-pipe
-select
-sched_yield
-mremap
-msync
-mincore
-madvise
-shmget
-shmat
-shmctl
-dup
-dup2
-pause
-nanosleep
-getitimer
-alarm
-setitimer
-getpid
-sendfile
-socket
-connect
-accept
-sendto
-recvfrom
-sendmsg
-recvmsg
-shitdown
-bind
-listen
-getsockname
-getpeername
-socketpair
-setsockopt
-getsockopt
-clone
-fork
-vfork
-execve
-exit
-wait4
-kill
-uname
-semget
-semop
-semctl
-shmdt
-msgget
-msgsnd
-msgrcv
-msgctl
-fcntl
-flock
-fsync
-fdatasync
-truncate
-ftruncate
-getdents
-getcwd
-chdir
-fchdir
-rename
-mkdir
-rmdir
-creat
-link
-unlink
-symlink
-readlink
-chmod
-fchmod
-chown
-fchown
-lchown
-umask
-gettimeofday
-getrlimit
-getrusage
-sysinfo
-times
-ptrace
-getuid
-syslog
-getgid
-setuid
-setgid
-geteuid
-getegid
-setpgid
-getppid
-getpgrp
-setsid
-setreuid
-setregid
-getgroups
-setgroups
-setresuid
-getresuid
-setresgid
-getresgid
-getpgid
-setfsuid
-setfsgid
-getsid
-capget
-capset
-rt_sigpening
-rt_sigtimedwait
-rt_sigqueueinfo
-rt_sigsuspend
+var SYSREAD = 0;
+var SYSWRITE = 1;
+var SYSOPEN = 2;
+var SYSCLOSE = 3;
+var SYSSTAT = 4;
+var SYSFSTAT = 5;
+var SYSLSTAT = 6;
+var SYSPOLL = 7;
+var SYSLSEEK = 8;
+var SYSMMAP = 9;
+var SYSMPROTECT = 10;
+var SYSMUNMAP = 11;
+var SYSBRK = 12;
+var SYSRT_SIGACTION = 13;
+var SYSRT_SIGPROCMASK = 14;
+var SYSRT_SIGRETURN = 15;
+var SYSIOCTL = 16;
+var SYSPREAD64 = 17;
+var SYSPWRITE64 = 18;
+var SYSREADV = 19;
+var SYSWRITEV = 20;
+var SYSACCESS = 21;
+var SYSPIPE = 22;
+var SYSSELECT = 23;
+var SYSSCHED_YIELD = 24;
+var SYSMREMAP = 25;
+var SYSMSYNC = 26;
+var SYSMINCORE = 27;
+var SYSMADVISE = 28;
+var SYSSHMGET = 29;
+var SYSSHMAT = 30;
+var SYSSHMCTL = 31;
+var SYSDUP = 32;
+var SYSDUP2 = 33;
+var SYSPAUSE = 34;
+var SYSNANOSLEEP = 35;
+var SYSGETITIMER = 36;
+var SYSALARM = 37;
+var SYSSETITIMER = 38;
+var SYSGETPID = 39;
+var SYSSENDFILE = 40;
+var SYSSOCKET = 41;
+var SYSCONNECT = 42;
+var SYSACCEPT = 43;
+var SYSSENDTO = 44;
+var SYSRECVFROM = 45;
+var SYSSENDMSG = 46;
+var SYSRECVMSG = 47;
+var SYSSHITDOWN = 48;
+var SYSBIND = 49;
+var SYSLISTEN = 50;
+var SYSGETSOCKNAME = 51;
+var SYSGETPEERNAME = 52;
+var SYSSOCKETPAIR = 53;
+var SYSSETSOCKOPT = 54;
+var SYSGETSOCKOPT = 55;
+var SYSCLONE = 56;
+var SYSFORK = 57;
+var SYSVFORK = 58;
+var SYSEXECVE = 59;
+var SYSEXIT = 60;
+var SYSWAIT4 = 61;
+var SYSKILL = 62;
+var SYSUNAME = 63;
+var SYSSEMGET = 64;
+var SYSSEMOP = 65;
+var SYSSEMCTL = 66;
+var SYSSHMDT = 67;
+var SYSMSGGET = 68;
+var SYSMSGSND = 69;
+var SYSMSGRCV = 70;
+var SYSMSGCTL = 71;
+var SYSFCNTL = 72;
+var SYSFLOCK = 73;
+var SYSFSYNC = 74;
+var SYSFDATASYNC = 75;
+var SYSTRUNCATE = 76;
+var SYSFTRUNCATE = 77;
+var SYSGETDENTS = 78;
+var SYSGETCWD = 79;
+var SYSCHDIR = 80;
+var SYSFCHDIR = 81;
+var SYSRENAME = 82;
+var SYSMKDIR = 83;
+var SYSRMDIR = 84;
+var SYSCREAT = 85;
+var SYSLINK = 86;
+var SYSUNLINK = 87;
+var SYSSYMLINK = 88;
+var SYSREADLINK = 89;
+var SYSCHMOD = 90;
+var SYSFCHMOD = 91;
+var SYSCHOWN = 92;
+var SYSFCHOWN = 93;
+var SYSLCHOWN = 94;
+var SYSUMASK = 95;
+var SYSGETTIMEOFDAY = 96;
+var SYSGETRLIMIT = 97;
+var SYSGETRUSAGE = 98;
+var SYSSYSINFO = 99;
+var SYSTIMES = 100;
+var SYSPTRACE = 101;
+var SYSGETUID = 102;
+var SYSSYSLOG = 103;
+var SYSGETGID = 104;
+var SYSSETUID = 105;
+var SYSSETGID = 106;
+var SYSGETEUID = 107;
+var SYSGETEGID = 108;
+var SYSSETPGID = 109;
+var SYSGETPPID = 110;
+var SYSGETPGRP = 111;
+var SYSSETSID = 112;
+var SYSSETREUID = 113;
+var SYSSETREGID = 114;
+var SYSGETGROUPS = 115;
+var SYSSETGROUPS = 116;
+var SYSSETRESUID = 117;
+var SYSGETRESUID = 118;
+var SYSSETRESGID = 119;
+var SYSGETRESGID = 120;
+var SYSGETPGID = 121;
+var SYSSETFSUID = 122;
+var SYSSETFSGID = 123;
+var SYSGETSID = 124;
+var SYSCAPGET = 125;
+var SYSCAPSET = 126;
+var SYSRT_SIGPENING = 127;
+var SYSRT_SIGTIMEDWAIT = 128;
+var SYSRT_SIGQUEUEINFO = 129;
+var SYSRKT_SIGSUSPEND = 130;
+
+
+
+func read() -> int {
+	return <int>syscall(SYSREAD, 0, 0, 0, 0, 0, 0);
+}
+
+func write() -> int {
+	return <int>syscall(SYSWRITE, 0, 0, 0, 0, 0, 0);
+}
+
+func open() -> int {
+	return <int>syscall(SYSOPEN, 0, 0, 0, 0, 0, 0);
+}
+
+func close() -> int {
+	return <int>syscall(SYSCLOSE, 0, 0, 0, 0, 0, 0);
+}
+
+func stat() -> int {
+	return <int>syscall(SYSSTAT, 0, 0, 0, 0, 0, 0);
+}
+
+func fstat() -> int {
+	return <int>syscall(SYSFSTAT, 0, 0, 0, 0, 0, 0);
+}
+
+func lstat() -> int {
+	return <int>syscall(SYSLSTAT, 0, 0, 0, 0, 0, 0);
+}
+
+func poll() -> int {
+	return <int>syscall(SYSPOLL, 0, 0, 0, 0, 0, 0);
+}
+
+func lseek() -> int {
+	return <int>syscall(SYSLSEEK, 0, 0, 0, 0, 0, 0);
+}
+
+func mmap() -> int {
+	return <int>syscall(SYSMMAP, 0, 0, 0, 0, 0, 0);
+}
+
+func mprotect() -> int {
+	return <int>syscall(SYSMPROTECT, 0, 0, 0, 0, 0, 0);
+}
+
+func munmap() -> int {
+	return <int>syscall(SYSMUNMAP, 0, 0, 0, 0, 0, 0);
+}
+
+func brk() -> int {
+	return <int>syscall(SYSBRK, 0, 0, 0, 0, 0, 0);
+}
+
+func rt_sigaction() -> int {
+	return <int>syscall(SYSRT_SIGACTION, 0, 0, 0, 0, 0, 0);
+}
+
+func rt_sigprocmask() -> int {
+	return <int>syscall(SYSRT_SIGPROCMASK, 0, 0, 0, 0, 0, 0);
+}
+
+func rt_sigreturn() -> int {
+	return <int>syscall(SYSRT_SIGRETURN, 0, 0, 0, 0, 0, 0);
+}
+
+func ioctl() -> int {
+	return <int>syscall(SYSIOCTL, 0, 0, 0, 0, 0, 0);
+}
+
+func pread64() -> int {
+	return <int>syscall(SYSPREAD64, 0, 0, 0, 0, 0, 0);
+}
+
+func pwrite64() -> int {
+	return <int>syscall(SYSPWRITE64, 0, 0, 0, 0, 0, 0);
+}
+
+func readv() -> int {
+	return <int>syscall(SYSREADV, 0, 0, 0, 0, 0, 0);
+}
+
+func writev() -> int {
+	return <int>syscall(SYSWRITEV, 0, 0, 0, 0, 0, 0);
+}
+
+func access() -> int {
+	return <int>syscall(SYSACCESS, 0, 0, 0, 0, 0, 0);
+}
+
+func pipe() -> int {
+	return <int>syscall(SYSPIPE, 0, 0, 0, 0, 0, 0);
+}
+
+func select() -> int {
+	return <int>syscall(SYSSELECT, 0, 0, 0, 0, 0, 0);
+}
+
+func sched_yield() -> int {
+	return <int>syscall(SYSSCHED_YIELD, 0, 0, 0, 0, 0, 0);
+}
+
+func mremap() -> int {
+	return <int>syscall(SYSMREMAP, 0, 0, 0, 0, 0, 0);
+}
+
+func msync() -> int {
+	return <int>syscall(SYSMSYNC, 0, 0, 0, 0, 0, 0);
+}
+
+func mincore() -> int {
+	return <int>syscall(SYSMINCORE, 0, 0, 0, 0, 0, 0);
+}
+
+func madvise() -> int {
+	return <int>syscall(SYSMADVISE, 0, 0, 0, 0, 0, 0);
+}
+
+func shmget() -> int {
+	return <int>syscall(SYSSHMGET, 0, 0, 0, 0, 0, 0);
+}
+
+func shmat() -> int {
+	return <int>syscall(SYSSHMAT, 0, 0, 0, 0, 0, 0);
+}
+
+func shmctl() -> int {
+	return <int>syscall(SYSSHMCTL, 0, 0, 0, 0, 0, 0);
+}
+
+func dup() -> int {
+	return <int>syscall(SYSDUP, 0, 0, 0, 0, 0, 0);
+}
+
+func dup2() -> int {
+	return <int>syscall(SYSDUP2, 0, 0, 0, 0, 0, 0);
+}
+
+func pause() -> int {
+	return <int>syscall(SYSPAUSE, 0, 0, 0, 0, 0, 0);
+}
+
+func nanosleep() -> int {
+	return <int>syscall(SYSNANOSLEEP, 0, 0, 0, 0, 0, 0);
+}
+
+func getitimer() -> int {
+	return <int>syscall(SYSGETITIMER, 0, 0, 0, 0, 0, 0);
+}
+
+func alarm() -> int {
+	return <int>syscall(SYSALARM, 0, 0, 0, 0, 0, 0);
+}
+
+func setitimer() -> int {
+	return <int>syscall(SYSSETITIMER, 0, 0, 0, 0, 0, 0);
+}
+
+func getpid() -> int {
+	return <int>syscall(SYSGETPID, 0, 0, 0, 0, 0, 0);
+}
+
+func sendfile() -> int {
+	return <int>syscall(SYSSENDFILE, 0, 0, 0, 0, 0, 0);
+}
+
+func socket() -> int {
+	return <int>syscall(SYSSOCKET, 0, 0, 0, 0, 0, 0);
+}
+
+func connect() -> int {
+	return <int>syscall(SYSCONNECT, 0, 0, 0, 0, 0, 0);
+}
+
+func accept() -> int {
+	return <int>syscall(SYSACCEPT, 0, 0, 0, 0, 0, 0);
+}
+
+func sendto() -> int {
+	return <int>syscall(SYSSENDTO, 0, 0, 0, 0, 0, 0);
+}
+
+func recvfrom() -> int {
+	return <int>syscall(SYSRECVFROM, 0, 0, 0, 0, 0, 0);
+}
+
+func sendmsg() -> int {
+	return <int>syscall(SYSSENDMSG, 0, 0, 0, 0, 0, 0);
+}
+
+func recvmsg() -> int {
+	return <int>syscall(SYSRECVMSG, 0, 0, 0, 0, 0, 0);
+}
+
+func shitdown() -> int {
+	return <int>syscall(SYSSHITDOWN, 0, 0, 0, 0, 0, 0);
+}
+
+func bind() -> int {
+	return <int>syscall(SYSBIND, 0, 0, 0, 0, 0, 0);
+}
+
+func listen() -> int {
+	return <int>syscall(SYSLISTEN, 0, 0, 0, 0, 0, 0);
+}
+
+func getsockname() -> int {
+	return <int>syscall(SYSGETSOCKNAME, 0, 0, 0, 0, 0, 0);
+}
+
+func getpeername() -> int {
+	return <int>syscall(SYSGETPEERNAME, 0, 0, 0, 0, 0, 0);
+}
+
+func socketpair() -> int {
+	return <int>syscall(SYSSOCKETPAIR, 0, 0, 0, 0, 0, 0);
+}
+
+func setsockopt() -> int {
+	return <int>syscall(SYSSETSOCKOPT, 0, 0, 0, 0, 0, 0);
+}
+
+func getsockopt() -> int {
+	return <int>syscall(SYSGETSOCKOPT, 0, 0, 0, 0, 0, 0);
+}
+
+func clone() -> int {
+	return <int>syscall(SYSCLONE, 0, 0, 0, 0, 0, 0);
+}
+
+func fork() -> int {
+	return <int>syscall(SYSFORK, 0, 0, 0, 0, 0, 0);
+}
+
+func vfork() -> int {
+	return <int>syscall(SYSVFORK, 0, 0, 0, 0, 0, 0);
+}
+
+func execve() -> int {
+	return <int>syscall(SYSEXECVE, 0, 0, 0, 0, 0, 0);
+}
+
+func exit() -> int {
+	return <int>syscall(SYSEXIT, 0, 0, 0, 0, 0, 0);
+}
+
+func wait4() -> int {
+	return <int>syscall(SYSWAIT4, 0, 0, 0, 0, 0, 0);
+}
+
+func kill() -> int {
+	return <int>syscall(SYSKILL, 0, 0, 0, 0, 0, 0);
+}
+
+func uname() -> int {
+	return <int>syscall(SYSUNAME, 0, 0, 0, 0, 0, 0);
+}
+
+func semget() -> int {
+	return <int>syscall(SYSSEMGET, 0, 0, 0, 0, 0, 0);
+}
+
+func semop() -> int {
+	return <int>syscall(SYSSEMOP, 0, 0, 0, 0, 0, 0);
+}
+
+func semctl() -> int {
+	return <int>syscall(SYSSEMCTL, 0, 0, 0, 0, 0, 0);
+}
+
+func shmdt() -> int {
+	return <int>syscall(SYSSHMDT, 0, 0, 0, 0, 0, 0);
+}
+
+func msgget() -> int {
+	return <int>syscall(SYSMSGGET, 0, 0, 0, 0, 0, 0);
+}
+
+func msgsnd() -> int {
+	return <int>syscall(SYSMSGSND, 0, 0, 0, 0, 0, 0);
+}
+
+func msgrcv() -> int {
+	return <int>syscall(SYSMSGRCV, 0, 0, 0, 0, 0, 0);
+}
+
+func msgctl() -> int {
+	return <int>syscall(SYSMSGCTL, 0, 0, 0, 0, 0, 0);
+}
+
+func fcntl() -> int {
+	return <int>syscall(SYSFCNTL, 0, 0, 0, 0, 0, 0);
+}
+
+func flock() -> int {
+	return <int>syscall(SYSFLOCK, 0, 0, 0, 0, 0, 0);
+}
+
+func fsync() -> int {
+	return <int>syscall(SYSFSYNC, 0, 0, 0, 0, 0, 0);
+}
+
+func fdatasync() -> int {
+	return <int>syscall(SYSFDATASYNC, 0, 0, 0, 0, 0, 0);
+}
+
+func truncate() -> int {
+	return <int>syscall(SYSTRUNCATE, 0, 0, 0, 0, 0, 0);
+}
+
+func ftruncate() -> int {
+	return <int>syscall(SYSFTRUNCATE, 0, 0, 0, 0, 0, 0);
+}
+
+func getdents() -> int {
+	return <int>syscall(SYSGETDENTS, 0, 0, 0, 0, 0, 0);
+}
+
+func getcwd() -> int {
+	return <int>syscall(SYSGETCWD, 0, 0, 0, 0, 0, 0);
+}
+
+func chdir() -> int {
+	return <int>syscall(SYSCHDIR, 0, 0, 0, 0, 0, 0);
+}
+
+func fchdir() -> int {
+	return <int>syscall(SYSFCHDIR, 0, 0, 0, 0, 0, 0);
+}
+
+func rename() -> int {
+	return <int>syscall(SYSRENAME, 0, 0, 0, 0, 0, 0);
+}
+
+func mkdir() -> int {
+	return <int>syscall(SYSMKDIR, 0, 0, 0, 0, 0, 0);
+}
+
+func rmdir() -> int {
+	return <int>syscall(SYSRMDIR, 0, 0, 0, 0, 0, 0);
+}
+
+func creat() -> int {
+	return <int>syscall(SYSCREAT, 0, 0, 0, 0, 0, 0);
+}
+
+func link() -> int {
+	return <int>syscall(SYSLINK, 0, 0, 0, 0, 0, 0);
+}
+
+func unlink() -> int {
+	return <int>syscall(SYSUNLINK, 0, 0, 0, 0, 0, 0);
+}
+
+func symlink() -> int {
+	return <int>syscall(SYSSYMLINK, 0, 0, 0, 0, 0, 0);
+}
+
+func readlink() -> int {
+	return <int>syscall(SYSREADLINK, 0, 0, 0, 0, 0, 0);
+}
+
+func chmod() -> int {
+	return <int>syscall(SYSCHMOD, 0, 0, 0, 0, 0, 0);
+}
+
+func fchmod() -> int {
+	return <int>syscall(SYSFCHMOD, 0, 0, 0, 0, 0, 0);
+}
+
+func chown() -> int {
+	return <int>syscall(SYSCHOWN, 0, 0, 0, 0, 0, 0);
+}
+
+func fchown() -> int {
+	return <int>syscall(SYSFCHOWN, 0, 0, 0, 0, 0, 0);
+}
+
+func lchown() -> int {
+	return <int>syscall(SYSLCHOWN, 0, 0, 0, 0, 0, 0);
+}
+
+func umask() -> int {
+	return <int>syscall(SYSUMASK, 0, 0, 0, 0, 0, 0);
+}
+
+func gettimeofday() -> int {
+	return <int>syscall(SYSGETTIMEOFDAY, 0, 0, 0, 0, 0, 0);
+}
+
+func getrlimit() -> int {
+	return <int>syscall(SYSGETRLIMIT, 0, 0, 0, 0, 0, 0);
+}
+
+func getrusage() -> int {
+	return <int>syscall(SYSGETRUSAGE, 0, 0, 0, 0, 0, 0);
+}
+
+func sysinfo() -> int {
+	return <int>syscall(SYSSYSINFO, 0, 0, 0, 0, 0, 0);
+}
+
+func times() -> int {
+	return <int>syscall(SYSTIMES, 0, 0, 0, 0, 0, 0);
+}
+
+func ptrace() -> int {
+	return <int>syscall(SYSPTRACE, 0, 0, 0, 0, 0, 0);
+}
+
+func getuid() -> int {
+	return <int>syscall(SYSGETUID, 0, 0, 0, 0, 0, 0);
+}
+
+func syslog() -> int {
+	return <int>syscall(SYSSYSLOG, 0, 0, 0, 0, 0, 0);
+}
+
+func getgid() -> int {
+	return <int>syscall(SYSGETGID, 0, 0, 0, 0, 0, 0);
+}
+
+func setuid() -> int {
+	return <int>syscall(SYSSETUID, 0, 0, 0, 0, 0, 0);
+}
+
+func setgid() -> int {
+	return <int>syscall(SYSSETGID, 0, 0, 0, 0, 0, 0);
+}
+
+func geteuid() -> int {
+	return <int>syscall(SYSGETEUID, 0, 0, 0, 0, 0, 0);
+}
+
+func getegid() -> int {
+	return <int>syscall(SYSGETEGID, 0, 0, 0, 0, 0, 0);
+}
+
+func setpgid() -> int {
+	return <int>syscall(SYSSETPGID, 0, 0, 0, 0, 0, 0);
+}
+
+func getppid() -> int {
+	return <int>syscall(SYSGETPPID, 0, 0, 0, 0, 0, 0);
+}
+
+func getpgrp() -> int {
+	return <int>syscall(SYSGETPGRP, 0, 0, 0, 0, 0, 0);
+}
+
+func setsid() -> int {
+	return <int>syscall(SYSSETSID, 0, 0, 0, 0, 0, 0);
+}
+
+func setreuid() -> int {
+	return <int>syscall(SYSSETREUID, 0, 0, 0, 0, 0, 0);
+}
+
+func setregid() -> int {
+	return <int>syscall(SYSSETREGID, 0, 0, 0, 0, 0, 0);
+}
+
+func getgroups() -> int {
+	return <int>syscall(SYSGETGROUPS, 0, 0, 0, 0, 0, 0);
+}
+
+func setgroups() -> int {
+	return <int>syscall(SYSSETGROUPS, 0, 0, 0, 0, 0, 0);
+}
+
+func setresuid() -> int {
+	return <int>syscall(SYSSETRESUID, 0, 0, 0, 0, 0, 0);
+}
+
+func getresuid() -> int {
+	return <int>syscall(SYSGETRESUID, 0, 0, 0, 0, 0, 0);
+}
+
+func setresgid() -> int {
+	return <int>syscall(SYSSETRESGID, 0, 0, 0, 0, 0, 0);
+}
+
+func getresgid() -> int {
+	return <int>syscall(SYSGETRESGID, 0, 0, 0, 0, 0, 0);
+}
+
+func getpgid() -> int {
+	return <int>syscall(SYSGETPGID, 0, 0, 0, 0, 0, 0);
+}
+
+func setfsuid() -> int {
+	return <int>syscall(SYSSETFSUID, 0, 0, 0, 0, 0, 0);
+}
+
+func setfsgid() -> int {
+	return <int>syscall(SYSSETFSGID, 0, 0, 0, 0, 0, 0);
+}
+
+func getsid() -> int {
+	return <int>syscall(SYSGETSID, 0, 0, 0, 0, 0, 0);
+}
+
+func capget() -> int {
+	return <int>syscall(SYSCAPGET, 0, 0, 0, 0, 0, 0);
+}
+
+func capset() -> int {
+	return <int>syscall(SYSCAPSET, 0, 0, 0, 0, 0, 0);
+}
+
+func rt_sigpening() -> int {
+	return <int>syscall(SYSRT_SIGPENING, 0, 0, 0, 0, 0, 0);
+}
+
+func rt_sigtimedwait() -> int {
+	return <int>syscall(SYSRT_SIGTIMEDWAIT, 0, 0, 0, 0, 0, 0);
+}
+
+func rt_sigqueueinfo() -> int {
+	return <int>syscall(SYSRT_SIGQUEUEINFO, 0, 0, 0, 0, 0, 0);
+}
+
+func rkt_sigsuspend() -> int {
+	return <int>syscall(SYSRKT_SIGSUSPEND, 0, 0, 0, 0, 0, 0);
+}
+
