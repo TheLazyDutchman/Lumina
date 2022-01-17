@@ -418,6 +418,7 @@ Token *nextToken(Lexer* lexer){
 				break;
 			default:
 				lexerError(lexer, "could not recognize character");
+				printf("char: '%c', ascii: '%d'\n", *lexer->current, *lexer->current);
 				token->type = TOKEN_ERROR;
 				return NULL;
 		}

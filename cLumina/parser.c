@@ -146,7 +146,10 @@ void panic(Parser* parser) {
 	while (type != TOKEN_SEMICOLON && type != TOKEN_RBRACE && type != TOKEN_END_OF_FILE) {
 		type = next(parser)->type;
 	}
-	next(parser);
+
+	if (type != TOKEN_END_OF_FILE) {
+		next(parser);
+	}
 }
 
 void parseError(Parser* parser, Token token, char* message) {
@@ -728,6 +731,10 @@ void functionDefinition(Parser* parser) {
 			next(parser);
 			Token type = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter type");
 			Token name = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter name");
+
+			if (type.type == TOKEN_ERROR || name.type == TOKEN_ERROR) {
+				return;
+			}
 
 			char* typeName = strndup(type.word, type.wordLen);
 
