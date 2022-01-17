@@ -38,6 +38,7 @@ void addString(StringList* list, Token token) {
 	list->size++;
 
 	if (list->size == list->maxSize) {
-		list->strings = reallocarray(list->strings, sizeof(String*), list->maxSize * 2);
+		list->maxSize *= 2;
+		list->strings = reallocarray(list->strings, sizeof(String*), list->maxSize);
 	}
 }

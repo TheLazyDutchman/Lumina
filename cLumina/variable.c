@@ -43,6 +43,7 @@ void addVariable(VariableList* list, char* name, uint16_t position, uint16_t fun
 	list->size++;
 
 	if (list->size == list->maxSize) {
-		list->variables = reallocarray(list->variables, sizeof(Variable*), list->maxSize * 2);
+		list->maxSize *= 2;
+		list->variables = reallocarray(list->variables, sizeof(Variable*), list->maxSize);
 	}
 }

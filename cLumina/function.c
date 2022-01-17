@@ -43,6 +43,7 @@ void addFunction(FunctionList* list, char* name, uint16_t id, Type *returnType, 
 	list->size++;
 
 	if (list->size == list->maxSize) {
-		list->functions = reallocarray(list->functions, sizeof(Function*), list->maxSize * 2);
+		list->maxSize *= 2;
+		list->functions = reallocarray(list->functions, sizeof(Function*), list->maxSize);
 	}
 }
