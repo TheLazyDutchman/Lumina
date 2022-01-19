@@ -132,120 +132,122 @@ var SYSRKT_SIGSUSPEND = 130;
 
 
 
-func read() -> int {
-	return <int>syscall(SYSREAD, 0, 0, 0, 0, 0, 0);
+func read(int fd, ptr buf, int count) -> int {
+	return <int>syscall(SYSREAD, fd, buf, count, 0, 0, 0);
 }
 
-func write() -> int {
-	return <int>syscall(SYSWRITE, 0, 0, 0, 0, 0, 0);
+func write(int fd, ptr buf, int count) -> int {
+	return <int>syscall(SYSWRITE, fd, buf, count, 0, 0, 0);
 }
 
-func open() -> int {
-	return <int>syscall(SYSOPEN, 0, 0, 0, 0, 0, 0);
+func open(str filename, int flags, int mode) -> int {
+	return <int>syscall(SYSOPEN, filename, flags, mode, 0, 0, 0);
 }
 
-func close() -> int {
-	return <int>syscall(SYSCLOSE, 0, 0, 0, 0, 0, 0);
+func close(int fd) -> int {
+	return <int>syscall(SYSCLOSE, fd, 0, 0, 0, 0, 0);
 }
 
-func stat() -> int {
-	return <int>syscall(SYSSTAT, 0, 0, 0, 0, 0, 0);
+func stat(str filename, ptr statbuf) -> int {
+	return <int>syscall(SYSSTAT, filename, statbuf, 0, 0, 0, 0);
 }
 
-func fstat() -> int {
-	return <int>syscall(SYSFSTAT, 0, 0, 0, 0, 0, 0);
+func fstat(int fd, ptr statbuf) -> int {
+	return <int>syscall(SYSFSTAT, fd, statbuf, 0, 0, 0, 0);
 }
 
-func lstat() -> int {
-	return <int>syscall(SYSLSTAT, 0, 0, 0, 0, 0, 0);
+func lstat(char filename, ptr statbuf) -> int {
+	return <int>syscall(SYSLSTAT, filename, statbuf, 0, 0, 0, 0);
 }
 
-func poll() -> int {
-	return <int>syscall(SYSPOLL, 0, 0, 0, 0, 0, 0);
+func poll(ptr ufds, int nfds, int timeout) -> int {
+	return <int>syscall(SYSPOLL, ufds, nfds, timeout, 0, 0, 0);
 }
 
-func lseek() -> int {
-	return <int>syscall(SYSLSEEK, 0, 0, 0, 0, 0, 0);
+func lseek(int fd, int offset, int whence) -> int {
+	return <int>syscall(SYSLSEEK, fd, offset, whence, 0, 0, 0);
 }
 
+//TODO: look at mmap
 func mmap() -> int {
 	return <int>syscall(SYSMMAP, 0, 0, 0, 0, 0, 0);
 }
 
-func mprotect() -> int {
-	return <int>syscall(SYSMPROTECT, 0, 0, 0, 0, 0, 0);
+func mprotect(int start, int len, int prot) -> int {
+	return <int>syscall(SYSMPROTECT, start, len, prot, 0, 0, 0);
 }
 
-func munmap() -> int {
-	return <int>syscall(SYSMUNMAP, 0, 0, 0, 0, 0, 0);
+func munmap(int addr, int len) -> int {
+	return <int>syscall(SYSMUNMAP, addr, len, 0, 0, 0, 0);
 }
 
-func brk() -> int {
-	return <int>syscall(SYSBRK, 0, 0, 0, 0, 0, 0);
+func brk(int brk) -> int {
+	return <int>syscall(SYSBRK, brk, 0, 0, 0, 0, 0);
 }
 
-func rt_sigaction() -> int {
-	return <int>syscall(SYSRT_SIGACTION, 0, 0, 0, 0, 0, 0);
+func rt_sigaction(int signum, ptr act, ptr oldact, int sigsetsize) -> int {
+	return <int>syscall(SYSRT_SIGACTION, signum, act, oldact, sigsetsize, 0, 0);
 }
 
-func rt_sigprocmask() -> int {
-	return <int>syscall(SYSRT_SIGPROCMASK, 0, 0, 0, 0, 0, 0);
+func rt_sigprocmask(int how, ptr set, ptr oset, int sigsetsize) -> int {
+	return <int>syscall(SYSRT_SIGPROCMASK, how, set, oset, sigsetsize, 0, 0);
 }
 
+//TODO: look at sigreturn
 func rt_sigreturn() -> int {
 	return <int>syscall(SYSRT_SIGRETURN, 0, 0, 0, 0, 0, 0);
 }
 
-func ioctl() -> int {
-	return <int>syscall(SYSIOCTL, 0, 0, 0, 0, 0, 0);
+func ioctl(int fd, int cmd, int arg) -> int {
+	return <int>syscall(SYSIOCTL, fd, cmd, arg, 0, 0, 0);
 }
 
-func pread64() -> int {
-	return <int>syscall(SYSPREAD64, 0, 0, 0, 0, 0, 0);
+func pread64(int fd, string buf, int count, int pos) -> int {
+	return <int>syscall(SYSPREAD64, fd, buf, count, pos, 0, 0);
 }
 
-func pwrite64() -> int {
-	return <int>syscall(SYSPWRITE64, 0, 0, 0, 0, 0, 0);
+func pwrite64(inf fd, str buf, int count, int pos) -> int {
+	return <int>syscall(SYSPWRITE64, fd, buf, count, pos, 0, 0);
 }
 
-func readv() -> int {
-	return <int>syscall(SYSREADV, 0, 0, 0, 0, 0, 0);
+func readv(int fd, ptr vec, int vlen) -> int {
+	return <int>syscall(SYSREADV, fd, vec, vlen, 0, 0, 0);
 }
 
-func writev() -> int {
-	return <int>syscall(SYSWRITEV, 0, 0, 0, 0, 0, 0);
+func writev(int fd, ptr vec, int vlen) -> int {
+	return <int>syscall(SYSWRITEV, fd, vec, vlen, 0, 0, 0);
 }
 
-func access() -> int {
-	return <int>syscall(SYSACCESS, 0, 0, 0, 0, 0, 0);
+func access(str filename, int mode) -> int {
+	return <int>syscall(SYSACCESS, filename, mode, 0, 0, 0, 0);
 }
 
-func pipe() -> int {
-	return <int>syscall(SYSPIPE, 0, 0, 0, 0, 0, 0);
+func pipe(int filedes) -> int {
+	return <int>syscall(SYSPIPE, filedes, 0, 0, 0, 0, 0);
 }
 
-func select() -> int {
-	return <int>syscall(SYSSELECT, 0, 0, 0, 0, 0, 0);
+func select(int n, ptr inp, ptr outp, ptr exp, ptr tvp) -> int {
+	return <int>syscall(SYSSELECT, n, inp, outp, exp, tvp, 0);
 }
 
 func sched_yield() -> int {
 	return <int>syscall(SYSSCHED_YIELD, 0, 0, 0, 0, 0, 0);
 }
 
-func mremap() -> int {
-	return <int>syscall(SYSMREMAP, 0, 0, 0, 0, 0, 0);
+func mremap(int addr, int old_len, int new_len, int flags, int new_addr) -> int {
+	return <int>syscall(SYSMREMAP, addr, old_len, new_len, flags, new_addr, 0);
 }
 
-func msync() -> int {
-	return <int>syscall(SYSMSYNC, 0, 0, 0, 0, 0, 0);
+func msync(int start, int len, int flags) -> int {
+	return <int>syscall(SYSMSYNC, start, len, flags, 0, 0, 0);
 }
 
-func mincore() -> int {
-	return <int>syscall(SYSMINCORE, 0, 0, 0, 0, 0, 0);
+func mincore(int start, int len, ptr vec) -> int {
+	return <int>syscall(SYSMINCORE, start, len, vec, 0, 0, 0);
 }
 
-func madvise() -> int {
-	return <int>syscall(SYSMADVISE, 0, 0, 0, 0, 0, 0);
+func madvise(int start, int len, int behaviour) -> int {
+	return <int>syscall(SYSMADVISE, start, len, behaviour, 0, 0, 0);
 }
 
 func shmget() -> int {
@@ -652,7 +654,8 @@ func rt_sigqueueinfo() -> int {
 	return <int>syscall(SYSRT_SIGQUEUEINFO, 0, 0, 0, 0, 0, 0);
 }
 
-func rkt_sigsuspend() -> int {
-	return <int>syscall(SYSRKT_SIGSUSPEND, 0, 0, 0, 0, 0, 0);
+func rkt_sigsuspend(ptr unewset, int sigsetsize) -> int {
+	return <int>syscall(SYSRKT_SIGSUSPEND, unewset, sigsetsize, 0, 0, 0, 0);
 }
+
 
