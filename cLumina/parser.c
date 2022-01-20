@@ -208,6 +208,18 @@ Token consumeToken(Parser* parser, Tokentype type, char* message) {
 	return token;
 }
 
+Type *consumeType(Parser* parser, char* message) {
+	Token token = consumeToken(parser, TOKEN_TYPE, message);
+
+	Type *type = findType(parser->compiler, token.word, token.wordLen);
+
+	if (type == NULL) {
+		parseError(parser, token, message);
+	}
+
+	return type;
+}
+
 void dumpNumber(Parser* parser, Token value) {
 	if (parser->flags & FLAG_DUMP) {
 		printf("%s:%d: number '%s'\n", value.fileName, value.line, value.word);

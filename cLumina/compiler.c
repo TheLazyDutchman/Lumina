@@ -121,6 +121,18 @@ void defineType(Compiler* compiler, char* name, int nameLen, Token token, TypeLi
 	addType(compiler->typeList, buffer, token, properties);
 }
 
+Type *findType(Compiler* compiler, char* name, int nameLen) {
+	TypeList list = *compiler->typeList;
+
+	for (int i = 0; i < list.size; i++) {
+		if (strncmp(list.types[i]->name, name, nameLen) == 0) {
+			return list.types[i];
+		}
+	}
+
+	return NULL;
+}
+
 void defineFunction(Compiler* compiler, char* name, int nameLen, int id, Type *type, TypeList *parameters) {
 	char* buffer = strndup(name, nameLen);
 
