@@ -13,7 +13,6 @@ var SYSMUNMAP = 11;
 var SYSBRK = 12;
 var SYSRT_SIGACTION = 13;
 var SYSRT_SIGPROCMASK = 14;
-var SYSRT_SIGRETURN = 15;
 var SYSIOCTL = 16;
 var SYSPREAD64 = 17;
 var SYSPWRITE64 = 18;
@@ -168,9 +167,8 @@ func lseek(int fd, int offset, int whence) -> int {
 	return <int>syscall(SYSLSEEK, fd, offset, whence, 0, 0, 0);
 }
 
-//TODO: look at mmap
-func mmap() -> int {
-	return <int>syscall(SYSMMAP, 0, 0, 0, 0, 0, 0);
+func mmap(ptr addr, int length, int prot, int flags, int fd, int offset) -> ptr {
+	return <ptr>syscall(SYSMMAP, addr, length, prot, flags, fd, offset);
 }
 
 func mprotect(int start, int len, int prot) -> int {
@@ -181,8 +179,8 @@ func munmap(int addr, int len) -> int {
 	return <int>syscall(SYSMUNMAP, addr, len, 0, 0, 0, 0);
 }
 
-func brk(int brk) -> int {
-	return <int>syscall(SYSBRK, brk, 0, 0, 0, 0, 0);
+func brk(ptr addr) -> int {
+	return <int>syscall(SYSBRK, addr, 0, 0, 0, 0, 0);
 }
 
 func rt_sigaction(int signum, ptr act, ptr oldact, int sigsetsize) -> int {
@@ -193,11 +191,7 @@ func rt_sigprocmask(int how, ptr set, ptr oset, int sigsetsize) -> int {
 	return <int>syscall(SYSRT_SIGPROCMASK, how, set, oset, sigsetsize, 0, 0);
 }
 
-//TODO: look at sigreturn
-func rt_sigreturn() -> int {
-	return <int>syscall(SYSRT_SIGRETURN, 0, 0, 0, 0, 0, 0);
-}
-
+//TODO: look at how to implement this properly
 func ioctl(int fd, int cmd, int arg) -> int {
 	return <int>syscall(SYSIOCTL, fd, cmd, arg, 0, 0, 0);
 }
@@ -234,8 +228,8 @@ func sched_yield() -> int {
 	return <int>syscall(SYSSCHED_YIELD, 0, 0, 0, 0, 0, 0);
 }
 
-func mremap(int addr, int old_len, int new_len, int flags, int new_addr) -> int {
-	return <int>syscall(SYSMREMAP, addr, old_len, new_len, flags, new_addr, 0);
+func mremap(int addr, int old_len, int new_len, int flags, int new_addr) -> ptr {
+	return <ptr>syscall(SYSMREMAP, addr, old_len, new_len, flags, new_addr, 0);
 }
 
 func msync(int start, int len, int flags) -> int {
