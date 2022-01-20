@@ -18,17 +18,26 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 
 	parser->numIfs = 0;
 	parser->numWhiles = 0;
+
+	// defining built-in immediates
+	defineType(parser->compiler, "any", 3, *parser->current, NULL);
+	defineType(parser->compiler, "int", 3, *parser->current, NULL);
+	defineType(parser->compiler, "str", 3, *parser->current, NULL);
+	defineType(parser->compiler, "char", 4, *parser->current, NULL);
+	defineType(parser->compiler, "bool", 4, *parser->current, NULL);
+	defineType(parser->compiler, "NULL", 4, *parser->current, NULL);
 	
 	// defining sycall built-in
 	char *name = "syscall";
 	int nameLen = strlen(name);
 	int id = 0;
-	Type *returnType = initType("any", *parser->current);
+	Type* typeAny = findType(parser->compiler, "any", 3);
+	Type* returnType = typeAny;
 
 	TypeList *parameters = initTypeList();
 	int i = 0;
 	while (i < 7) {
-		addType(parameters, "any", *parser->current, NULL);
+		addType(parameters, typeAny);
 		i++;
 	}
 
@@ -61,6 +70,10 @@ void freeParser(Parser* parser) {
 	fclose(parser->outputFile);
 
 	free(parser);
+}
+
+void setLastType(Parser* parser, Type* type) {
+	parser->lastType = type;
 }
 
 Token* next(Parser* parser) {
@@ -244,7 +257,7 @@ void number(Parser* parser) {
 
 	writeNumber(parser->compiler, numberValue);
 
-	parser->lastType = initType("int", value);
+	setLastType(parser, findType(parser->compiler, "int", 3));
 
 	next(parser);
 }
@@ -266,7 +279,7 @@ void character(Parser* parser) {
 	char *chr = value.word + 1;
 	writeCharacter(parser->compiler, &chr);
 
-	parser->lastType = initType("char", value);
+	setLastType(parser, findType(parser->compiler, "char", 4));
 
 	next(parser);
 }
@@ -282,7 +295,7 @@ void string(Parser* parser) {
 
 	writeString(parser->compiler, id);
 
-	parser->lastType = initType("str", value);
+	setLastType(parser, findType(parser->compiler, "str", 3));
 
 	next(parser);
 }
@@ -296,8 +309,7 @@ void readIndex(Parser* parser) {
 
 	writeReadIndex(parser->compiler);
 
-	freeType(parser->lastType);
-	parser->lastType = initType("char", *parser->current);
+	setLastType(parser, findType(parser->compiler, "char", 4));
 
 	consumeToken(parser, TOKEN_RBRACKET, "expected ']' after index");
 }
@@ -372,7 +384,7 @@ void identifier(Parser* parser) {
 		
 		writeCall(parser->compiler, func->id, numCalls);
 
-		parser->lastType = initType(func->returnType->name, identifier);
+		setLastType(parser, func->returnType);
 	} else {
 		Variable *var = findVariable(parser->compiler, identifier.word, identifier.wordLen);
 
@@ -389,7 +401,7 @@ void identifier(Parser* parser) {
 		
 		Type *type = findVariableType(parser->compiler, identifier.word, identifier.wordLen);
 		if (type != NULL) {
-			parser->lastType = initType(type->name, identifier);
+			setLastType(parser, type);
 		}
 	}
 }
@@ -447,13 +459,9 @@ void binary(Parser* parser) {
 			writeAdd(parser->compiler);
 
 			if (strcmp(value1.name, "char") == 0 || strcmp(parser->lastType->name, "char") == 0) {
-				freeType(parser->lastType);
-
-				parser->lastType == initType("char", operator);
+				setLastType(parser, findType(parser->compiler, "char", 4));
 			} else {
-				freeType(parser->lastType);
-
-				parser->lastType == initType("int", operator);
+				setLastType(parser, findType(parser->compiler, "int", 3));
 			}
 
 			break;
@@ -477,13 +485,9 @@ void binary(Parser* parser) {
 			writeSubtract(parser->compiler);
 
 			if (strcmp(value1.name, "char") == 0 && strcmp(parser->lastType->name, "int") == 0) {
-				freeType(parser->lastType);
-
-				parser->lastType = initType("char", operator);
+				setLastType(parser, findType(parser->compiler, "char", 4));
 			} else {
-				freeType(parser->lastType);
-
-				parser->lastType = initType("int", operator);
+				setLastType(parser, findType(parser->compiler, "int", 3));
 			}
 
 			break;
@@ -497,9 +501,7 @@ void binary(Parser* parser) {
 
 			writeLess(parser->compiler);
 
-			freeType(parser->lastType);
-
-			parser->lastType = initType("bool", operator);
+			setLastType(parser, findType(parser->compiler, "bool", 4));
 			break;
 		case TOKEN_LESSEQUAL:
 			dumpBinary(parser, operator);
@@ -511,9 +513,7 @@ void binary(Parser* parser) {
 
 			writeLessEqual(parser->compiler);
 
-			freeType(parser->lastType);
-
-			parser->lastType = initType("bool", operator);
+			setLastType(parser, findType(parser->compiler, "bool", 4));
 			break;
 		case TOKEN_GREATER:
 			dumpBinary(parser, operator);
@@ -525,9 +525,7 @@ void binary(Parser* parser) {
 
 			writeGreater(parser->compiler);
 
-			freeType(parser->lastType);
-
-			parser->lastType = initType("bool", operator);
+			setLastType(parser, findType(parser->compiler, "bool", 4));
 			break;
 		case TOKEN_GREATEREQUAL:
 			dumpBinary(parser, operator);
@@ -539,9 +537,7 @@ void binary(Parser* parser) {
 
 			writeGreaterEqual(parser->compiler);
 
-			freeType(parser->lastType);
-
-			parser->lastType = initType("bool", operator);
+			setLastType(parser, findType(parser->compiler, "bool", 4));
 			break;
 		case TOKEN_EQUALEQUAL:
 			dumpBinary(parser, operator);
@@ -553,9 +549,7 @@ void binary(Parser* parser) {
 
 			writeEqual(parser->compiler);
 
-			freeType(parser->lastType);
-
-			parser->lastType = initType("bool", operator);
+			setLastType(parser, findType(parser->compiler, "bool", 4));
 			break;
 	}
 }
@@ -597,8 +591,7 @@ void typeCast(Parser* parser) {
 
 	parsePrecedence(parser, PREC_PRIMARY);
 
-	freeType(parser->lastType);
-	parser->lastType = initType(strndup(typeName.word, typeName.wordLen), typeName);
+	setLastType(parser, findType(parser->compiler, typeName.word, typeName.wordLen));
 }
 
 void expression(Parser* parser) {
@@ -649,12 +642,10 @@ void variableDefinition(Parser* parser) {
 	expression(parser);
 	consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after variable definition");
 
-	char* typeName = "NULL";
+	Type* type = findType(parser->compiler, "NULL", 4);
 	if (parser->lastType != NULL) {
-		typeName = parser->lastType->name;
+		type = parser->lastType;
 	}
-
-	Type *type = initType(typeName, identifier);
 
 	defineVariable(parser->compiler, identifier.word, identifier.wordLen, type);
 }
@@ -733,27 +724,21 @@ void functionDefinition(Parser* parser) {
 	TypeList *parameters = initTypeList();
 
 	if (parser->current->type != TOKEN_RPAREN) {
-		Token type = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter type");
+		Type *type = consumeType(parser, "expected parameter type");
 		Token name = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter name");
 
-		char* typeName = strndup(type.word, type.wordLen);
-
-		addType(parameters, typeName, name, NULL);
-		free(typeName);
+		addType(parameters, type);
 
 		while (parser->current->type == TOKEN_COMMA) {
 			next(parser);
-			Token type = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter type");
+			Type *type = consumeType(parser, "expected parameter type");
 			Token name = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter name");
 
-			if (type.type == TOKEN_ERROR || name.type == TOKEN_ERROR) {
+			if (type == NULL || name.type == TOKEN_ERROR) {
 				return;
 			}
 
-			char* typeName = strndup(type.word, type.wordLen);
-
-			addType(parameters, typeName, name, NULL);
-			free(typeName);
+			addType(parameters, type);
 		}	
 	}
 	
@@ -764,11 +749,9 @@ void functionDefinition(Parser* parser) {
 	if (parser->current->type == TOKEN_RARROW) {
 		next(parser);
 
-		Token typeToken = consumeToken(parser, TOKEN_IDENTIFIER, "expected return type");
-		
-		type = initType(strndup(typeToken.word, typeToken.wordLen), typeToken);
+		type = consumeType(parser, "expected return type");
 	} else {
-		type = initType("null", name);
+		type = findType(parser->compiler, "NULL", 4);
 	}
 
 	defineFunction(parser->compiler, name.word, name.wordLen, funcId, type, parameters);
@@ -794,7 +777,7 @@ void block(Parser* parser, Function *func, TypeList *parameters) {
 		int i = 0;
 		while (i < parameters->size) {
 			//block will free the types, so we need to copy them first
-			Type *parameter = initType(parameters->types[i]->name, parameters->types[i]->token);
+			Type *parameter = initType(parameters->types[i]->name, parameters->types[i]->token, NULL);
 
 			scopeCompiler->currentStackSize++;
 			defineVariable(scopeCompiler, parameter->token.word, parameter->token.wordLen, parameter);

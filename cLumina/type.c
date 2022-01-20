@@ -3,17 +3,19 @@
 
 #include "type.h"
 
-Type *initType(const char* name, Token token) {
+Type *initType(const char* name, const Token token, Type **properties) {
 	Type *type = malloc(sizeof(Type));
 
 	type->name = strdup(name);
 	type->token = token;
+	type->properties = properties;
 
 	return type;
 }
 
 void freeType(Type *type) {
 	free(type->name);
+	free(type->properties);
 	free(type);
 }
 
@@ -36,8 +38,8 @@ void freeTypeList(TypeList* list) {
 	free(list);
 }
 
-void addType(TypeList* list, char* name, Token token, TypeList *properties) {
-	list->types[list->size] = initType(name, token);
+void addType(TypeList* list, Type *type) {
+	list->types[list->size] = type;
 
 	list->size++;
 
