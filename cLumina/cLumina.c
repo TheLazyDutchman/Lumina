@@ -11,11 +11,12 @@
 #include "parser.h"
 
 void usage() {
-	printf("usage: cLumina [-dump] [-debug] [-r] [-s] <inputFile>\n");
+	printf("usage: cLumina [-dump] [-debug] [-r] [-s] [-check] <inputFile>\n");
 	printf("	-dump: dumps the lexer output to stdout\n");
 	printf("	-debug: generate a file that can be debugged by gdb\n");
 	printf("	-r: run the generated executable after compilation finished\n");
 	printf("	-s: suppress compiler output in stdout\n");
+	printf("	-check: checks inputfile for errors, but doesn't generate code\n");
 }
 
 pid_t createChild(char* program, char** args, bool suppressOutput) {
@@ -72,6 +73,7 @@ int main(int argc, char *argv[]) {
 	bool runFile = false;
 	bool debug = false;
 	bool suppress = false;
+	bool check = false;
 
 	argv++;
 	while (*argv != NULL) {
@@ -86,6 +88,9 @@ int main(int argc, char *argv[]) {
 		}
 		else if (strcmp(*argv, "-s") == 0) {
 			suppress = true;
+		}
+		else if (strcmp(*argv, "-check") == 0) {
+			check = true;
 		}
 		else {
 			fileName = *argv;
@@ -102,6 +107,10 @@ int main(int argc, char *argv[]) {
 
 	char* assemblyFile = getFileNameWithExtension(fileName, ".asm");
 
+	if (check) {
+		assemblyFile = "outputCheck.asm";
+	}
+
 	Parser* parser = initParser(fileName, assemblyFile, flags);
 
 	if (!suppress) {
@@ -111,7 +120,18 @@ int main(int argc, char *argv[]) {
 	parse(parser);
 
 	if (parser->hadError) {
+		if (check) {
+			remove(assemblyFile);
+			printf("[CHECK] got errors in '%s'\n", fileName);
+		}
+
 		exit(1);
+	}
+
+	if (check) {
+		remove(assemblyFile);
+		printf("[CHECK] successfully checked '%s'\n", fileName);
+		exit(0);
 	}
 
 	freeParser(parser);

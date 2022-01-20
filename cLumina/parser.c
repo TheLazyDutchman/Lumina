@@ -143,8 +143,12 @@ ParseRule parseTable[] = {
 
 void panic(Parser* parser) {
 	Tokentype type = parser->current->type;
-	while (type != TOKEN_SEMICOLON && type != TOKEN_RBRACE && type != TOKEN_RPAREN && type != TOKEN_END_OF_FILE) {
+	while (type != TOKEN_SEMICOLON && type != TOKEN_RBRACE && type != TOKEN_END_OF_FILE) {
 		type = next(parser)->type;
+	}
+
+	if (type != TOKEN_END_OF_FILE) {
+		next(parser);
 	}
 }
 
@@ -318,7 +322,8 @@ void identifier(Parser* parser) {
 		if (func->parameters->size > 0) {
 			expression(parser);
 
-			if (strcmp(func->parameters->types[0]->name, parser->lastType->name) != 0) { 
+			if (strcmp(func->parameters->types[0]->name, parser->lastType->name) != 0 &&
+					strcmp(func->parameters->types[0]->name, "any") != 0) { 
 				parseError(parser, *parser->current, "incorrect type passed to function");
 				return;
 			}
@@ -335,7 +340,8 @@ void identifier(Parser* parser) {
 
 				expression(parser);
 
-				if (strcmp(func->parameters->types[i]->name, parser->lastType->name) != 0) { 
+				if (strcmp(func->parameters->types[i]->name, parser->lastType->name) != 0 &&
+						strcmp(func->parameters->types[i]->name, "any") != 0) { 
 					parseError(parser, *parser->current, "incorrect type passed to function"); 
 					return;
 				}
@@ -614,8 +620,15 @@ void variableDefinition(Parser* parser) {
 
 	dumpIdentifier(parser, identifier);
 
-	if (findLocalVariable(parser->compiler, identifier.word, identifier.wordLen) != NULL) { parseError(parser, identifier, "there already exists a variable with this name"); }
-	if (findLocalFunction(parser->compiler, identifier.word, identifier.wordLen) != NULL) { parseError(parser, identifier, "there already exists a function with this name"); }
+	if (findLocalVariable(parser->compiler, identifier.word, identifier.wordLen) != NULL) { 
+		parseError(parser, identifier, "there already exists a variable with this name"); 
+		return;
+	}
+
+	if (findLocalFunction(parser->compiler, identifier.word, identifier.wordLen) != NULL) { 
+		parseError(parser, identifier, "there already exists a function with this name"); 
+		return;
+	}
 
 	consumeToken(parser, TOKEN_EQUAL, "expected '=' after variable name in definition");
 
@@ -719,6 +732,10 @@ void functionDefinition(Parser* parser) {
 			Token type = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter type");
 			Token name = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter name");
 
+			if (type.type == TOKEN_ERROR || name.type == TOKEN_ERROR) {
+				return;
+			}
+
 			char* typeName = strndup(type.word, type.wordLen);
 
 			addType(parameters, typeName, name);
@@ -742,7 +759,7 @@ void functionDefinition(Parser* parser) {
 
 	defineFunction(parser->compiler, name.word, name.wordLen, funcId, type, parameters);
 
-	if (consumeToken(parser, TOKEN_LBRACE, "expected '{' before function block").type == TOKEN_ERROR) { return;}
+	consumeToken(parser, TOKEN_LBRACE, "expected '{' before function block");
 
 	writeBeginFunction(parser->compiler, funcId, parameters->size);
 
@@ -786,6 +803,7 @@ void block(Parser* parser, Function *func, TypeList *parameters) {
 		if (strcmp(func->returnType->name, "null") != 0) {
 			if (!scopeCompiler->hasReturned) {
 				parseError(parser, *parser->current, "not al code paths return a value");
+				return;
 			}
 		} else {
 			uint16_t numVars = parser->compiler->currentStackSize - func->parameters->size - 1;

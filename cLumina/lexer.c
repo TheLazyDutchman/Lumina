@@ -88,7 +88,7 @@ void lexerError(Lexer* lexer, const char* message) {
 }
 
 void lexIdentifier(Lexer* lexer, Token* token) {
-	while (isalnum(*lexer->current)) {
+	while (isalnum(*lexer->current) || *lexer->current == '_') {
 			advance(lexer);
 	}
 
@@ -418,6 +418,7 @@ Token *nextToken(Lexer* lexer){
 				break;
 			default:
 				lexerError(lexer, "could not recognize character");
+				printf("char: '%c', ascii: '%d'\n", *lexer->current, *lexer->current);
 				token->type = TOKEN_ERROR;
 				return NULL;
 		}
