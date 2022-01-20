@@ -17,7 +17,7 @@ typedef struct {
 TypeList* initTypeList();
 void freeTypeList(TypeList* list);
 
-void addType(TypeList* list, char* name, Token token);
+void addType(TypeList* list, char* name, Token token, TypeList *properties);
 
 Type *initType(const char* name, Token token);
 void freeType(Type *type);

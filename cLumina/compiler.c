@@ -115,6 +115,12 @@ Variable *findLocalVariable(Compiler* compiler, char* name, int nameLen) {
 	return NULL;
 }
 
+void defineType(Compiler* compiler, char* name, int nameLen, Token token, TypeList *properties) {
+	char* buffer = strndup(name, nameLen);
+
+	addType(compiler->typeList, buffer, token, properties);
+}
+
 void defineFunction(Compiler* compiler, char* name, int nameLen, int id, Type *type, TypeList *parameters) {
 	char* buffer = strndup(name, nameLen);
 

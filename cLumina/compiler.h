@@ -14,6 +14,7 @@ typedef struct Compiler{
 	FILE* output;
 	size_t currentStackSize;
 	VariableList* variableList;
+	TypeList* typeList;
 	FunctionList* functionList;
 	Function *function;
 	bool hasReturned;
@@ -28,6 +29,9 @@ void defineVariable(Compiler* compiler, char* name, int nameLen, Type *type);
 Variable *findVariable(Compiler* compiler, char* name, int nameLen);
 Type *findVariableType(Compiler* compiler, char* name, int nameLen);
 Variable *findLocalVariable(Compiler* compiler, char* name, int nameLen);
+
+void defineType(Compiler* compiler, char* name, int nameLen, Token token, TypeList* properties);
+Type *findType(Compiler* compiler, char* name, int nameLen);
 
 void defineFunction(Compiler* compiler, char* name, int nameLen, int id, Type *type, TypeList *parameters);
 int16_t findFunctionId(Compiler* compiler, char* name, int nameLen);

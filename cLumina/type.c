@@ -36,7 +36,7 @@ void freeTypeList(TypeList* list) {
 	free(list);
 }
 
-void addType(TypeList* list, char* name, Token token) {
+void addType(TypeList* list, char* name, Token token, TypeList *properties) {
 	list->types[list->size] = initType(name, token);
 
 	list->size++;

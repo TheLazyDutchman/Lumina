@@ -28,7 +28,7 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 	TypeList *parameters = initTypeList();
 	int i = 0;
 	while (i < 7) {
-		addType(parameters, "any", *parser->current);
+		addType(parameters, "any", *parser->current, NULL);
 		i++;
 	}
 
@@ -726,7 +726,7 @@ void functionDefinition(Parser* parser) {
 
 		char* typeName = strndup(type.word, type.wordLen);
 
-		addType(parameters, typeName, name);
+		addType(parameters, typeName, name, NULL);
 		free(typeName);
 
 		while (parser->current->type == TOKEN_COMMA) {
@@ -740,7 +740,7 @@ void functionDefinition(Parser* parser) {
 
 			char* typeName = strndup(type.word, type.wordLen);
 
-			addType(parameters, typeName, name);
+			addType(parameters, typeName, name, NULL);
 			free(typeName);
 		}	
 	}
