@@ -891,6 +891,38 @@ void importStatement(Parser* parser) {
 	free(fileName);
 }
 
+void typeDefinition(Parser* parser) {
+	Token name = consumeToken(parser, TOKEN_IDENTIFIER, "expected type name in definition");
+
+	if (findVariable(parser->compiler, name.word, name.wordLen) != NULL) {
+		parseError(parser, name, "there already exists a variable with this name");
+		return;
+	}
+
+	if (findType(parser->compiler, name.word, name.wordLen) != NULL) {
+		parseError(parser, name, "there already exists a type with this name");
+		return;
+	}
+
+	if (findFunction(parser->compiler, name.word, name.wordLen) != NULL) {
+		parseError(parser, name, "there already exists a function with this name");
+		return;
+	}
+
+	defineType(parser->compiler, name.word, name.wordLen, name, NULL);
+
+	if (consumeToken(parser, TOKEN_LBRACE, "expected '{' after type name").type == TOKEN_ERROR) { return; }
+
+	while (parser->current->type != TOKEN_LBRACE) {
+		consumeType(parser, "expected type property to start with type");
+		Token propertyName = consumeToken(parser, TOKEN_IDENTIFIER, "expected name of property");
+		// store property
+	}
+	// add properties to type
+
+	consumeToken(parser, TOKEN_RBRACE, "expected '}' after type definition");
+}
+
 void statement(Parser* parser) {
 	if (parser->current->type == TOKEN_VAR) {
 		next(parser);
@@ -908,6 +940,10 @@ void statement(Parser* parser) {
 		next(parser);
 
 		functionDefinition(parser);
+	} else if (parser->current->type == TOKEN_TYPE) {
+		next(parser);
+
+		typeDefinition(parser);
 	} else if (parser->current->type == TOKEN_RETURN) {
 		next(parser);
 
