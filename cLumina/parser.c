@@ -632,7 +632,12 @@ void variableDefinition(Parser* parser) {
 		return;
 	}
 
-	if (findLocalFunction(parser->compiler, identifier.word, identifier.wordLen) != NULL) { 
+	if (findType(parser->compiler, identifier.word, identifier.wordLen) != NULL) {
+		parseError(parser, identifier, "there already exists a type with this name");
+		return;
+	}
+
+	if (findFunction(parser->compiler, identifier.word, identifier.wordLen) != NULL) { 
 		parseError(parser, identifier, "there already exists a function with this name"); 
 		return;
 	}
@@ -716,6 +721,21 @@ void functionDefinition(Parser* parser) {
 	uint32_t funcId = parser->numFuncs++;
 
 	Token name = consumeToken(parser, TOKEN_IDENTIFIER, "expected function name");
+
+	if (findVariable(parser->compiler, name.word, name.wordLen) != NULL) {
+		parseError(parser, name, "there already exists a variable with this name");
+		return;
+	}
+
+	if (findType(parser->compiler, name.word, name.wordLen) != NULL) {
+		parseError(parser, name, "there already exists a type with this name");
+		return;
+	}
+
+	if (findLocalFunction(parser->compiler, name.word, name.wordLen) != NULL) {
+		parseError(parser, name, "there already exists a type with this name");
+		return;
+	}
 
 	if (name.type == TOKEN_ERROR) { return;}
 
