@@ -3,12 +3,13 @@
 
 #include "type.h"
 
-Type *initType(const char* name, const Token token, Type **properties) {
+Type *initType(const char* name, const Token token, Property **properties, Type **propertyTypes) {
 	Type *type = malloc(sizeof(Type));
 
 	type->name = strdup(name);
 	type->token = token;
 	type->properties = properties;
+	type->propertyTypes = propertyTypes;
 
 	return type;
 }
@@ -16,6 +17,7 @@ Type *initType(const char* name, const Token token, Type **properties) {
 void freeType(Type *type) {
 	free(type->name);
 	free(type->properties);
+	free(type->propertyTypes);
 	free(type);
 }
 

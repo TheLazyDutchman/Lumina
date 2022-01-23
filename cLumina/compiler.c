@@ -115,9 +115,9 @@ Variable *findLocalVariable(Compiler* compiler, char* name, int nameLen) {
 	return NULL;
 }
 
-void defineType(Compiler* compiler, char* name, int nameLen, Token token, Type **properties) {
+void defineType(Compiler* compiler, char* name, int nameLen, Token token, Property **properties, Type **propertyTypes) {
 	char* buffer = strndup(name, nameLen);
-	Type* type = initType(buffer, token, properties);
+	Type* type = initType(buffer, token, properties, propertyTypes);
 
 	addType(compiler->typeList, type);
 }

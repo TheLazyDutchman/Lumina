@@ -3,10 +3,16 @@
 
 #include "lexer.h"
 
+typedef struct {
+	char* name;
+	int index;
+} Property;
+
 typedef struct Type{
 	char* name;
 	Token token;
-	struct Type **properties;
+	Property **properties;
+	struct Type **propertyTypes;
 } Type;
 
 typedef struct {
@@ -20,7 +26,7 @@ void freeTypeList(TypeList* list);
 
 void addType(TypeList* list, Type *type);
 
-Type *initType(const char* name, const Token token, Type **properties);
+Type *initType(const char* name, const Token token, Property **properties, Type **propertyTypes);
 void freeType(Type *type);
 
 #endif

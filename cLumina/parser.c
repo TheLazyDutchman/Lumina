@@ -20,12 +20,12 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 	parser->numWhiles = 0;
 
 	// defining built-in immediates
-	defineType(parser->compiler, "any", 3, *parser->current, NULL);
-	defineType(parser->compiler, "int", 3, *parser->current, NULL);
-	defineType(parser->compiler, "str", 3, *parser->current, NULL);
-	defineType(parser->compiler, "char", 4, *parser->current, NULL);
-	defineType(parser->compiler, "bool", 4, *parser->current, NULL);
-	defineType(parser->compiler, "NULL", 4, *parser->current, NULL);
+	defineType(parser->compiler, "any", 3, *parser->current, NULL, NULL);
+	defineType(parser->compiler, "int", 3, *parser->current, NULL, NULL);
+	defineType(parser->compiler, "str", 3, *parser->current, NULL, NULL);
+	defineType(parser->compiler, "char", 4, *parser->current, NULL, NULL);
+	defineType(parser->compiler, "bool", 4, *parser->current, NULL, NULL);
+	defineType(parser->compiler, "NULL", 4, *parser->current, NULL, NULL);
 	
 	// defining sycall built-in
 	char *name = "syscall";
@@ -797,7 +797,7 @@ void block(Parser* parser, Function *func, TypeList *parameters) {
 		int i = 0;
 		while (i < parameters->size) {
 			//block will free the types, so we need to copy them first
-			Type *parameter = initType(parameters->types[i]->name, parameters->types[i]->token, NULL);
+			Type *parameter = initType(parameters->types[i]->name, parameters->types[i]->token, parameters->types[i]->properties, parameters->types[i]->propertyTypes);
 
 			scopeCompiler->currentStackSize++;
 			defineVariable(scopeCompiler, parameter->token.word, parameter->token.wordLen, parameter);
@@ -909,7 +909,7 @@ void typeDefinition(Parser* parser) {
 		return;
 	}
 
-	defineType(parser->compiler, name.word, name.wordLen, name, NULL);
+	defineType(parser->compiler, name.word, name.wordLen, name, NULL, NULL);
 
 	if (consumeToken(parser, TOKEN_LBRACE, "expected '{' after type name").type == TOKEN_ERROR) { return; }
 
