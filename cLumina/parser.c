@@ -914,6 +914,10 @@ void typeDefinition(Parser* parser) {
 
 	if (consumeToken(parser, TOKEN_LBRACE, "expected '{' after type name").type == TOKEN_ERROR) { return; }
 
+	int i = 0;
+	PropertyList *properties = initPropertyList();
+	TypeList *types = initTypeList();
+
 	while (parser->current->type != TOKEN_LBRACE) {
 		consumeType(parser, "expected type property to start with type");
 		Token propertyName = consumeToken(parser, TOKEN_IDENTIFIER, "expected name of property");
