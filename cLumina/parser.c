@@ -34,10 +34,10 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 	Type* typeAny = findType(parser->compiler, "any", 3);
 	Type* returnType = typeAny;
 
-	TypeList *parameters = initTypeList();
+	VariableList *parameters = initVariableList();
 	int i = 0;
 	while (i < 7) {
-		addType(parameters, typeAny);
+		addVariable(parameters, "", i, 0, typeAny);
 		i++;
 	}
 
@@ -348,8 +348,8 @@ void identifier(Parser* parser) {
 		if (func->parameters->size > 0) {
 			expression(parser);
 
-			if (strcmp(func->parameters->types[0]->name, parser->lastType->name) != 0 &&
-					strcmp(func->parameters->types[0]->name, "any") != 0) { 
+			if (strcmp(func->parameters->variables[0]->type->name, parser->lastType->name) != 0 &&
+					strcmp(func->parameters->variables[0]->type->name, "any") != 0) { 
 				parseError(parser, *parser->current, "incorrect type passed to function");
 				return;
 			}
@@ -366,8 +366,8 @@ void identifier(Parser* parser) {
 
 				expression(parser);
 
-				if (strcmp(func->parameters->types[i]->name, parser->lastType->name) != 0 &&
-						strcmp(func->parameters->types[i]->name, "any") != 0) { 
+				if (strcmp(func->parameters->variables[i]->type->name, parser->lastType->name) != 0 &&
+						strcmp(func->parameters->variables[i]->type->name, "any") != 0) { 
 					parseError(parser, *parser->current, "incorrect type passed to function"); 
 					return;
 				}
@@ -741,13 +741,16 @@ void functionDefinition(Parser* parser) {
 
 	if (consumeToken(parser, TOKEN_LPAREN, "expected '(' after function name").type == TOKEN_ERROR) { return; }
 
-	TypeList *parameters = initTypeList();
+	VariableList *parameters = initVariableList();
 
 	if (parser->current->type != TOKEN_RPAREN) {
 		Type *type = consumeType(parser, "expected parameter type");
 		Token name = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter name");
 
-		addType(parameters, type);
+		int i = 0;
+		int functionDepth = parser->compiler->functionDepth + 1;
+
+		addVariable(parameters, strndup(name.word, name.wordLen), i, functionDepth, type);
 
 		while (parser->current->type == TOKEN_COMMA) {
 			next(parser);
@@ -758,7 +761,7 @@ void functionDefinition(Parser* parser) {
 				return;
 			}
 
-			addType(parameters, type);
+			addVariable(parameters, strndup(name.word, name.wordLen), ++i, functionDepth, type);
 		}	
 	}
 	
@@ -785,7 +788,7 @@ void functionDefinition(Parser* parser) {
 	writeAddress(parser->compiler, "addr_func_end", funcId);
 }
 
-void block(Parser* parser, Function *func, TypeList *parameters) {
+void block(Parser* parser, Function *func, VariableList *parameters) {
 	Compiler* scopeCompiler = initCompiler(parser->outputFile, parser->compiler);
 	
 	if (func != NULL) {
@@ -796,11 +799,9 @@ void block(Parser* parser, Function *func, TypeList *parameters) {
 	if (parameters != NULL) {
 		int i = 0;
 		while (i < parameters->size) {
-			//block will free the types, so we need to copy them first
-			Type *parameter = initType(parameters->types[i]->name, parameters->types[i]->token, parameters->types[i]->properties, parameters->types[i]->propertyTypes);
-
 			scopeCompiler->currentStackSize++;
-			defineVariable(scopeCompiler, parameter->token.word, parameter->token.wordLen, parameter);
+			Variable *var = parameters->variables[i];
+			defineVariable(scopeCompiler, var->name, strlen(var->name), var->type);
 
 			i++;
 		}

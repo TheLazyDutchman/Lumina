@@ -26,6 +26,7 @@ Compiler* initCompiler(FILE* output, Compiler* outer) {
 void freeCompiler(Compiler* compiler) {
 	freeVariableList(compiler->variableList);
 	freeFunctionList(compiler->functionList);
+	freeTypeList(compiler->typeList);
 	free(compiler);
 }
 
@@ -134,7 +135,7 @@ Type *findType(Compiler* compiler, char* name, int nameLen) {
 	return NULL;
 }
 
-void defineFunction(Compiler* compiler, char* name, int nameLen, int id, Type *type, TypeList *parameters) {
+void defineFunction(Compiler* compiler, char* name, int nameLen, int id, Type *type, VariableList *parameters) {
 	char* buffer = strndup(name, nameLen);
 
 	addFunction(compiler->functionList, buffer, id, type, parameters);

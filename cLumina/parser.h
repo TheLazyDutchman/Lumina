@@ -50,7 +50,7 @@ void ifStatement(Parser* parser);
 void importStatement(Parser* parser);
 void variableDefinition(Parser* parser);
 void typeDefinition(Parser* parser);
-void block(Parser* parser, Function *func, TypeList *parameters);
+void block(Parser* parser, Function *func, VariableList *parameters);
 void statement(Parser* parser);
 void returnStatement(Parser* parser);
 
