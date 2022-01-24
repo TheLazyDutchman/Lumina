@@ -9,6 +9,7 @@ Compiler* initCompiler(FILE* output, Compiler* outer) {
 	compiler->currentStackSize = 0;
 	compiler->variableList = initVariableList();
 	compiler->functionList = initFunctionList();
+	compiler->typeList = initTypeList();
 	compiler->hasReturned = false;
 	compiler->outer = outer;
 
