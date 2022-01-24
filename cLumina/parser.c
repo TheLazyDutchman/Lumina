@@ -20,24 +20,25 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 	parser->numWhiles = 0;
 
 	// defining built-in immediates
-	defineType(parser->compiler, "any", 3, *parser->current, NULL, NULL);
-	defineType(parser->compiler, "int", 3, *parser->current, NULL, NULL);
-	defineType(parser->compiler, "str", 3, *parser->current, NULL, NULL);
-	defineType(parser->compiler, "char", 4, *parser->current, NULL, NULL);
-	defineType(parser->compiler, "bool", 4, *parser->current, NULL, NULL);
-	defineType(parser->compiler, "NULL", 4, *parser->current, NULL, NULL);
+	//strdup is used here because these predefined string literals are freed later, because there will be allocated strings in the same place later
+	defineType(parser->compiler, strdup("any"), 3, *parser->current, NULL, NULL); 
+	defineType(parser->compiler, strdup("int"), 3, *parser->current, NULL, NULL);
+	defineType(parser->compiler, strdup("str"), 3, *parser->current, NULL, NULL);
+	defineType(parser->compiler, strdup("char"), 4, *parser->current, NULL, NULL);
+	defineType(parser->compiler, strdup("bool"), 4, *parser->current, NULL, NULL);
+	defineType(parser->compiler, strdup("NULL"), 4, *parser->current, NULL, NULL);
 	
 	// defining sycall built-in
-	char *name = "syscall";
+	char *name = strdup("syscall");
 	int nameLen = strlen(name);
 	int id = 0;
-	Type* typeAny = findType(parser->compiler, "any", 3);
+	Type* typeAny = findType(parser->compiler, strdup("any"), 3);
 	Type* returnType = typeAny;
 
 	VariableList *parameters = initVariableList();
 	int i = 0;
 	while (i < 7) {
-		addVariable(parameters, "", i, 0, typeAny);
+		addVariable(parameters, strdup(""), i, 0, typeAny);
 		i++;
 	}
 
@@ -57,10 +58,6 @@ void freeParser(Parser* parser) {
 
 	if (parser->current != NULL) {
 		freeToken(parser->current);
-	}
-
-	if (parser->lastType != NULL) {
-		freeType(parser->lastType);
 	}
 
 	freeCompiler(parser->compiler);
@@ -801,7 +798,7 @@ void block(Parser* parser, Function *func, VariableList *parameters) {
 		while (i < parameters->size) {
 			scopeCompiler->currentStackSize++;
 			Variable *var = parameters->variables[i];
-			defineVariable(scopeCompiler, var->name, strlen(var->name), var->type);
+			defineVariable(scopeCompiler, strdup(var->name), strlen(var->name), var->type);
 
 			i++;
 		}
