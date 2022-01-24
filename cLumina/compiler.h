@@ -30,7 +30,7 @@ Variable *findVariable(Compiler* compiler, char* name, int nameLen);
 Type *findVariableType(Compiler* compiler, char* name, int nameLen);
 Variable *findLocalVariable(Compiler* compiler, char* name, int nameLen);
 
-void defineType(Compiler* compiler, char* name, int nameLen, Token token, Property **properties, Type **propertyTypes);
+Type *defineType(Compiler* compiler, char* name, int nameLen, Token token, PropertyList *properties, Type **propertyTypes);
 Type *findType(Compiler* compiler, char* name, int nameLen);
 
 void defineFunction(Compiler* compiler, char* name, int nameLen, int id, Type *type, VariableList *parameters);

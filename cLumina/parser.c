@@ -910,7 +910,7 @@ void typeDefinition(Parser* parser) {
 		return;
 	}
 
-	defineType(parser->compiler, name.word, name.wordLen, name, NULL, NULL);
+	Type *type = defineType(parser->compiler, name.word, name.wordLen, name, NULL, NULL);
 
 	if (consumeToken(parser, TOKEN_LBRACE, "expected '{' after type name").type == TOKEN_ERROR) { return; }
 
@@ -919,11 +919,17 @@ void typeDefinition(Parser* parser) {
 	TypeList *types = initTypeList();
 
 	while (parser->current->type != TOKEN_LBRACE) {
-		consumeType(parser, "expected type property to start with type");
+		Type *type = consumeType(parser, "expected type property to start with type");
 		Token propertyName = consumeToken(parser, TOKEN_IDENTIFIER, "expected name of property");
-		// store property
+
+		addProperty(properties, strndup(propertyName.word, propertyName.wordLen), i);
+		addType(types, type);
+		i++;
 	}
-	// add properties to type
+
+	type->properties = properties;
+	type->propertyTypes = types->types;
+	free(types);
 
 	consumeToken(parser, TOKEN_RBRACE, "expected '}' after type definition");
 }

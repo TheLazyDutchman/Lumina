@@ -30,7 +30,7 @@ typedef struct {
 PropertyList* initPropertyList();
 void freePropertyList();
 
-void addProperty(PropertyList* list, Property *property);
+void addProperty(PropertyList* list, char* name, int index);
 void freeProperty(Property *property);
 
 TypeList* initTypeList();

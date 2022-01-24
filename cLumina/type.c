@@ -73,8 +73,17 @@ void freePropertyList(PropertyList* list) {
 	free(list);
 }
 
-void addProperty(PropertyList* list, Property *property) {
-	list->properties[list->size] = property;
+Property *initProperty(char* name, int index) {
+	Property *property = malloc(sizeof(Property));
+
+	property->name = name;
+	property->index = index;
+	
+	return property;
+}
+
+void addProperty(PropertyList* list, char* name, int index) {
+	list->properties[list->size] = initProperty(name, index);
 
 	list->size++;
 
