@@ -222,7 +222,7 @@ Token consumeToken(Parser* parser, Tokentype type, char* message) {
 }
 
 Type *consumeType(Parser* parser, char* message) {
-	Token token = consumeToken(parser, TOKEN_TYPE, message);
+	Token token = consumeToken(parser, TOKEN_IDENTIFIER, message);
 
 	Type *type = findType(parser->compiler, token.word, token.wordLen);
 
@@ -918,13 +918,17 @@ void typeDefinition(Parser* parser) {
 	PropertyList *properties = initPropertyList();
 	TypeList *types = initTypeList();
 
-	while (parser->current->type != TOKEN_LBRACE) {
+	while (parser->current->type != TOKEN_RBRACE) {
 		Type *type = consumeType(parser, "expected type property to start with type");
 		Token propertyName = consumeToken(parser, TOKEN_IDENTIFIER, "expected name of property");
+
+		if (type == NULL || propertyName.type == TOKEN_ERROR) { return; }
 
 		addProperty(properties, strndup(propertyName.word, propertyName.wordLen), i);
 		addType(types, type);
 		i++;
+
+		consumeToken(parser, TOKEN_SEMICOLON, "expected property to end with ';'");
 	}
 
 	type->properties = properties;
