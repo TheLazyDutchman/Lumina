@@ -6,16 +6,19 @@
 typedef struct {
 	char* name;
 	int index;
+	size_t offset;
 } Property;
 
 typedef struct {
 	size_t size;
 	size_t maxSize;
+	size_t totalTypeSize;
 	Property **properties;
 } PropertyList;
 
 typedef struct Type{
 	char* name;
+	size_t size;
 	Token token;
 	PropertyList *properties;
 	struct Type **propertyTypes;
@@ -30,7 +33,7 @@ typedef struct {
 PropertyList* initPropertyList();
 void freePropertyList();
 
-void addProperty(PropertyList* list, char* name, int index);
+void addProperty(PropertyList* list, char* name, int index, size_t size);
 void freeProperty(Property *property);
 
 TypeList* initTypeList();
@@ -38,7 +41,7 @@ void freeTypeList(TypeList* list);
 
 void addType(TypeList* list, Type *type);
 
-Type *initType(const char* name, const Token token, PropertyList *properties, Type **propertyTypes);
+Type *initType(const char* name, const Token token, size_t size, PropertyList *properties, Type **propertyTypes);
 void freeType(Type *type);
 
 #endif

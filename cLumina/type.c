@@ -3,11 +3,12 @@
 
 #include "type.h"
 
-Type *initType(const char* name, const Token token, PropertyList *properties, Type **propertyTypes) {
+Type *initType(const char* name, const Token token, size_t size, PropertyList *properties, Type **propertyTypes) {
 	Type *type = malloc(sizeof(Type));
 
 	type->name = strdup(name);
 	type->token = token;
+	type->size = size;
 	type->properties = properties;
 	type->propertyTypes = propertyTypes;
 
@@ -73,22 +74,24 @@ void freePropertyList(PropertyList* list) {
 	free(list);
 }
 
-Property *initProperty(char* name, int index) {
+Property *initProperty(char* name, int index, size_t offset) {
 	Property *property = malloc(sizeof(Property));
 
 	property->name = name;
 	property->index = index;
+	property->offset = offset;
 	
 	return property;
 }
 
-void addProperty(PropertyList* list, char* name, int index) {
-	list->properties[list->size] = initProperty(name, index);
+void addProperty(PropertyList* list, char* name, int index, size_t size) {
+	list->properties[list->size] = initProperty(name, index, list->totalTypeSize);
 
 	list->size++;
+	list->totalTypeSize += size;
 
 	if (list->size == list->maxSize) {
 		list->maxSize *= 2;
-		list->properties = reallocarray(list->properties, sizeof(Type*), list->maxSize);
+		list->properties = reallocarray(list->properties, sizeof(Property*), list->maxSize);
 	}
 }

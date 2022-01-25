@@ -21,12 +21,12 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 
 	// defining built-in immediates
 	//strdup is used here because these predefined string literals are freed later, because there will be allocated strings in the same place later
-	defineType(parser->compiler, strdup("any"), 3, *parser->current, NULL, NULL); 
-	defineType(parser->compiler, strdup("int"), 3, *parser->current, NULL, NULL);
-	defineType(parser->compiler, strdup("str"), 3, *parser->current, NULL, NULL);
-	defineType(parser->compiler, strdup("char"), 4, *parser->current, NULL, NULL);
-	defineType(parser->compiler, strdup("bool"), 4, *parser->current, NULL, NULL);
-	defineType(parser->compiler, strdup("NULL"), 4, *parser->current, NULL, NULL);
+	defineType(parser->compiler, strdup("any"), 3, 8, *parser->current, NULL, NULL); 
+	defineType(parser->compiler, strdup("int"), 3, 8, *parser->current, NULL, NULL);
+	defineType(parser->compiler, strdup("str"), 3, 8, *parser->current, NULL, NULL);
+	defineType(parser->compiler, strdup("char"), 4, 1, *parser->current, NULL, NULL);
+	defineType(parser->compiler, strdup("bool"), 4, 1, *parser->current, NULL, NULL);
+	defineType(parser->compiler, strdup("NULL"), 4, 8, *parser->current, NULL, NULL);
 	
 	// defining sycall built-in
 	char *name = strdup("syscall");
@@ -907,7 +907,7 @@ void typeDefinition(Parser* parser) {
 		return;
 	}
 
-	Type *type = defineType(parser->compiler, name.word, name.wordLen, name, NULL, NULL);
+	Type *type = defineType(parser->compiler, name.word, name.wordLen, 8, name, NULL, NULL);
 
 	if (consumeToken(parser, TOKEN_LBRACE, "expected '{' after type name").type == TOKEN_ERROR) { return; }
 
@@ -921,7 +921,7 @@ void typeDefinition(Parser* parser) {
 
 		if (type == NULL || propertyName.type == TOKEN_ERROR) { return; }
 
-		addProperty(properties, strndup(propertyName.word, propertyName.wordLen), i);
+		addProperty(properties, strndup(propertyName.word, propertyName.wordLen), i, type->size);
 		addType(types, type);
 		i++;
 
