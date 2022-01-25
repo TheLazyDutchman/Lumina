@@ -1,0 +1,8 @@
+type IntVector {
+	int x;
+	int y;
+}
+
+func addVec(IntVector a, IntVector b) -> IntVector {
+	return a;
+}
