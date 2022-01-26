@@ -1,3 +1,5 @@
+import "../std/syscalls.lumina";
+
 type IntVector {
 	int x;
 	int y;

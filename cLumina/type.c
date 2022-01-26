@@ -3,8 +3,6 @@
 
 #include "type.h"
 
-#include <stdio.h>
-
 Type *initType(const char* name, const Token token, size_t size, PropertyList *properties, Type **propertyTypes) {
 	Type *type = malloc(sizeof(Type));
 
