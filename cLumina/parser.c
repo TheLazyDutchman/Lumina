@@ -412,10 +412,6 @@ void identifier(Parser* parser) {
 
 		writeIdentifier(parser->compiler, var->position, var->functionDepth);
 
-		if (parser->lastType != NULL) {
-			freeType(parser->lastType);
-		}
-		
 		Type *type = findVariableType(parser->compiler, identifier.word, identifier.wordLen);
 		if (type != NULL) {
 			setLastType(parser, type);
@@ -603,12 +599,14 @@ void unary(Parser* parser) {
 
 void typeCast(Parser* parser) {
 	next(parser);
-	Token typeName = consumeToken(parser, TOKEN_IDENTIFIER, "expected type name in type cast");
+	Type *type = consumeType(parser, "expected type name in type cast");
+	if (type == NULL) { return; }
+
 	consumeToken(parser, TOKEN_GREATER, "expected '>' after type name");
 
 	parsePrecedence(parser, PREC_PRIMARY);
 
-	setLastType(parser, findType(parser->compiler, typeName.word, typeName.wordLen));
+	setLastType(parser, type);
 }
 
 void expression(Parser* parser) {

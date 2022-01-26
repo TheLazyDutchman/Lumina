@@ -7,5 +7,10 @@ func addVec(IntVector a, IntVector b) -> IntVector {
 	return a;
 }
 
+func initVec() -> IntVector {
+	var vec = <IntVector>0;
+
+	return vec;
+}
 
 var a = sizeof(IntVector);

@@ -147,7 +147,11 @@ Type *findType(Compiler* compiler, char* name, int nameLen) {
 		}
 	}
 
-	return NULL;
+	if (compiler->outer == NULL) {
+		return NULL;
+	}
+
+	return findType(compiler->outer, name, nameLen);
 }
 
 void defineFunction(Compiler* compiler, char* name, int nameLen, int id, Type *type, VariableList *parameters) {
