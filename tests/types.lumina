@@ -6,3 +6,6 @@ type IntVector {
 func addVec(IntVector a, IntVector b) -> IntVector {
 	return a;
 }
+
+
+var a = sizeof(IntVector);

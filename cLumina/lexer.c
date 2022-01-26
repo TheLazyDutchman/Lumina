@@ -235,6 +235,45 @@ Token *nextToken(Lexer* lexer){
 
 				token->type = TOKEN_RETURN;
 				break;
+			case 's':
+				advance(lexer);
+				if (*lexer->current != 'i') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 'z') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 'e') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 'o') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 'f') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (isalnum(*lexer->current)) {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				token->type = TOKEN_SIZEOF;
+				break;
 			case 't':
 				advance(lexer);
 				if (*lexer->current != 'y') {

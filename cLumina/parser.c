@@ -118,7 +118,7 @@ typedef struct {
 	Precedence precedence;
 } ParseRule;
 
-_Static_assert(TOKEN_TYPES_NUM == 30, "Exhaustive handling of token types in parsing");
+_Static_assert(TOKEN_TYPES_NUM == 31, "Exhaustive handling of token types in parsing");
 
 ParseRule parseTable[] = {
 	[TOKEN_NUMBER] = {number, NULL, PREC_PRIMARY},
@@ -146,6 +146,7 @@ ParseRule parseTable[] = {
 	[TOKEN_FUNC] = {NULL, NULL, PREC_FUNC},
 	[TOKEN_TYPE] = {NULL, NULL, PREC_TYPE},
 	[TOKEN_IMPORT] = {NULL, NULL, PREC_STATEMENT},
+	[TOKEN_SIZEOF] = {typeSize, NULL, PREC_PRIMARY},
 	[TOKEN_RETURN] = {NULL, NULL, PREC_RETURN_STATEMENT},
 	[TOKEN_COMMA] = {NULL, NULL, PREC_ARG},
 	[TOKEN_IDENTIFIER] = {identifier, NULL, PREC_PRIMARY},
@@ -309,6 +310,23 @@ void readIndex(Parser* parser) {
 	setLastType(parser, findType(parser->compiler, "char", 4));
 
 	consumeToken(parser, TOKEN_RBRACKET, "expected ']' after index");
+}
+
+void typeSize(Parser* parser) {
+	if (parser->current->type != TOKEN_SIZEOF) {
+		printf("incorrect reference in parseTable: '%s' points to sizeof\n", tokenTypes[parser->current->type]);
+	}
+
+	if (consumeToken(parser, TOKEN_LPAREN, "expected '(' after 'sizeof'").type == TOKEN_ERROR) { return; }
+	Type *type = consumeType(parser, "expected type in 'sizeof' expression");
+	
+	if (type == NULL) { return; }
+
+	writeNumber(parser->compiler, type->properties->totalTypeSize);
+
+	setLastType(parser, findType(parser->compiler, "int", 4));
+
+	if (consumeToken(parser, TOKEN_RPAREN, "expected ')' after 'sizeof' expression").type == TOKEN_ERROR) { return; }
 }
 
 void identifier(Parser* parser) {
