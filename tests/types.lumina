@@ -1,4 +1,4 @@
-import "../std/syscalls.lumina";
+import "../std/syscalls.lumina"
 
 type IntVector {
 	int x;

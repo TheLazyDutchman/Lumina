@@ -196,11 +196,11 @@ func ioctl(int fd, int cmd, int arg) -> int {
 	return <int>syscall(SYSIOCTL, fd, cmd, arg, 0, 0, 0);
 }
 
-func pread64(int fd, string buf, int count, int pos) -> int {
+func pread64(int fd, str buf, int count, int pos) -> int {
 	return <int>syscall(SYSPREAD64, fd, buf, count, pos, 0, 0);
 }
 
-func pwrite64(inf fd, str buf, int count, int pos) -> int {
+func pwrite64(int fd, str buf, int count, int pos) -> int {
 	return <int>syscall(SYSPWRITE64, fd, buf, count, pos, 0, 0);
 }
 
@@ -651,5 +651,3 @@ func rt_sigqueueinfo() -> int {
 func rkt_sigsuspend(ptr unewset, int sigsetsize) -> int {
 	return <int>syscall(SYSRKT_SIGSUSPEND, unewset, sigsetsize, 0, 0, 0, 0);
 }
-
-
