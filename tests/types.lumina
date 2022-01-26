@@ -5,12 +5,16 @@ type IntVector {
 	int y;
 }
 
+var prot = 0;
+var flags = 0;
+var fd = 0;
+
 func addVec(IntVector a, IntVector b) -> IntVector {
 	return a;
 }
 
 func initVec() -> IntVector {
-	var vec = <IntVector>0;
+	var vec = <IntVector>mmap(<ptr>0, sizeof(IntVector), prot, flags, fd, 0);
 
 	return vec;
 }

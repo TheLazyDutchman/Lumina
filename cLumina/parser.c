@@ -71,6 +71,10 @@ void freeParser(Parser* parser) {
 }
 
 void setLastType(Parser* parser, Type* type) {
+	if (type == NULL) {
+		parseError(parser, *parser->current, "type not found");
+	}
+
 	parser->lastType = type;
 }
 
@@ -327,7 +331,7 @@ void typeSize(Parser* parser) {
 
 	writeNumber(parser->compiler, type->properties->totalTypeSize);
 
-	setLastType(parser, findType(parser->compiler, "int", 4));
+	setLastType(parser, findType(parser->compiler, "int", 3));
 
 	if (consumeToken(parser, TOKEN_RPAREN, "expected ')' after 'sizeof' expression").type == TOKEN_ERROR) { return; }
 }
@@ -413,10 +417,7 @@ void identifier(Parser* parser) {
 
 		writeIdentifier(parser->compiler, var->position, var->functionDepth);
 
-		Type *type = findVariableType(parser->compiler, identifier.word, identifier.wordLen);
-		if (type != NULL) {
-			setLastType(parser, type);
-		}
+		setLastType(parser, var->type);
 	}
 }
 

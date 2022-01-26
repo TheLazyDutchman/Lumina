@@ -33,6 +33,8 @@ typedef struct {
 Parser* initParser(char* inputName, char* outputName, ParseFlag flags);
 void freeParser(Parser* parser);
 
+void parseError(Parser* parser, Token token, char* message);
+
 void setLastType(Parser* parser, Type* type);
 
 void number(Parser* parser);
