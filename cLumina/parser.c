@@ -317,6 +317,8 @@ void typeSize(Parser* parser) {
 		printf("incorrect reference in parseTable: '%s' points to sizeof\n", tokenTypes[parser->current->type]);
 	}
 
+	next(parser);
+
 	if (consumeToken(parser, TOKEN_LPAREN, "expected '(' after 'sizeof'").type == TOKEN_ERROR) { return; }
 	Type *type = consumeType(parser, "expected type in 'sizeof' expression");
 	

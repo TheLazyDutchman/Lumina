@@ -77,8 +77,11 @@ Type *findVariableType(Compiler* compiler, char* name, int nameLen) {
 	VariableList list = *compiler->variableList;
 
 	for (int i = 0; i < list.size; i++) {
-		if (strncmp(list.variables[i]->name, name, nameLen) == 0) {
-			return list.variables[i]->type;
+		Variable *var = list.variables[i];
+		if (strlen(var->name) != nameLen) { continue; }
+
+		if (strncmp(var->name, name, nameLen) == 0) {
+			return var->type;
 		}
 	}
 
@@ -93,8 +96,11 @@ Variable *findVariable(Compiler* compiler, char* name, int nameLen) {
 	VariableList list = *compiler->variableList;
 
 	for (int i = 0; i < list.size; i++) {
-		if (strncmp(list.variables[i]->name, name, nameLen) == 0) {
-			return list.variables[i];
+		Variable *var = list.variables[i];
+		if (strlen(var->name) != nameLen) { continue; }
+
+		if (strncmp(var->name, name, nameLen) == 0) {
+			return var;
 		}
 	}
 
@@ -109,8 +115,11 @@ Variable *findLocalVariable(Compiler* compiler, char* name, int nameLen) {
 	VariableList list = *compiler->variableList;
 
 	for (int i = 0; i < list.size; i++) {
-		if (strncmp(list.variables[i]->name, name, nameLen) == 0) {
-			return list.variables[i];
+		Variable *var = list.variables[i];
+		if (strlen(var->name) != nameLen) { continue; }
+
+		if (strncmp(var->name, name, nameLen) == 0) {
+			return var;
 		}
 	}
 
@@ -130,8 +139,11 @@ Type *findType(Compiler* compiler, char* name, int nameLen) {
 	TypeList list = *compiler->typeList;
 
 	for (int i = 0; i < list.size; i++) {
-		if (strncmp(list.types[i]->name, name, nameLen) == 0) {
-			return list.types[i];
+		Type *type = list.types[i];
+		if (strlen(type->name) != nameLen) { continue; }
+
+		if (strncmp(type->name, name, nameLen) == 0) {
+			return type;
 		}
 	}
 
@@ -148,8 +160,11 @@ int16_t findFunctionId(Compiler* compiler, char* name, int nameLen) {
 	FunctionList list = *compiler->functionList;
 
 	for (int i = 0; i < list.size; i++) {
-		if (strncmp(list.functions[i]->name, name, nameLen) == 0) {
-			return list.functions[i]->id;
+		Function *func = list.functions[i];
+		if (strlen(func->name) != nameLen) { continue; }
+
+		if (strncmp(func->name, name, nameLen) == 0) {
+			return func->id;
 		}
 	}
 
@@ -162,8 +177,11 @@ Function *findFunction(Compiler* compiler, char* name, int nameLen) {
 	FunctionList list = *compiler->functionList;
 
 	for (int i = 0; i < list.size; i++) {
-		if (strncmp(list.functions[i]->name, name, nameLen) == 0) {
-			return list.functions[i];
+		Function *func = list.functions[i];
+		if (strlen(func->name) != nameLen) { continue; }
+
+		if (strncmp(func->name, name, nameLen) == 0) {
+			return func;
 		}
 	}
 
@@ -176,8 +194,11 @@ Function *findLocalFunction(Compiler* compiler, char* name, int nameLen) {
 	FunctionList list = *compiler->functionList;
 
 	for (int i = 0; i < list.size; i++) {
-		if (strncmp(list.functions[i]->name, name, nameLen) == 0) {
-			return list.functions[i];
+		Function *func = list.functions[i];
+		if (strlen(func->name) != nameLen) { continue; }
+
+		if (strncmp(func->name, name, nameLen) == 0) {
+			return func;
 		}
 	}
 
