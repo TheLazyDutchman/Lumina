@@ -123,7 +123,7 @@ typedef struct {
 	Precedence precedence;
 } ParseRule;
 
-_Static_assert(TOKEN_TYPES_NUM == 31, "Exhaustive handling of token types in parsing");
+_Static_assert(TOKEN_TYPES_NUM == 32, "Exhaustive handling of token types in parsing");
 
 ParseRule parseTable[] = {
 	[TOKEN_NUMBER] = {number, NULL, PREC_PRIMARY},
@@ -154,6 +154,7 @@ ParseRule parseTable[] = {
 	[TOKEN_SIZEOF] = {typeSize, NULL, PREC_PRIMARY},
 	[TOKEN_RETURN] = {NULL, NULL, PREC_RETURN_STATEMENT},
 	[TOKEN_COMMA] = {NULL, NULL, PREC_ARG},
+	[TOKEN_PERIOD] = {NULL, readProperty, PREC_READ},
 	[TOKEN_IDENTIFIER] = {identifier, NULL, PREC_PRIMARY},
 	[TOKEN_END_OF_FILE] = {NULL, NULL, PREC_NONE},
 	[TOKEN_ERROR] = {NULL, NULL, PREC_NONE}
@@ -315,6 +316,10 @@ void readIndex(Parser* parser) {
 	setLastType(parser, findType(parser->compiler, "char", 4));
 
 	consumeToken(parser, TOKEN_RBRACKET, "expected ']' after index");
+}
+
+void readProperty(Parser* parser) {
+	next(parser);
 }
 
 void typeSize(Parser* parser) {
