@@ -154,7 +154,7 @@ ParseRule parseTable[] = {
 	[TOKEN_SIZEOF] = {typeSize, NULL, PREC_PRIMARY},
 	[TOKEN_RETURN] = {NULL, NULL, PREC_RETURN_STATEMENT},
 	[TOKEN_COMMA] = {NULL, NULL, PREC_ARG},
-	[TOKEN_PERIOD] = {NULL, readProperty, PREC_READ},
+	[TOKEN_PERIOD] = {NULL, property, PREC_READ},
 	[TOKEN_IDENTIFIER] = {identifier, NULL, PREC_PRIMARY},
 	[TOKEN_END_OF_FILE] = {NULL, NULL, PREC_NONE},
 	[TOKEN_ERROR] = {NULL, NULL, PREC_NONE}
@@ -318,7 +318,7 @@ void readIndex(Parser* parser) {
 	consumeToken(parser, TOKEN_RBRACKET, "expected ']' after index");
 }
 
-void readProperty(Parser* parser) {
+void property(Parser* parser) {
 	next(parser);
 
 	Token name = consumeToken(parser, TOKEN_IDENTIFIER, "expected property name");
@@ -341,7 +341,15 @@ void readProperty(Parser* parser) {
 
 	Type *newType = type->propertyTypes[property->index];
 
-	writeReadProperty(parser->compiler, property->offset, newType->size);
+	if (parser->current->type == TOKEN_EQUAL) {
+		next(parser);
+
+		expression(parser);
+
+		writeWriteProperty(parser->compiler, property->offset, newType->size);
+	} else {
+		writeReadProperty(parser->compiler, property->offset, newType->size);
+	}
 
 	setLastType(parser, newType);
 }
