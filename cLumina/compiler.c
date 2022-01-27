@@ -561,6 +561,16 @@ void writeReadIndex(Compiler* compiler) {
 }
 
 void writeReadOffset(Compiler* compiler, int offset, int size) {
+	fprintf(compiler->output, "	;; -- read property -- \n");
+	fprintf(compiler->output, "	pop rax ;; pointer\n");
+	fprintf(compiler->output, "	add rax, %d\n", offset);
+	fprintf(compiler->output, "	mov rax, [rax]\n");
+	fprintf(compiler->output, "	;; create bit mask\n");
+	fprintf(compiler->output, " mov rbx, 1\n");
+	fprintf(compiler->output, "	shl rbx, %d ;; size\n", size);
+	fprintf(compiler->output, "	sub rbx, 1\n");
+	fprintf(compiler->output, "	and rax, rbx\n");
+	fprintf(compiler->output, "	push rax\n\n");
 }
 
 void writeIdentifier(Compiler* compiler, int offset, int currentDepth) {
