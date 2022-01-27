@@ -341,7 +341,7 @@ void readProperty(Parser* parser) {
 
 	Type *newType = type->propertyTypes[property->index];
 
-	writeReadOffset(parser->compiler, property->offset, newType->size);
+	writeReadProperty(parser->compiler, property->offset, newType->size);
 
 	setLastType(parser, newType);
 }

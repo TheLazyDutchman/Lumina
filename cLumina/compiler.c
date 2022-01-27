@@ -560,7 +560,7 @@ void writeReadIndex(Compiler* compiler) {
 	compiler->currentStackSize--;
 }
 
-void writeReadOffset(Compiler* compiler, int offset, int size) {
+void writeReadProperty(Compiler* compiler, int offset, int size) {
 	fprintf(compiler->output, "	;; -- read property -- \n");
 	fprintf(compiler->output, "	pop rax ;; pointer\n");
 	fprintf(compiler->output, "	add rax, %d\n", offset);
@@ -571,6 +571,27 @@ void writeReadOffset(Compiler* compiler, int offset, int size) {
 	fprintf(compiler->output, "	sub rbx, 1\n");
 	fprintf(compiler->output, "	and rax, rbx\n");
 	fprintf(compiler->output, "	push rax\n\n");
+
+	compiler->currentStackSize--;
+}
+
+void writeWriteProperty(Compiler* compiler, int offset, int size) {
+	fprintf(compiler->output, "	;; -- read property -- \n");
+	fprintf(compiler->output, "	pop rax ;; value\n");
+	fprintf(compiler->output, "	pop rbx ;; pointer\n");
+	fprintf(compiler->output, "	add rbx, %d\n", offset);
+	fprintf(compiler->output, "	mov rcx, [rbx]\n");
+	fprintf(compiler->output, "	;; create bit mask\n");
+	fprintf(compiler->output, " mov r9, 1\n");
+	fprintf(compiler->output, "	shl r9, %d ;; size\n", size);
+	fprintf(compiler->output, "	sub r9, 1\n");
+	fprintf(compiler->output, "	and rax, r9\n");
+	fprintf(compiler->output, "	not r9\n");
+	fprintf(compiler->output, "	and rcx, r9\n");
+	fprintf(compiler->output, "	add rcx, rax\n");
+	fprintf(compiler->output, "	mov [rbx], rcx\n\n");
+
+	compiler->currentStackSize -= 2;
 }
 
 void writeIdentifier(Compiler* compiler, int offset, int currentDepth) {
