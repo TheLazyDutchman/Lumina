@@ -479,6 +479,10 @@ Token *nextToken(Lexer* lexer){
 				token->type = TOKEN_COMMA;
 				advance(lexer);
 				break;
+			case '.':
+				token->type = TOKEN_PERIOD;
+				advance(lexer);
+				break;
 			case '\0':
 				token->type = TOKEN_END_OF_FILE;
 				break;
