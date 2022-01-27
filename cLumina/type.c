@@ -84,6 +84,20 @@ Property *initProperty(char* name, int index, size_t offset) {
 	return property;
 }
 
+Property *findProperty(PropertyList *list, char *name, int nameLen) {
+	int i = 0;
+	while (i < list->size) {
+		Property *property = list->properties[i];
+
+		if (strlen(property->name) != nameLen) { continue; }
+		if (strncmp(property->name, name, nameLen) == 0) {
+			return property;
+		}
+	}
+
+	return NULL;
+}
+
 void addProperty(PropertyList* list, char* name, int index, size_t size) {
 	list->properties[list->size] = initProperty(name, index, list->totalTypeSize);
 

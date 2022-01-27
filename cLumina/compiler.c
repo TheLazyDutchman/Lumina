@@ -560,6 +560,9 @@ void writeReadIndex(Compiler* compiler) {
 	compiler->currentStackSize--;
 }
 
+void writeReadOffset(Compiler* compiler, int offset, int size) {
+}
+
 void writeIdentifier(Compiler* compiler, int offset, int currentDepth) {
 	fprintf(compiler->output, "	;; -- identifier --\n");
 	fprintf(compiler->output, "	mov rax, [basestack + 8 * %d]\n", currentDepth);

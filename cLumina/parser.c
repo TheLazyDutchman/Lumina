@@ -320,6 +320,30 @@ void readIndex(Parser* parser) {
 
 void readProperty(Parser* parser) {
 	next(parser);
+
+	Token name = consumeToken(parser, TOKEN_IDENTIFIER, "expected property name");
+
+	if (name.type == TOKEN_ERROR) { return; }
+
+	Type *type = parser->lastType;
+
+	if (type == NULL) {
+		parseError(parser, name, "problem in type when reading property");
+		return;
+	}
+
+	Property *property = findProperty(type->properties, name.word, name.wordLen);
+
+	if (property == NULL) {
+		parseError(parser, name, "cannot find property");
+		return;
+	}
+
+	Type *newType = type->propertyTypes[property->index];
+
+	writeReadOffset(parser->compiler, property->offset, newType->size);
+
+	setLastType(parser, newType);
 }
 
 void typeSize(Parser* parser) {

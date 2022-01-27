@@ -33,6 +33,7 @@ typedef struct {
 PropertyList* initPropertyList();
 void freePropertyList();
 
+Property *findProperty(PropertyList *list, char *name, int nameLen);
 void addProperty(PropertyList* list, char* name, int index, size_t size);
 void freeProperty(Property *property);
 
