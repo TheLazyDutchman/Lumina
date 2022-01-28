@@ -247,7 +247,7 @@ void writeHeader(Compiler* compiler) {
 	
 	fprintf(compiler->output, "	;; -- pop return address --\n");
 	fprintf(compiler->output, "	mov rax, [callrsp]\n");
-	fprintf(compiler->output, "	add rax, 4\n");
+	fprintf(compiler->output, "	add rax, 8\n");
 	fprintf(compiler->output, "	mov [callrsp], rax\n");
 	// jump to address
 	fprintf(compiler->output, "	mov rax, [callrsp]\n");
@@ -290,7 +290,7 @@ void writeCall(Compiler* compiler, uint32_t id, uint16_t numCalls) {
 	fprintf(compiler->output, "	mov rbx, [callrsp]\n");
 	fprintf(compiler->output, "	mov [rbx], rax\n");
 	// decrease callrsp
-	fprintf(compiler->output, "	sub rbx, 4\n");
+	fprintf(compiler->output, "	sub rbx, 8\n");
 	fprintf(compiler->output, "	mov [callrsp], rbx\n");
 	
 	fprintf(compiler->output, "	;; -- jump --\n");
@@ -318,7 +318,7 @@ void writeReturnEmpty(Compiler* compiler, uint16_t numVars, uint16_t numParamete
 	
 	fprintf(compiler->output, "	;; -- jump to return address --\n");
 	fprintf(compiler->output, "	mov rax, [callrsp]\n");
-	fprintf(compiler->output, "	add rax, 4\n");
+	fprintf(compiler->output, "	add rax, 8\n");
 	fprintf(compiler->output, "	mov [callrsp], rax\n");
 	// jump to address
 	fprintf(compiler->output, "	mov rax, [callrsp]\n");
@@ -346,7 +346,7 @@ void writeReturnValue(Compiler* compiler, uint16_t numVars, uint16_t numParamete
 	
 	fprintf(compiler->output, "	;; -- pop return address --\n");
 	fprintf(compiler->output, "	mov rax, [callrsp]\n");
-	fprintf(compiler->output, "	add rax, 4\n");
+	fprintf(compiler->output, "	add rax, 8\n");
 	fprintf(compiler->output, "	mov [callrsp], rax\n");
 	// jump to address
 	fprintf(compiler->output, "	mov rax, [callrsp]\n");
