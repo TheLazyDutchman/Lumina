@@ -236,12 +236,6 @@ void writeHeader(Compiler* compiler) {
 
 	fprintf(compiler->output, "	;; -- return --\n");
 
-	fprintf(compiler->output, "	;; -- store return value --\n");
-
-	fprintf(compiler->output, "	;; -- restore stackframe -- \n");
-	fprintf(compiler->output, "	pop rbx\n");
-	fprintf(compiler->output, " mov [basestack], rbx\n");
-
 	fprintf(compiler->output, "	;; -- push return value --\n");
 	fprintf(compiler->output, "	push rax\n");
 	
