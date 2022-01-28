@@ -1,6 +1,7 @@
 import "../std/syscalls.lumina"
 
 type IntVector {
+	str name;
 	int x;
 	int y;
 }
@@ -13,10 +14,21 @@ func addVec(IntVector a, IntVector b) -> IntVector {
 	return a;
 }
 
+var heap_start = <int>brk(<ptr>0);
+var page_size = 4096;
+var page_end = heap_start + page_size;
+brk(<ptr>page_end);
+
 func initVec() -> IntVector {
-	var vec = <IntVector>mmap(<ptr>0, sizeof(IntVector), prot, flags, fd, 0);
+	var vec = <IntVector>heap_start;
+
+	vec.name = "Hello, World!\n";
+	vec.x = 10;
 
 	return vec;
 }
 
-var a = sizeof(IntVector);
+var a = initVec();
+
+var b = a.x;
+print(a.name);

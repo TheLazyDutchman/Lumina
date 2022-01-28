@@ -179,8 +179,8 @@ func munmap(int addr, int len) -> int {
 	return <int>syscall(SYSMUNMAP, addr, len, 0, 0, 0, 0);
 }
 
-func brk(ptr addr) -> int {
-	return <int>syscall(SYSBRK, addr, 0, 0, 0, 0, 0);
+func brk(ptr addr) -> ptr {
+	return <ptr>syscall(SYSBRK, addr, 0, 0, 0, 0, 0);
 }
 
 func rt_sigaction(int signum, ptr act, ptr oldact, int sigsetsize) -> int {

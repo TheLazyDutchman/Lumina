@@ -89,6 +89,8 @@ Property *findProperty(PropertyList *list, char *name, int nameLen) {
 	while (i < list->size) {
 		Property *property = list->properties[i];
 
+		i++;
+
 		if (strlen(property->name) != nameLen) { continue; }
 		if (strncmp(property->name, name, nameLen) == 0) {
 			return property;
