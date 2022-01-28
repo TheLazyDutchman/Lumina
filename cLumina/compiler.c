@@ -583,9 +583,10 @@ void writeWriteProperty(Compiler* compiler, int offset, int size) {
 	fprintf(compiler->output, "	not r9\n");
 	fprintf(compiler->output, "	and rcx, r9\n");
 	fprintf(compiler->output, "	add rcx, rax\n");
-	fprintf(compiler->output, "	mov [rbx], rcx\n\n");
+	fprintf(compiler->output, "	mov [rbx], rcx\n");
+	fprintf(compiler->output, "	push rax\n\n");
 
-	compiler->currentStackSize -= 2;
+	compiler->currentStackSize -= 1;
 }
 
 void writeIdentifier(Compiler* compiler, int offset, int currentDepth) {
