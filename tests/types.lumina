@@ -1,4 +1,5 @@
 import "../std/syscalls.lumina"
+import "../std/io.lumina"
 
 type IntVector {
 	str name;

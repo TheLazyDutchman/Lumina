@@ -22,7 +22,7 @@ char* readFile(char *fileName) {
 		exit(1);
 	}
 
-	char *buffer = malloc(len);
+	char *buffer = malloc(len + 1);
 
 	if (buffer == NULL) {
 		printf("[ERROR] could not allocate enough memory to read file '%s'\n", fileName);
@@ -33,6 +33,8 @@ char* readFile(char *fileName) {
 		printf("[ERROR] could not read file '%s'\n", fileName);
 		exit(1);
 	}
+
+	buffer[len] = '\0';
 	
 	fclose(fd);
 	return buffer;

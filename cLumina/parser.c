@@ -90,7 +90,7 @@ Token* next(Parser* parser) {
 		parser->lexer = current->outer;
 		freeLexer(current);
 
-		return next(parser);
+		parser->current = next(parser);
 	}
 
 	return parser->current;
