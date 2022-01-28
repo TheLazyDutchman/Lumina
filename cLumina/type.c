@@ -61,6 +61,7 @@ PropertyList* initPropertyList() {
 
 	list->size = 0;
 	list->maxSize = 8;
+	list->totalTypeSize = 0;
 	list->properties = malloc(sizeof(Property*) * 8);
 
 	return list;
