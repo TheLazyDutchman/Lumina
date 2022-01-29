@@ -10,4 +10,8 @@ type _heap_block {
 
 var _heap_start = <_heap_block>brk(<ptr>0);
 
-brk(<ptr>(<int>_heap_start + PAGESIZE));
+brk(<ptr>(<int>_heap_start + PAGESIZE)); // allocate memory for the heap
+
+_heap_start.size = PAGESIZE; // initialize the first block
+_heap_start.prev = 0;
+_heap_start.next = 0;
