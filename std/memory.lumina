@@ -10,4 +10,4 @@ type _heap_block {
 
 var _heap_start = <_heap_block>brk(<ptr>0);
 
-brk(<ptr>(<int>_heap_block + PAGESIZE));
+brk(<ptr>(<int>_heap_start + PAGESIZE));
