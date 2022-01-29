@@ -38,6 +38,7 @@ void parseError(Parser* parser, Token token, char* message);
 void setLastType(Parser* parser, Type* type);
 
 void number(Parser* parser);
+void group(Parser* parser);
 void character(Parser* parser);
 void string(Parser* parser);
 void readIndex(Parser* parser);

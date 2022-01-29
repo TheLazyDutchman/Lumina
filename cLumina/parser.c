@@ -138,7 +138,7 @@ ParseRule parseTable[] = {
 	[TOKEN_GREATEREQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_EQUALEQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_RARROW] = {NULL, NULL, PREC_NONE},
-	[TOKEN_LPAREN] = {NULL, NULL, PREC_BLOCK},
+	[TOKEN_LPAREN] = {group, NULL, PREC_PRIMARY},
 	[TOKEN_RPAREN] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_LBRACKET] = {NULL, readIndex, PREC_READ},
 	[TOKEN_RBRACKET] = {NULL, NULL, PREC_BLOCK},
@@ -235,6 +235,14 @@ Type *consumeType(Parser* parser, char* message) {
 	}
 
 	return type;
+}
+
+void group(Parser* parser) {
+	next(parser);
+
+	expression(parser);
+
+	consumeToken(parser, TOKEN_RPAREN, "expected closing parenthesis");
 }
 
 void dumpNumber(Parser* parser, Token value) {
