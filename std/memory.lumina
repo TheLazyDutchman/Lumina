@@ -1,0 +1,13 @@
+import "syscalls.lumina"
+
+var PAGESIZE = 4096;
+
+type _heap_block {
+	int size;
+	_heap_block prev;
+	_heap_block next;
+}
+
+var _heap_start = <_heap_block>brk(<ptr>0);
+
+brk(<ptr>(<int>_heap_block + PAGESIZE));
