@@ -15,3 +15,22 @@ brk(<ptr>(<int>_heap_start + PAGESIZE)); // allocate memory for the heap
 _heap_start.size = PAGESIZE; // initialize the first block
 _heap_start.prev = 0;
 _heap_start.next = 0;
+
+
+func malloc(int size) -> ptr {
+	var block = _heap_start;
+
+	while (block.next > <_heap_block>0) {
+		if (block.size > size) {
+			// split block
+		}
+
+		if (block.size == size) {
+			// return block
+		}
+
+		block = block.next;
+	}
+
+	return <ptr>0;
+}
