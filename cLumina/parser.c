@@ -880,7 +880,7 @@ void block(Parser* parser, Function *func, VariableList *parameters) {
 	}
 
 	if (scopeCompiler->function != scopeCompiler->outer->function) {// the outermost block of the function body
-		if (strcmp(func->returnType->name, "null") != 0) {
+		if (func->returnType != findType(parser->compiler, "NULL", 4)) {
 			if (!scopeCompiler->hasReturned) {
 				parseError(parser, *parser->current, "not al code paths return a value");
 				return;
