@@ -211,7 +211,7 @@ Token parsePrecedence(Parser* parser, Precedence precedence) {
 	token = *parser->current;
 	rule = parseTable[token.type];
 
-	while (rule.precedence > precedence) {
+	while (rule.precedence >= precedence) {
 		if (rule.infix == NULL) {
 			parseError(parser, token, "unexpected token");
 			next(parser);
