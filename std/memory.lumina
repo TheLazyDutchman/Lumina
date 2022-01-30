@@ -12,9 +12,30 @@ var _heap_start = <_heap_block>brk(<ptr>0);
 
 brk(<ptr>(<int>_heap_start + PAGESIZE)); // allocate memory for the heap
 
-_heap_start.size = PAGESIZE; // initialize the first block
+_heap_start.size = PAGESIZE - sizeof(_heap_block); // initialize the first block
 _heap_start.prev = 0;
 _heap_start.next = 0;
+
+
+func _remove_block(_heap_block block) {
+	if (block.prev > <_heap_block>0) {
+		block.prev.next = block.next;
+	}
+
+	if (block.next > <_heap_block>0) {
+		block.next.prev = block.prev;
+	}
+}
+
+func _split_block(_heap_block block, int size) {
+	var newBlock = <_heap_block>(<int>block + size + sizeof(_heap_block));
+
+	newBlock.size = block.size - size - sizeof(_heap_block);
+	newBlock.prev = block.prev;
+	newBlock.next = block.next;
+
+	block.size = size;
+}
 
 
 func malloc(int size) -> ptr {
