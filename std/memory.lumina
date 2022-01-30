@@ -4,6 +4,7 @@ var PAGESIZE = 4096;
 
 type _heap_block {
 	int size;
+	bool free;
 	_heap_block prev;
 	_heap_block next;
 }
@@ -13,28 +14,28 @@ var _heap_start = <_heap_block>brk(<ptr>0);
 brk(<ptr>(<int>_heap_start + PAGESIZE)); // allocate memory for the heap
 
 _heap_start.size = PAGESIZE - sizeof(_heap_block); // initialize the first block
+_heap_start.free = 1 == 0; // false keyword is not implemented yet
 _heap_start.prev = 0;
 _heap_start.next = 0;
 
 
-func _remove_block(_heap_block block) {
-	if (block.prev > <_heap_block>0) {
-		block.prev.next = block.next;
+func _split_block(_heap_block block, int size) -> _heap_block {
+	if (size + sizeof(_heap_block) < block.size) {
+		block.free = 0 == 0; //true keyword is not implemented yet
+		return block;
 	}
 
-	if (block.next > <_heap_block>0) {
-		block.next.prev = block.prev;
-	}
-}
-
-func _split_block(_heap_block block, int size) {
 	var newBlock = <_heap_block>(<int>block + size + sizeof(_heap_block));
 
 	newBlock.size = block.size - size - sizeof(_heap_block);
-	newBlock.prev = block.prev;
+	block.size = size;
+
+	newBlock.prev = block;
 	newBlock.next = block.next;
 
-	block.size = size;
+	block.next = newBlock;
+
+	return newBlock;
 }
 
 
@@ -42,11 +43,13 @@ func malloc(int size) -> ptr {
 	var block = _heap_start;
 
 	while (block.next > <_heap_block>0) {
-		if (block.size > size) {
-			// split block
+		if (block.size > size + sizeof(_heap_block)) {
+			var newBlock = _split_block(block, size);
+
+			_remove_block(block);
 		}
 
-		if (block.size == size) {
+		if (block.size == size + sizeof(_heap_block)) {
 			// return block
 		}
 

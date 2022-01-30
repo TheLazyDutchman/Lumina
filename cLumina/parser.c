@@ -208,6 +208,24 @@ Token parsePrecedence(Parser* parser, Precedence precedence) {
 
 	rule.prefix(parser);
 
+	token = *parser->current;
+	rule = parseTable[token.type];
+
+	while (rule.precedence > precedence) {
+		if (rule.infix == NULL) {
+			parseError(parser, token, "unexpected token");
+			next(parser);
+
+			token.type = TOKEN_ERROR;
+			return token;
+		}
+
+		rule.infix(parser);
+
+		token = *parser->current;
+		rule = parseTable[token.type];
+	}
+
 	return token;
 }
 
@@ -556,6 +574,7 @@ void binary(Parser* parser) {
 
 			if (strcmp(value1.name, parser->lastType->name) != 0) {
 				parseError(parser, operator, "can not compare two values with different type");
+				printf("NOTE: types are: '%s' and '%s'\n", value1.name, parser->lastType->name);
 				return;
 			}
 
@@ -568,6 +587,7 @@ void binary(Parser* parser) {
 
 			if (strcmp(value1.name, parser->lastType->name) != 0) {
 				parseError(parser, operator, "can not compare two values with different type");
+				printf("NOTE: types are: '%s' and '%s'\n", value1.name, parser->lastType->name);
 				return;
 			}
 
@@ -580,6 +600,7 @@ void binary(Parser* parser) {
 
 			if (strcmp(value1.name, parser->lastType->name) != 0) {
 				parseError(parser, operator, "can not compare two values with different type");
+				printf("NOTE: types are: '%s' and '%s'\n", value1.name, parser->lastType->name);
 				return;
 			}
 
@@ -592,6 +613,7 @@ void binary(Parser* parser) {
 
 			if (strcmp(value1.name, parser->lastType->name) != 0) {
 				parseError(parser, operator, "can not compare two values with different type");
+				printf("NOTE: types are: '%s' and '%s'\n", value1.name, parser->lastType->name);
 				return;
 			}
 
@@ -604,6 +626,7 @@ void binary(Parser* parser) {
 
 			if (strcmp(value1.name, parser->lastType->name) != 0) {
 				parseError(parser, operator, "can not compare two values with different type");
+				printf("NOTE: types are: '%s' and '%s'\n", value1.name, parser->lastType->name);
 				return;
 			}
 
