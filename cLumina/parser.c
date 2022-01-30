@@ -132,7 +132,7 @@ ParseRule parseTable[] = {
 	[TOKEN_PLUS] = {NULL, binary, PREC_TERM},
 	[TOKEN_MINUS] = {unary, binary, PREC_UNARY},
 	[TOKEN_EQUAL] = {NULL, NULL, PREC_ASSIGNMENT},
-	[TOKEN_LESS] = {typeCast, binary, PREC_UNARY},
+	[TOKEN_LESS] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_GREATER] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_LESSEQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_GREATEREQUAL] = {NULL, binary, PREC_COMPARISON},
@@ -257,6 +257,20 @@ Type *consumeType(Parser* parser, char* message) {
 
 void group(Parser* parser) {
 	next(parser);
+
+	if (parser->current->type == TOKEN_IDENTIFIER) {
+		Type *type = findType(parser->compiler, parser->current->word, parser->current->wordLen);
+		if (type != NULL) { // type cast
+			next(parser);
+			consumeToken(parser, TOKEN_RPAREN, "expected closing parenthesis");
+
+			parsePrecedence(parser, PREC_PRIMARY); 
+
+			setLastType(parser, type);
+
+			return;
+		}
+	}
 
 	expression(parser);
 
@@ -522,10 +536,12 @@ void binary(Parser* parser) {
 
 			if (strcmp(value1.name, "int") != 0 && strcmp(value1.name, "char") != 0) {
 				parseError(parser, value1.token, "can not add something that is not 'int' or 'char'");
+				printf("NOTE: left hand side is of type: '%s'\n", value1.name);
 				return;
 			}
 			if (strcmp(parser->lastType->name, "int") != 0 && strcmp(parser->lastType->name, "char") != 0) {
 				parseError(parser, parser->lastType->token, "can not add something that is not 'int' or 'char'");
+				printf("NOTE: right hand side is of type: '%s'\n", parser->lastType->name);
 				return;
 			}
 
@@ -548,10 +564,12 @@ void binary(Parser* parser) {
 
 			if (strcmp(value1.name, "int") != 0 && strcmp(value1.name, "char") != 0) {
 				parseError(parser, value1.token, "can not subtract something that is not 'int' or 'char'");
+				printf("NOTE: left hand side is of type: '%s'\n", value1.name);
 				return;
 			}
 			if (strcmp(parser->lastType->name, "int") != 0 && strcmp(parser->lastType->name, "char") != 0) {
 				parseError(parser, parser->lastType->token, "can not subtract something that is not 'int' or 'char'");
+				printf("NOTE: right hand side is of type: '%s'\n", parser->lastType->name);
 				return;
 			}
 
@@ -667,17 +685,6 @@ void unary(Parser* parser) {
 	}
 }
 
-void typeCast(Parser* parser) {
-	next(parser);
-	Type *type = consumeType(parser, "expected type name in type cast");
-	if (type == NULL) { return; }
-
-	consumeToken(parser, TOKEN_GREATER, "expected '>' after type name");
-
-	parsePrecedence(parser, PREC_PRIMARY);
-
-	setLastType(parser, type);
-}
 
 void expression(Parser* parser) {
 	if (parsePrecedence(parser, PREC_EXPR).type == TOKEN_ERROR) {

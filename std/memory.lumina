@@ -9,9 +9,9 @@ type _heap_block {
 	_heap_block next;
 }
 
-var _heap_start = <_heap_block>brk(<ptr>0);
+var _heap_start = (_heap_block)brk((ptr)0);
 
-brk(<ptr>(<int>_heap_start + PAGESIZE)); // allocate memory for the heap
+brk((ptr)((int)_heap_start + PAGESIZE)); // allocate memory for the heap
 
 _heap_start.size = PAGESIZE - sizeof(_heap_block); // initialize the first block
 _heap_start.free = 1 == 0; // false keyword is not implemented yet
@@ -25,7 +25,7 @@ func _split_block(_heap_block block, int size) -> _heap_block {
 		return block;
 	}
 
-	var newBlock = <_heap_block>(<int>block + size + sizeof(_heap_block));
+	var newBlock = (_heap_block)((int)block + size + sizeof(_heap_block));
 
 	newBlock.size = block.size - size - sizeof(_heap_block);
 	block.size = size;
@@ -42,7 +42,7 @@ func _split_block(_heap_block block, int size) -> _heap_block {
 func malloc(int size) -> ptr {
 	var block = _heap_start;
 
-	while (block.next > <_heap_block>0) {
+	while (block.next > (_heap_block)0) {
 		if (block.size > size + sizeof(_heap_block)) {
 			var newBlock = _split_block(block, size);
 
@@ -56,5 +56,5 @@ func malloc(int size) -> ptr {
 		block = block.next;
 	}
 
-	return <ptr>0;
+	return (ptr)0;
 }
