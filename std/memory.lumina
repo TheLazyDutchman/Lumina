@@ -14,7 +14,7 @@ var _heap_start = (_heap_block)brk((ptr)0);
 brk((ptr)((int)_heap_start + PAGESIZE)); // allocate memory for the heap
 
 _heap_start.size = PAGESIZE - sizeof(_heap_block); // initialize the first block
-_heap_start.free = 1 == 0; // false keyword is not implemented yet
+_heap_start.free = 0 == 0; // true keyword is not implemented yet
 _heap_start.prev = 0;
 _heap_start.next = 0;
 
@@ -39,15 +39,20 @@ func _split_block(_heap_block block, int size) -> _heap_block {
 
 	var newBlock = (_heap_block)((int)block + size + sizeof(_heap_block));
 
+	newBlock.free = 0 == 0;
 	newBlock.size = block.size - size - sizeof(_heap_block);
 	block.size = size;
 
 	newBlock.prev = block;
 	newBlock.next = block.next;
+	
+	if (newBlock.next > (_heap_block)0) {
+		newBlock.next.prev = newBlock;
+	}
 
 	block.next = newBlock;
 
-	return newBlock;
+	return block;
 }
 
 
@@ -68,7 +73,7 @@ func malloc(int size) -> ptr {
 		if (block.free) {
 			if (block.size > size) {
 				var newBlock = _split_block(block, size);
-				newBlock.free = 0 == 0; //true keyword is not implemented yet
+				newBlock.free = 1 == 0; // false keyword is not implemented yet
 
 				return (ptr)((int)newBlock + sizeof(_heap_block));
 			}
@@ -79,6 +84,7 @@ func malloc(int size) -> ptr {
 	var expandedSize = _expand_heap(size);
 
 	var newBlock = (_heap_block)((int)block + sizeof(_heap_block) + block.size);
+	newBlock.free = 0 == 0;
 	newBlock.size = expandedSize - sizeof(_heap_block);
 	newBlock.prev = block;
 	block.next = newBlock;
@@ -87,9 +93,34 @@ func malloc(int size) -> ptr {
 	return malloc(size);
 }
 
+func realloc(ptr addr, int newSize) -> ptr {
+	var block = (_heap_block)((int)addr - sizeof(_heap_block));
+
+	if (newSize < block.size - sizeof(_heap_block) {
+		_split_block(block, newSize);
+		return block;
+	}
+
+	if (newSize > block.size) {
+		if (block.next > (_heap_block)0) {
+			if (block.next.free) {
+				_combine(block);
+				return realloc(addr, newSize);
+			}
+		}
+
+		var target = malloc(newSize);
+
+		// copy data from addr to target
+
+		free(addr);
+		return target;
+	}
+}
+
 func free(ptr addr) {
 	var block = (_heap_block)((int)addr - sizeof(_heap_block));
-	block.free = 1 == 0; // false keyword not implemented
+	block.free = 0 == 0; // true keyword not implemented
 
 	if (block.next > (_heap_block)0) {
 		if (block.next.free) {
