@@ -9,6 +9,7 @@ Compiler* initCompiler(FILE* output, Compiler* outer) {
 	compiler->currentStackSize = 0;
 	compiler->variableList = initVariableList();
 	compiler->functionList = initFunctionList();
+	compiler->typeList = initTypeList();
 	compiler->hasReturned = false;
 	compiler->outer = outer;
 
@@ -26,6 +27,7 @@ Compiler* initCompiler(FILE* output, Compiler* outer) {
 void freeCompiler(Compiler* compiler) {
 	freeVariableList(compiler->variableList);
 	freeFunctionList(compiler->functionList);
+	freeTypeList(compiler->typeList);
 	free(compiler);
 }
 
@@ -75,8 +77,11 @@ Type *findVariableType(Compiler* compiler, char* name, int nameLen) {
 	VariableList list = *compiler->variableList;
 
 	for (int i = 0; i < list.size; i++) {
-		if (strncmp(list.variables[i]->name, name, nameLen) == 0) {
-			return list.variables[i]->type;
+		Variable *var = list.variables[i];
+		if (strlen(var->name) != nameLen) { continue; }
+
+		if (strncmp(var->name, name, nameLen) == 0) {
+			return var->type;
 		}
 	}
 
@@ -91,8 +96,11 @@ Variable *findVariable(Compiler* compiler, char* name, int nameLen) {
 	VariableList list = *compiler->variableList;
 
 	for (int i = 0; i < list.size; i++) {
-		if (strncmp(list.variables[i]->name, name, nameLen) == 0) {
-			return list.variables[i];
+		Variable *var = list.variables[i];
+		if (strlen(var->name) != nameLen) { continue; }
+
+		if (strncmp(var->name, name, nameLen) == 0) {
+			return var;
 		}
 	}
 
@@ -107,15 +115,46 @@ Variable *findLocalVariable(Compiler* compiler, char* name, int nameLen) {
 	VariableList list = *compiler->variableList;
 
 	for (int i = 0; i < list.size; i++) {
-		if (strncmp(list.variables[i]->name, name, nameLen) == 0) {
-			return list.variables[i];
+		Variable *var = list.variables[i];
+		if (strlen(var->name) != nameLen) { continue; }
+
+		if (strncmp(var->name, name, nameLen) == 0) {
+			return var;
 		}
 	}
 
 	return NULL;
 }
 
-void defineFunction(Compiler* compiler, char* name, int nameLen, int id, Type *type, TypeList *parameters) {
+Type *defineType(Compiler* compiler, char* name, int nameLen, size_t size, Token token, PropertyList *properties, Type **propertyTypes) {
+	char* buffer = strndup(name, nameLen);
+	Type* type = initType(buffer, token, size, properties, propertyTypes);
+
+	addType(compiler->typeList, type);
+
+	return type;
+}
+
+Type *findType(Compiler* compiler, char* name, int nameLen) {
+	TypeList list = *compiler->typeList;
+
+	for (int i = 0; i < list.size; i++) {
+		Type *type = list.types[i];
+		if (strlen(type->name) != nameLen) { continue; }
+
+		if (strncmp(type->name, name, nameLen) == 0) {
+			return type;
+		}
+	}
+
+	if (compiler->outer == NULL) {
+		return NULL;
+	}
+
+	return findType(compiler->outer, name, nameLen);
+}
+
+void defineFunction(Compiler* compiler, char* name, int nameLen, int id, Type *type, VariableList *parameters) {
 	char* buffer = strndup(name, nameLen);
 
 	addFunction(compiler->functionList, buffer, id, type, parameters);
@@ -125,8 +164,11 @@ int16_t findFunctionId(Compiler* compiler, char* name, int nameLen) {
 	FunctionList list = *compiler->functionList;
 
 	for (int i = 0; i < list.size; i++) {
-		if (strncmp(list.functions[i]->name, name, nameLen) == 0) {
-			return list.functions[i]->id;
+		Function *func = list.functions[i];
+		if (strlen(func->name) != nameLen) { continue; }
+
+		if (strncmp(func->name, name, nameLen) == 0) {
+			return func->id;
 		}
 	}
 
@@ -139,8 +181,11 @@ Function *findFunction(Compiler* compiler, char* name, int nameLen) {
 	FunctionList list = *compiler->functionList;
 
 	for (int i = 0; i < list.size; i++) {
-		if (strncmp(list.functions[i]->name, name, nameLen) == 0) {
-			return list.functions[i];
+		Function *func = list.functions[i];
+		if (strlen(func->name) != nameLen) { continue; }
+
+		if (strncmp(func->name, name, nameLen) == 0) {
+			return func;
 		}
 	}
 
@@ -153,8 +198,11 @@ Function *findLocalFunction(Compiler* compiler, char* name, int nameLen) {
 	FunctionList list = *compiler->functionList;
 
 	for (int i = 0; i < list.size; i++) {
-		if (strncmp(list.functions[i]->name, name, nameLen) == 0) {
-			return list.functions[i];
+		Function *func = list.functions[i];
+		if (strlen(func->name) != nameLen) { continue; }
+
+		if (strncmp(func->name, name, nameLen) == 0) {
+			return func;
 		}
 	}
 
@@ -188,18 +236,12 @@ void writeHeader(Compiler* compiler) {
 
 	fprintf(compiler->output, "	;; -- return --\n");
 
-	fprintf(compiler->output, "	;; -- store return value --\n");
-
-	fprintf(compiler->output, "	;; -- restore stackframe -- \n");
-	fprintf(compiler->output, "	pop rbx\n");
-	fprintf(compiler->output, " mov [basestack], rbx\n");
-
 	fprintf(compiler->output, "	;; -- push return value --\n");
 	fprintf(compiler->output, "	push rax\n");
 	
 	fprintf(compiler->output, "	;; -- pop return address --\n");
 	fprintf(compiler->output, "	mov rax, [callrsp]\n");
-	fprintf(compiler->output, "	add rax, 4\n");
+	fprintf(compiler->output, "	add rax, 8\n");
 	fprintf(compiler->output, "	mov [callrsp], rax\n");
 	// jump to address
 	fprintf(compiler->output, "	mov rax, [callrsp]\n");
@@ -242,7 +284,7 @@ void writeCall(Compiler* compiler, uint32_t id, uint16_t numCalls) {
 	fprintf(compiler->output, "	mov rbx, [callrsp]\n");
 	fprintf(compiler->output, "	mov [rbx], rax\n");
 	// decrease callrsp
-	fprintf(compiler->output, "	sub rbx, 4\n");
+	fprintf(compiler->output, "	sub rbx, 8\n");
 	fprintf(compiler->output, "	mov [callrsp], rbx\n");
 	
 	fprintf(compiler->output, "	;; -- jump --\n");
@@ -270,7 +312,7 @@ void writeReturnEmpty(Compiler* compiler, uint16_t numVars, uint16_t numParamete
 	
 	fprintf(compiler->output, "	;; -- jump to return address --\n");
 	fprintf(compiler->output, "	mov rax, [callrsp]\n");
-	fprintf(compiler->output, "	add rax, 4\n");
+	fprintf(compiler->output, "	add rax, 8\n");
 	fprintf(compiler->output, "	mov [callrsp], rax\n");
 	// jump to address
 	fprintf(compiler->output, "	mov rax, [callrsp]\n");
@@ -298,7 +340,7 @@ void writeReturnValue(Compiler* compiler, uint16_t numVars, uint16_t numParamete
 	
 	fprintf(compiler->output, "	;; -- pop return address --\n");
 	fprintf(compiler->output, "	mov rax, [callrsp]\n");
-	fprintf(compiler->output, "	add rax, 4\n");
+	fprintf(compiler->output, "	add rax, 8\n");
 	fprintf(compiler->output, "	mov [callrsp], rax\n");
 	// jump to address
 	fprintf(compiler->output, "	mov rax, [callrsp]\n");
@@ -510,6 +552,49 @@ void writeReadIndex(Compiler* compiler) {
 	fprintf(compiler->output, "	push rbx\n\n");
 
 	compiler->currentStackSize--;
+}
+
+void writeReadProperty(Compiler* compiler, int offset, int size) {
+	fprintf(compiler->output, "	;; -- read property -- \n");
+	fprintf(compiler->output, "	pop rax ;; pointer\n");
+	fprintf(compiler->output, "	add rax, %d\n", offset);
+	fprintf(compiler->output, "	mov rax, [rax]\n");
+	fprintf(compiler->output, "	;; create bit mask\n");
+	if (size < 8) {
+		fprintf(compiler->output, "	mov rbx, 1\n");
+		fprintf(compiler->output, "	shl rbx, %d ;; size\n", 8 * size);
+	} else {
+		fprintf(compiler->output, "	mov rbx, 0\n");
+	}
+	fprintf(compiler->output, "	sub rbx, 1\n");
+	fprintf(compiler->output, "	and rax, rbx\n");
+	fprintf(compiler->output, "	push rax\n\n");
+
+	compiler->currentStackSize--;
+}
+
+void writeWriteProperty(Compiler* compiler, int offset, int size) {
+	fprintf(compiler->output, "	;; -- write property -- \n");
+	fprintf(compiler->output, "	pop rax ;; value\n");
+	fprintf(compiler->output, "	pop rbx ;; pointer\n");
+	fprintf(compiler->output, "	add rbx, %d\n", offset);
+	fprintf(compiler->output, "	mov rcx, [rbx]\n");
+	fprintf(compiler->output, "	;; create bit mask\n");
+	if (size < 8) {
+		fprintf(compiler->output, "	mov r9, 1\n");
+		fprintf(compiler->output, "	shl r9, %d ;; size\n", 8 * size);
+	} else {
+		fprintf(compiler->output, "	mov r9, 0\n");
+	}
+	fprintf(compiler->output, "	sub r9, 1\n");
+	fprintf(compiler->output, "	and rax, r9\n");
+	fprintf(compiler->output, "	not r9\n");
+	fprintf(compiler->output, "	and rcx, r9\n");
+	fprintf(compiler->output, "	add rcx, rax\n");
+	fprintf(compiler->output, "	mov [rbx], rcx\n");
+	fprintf(compiler->output, "	push rax\n\n");
+
+	compiler->currentStackSize -= 1;
 }
 
 void writeIdentifier(Compiler* compiler, int offset, int currentDepth) {

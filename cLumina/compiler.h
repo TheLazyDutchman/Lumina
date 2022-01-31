@@ -14,6 +14,7 @@ typedef struct Compiler{
 	FILE* output;
 	size_t currentStackSize;
 	VariableList* variableList;
+	TypeList* typeList;
 	FunctionList* functionList;
 	Function *function;
 	bool hasReturned;
@@ -29,7 +30,10 @@ Variable *findVariable(Compiler* compiler, char* name, int nameLen);
 Type *findVariableType(Compiler* compiler, char* name, int nameLen);
 Variable *findLocalVariable(Compiler* compiler, char* name, int nameLen);
 
-void defineFunction(Compiler* compiler, char* name, int nameLen, int id, Type *type, TypeList *parameters);
+Type *defineType(Compiler* compiler, char* name, int nameLen, size_t size, Token token, PropertyList *properties, Type **propertyTypes);
+Type *findType(Compiler* compiler, char* name, int nameLen);
+
+void defineFunction(Compiler* compiler, char* name, int nameLen, int id, Type *type, VariableList *parameters);
 int16_t findFunctionId(Compiler* compiler, char* name, int nameLen);
 Function *findFunction(Compiler* compiler, char* name, int nameLen);
 Function *findLocalFunction(Compiler* compiler, char* name, int nameLen);
@@ -59,6 +63,8 @@ void writeNumber(Compiler* compiler, int value);
 void writeCharacter(Compiler* compiler, char* *value);
 void writeString(Compiler* compiler, int id);
 void writeReadIndex(Compiler* compiler);
+void writeReadProperty(Compiler* compiler, int offset, int size);
+void writeWriteProperty(Compiler* compiler, int offset, int size);
 void writeIdentifier(Compiler* compiler, int offset, int currentDepth);
 void writeAssignment(Compiler* compiler, int offset, int currentDepth);
 

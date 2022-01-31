@@ -132,524 +132,522 @@ var SYSRKT_SIGSUSPEND = 130;
 
 
 func read(int fd, ptr buf, int count) -> int {
-	return <int>syscall(SYSREAD, fd, buf, count, 0, 0, 0);
+	return (int)syscall(SYSREAD, fd, buf, count, 0, 0, 0);
 }
 
 func write(int fd, ptr buf, int count) -> int {
-	return <int>syscall(SYSWRITE, fd, buf, count, 0, 0, 0);
+	return (int)syscall(SYSWRITE, fd, buf, count, 0, 0, 0);
 }
 
 func open(str filename, int flags, int mode) -> int {
-	return <int>syscall(SYSOPEN, filename, flags, mode, 0, 0, 0);
+	return (int)syscall(SYSOPEN, filename, flags, mode, 0, 0, 0);
 }
 
 func close(int fd) -> int {
-	return <int>syscall(SYSCLOSE, fd, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSCLOSE, fd, 0, 0, 0, 0, 0);
 }
 
 func stat(str filename, ptr statbuf) -> int {
-	return <int>syscall(SYSSTAT, filename, statbuf, 0, 0, 0, 0);
+	return (int)syscall(SYSSTAT, filename, statbuf, 0, 0, 0, 0);
 }
 
 func fstat(int fd, ptr statbuf) -> int {
-	return <int>syscall(SYSFSTAT, fd, statbuf, 0, 0, 0, 0);
+	return (int)syscall(SYSFSTAT, fd, statbuf, 0, 0, 0, 0);
 }
 
 func lstat(char filename, ptr statbuf) -> int {
-	return <int>syscall(SYSLSTAT, filename, statbuf, 0, 0, 0, 0);
+	return (int)syscall(SYSLSTAT, filename, statbuf, 0, 0, 0, 0);
 }
 
 func poll(ptr ufds, int nfds, int timeout) -> int {
-	return <int>syscall(SYSPOLL, ufds, nfds, timeout, 0, 0, 0);
+	return (int)syscall(SYSPOLL, ufds, nfds, timeout, 0, 0, 0);
 }
 
 func lseek(int fd, int offset, int whence) -> int {
-	return <int>syscall(SYSLSEEK, fd, offset, whence, 0, 0, 0);
+	return (int)syscall(SYSLSEEK, fd, offset, whence, 0, 0, 0);
 }
 
 func mmap(ptr addr, int length, int prot, int flags, int fd, int offset) -> ptr {
-	return <ptr>syscall(SYSMMAP, addr, length, prot, flags, fd, offset);
+	return (ptr)syscall(SYSMMAP, addr, length, prot, flags, fd, offset);
 }
 
 func mprotect(int start, int len, int prot) -> int {
-	return <int>syscall(SYSMPROTECT, start, len, prot, 0, 0, 0);
+	return (int)syscall(SYSMPROTECT, start, len, prot, 0, 0, 0);
 }
 
 func munmap(int addr, int len) -> int {
-	return <int>syscall(SYSMUNMAP, addr, len, 0, 0, 0, 0);
+	return (int)syscall(SYSMUNMAP, addr, len, 0, 0, 0, 0);
 }
 
-func brk(ptr addr) -> int {
-	return <int>syscall(SYSBRK, addr, 0, 0, 0, 0, 0);
+func brk(ptr addr) -> ptr {
+	return (ptr)syscall(SYSBRK, addr, 0, 0, 0, 0, 0);
 }
 
 func rt_sigaction(int signum, ptr act, ptr oldact, int sigsetsize) -> int {
-	return <int>syscall(SYSRT_SIGACTION, signum, act, oldact, sigsetsize, 0, 0);
+	return (int)syscall(SYSRT_SIGACTION, signum, act, oldact, sigsetsize, 0, 0);
 }
 
 func rt_sigprocmask(int how, ptr set, ptr oset, int sigsetsize) -> int {
-	return <int>syscall(SYSRT_SIGPROCMASK, how, set, oset, sigsetsize, 0, 0);
+	return (int)syscall(SYSRT_SIGPROCMASK, how, set, oset, sigsetsize, 0, 0);
 }
 
 //TODO: look at how to implement this properly
 func ioctl(int fd, int cmd, int arg) -> int {
-	return <int>syscall(SYSIOCTL, fd, cmd, arg, 0, 0, 0);
+	return (int)syscall(SYSIOCTL, fd, cmd, arg, 0, 0, 0);
 }
 
-func pread64(int fd, string buf, int count, int pos) -> int {
-	return <int>syscall(SYSPREAD64, fd, buf, count, pos, 0, 0);
+func pread64(int fd, str buf, int count, int pos) -> int {
+	return (int)syscall(SYSPREAD64, fd, buf, count, pos, 0, 0);
 }
 
-func pwrite64(inf fd, str buf, int count, int pos) -> int {
-	return <int>syscall(SYSPWRITE64, fd, buf, count, pos, 0, 0);
+func pwrite64(int fd, str buf, int count, int pos) -> int {
+	return (int)syscall(SYSPWRITE64, fd, buf, count, pos, 0, 0);
 }
 
 func readv(int fd, ptr vec, int vlen) -> int {
-	return <int>syscall(SYSREADV, fd, vec, vlen, 0, 0, 0);
+	return (int)syscall(SYSREADV, fd, vec, vlen, 0, 0, 0);
 }
 
 func writev(int fd, ptr vec, int vlen) -> int {
-	return <int>syscall(SYSWRITEV, fd, vec, vlen, 0, 0, 0);
+	return (int)syscall(SYSWRITEV, fd, vec, vlen, 0, 0, 0);
 }
 
 func access(str filename, int mode) -> int {
-	return <int>syscall(SYSACCESS, filename, mode, 0, 0, 0, 0);
+	return (int)syscall(SYSACCESS, filename, mode, 0, 0, 0, 0);
 }
 
 func pipe(int filedes) -> int {
-	return <int>syscall(SYSPIPE, filedes, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSPIPE, filedes, 0, 0, 0, 0, 0);
 }
 
 func select(int n, ptr inp, ptr outp, ptr exp, ptr tvp) -> int {
-	return <int>syscall(SYSSELECT, n, inp, outp, exp, tvp, 0);
+	return (int)syscall(SYSSELECT, n, inp, outp, exp, tvp, 0);
 }
 
 func sched_yield() -> int {
-	return <int>syscall(SYSSCHED_YIELD, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSCHED_YIELD, 0, 0, 0, 0, 0, 0);
 }
 
 func mremap(int addr, int old_len, int new_len, int flags, int new_addr) -> ptr {
-	return <ptr>syscall(SYSMREMAP, addr, old_len, new_len, flags, new_addr, 0);
+	return (ptr)syscall(SYSMREMAP, addr, old_len, new_len, flags, new_addr, 0);
 }
 
 func msync(int start, int len, int flags) -> int {
-	return <int>syscall(SYSMSYNC, start, len, flags, 0, 0, 0);
+	return (int)syscall(SYSMSYNC, start, len, flags, 0, 0, 0);
 }
 
 func mincore(int start, int len, ptr vec) -> int {
-	return <int>syscall(SYSMINCORE, start, len, vec, 0, 0, 0);
+	return (int)syscall(SYSMINCORE, start, len, vec, 0, 0, 0);
 }
 
 func madvise(int start, int len, int behaviour) -> int {
-	return <int>syscall(SYSMADVISE, start, len, behaviour, 0, 0, 0);
+	return (int)syscall(SYSMADVISE, start, len, behaviour, 0, 0, 0);
 }
 
 func shmget() -> int {
-	return <int>syscall(SYSSHMGET, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSHMGET, 0, 0, 0, 0, 0, 0);
 }
 
 func shmat() -> int {
-	return <int>syscall(SYSSHMAT, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSHMAT, 0, 0, 0, 0, 0, 0);
 }
 
 func shmctl() -> int {
-	return <int>syscall(SYSSHMCTL, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSHMCTL, 0, 0, 0, 0, 0, 0);
 }
 
 func dup() -> int {
-	return <int>syscall(SYSDUP, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSDUP, 0, 0, 0, 0, 0, 0);
 }
 
 func dup2() -> int {
-	return <int>syscall(SYSDUP2, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSDUP2, 0, 0, 0, 0, 0, 0);
 }
 
 func pause() -> int {
-	return <int>syscall(SYSPAUSE, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSPAUSE, 0, 0, 0, 0, 0, 0);
 }
 
 func nanosleep() -> int {
-	return <int>syscall(SYSNANOSLEEP, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSNANOSLEEP, 0, 0, 0, 0, 0, 0);
 }
 
 func getitimer() -> int {
-	return <int>syscall(SYSGETITIMER, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSGETITIMER, 0, 0, 0, 0, 0, 0);
 }
 
 func alarm() -> int {
-	return <int>syscall(SYSALARM, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSALARM, 0, 0, 0, 0, 0, 0);
 }
 
 func setitimer() -> int {
-	return <int>syscall(SYSSETITIMER, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSETITIMER, 0, 0, 0, 0, 0, 0);
 }
 
 func getpid() -> int {
-	return <int>syscall(SYSGETPID, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSGETPID, 0, 0, 0, 0, 0, 0);
 }
 
 func sendfile() -> int {
-	return <int>syscall(SYSSENDFILE, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSENDFILE, 0, 0, 0, 0, 0, 0);
 }
 
 func socket() -> int {
-	return <int>syscall(SYSSOCKET, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSOCKET, 0, 0, 0, 0, 0, 0);
 }
 
 func connect() -> int {
-	return <int>syscall(SYSCONNECT, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSCONNECT, 0, 0, 0, 0, 0, 0);
 }
 
 func accept() -> int {
-	return <int>syscall(SYSACCEPT, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSACCEPT, 0, 0, 0, 0, 0, 0);
 }
 
 func sendto() -> int {
-	return <int>syscall(SYSSENDTO, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSENDTO, 0, 0, 0, 0, 0, 0);
 }
 
 func recvfrom() -> int {
-	return <int>syscall(SYSRECVFROM, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSRECVFROM, 0, 0, 0, 0, 0, 0);
 }
 
 func sendmsg() -> int {
-	return <int>syscall(SYSSENDMSG, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSENDMSG, 0, 0, 0, 0, 0, 0);
 }
 
 func recvmsg() -> int {
-	return <int>syscall(SYSRECVMSG, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSRECVMSG, 0, 0, 0, 0, 0, 0);
 }
 
 func shitdown() -> int {
-	return <int>syscall(SYSSHITDOWN, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSHITDOWN, 0, 0, 0, 0, 0, 0);
 }
 
 func bind() -> int {
-	return <int>syscall(SYSBIND, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSBIND, 0, 0, 0, 0, 0, 0);
 }
 
 func listen() -> int {
-	return <int>syscall(SYSLISTEN, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSLISTEN, 0, 0, 0, 0, 0, 0);
 }
 
 func getsockname() -> int {
-	return <int>syscall(SYSGETSOCKNAME, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSGETSOCKNAME, 0, 0, 0, 0, 0, 0);
 }
 
 func getpeername() -> int {
-	return <int>syscall(SYSGETPEERNAME, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSGETPEERNAME, 0, 0, 0, 0, 0, 0);
 }
 
 func socketpair() -> int {
-	return <int>syscall(SYSSOCKETPAIR, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSOCKETPAIR, 0, 0, 0, 0, 0, 0);
 }
 
 func setsockopt() -> int {
-	return <int>syscall(SYSSETSOCKOPT, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSETSOCKOPT, 0, 0, 0, 0, 0, 0);
 }
 
 func getsockopt() -> int {
-	return <int>syscall(SYSGETSOCKOPT, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSGETSOCKOPT, 0, 0, 0, 0, 0, 0);
 }
 
 func clone() -> int {
-	return <int>syscall(SYSCLONE, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSCLONE, 0, 0, 0, 0, 0, 0);
 }
 
 func fork() -> int {
-	return <int>syscall(SYSFORK, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSFORK, 0, 0, 0, 0, 0, 0);
 }
 
 func vfork() -> int {
-	return <int>syscall(SYSVFORK, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSVFORK, 0, 0, 0, 0, 0, 0);
 }
 
 func execve() -> int {
-	return <int>syscall(SYSEXECVE, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSEXECVE, 0, 0, 0, 0, 0, 0);
 }
 
 func exit() -> int {
-	return <int>syscall(SYSEXIT, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSEXIT, 0, 0, 0, 0, 0, 0);
 }
 
 func wait4() -> int {
-	return <int>syscall(SYSWAIT4, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSWAIT4, 0, 0, 0, 0, 0, 0);
 }
 
 func kill() -> int {
-	return <int>syscall(SYSKILL, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSKILL, 0, 0, 0, 0, 0, 0);
 }
 
 func uname() -> int {
-	return <int>syscall(SYSUNAME, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSUNAME, 0, 0, 0, 0, 0, 0);
 }
 
 func semget() -> int {
-	return <int>syscall(SYSSEMGET, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSEMGET, 0, 0, 0, 0, 0, 0);
 }
 
 func semop() -> int {
-	return <int>syscall(SYSSEMOP, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSEMOP, 0, 0, 0, 0, 0, 0);
 }
 
 func semctl() -> int {
-	return <int>syscall(SYSSEMCTL, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSEMCTL, 0, 0, 0, 0, 0, 0);
 }
 
 func shmdt() -> int {
-	return <int>syscall(SYSSHMDT, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSHMDT, 0, 0, 0, 0, 0, 0);
 }
 
 func msgget() -> int {
-	return <int>syscall(SYSMSGGET, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSMSGGET, 0, 0, 0, 0, 0, 0);
 }
 
 func msgsnd() -> int {
-	return <int>syscall(SYSMSGSND, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSMSGSND, 0, 0, 0, 0, 0, 0);
 }
 
 func msgrcv() -> int {
-	return <int>syscall(SYSMSGRCV, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSMSGRCV, 0, 0, 0, 0, 0, 0);
 }
 
 func msgctl() -> int {
-	return <int>syscall(SYSMSGCTL, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSMSGCTL, 0, 0, 0, 0, 0, 0);
 }
 
 func fcntl() -> int {
-	return <int>syscall(SYSFCNTL, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSFCNTL, 0, 0, 0, 0, 0, 0);
 }
 
 func flock() -> int {
-	return <int>syscall(SYSFLOCK, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSFLOCK, 0, 0, 0, 0, 0, 0);
 }
 
 func fsync() -> int {
-	return <int>syscall(SYSFSYNC, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSFSYNC, 0, 0, 0, 0, 0, 0);
 }
 
 func fdatasync() -> int {
-	return <int>syscall(SYSFDATASYNC, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSFDATASYNC, 0, 0, 0, 0, 0, 0);
 }
 
 func truncate() -> int {
-	return <int>syscall(SYSTRUNCATE, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSTRUNCATE, 0, 0, 0, 0, 0, 0);
 }
 
 func ftruncate() -> int {
-	return <int>syscall(SYSFTRUNCATE, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSFTRUNCATE, 0, 0, 0, 0, 0, 0);
 }
 
 func getdents() -> int {
-	return <int>syscall(SYSGETDENTS, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSGETDENTS, 0, 0, 0, 0, 0, 0);
 }
 
 func getcwd() -> int {
-	return <int>syscall(SYSGETCWD, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSGETCWD, 0, 0, 0, 0, 0, 0);
 }
 
 func chdir() -> int {
-	return <int>syscall(SYSCHDIR, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSCHDIR, 0, 0, 0, 0, 0, 0);
 }
 
 func fchdir() -> int {
-	return <int>syscall(SYSFCHDIR, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSFCHDIR, 0, 0, 0, 0, 0, 0);
 }
 
 func rename() -> int {
-	return <int>syscall(SYSRENAME, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSRENAME, 0, 0, 0, 0, 0, 0);
 }
 
 func mkdir() -> int {
-	return <int>syscall(SYSMKDIR, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSMKDIR, 0, 0, 0, 0, 0, 0);
 }
 
 func rmdir() -> int {
-	return <int>syscall(SYSRMDIR, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSRMDIR, 0, 0, 0, 0, 0, 0);
 }
 
 func creat() -> int {
-	return <int>syscall(SYSCREAT, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSCREAT, 0, 0, 0, 0, 0, 0);
 }
 
 func link() -> int {
-	return <int>syscall(SYSLINK, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSLINK, 0, 0, 0, 0, 0, 0);
 }
 
 func unlink() -> int {
-	return <int>syscall(SYSUNLINK, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSUNLINK, 0, 0, 0, 0, 0, 0);
 }
 
 func symlink() -> int {
-	return <int>syscall(SYSSYMLINK, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSYMLINK, 0, 0, 0, 0, 0, 0);
 }
 
 func readlink() -> int {
-	return <int>syscall(SYSREADLINK, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSREADLINK, 0, 0, 0, 0, 0, 0);
 }
 
 func chmod() -> int {
-	return <int>syscall(SYSCHMOD, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSCHMOD, 0, 0, 0, 0, 0, 0);
 }
 
 func fchmod() -> int {
-	return <int>syscall(SYSFCHMOD, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSFCHMOD, 0, 0, 0, 0, 0, 0);
 }
 
 func chown() -> int {
-	return <int>syscall(SYSCHOWN, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSCHOWN, 0, 0, 0, 0, 0, 0);
 }
 
 func fchown() -> int {
-	return <int>syscall(SYSFCHOWN, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSFCHOWN, 0, 0, 0, 0, 0, 0);
 }
 
 func lchown() -> int {
-	return <int>syscall(SYSLCHOWN, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSLCHOWN, 0, 0, 0, 0, 0, 0);
 }
 
 func umask() -> int {
-	return <int>syscall(SYSUMASK, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSUMASK, 0, 0, 0, 0, 0, 0);
 }
 
 func gettimeofday() -> int {
-	return <int>syscall(SYSGETTIMEOFDAY, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSGETTIMEOFDAY, 0, 0, 0, 0, 0, 0);
 }
 
 func getrlimit() -> int {
-	return <int>syscall(SYSGETRLIMIT, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSGETRLIMIT, 0, 0, 0, 0, 0, 0);
 }
 
 func getrusage() -> int {
-	return <int>syscall(SYSGETRUSAGE, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSGETRUSAGE, 0, 0, 0, 0, 0, 0);
 }
 
 func sysinfo() -> int {
-	return <int>syscall(SYSSYSINFO, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSYSINFO, 0, 0, 0, 0, 0, 0);
 }
 
 func times() -> int {
-	return <int>syscall(SYSTIMES, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSTIMES, 0, 0, 0, 0, 0, 0);
 }
 
 func ptrace() -> int {
-	return <int>syscall(SYSPTRACE, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSPTRACE, 0, 0, 0, 0, 0, 0);
 }
 
 func getuid() -> int {
-	return <int>syscall(SYSGETUID, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSGETUID, 0, 0, 0, 0, 0, 0);
 }
 
 func syslog() -> int {
-	return <int>syscall(SYSSYSLOG, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSYSLOG, 0, 0, 0, 0, 0, 0);
 }
 
 func getgid() -> int {
-	return <int>syscall(SYSGETGID, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSGETGID, 0, 0, 0, 0, 0, 0);
 }
 
 func setuid() -> int {
-	return <int>syscall(SYSSETUID, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSETUID, 0, 0, 0, 0, 0, 0);
 }
 
 func setgid() -> int {
-	return <int>syscall(SYSSETGID, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSETGID, 0, 0, 0, 0, 0, 0);
 }
 
 func geteuid() -> int {
-	return <int>syscall(SYSGETEUID, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSGETEUID, 0, 0, 0, 0, 0, 0);
 }
 
 func getegid() -> int {
-	return <int>syscall(SYSGETEGID, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSGETEGID, 0, 0, 0, 0, 0, 0);
 }
 
 func setpgid() -> int {
-	return <int>syscall(SYSSETPGID, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSETPGID, 0, 0, 0, 0, 0, 0);
 }
 
 func getppid() -> int {
-	return <int>syscall(SYSGETPPID, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSGETPPID, 0, 0, 0, 0, 0, 0);
 }
 
 func getpgrp() -> int {
-	return <int>syscall(SYSGETPGRP, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSGETPGRP, 0, 0, 0, 0, 0, 0);
 }
 
 func setsid() -> int {
-	return <int>syscall(SYSSETSID, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSETSID, 0, 0, 0, 0, 0, 0);
 }
 
 func setreuid() -> int {
-	return <int>syscall(SYSSETREUID, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSETREUID, 0, 0, 0, 0, 0, 0);
 }
 
 func setregid() -> int {
-	return <int>syscall(SYSSETREGID, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSETREGID, 0, 0, 0, 0, 0, 0);
 }
 
 func getgroups() -> int {
-	return <int>syscall(SYSGETGROUPS, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSGETGROUPS, 0, 0, 0, 0, 0, 0);
 }
 
 func setgroups() -> int {
-	return <int>syscall(SYSSETGROUPS, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSETGROUPS, 0, 0, 0, 0, 0, 0);
 }
 
 func setresuid() -> int {
-	return <int>syscall(SYSSETRESUID, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSETRESUID, 0, 0, 0, 0, 0, 0);
 }
 
 func getresuid() -> int {
-	return <int>syscall(SYSGETRESUID, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSGETRESUID, 0, 0, 0, 0, 0, 0);
 }
 
 func setresgid() -> int {
-	return <int>syscall(SYSSETRESGID, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSETRESGID, 0, 0, 0, 0, 0, 0);
 }
 
 func getresgid() -> int {
-	return <int>syscall(SYSGETRESGID, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSGETRESGID, 0, 0, 0, 0, 0, 0);
 }
 
 func getpgid() -> int {
-	return <int>syscall(SYSGETPGID, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSGETPGID, 0, 0, 0, 0, 0, 0);
 }
 
 func setfsuid() -> int {
-	return <int>syscall(SYSSETFSUID, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSETFSUID, 0, 0, 0, 0, 0, 0);
 }
 
 func setfsgid() -> int {
-	return <int>syscall(SYSSETFSGID, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSSETFSGID, 0, 0, 0, 0, 0, 0);
 }
 
 func getsid() -> int {
-	return <int>syscall(SYSGETSID, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSGETSID, 0, 0, 0, 0, 0, 0);
 }
 
 func capget() -> int {
-	return <int>syscall(SYSCAPGET, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSCAPGET, 0, 0, 0, 0, 0, 0);
 }
 
 func capset() -> int {
-	return <int>syscall(SYSCAPSET, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSCAPSET, 0, 0, 0, 0, 0, 0);
 }
 
 func rt_sigpening() -> int {
-	return <int>syscall(SYSRT_SIGPENING, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSRT_SIGPENING, 0, 0, 0, 0, 0, 0);
 }
 
 func rt_sigtimedwait() -> int {
-	return <int>syscall(SYSRT_SIGTIMEDWAIT, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSRT_SIGTIMEDWAIT, 0, 0, 0, 0, 0, 0);
 }
 
 func rt_sigqueueinfo() -> int {
-	return <int>syscall(SYSRT_SIGQUEUEINFO, 0, 0, 0, 0, 0, 0);
+	return (int)syscall(SYSRT_SIGQUEUEINFO, 0, 0, 0, 0, 0, 0);
 }
 
 func rkt_sigsuspend(ptr unewset, int sigsetsize) -> int {
-	return <int>syscall(SYSRKT_SIGSUSPEND, unewset, sigsetsize, 0, 0, 0, 0);
+	return (int)syscall(SYSRKT_SIGSUSPEND, unewset, sigsetsize, 0, 0, 0, 0);
 }
-
-

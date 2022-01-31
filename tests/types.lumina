@@ -1,0 +1,35 @@
+import "../std/syscalls.lumina"
+import "../std/io.lumina"
+
+type IntVector {
+	str name;
+	int x;
+	int y;
+}
+
+var prot = 0;
+var flags = 0;
+var fd = 0;
+
+func addVec(IntVector a, IntVector b) -> IntVector {
+	return a;
+}
+
+var heap_start = <int>brk(<ptr>0);
+var page_size = 4096;
+var page_end = heap_start + page_size;
+brk(<ptr>page_end);
+
+func initVec() -> IntVector {
+	var vec = <IntVector>heap_start;
+
+	vec.name = "Hello, World!\n";
+	vec.x = 10;
+
+	return vec;
+}
+
+var a = initVec();
+
+var b = a.x;
+print(a.name);

@@ -18,17 +18,28 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 
 	parser->numIfs = 0;
 	parser->numWhiles = 0;
+
+	// defining built-in immediates
+	//strdup is used here because these predefined string literals are freed later, because there will be allocated strings in the same place later
+	defineType(parser->compiler, strdup("any"), 3, 8, *parser->current, NULL, NULL); 
+	defineType(parser->compiler, strdup("int"), 3, 8, *parser->current, NULL, NULL);
+	defineType(parser->compiler, strdup("str"), 3, 8, *parser->current, NULL, NULL);
+	defineType(parser->compiler, strdup("ptr"), 3, 8, *parser->current, NULL, NULL);
+	defineType(parser->compiler, strdup("char"), 4, 4, *parser->current, NULL, NULL);
+	defineType(parser->compiler, strdup("bool"), 4, 4, *parser->current, NULL, NULL);
+	defineType(parser->compiler, strdup("NULL"), 4, 8, *parser->current, NULL, NULL);
 	
 	// defining sycall built-in
-	char *name = "syscall";
+	char *name = strdup("syscall");
 	int nameLen = strlen(name);
 	int id = 0;
-	Type *returnType = initType("any", *parser->current);
+	Type* typeAny = findType(parser->compiler, strdup("any"), 3);
+	Type* returnType = typeAny;
 
-	TypeList *parameters = initTypeList();
+	VariableList *parameters = initVariableList();
 	int i = 0;
 	while (i < 7) {
-		addType(parameters, "any", *parser->current);
+		addVariable(parameters, strdup(""), i, 0, typeAny);
 		i++;
 	}
 
@@ -50,10 +61,6 @@ void freeParser(Parser* parser) {
 		freeToken(parser->current);
 	}
 
-	if (parser->lastType != NULL) {
-		freeType(parser->lastType);
-	}
-
 	freeCompiler(parser->compiler);
 
 	freeStringList(parser->strings);
@@ -61,6 +68,14 @@ void freeParser(Parser* parser) {
 	fclose(parser->outputFile);
 
 	free(parser);
+}
+
+void setLastType(Parser* parser, Type* type) {
+	if (type == NULL) {
+		parseError(parser, *parser->current, "type not found");
+	}
+
+	parser->lastType = type;
 }
 
 Token* next(Parser* parser) {
@@ -75,7 +90,7 @@ Token* next(Parser* parser) {
 		parser->lexer = current->outer;
 		freeLexer(current);
 
-		return next(parser);
+		parser->current = next(parser);
 	}
 
 	return parser->current;
@@ -87,6 +102,7 @@ typedef enum {
 	PREC_NONE,
 	PREC_BLOCK,
 	PREC_STATEMENT,
+	PREC_TYPE,
 	PREC_FUNC,
 	PREC_RETURN_STATEMENT,
 	PREC_WHILE_STATEMENT,
@@ -107,7 +123,7 @@ typedef struct {
 	Precedence precedence;
 } ParseRule;
 
-_Static_assert(TOKEN_TYPES_NUM == 29, "Exhaustive handling of token types in parsing");
+_Static_assert(TOKEN_TYPES_NUM == 32, "Exhaustive handling of token types in parsing");
 
 ParseRule parseTable[] = {
 	[TOKEN_NUMBER] = {number, NULL, PREC_PRIMARY},
@@ -116,13 +132,13 @@ ParseRule parseTable[] = {
 	[TOKEN_PLUS] = {NULL, binary, PREC_TERM},
 	[TOKEN_MINUS] = {unary, binary, PREC_UNARY},
 	[TOKEN_EQUAL] = {NULL, NULL, PREC_ASSIGNMENT},
-	[TOKEN_LESS] = {typeCast, binary, PREC_COMPARISON},
+	[TOKEN_LESS] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_GREATER] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_LESSEQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_GREATEREQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_EQUALEQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_RARROW] = {NULL, NULL, PREC_NONE},
-	[TOKEN_LPAREN] = {NULL, NULL, PREC_BLOCK},
+	[TOKEN_LPAREN] = {group, NULL, PREC_PRIMARY},
 	[TOKEN_RPAREN] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_LBRACKET] = {NULL, readIndex, PREC_READ},
 	[TOKEN_RBRACKET] = {NULL, NULL, PREC_BLOCK},
@@ -133,9 +149,12 @@ ParseRule parseTable[] = {
 	[TOKEN_IF] = {NULL, NULL, PREC_IF_STATEMENT},
 	[TOKEN_WHILE] = {NULL, NULL, PREC_WHILE_STATEMENT},
 	[TOKEN_FUNC] = {NULL, NULL, PREC_FUNC},
+	[TOKEN_TYPE] = {NULL, NULL, PREC_TYPE},
 	[TOKEN_IMPORT] = {NULL, NULL, PREC_STATEMENT},
+	[TOKEN_SIZEOF] = {typeSize, NULL, PREC_PRIMARY},
 	[TOKEN_RETURN] = {NULL, NULL, PREC_RETURN_STATEMENT},
 	[TOKEN_COMMA] = {NULL, NULL, PREC_ARG},
+	[TOKEN_PERIOD] = {NULL, property, PREC_READ},
 	[TOKEN_IDENTIFIER] = {identifier, NULL, PREC_PRIMARY},
 	[TOKEN_END_OF_FILE] = {NULL, NULL, PREC_NONE},
 	[TOKEN_ERROR] = {NULL, NULL, PREC_NONE}
@@ -189,6 +208,24 @@ Token parsePrecedence(Parser* parser, Precedence precedence) {
 
 	rule.prefix(parser);
 
+	token = *parser->current;
+	rule = parseTable[token.type];
+
+	while (rule.precedence >= precedence) {
+		if (rule.infix == NULL) {
+			parseError(parser, token, "unexpected token");
+			next(parser);
+
+			token.type = TOKEN_ERROR;
+			return token;
+		}
+
+		rule.infix(parser);
+
+		token = *parser->current;
+		rule = parseTable[token.type];
+	}
+
 	return token;
 }
 
@@ -204,6 +241,40 @@ Token consumeToken(Parser* parser, Tokentype type, char* message) {
 	next(parser);
 
 	return token;
+}
+
+Type *consumeType(Parser* parser, char* message) {
+	Token token = consumeToken(parser, TOKEN_IDENTIFIER, message);
+
+	Type *type = findType(parser->compiler, token.word, token.wordLen);
+
+	if (type == NULL) {
+		parseError(parser, token, message);
+	}
+
+	return type;
+}
+
+void group(Parser* parser) {
+	next(parser);
+
+	if (parser->current->type == TOKEN_IDENTIFIER) {
+		Type *type = findType(parser->compiler, parser->current->word, parser->current->wordLen);
+		if (type != NULL) { // type cast
+			next(parser);
+			consumeToken(parser, TOKEN_RPAREN, "expected closing parenthesis");
+
+			parsePrecedence(parser, PREC_PRIMARY); 
+
+			setLastType(parser, type);
+
+			return;
+		}
+	}
+
+	expression(parser);
+
+	consumeToken(parser, TOKEN_RPAREN, "expected closing parenthesis");
 }
 
 void dumpNumber(Parser* parser, Token value) {
@@ -230,7 +301,7 @@ void number(Parser* parser) {
 
 	writeNumber(parser->compiler, numberValue);
 
-	parser->lastType = initType("int", value);
+	setLastType(parser, findType(parser->compiler, "int", 3));
 
 	next(parser);
 }
@@ -252,7 +323,7 @@ void character(Parser* parser) {
 	char *chr = value.word + 1;
 	writeCharacter(parser->compiler, &chr);
 
-	parser->lastType = initType("char", value);
+	setLastType(parser, findType(parser->compiler, "char", 4));
 
 	next(parser);
 }
@@ -268,7 +339,7 @@ void string(Parser* parser) {
 
 	writeString(parser->compiler, id);
 
-	parser->lastType = initType("str", value);
+	setLastType(parser, findType(parser->compiler, "str", 3));
 
 	next(parser);
 }
@@ -282,10 +353,64 @@ void readIndex(Parser* parser) {
 
 	writeReadIndex(parser->compiler);
 
-	freeType(parser->lastType);
-	parser->lastType = initType("char", *parser->current);
+	setLastType(parser, findType(parser->compiler, "char", 4));
 
 	consumeToken(parser, TOKEN_RBRACKET, "expected ']' after index");
+}
+
+void property(Parser* parser) {
+	next(parser);
+
+	Token name = consumeToken(parser, TOKEN_IDENTIFIER, "expected property name");
+
+	if (name.type == TOKEN_ERROR) { return; }
+
+	Type *type = parser->lastType;
+
+	if (type == NULL) {
+		parseError(parser, name, "problem in type when reading property");
+		return;
+	}
+
+	Property *property = findProperty(type->properties, name.word, name.wordLen);
+
+	if (property == NULL) {
+		parseError(parser, name, "cannot find property");
+		return;
+	}
+
+	Type *newType = type->propertyTypes[property->index];
+
+	if (parser->current->type == TOKEN_EQUAL) {
+		next(parser);
+
+		expression(parser);
+
+		writeWriteProperty(parser->compiler, property->offset, newType->size);
+	} else {
+		writeReadProperty(parser->compiler, property->offset, newType->size);
+	}
+
+	setLastType(parser, newType);
+}
+
+void typeSize(Parser* parser) {
+	if (parser->current->type != TOKEN_SIZEOF) {
+		printf("incorrect reference in parseTable: '%s' points to sizeof\n", tokenTypes[parser->current->type]);
+	}
+
+	next(parser);
+
+	if (consumeToken(parser, TOKEN_LPAREN, "expected '(' after 'sizeof'").type == TOKEN_ERROR) { return; }
+	Type *type = consumeType(parser, "expected type in 'sizeof' expression");
+	
+	if (type == NULL) { return; }
+
+	writeNumber(parser->compiler, type->properties->totalTypeSize);
+
+	setLastType(parser, findType(parser->compiler, "int", 3));
+
+	if (consumeToken(parser, TOKEN_RPAREN, "expected ')' after 'sizeof' expression").type == TOKEN_ERROR) { return; }
 }
 
 void identifier(Parser* parser) {
@@ -322,8 +447,8 @@ void identifier(Parser* parser) {
 		if (func->parameters->size > 0) {
 			expression(parser);
 
-			if (strcmp(func->parameters->types[0]->name, parser->lastType->name) != 0 &&
-					strcmp(func->parameters->types[0]->name, "any") != 0) { 
+			if (strcmp(func->parameters->variables[0]->type->name, parser->lastType->name) != 0 &&
+					strcmp(func->parameters->variables[0]->type->name, "any") != 0) { 
 				parseError(parser, *parser->current, "incorrect type passed to function");
 				return;
 			}
@@ -340,8 +465,8 @@ void identifier(Parser* parser) {
 
 				expression(parser);
 
-				if (strcmp(func->parameters->types[i]->name, parser->lastType->name) != 0 &&
-						strcmp(func->parameters->types[i]->name, "any") != 0) { 
+				if (strcmp(func->parameters->variables[i]->type->name, parser->lastType->name) != 0 &&
+						strcmp(func->parameters->variables[i]->type->name, "any") != 0) { 
 					parseError(parser, *parser->current, "incorrect type passed to function"); 
 					return;
 				}
@@ -358,7 +483,7 @@ void identifier(Parser* parser) {
 		
 		writeCall(parser->compiler, func->id, numCalls);
 
-		parser->lastType = initType(func->returnType->name, identifier);
+		setLastType(parser, func->returnType);
 	} else {
 		Variable *var = findVariable(parser->compiler, identifier.word, identifier.wordLen);
 
@@ -369,14 +494,7 @@ void identifier(Parser* parser) {
 
 		writeIdentifier(parser->compiler, var->position, var->functionDepth);
 
-		if (parser->lastType != NULL) {
-			freeType(parser->lastType);
-		}
-		
-		Type *type = findVariableType(parser->compiler, identifier.word, identifier.wordLen);
-		if (type != NULL) {
-			parser->lastType = initType(type->name, identifier);
-		}
+		setLastType(parser, var->type);
 	}
 }
 
@@ -418,10 +536,12 @@ void binary(Parser* parser) {
 
 			if (strcmp(value1.name, "int") != 0 && strcmp(value1.name, "char") != 0) {
 				parseError(parser, value1.token, "can not add something that is not 'int' or 'char'");
+				printf("NOTE: left hand side is of type: '%s'\n", value1.name);
 				return;
 			}
 			if (strcmp(parser->lastType->name, "int") != 0 && strcmp(parser->lastType->name, "char") != 0) {
 				parseError(parser, parser->lastType->token, "can not add something that is not 'int' or 'char'");
+				printf("NOTE: right hand side is of type: '%s'\n", parser->lastType->name);
 				return;
 			}
 
@@ -433,13 +553,9 @@ void binary(Parser* parser) {
 			writeAdd(parser->compiler);
 
 			if (strcmp(value1.name, "char") == 0 || strcmp(parser->lastType->name, "char") == 0) {
-				freeType(parser->lastType);
-
-				parser->lastType == initType("char", operator);
+				setLastType(parser, findType(parser->compiler, "char", 4));
 			} else {
-				freeType(parser->lastType);
-
-				parser->lastType == initType("int", operator);
+				setLastType(parser, findType(parser->compiler, "int", 3));
 			}
 
 			break;
@@ -448,10 +564,12 @@ void binary(Parser* parser) {
 
 			if (strcmp(value1.name, "int") != 0 && strcmp(value1.name, "char") != 0) {
 				parseError(parser, value1.token, "can not subtract something that is not 'int' or 'char'");
+				printf("NOTE: left hand side is of type: '%s'\n", value1.name);
 				return;
 			}
 			if (strcmp(parser->lastType->name, "int") != 0 && strcmp(parser->lastType->name, "char") != 0) {
 				parseError(parser, parser->lastType->token, "can not subtract something that is not 'int' or 'char'");
+				printf("NOTE: right hand side is of type: '%s'\n", parser->lastType->name);
 				return;
 			}
 
@@ -463,13 +581,9 @@ void binary(Parser* parser) {
 			writeSubtract(parser->compiler);
 
 			if (strcmp(value1.name, "char") == 0 && strcmp(parser->lastType->name, "int") == 0) {
-				freeType(parser->lastType);
-
-				parser->lastType = initType("char", operator);
+				setLastType(parser, findType(parser->compiler, "char", 4));
 			} else {
-				freeType(parser->lastType);
-
-				parser->lastType = initType("int", operator);
+				setLastType(parser, findType(parser->compiler, "int", 3));
 			}
 
 			break;
@@ -478,70 +592,65 @@ void binary(Parser* parser) {
 
 			if (strcmp(value1.name, parser->lastType->name) != 0) {
 				parseError(parser, operator, "can not compare two values with different type");
+				printf("NOTE: types are: '%s' and '%s'\n", value1.name, parser->lastType->name);
 				return;
 			}
 
 			writeLess(parser->compiler);
 
-			freeType(parser->lastType);
-
-			parser->lastType = initType("bool", operator);
+			setLastType(parser, findType(parser->compiler, "bool", 4));
 			break;
 		case TOKEN_LESSEQUAL:
 			dumpBinary(parser, operator);
 
 			if (strcmp(value1.name, parser->lastType->name) != 0) {
 				parseError(parser, operator, "can not compare two values with different type");
+				printf("NOTE: types are: '%s' and '%s'\n", value1.name, parser->lastType->name);
 				return;
 			}
 
 			writeLessEqual(parser->compiler);
 
-			freeType(parser->lastType);
-
-			parser->lastType = initType("bool", operator);
+			setLastType(parser, findType(parser->compiler, "bool", 4));
 			break;
 		case TOKEN_GREATER:
 			dumpBinary(parser, operator);
 
 			if (strcmp(value1.name, parser->lastType->name) != 0) {
 				parseError(parser, operator, "can not compare two values with different type");
+				printf("NOTE: types are: '%s' and '%s'\n", value1.name, parser->lastType->name);
 				return;
 			}
 
 			writeGreater(parser->compiler);
 
-			freeType(parser->lastType);
-
-			parser->lastType = initType("bool", operator);
+			setLastType(parser, findType(parser->compiler, "bool", 4));
 			break;
 		case TOKEN_GREATEREQUAL:
 			dumpBinary(parser, operator);
 
 			if (strcmp(value1.name, parser->lastType->name) != 0) {
 				parseError(parser, operator, "can not compare two values with different type");
+				printf("NOTE: types are: '%s' and '%s'\n", value1.name, parser->lastType->name);
 				return;
 			}
 
 			writeGreaterEqual(parser->compiler);
 
-			freeType(parser->lastType);
-
-			parser->lastType = initType("bool", operator);
+			setLastType(parser, findType(parser->compiler, "bool", 4));
 			break;
 		case TOKEN_EQUALEQUAL:
 			dumpBinary(parser, operator);
 
 			if (strcmp(value1.name, parser->lastType->name) != 0) {
 				parseError(parser, operator, "can not compare two values with different type");
+				printf("NOTE: types are: '%s' and '%s'\n", value1.name, parser->lastType->name);
 				return;
 			}
 
 			writeEqual(parser->compiler);
 
-			freeType(parser->lastType);
-
-			parser->lastType = initType("bool", operator);
+			setLastType(parser, findType(parser->compiler, "bool", 4));
 			break;
 	}
 }
@@ -576,16 +685,6 @@ void unary(Parser* parser) {
 	}
 }
 
-void typeCast(Parser* parser) {
-	next(parser);
-	Token typeName = consumeToken(parser, TOKEN_IDENTIFIER, "expected type name in type cast");
-	consumeToken(parser, TOKEN_GREATER, "expected '>' after type name");
-
-	parsePrecedence(parser, PREC_PRIMARY);
-
-	freeType(parser->lastType);
-	parser->lastType = initType(strndup(typeName.word, typeName.wordLen), typeName);
-}
 
 void expression(Parser* parser) {
 	if (parsePrecedence(parser, PREC_EXPR).type == TOKEN_ERROR) {
@@ -625,7 +724,12 @@ void variableDefinition(Parser* parser) {
 		return;
 	}
 
-	if (findLocalFunction(parser->compiler, identifier.word, identifier.wordLen) != NULL) { 
+	if (findType(parser->compiler, identifier.word, identifier.wordLen) != NULL) {
+		parseError(parser, identifier, "there already exists a type with this name");
+		return;
+	}
+
+	if (findFunction(parser->compiler, identifier.word, identifier.wordLen) != NULL) { 
 		parseError(parser, identifier, "there already exists a function with this name"); 
 		return;
 	}
@@ -635,12 +739,10 @@ void variableDefinition(Parser* parser) {
 	expression(parser);
 	consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after variable definition");
 
-	char* typeName = "NULL";
+	Type* type = findType(parser->compiler, "NULL", 4);
 	if (parser->lastType != NULL) {
-		typeName = parser->lastType->name;
+		type = parser->lastType;
 	}
-
-	Type *type = initType(typeName, identifier);
 
 	defineVariable(parser->compiler, identifier.word, identifier.wordLen, type);
 }
@@ -712,34 +814,46 @@ void functionDefinition(Parser* parser) {
 
 	Token name = consumeToken(parser, TOKEN_IDENTIFIER, "expected function name");
 
+	if (findVariable(parser->compiler, name.word, name.wordLen) != NULL) {
+		parseError(parser, name, "there already exists a variable with this name");
+		return;
+	}
+
+	if (findType(parser->compiler, name.word, name.wordLen) != NULL) {
+		parseError(parser, name, "there already exists a type with this name");
+		return;
+	}
+
+	if (findLocalFunction(parser->compiler, name.word, name.wordLen) != NULL) {
+		parseError(parser, name, "there already exists a type with this name");
+		return;
+	}
+
 	if (name.type == TOKEN_ERROR) { return;}
 
 	if (consumeToken(parser, TOKEN_LPAREN, "expected '(' after function name").type == TOKEN_ERROR) { return; }
 
-	TypeList *parameters = initTypeList();
+	VariableList *parameters = initVariableList();
 
 	if (parser->current->type != TOKEN_RPAREN) {
-		Token type = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter type");
+		Type *type = consumeType(parser, "expected parameter type");
 		Token name = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter name");
 
-		char* typeName = strndup(type.word, type.wordLen);
+		int i = 0;
+		int functionDepth = parser->compiler->functionDepth + 1;
 
-		addType(parameters, typeName, name);
-		free(typeName);
+		addVariable(parameters, strndup(name.word, name.wordLen), i, functionDepth, type);
 
 		while (parser->current->type == TOKEN_COMMA) {
 			next(parser);
-			Token type = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter type");
+			Type *type = consumeType(parser, "expected parameter type");
 			Token name = consumeToken(parser, TOKEN_IDENTIFIER, "expected parameter name");
 
-			if (type.type == TOKEN_ERROR || name.type == TOKEN_ERROR) {
+			if (type == NULL || name.type == TOKEN_ERROR) {
 				return;
 			}
 
-			char* typeName = strndup(type.word, type.wordLen);
-
-			addType(parameters, typeName, name);
-			free(typeName);
+			addVariable(parameters, strndup(name.word, name.wordLen), ++i, functionDepth, type);
 		}	
 	}
 	
@@ -750,11 +864,9 @@ void functionDefinition(Parser* parser) {
 	if (parser->current->type == TOKEN_RARROW) {
 		next(parser);
 
-		Token typeToken = consumeToken(parser, TOKEN_IDENTIFIER, "expected return type");
-		
-		type = initType(strndup(typeToken.word, typeToken.wordLen), typeToken);
+		type = consumeType(parser, "expected return type");
 	} else {
-		type = initType("null", name);
+		type = findType(parser->compiler, "NULL", 4);
 	}
 
 	defineFunction(parser->compiler, name.word, name.wordLen, funcId, type, parameters);
@@ -768,7 +880,7 @@ void functionDefinition(Parser* parser) {
 	writeAddress(parser->compiler, "addr_func_end", funcId);
 }
 
-void block(Parser* parser, Function *func, TypeList *parameters) {
+void block(Parser* parser, Function *func, VariableList *parameters) {
 	Compiler* scopeCompiler = initCompiler(parser->outputFile, parser->compiler);
 	
 	if (func != NULL) {
@@ -779,11 +891,9 @@ void block(Parser* parser, Function *func, TypeList *parameters) {
 	if (parameters != NULL) {
 		int i = 0;
 		while (i < parameters->size) {
-			//block will free the types, so we need to copy them first
-			Type *parameter = initType(parameters->types[i]->name, parameters->types[i]->token);
-
 			scopeCompiler->currentStackSize++;
-			defineVariable(scopeCompiler, parameter->token.word, parameter->token.wordLen, parameter);
+			Variable *var = parameters->variables[i];
+			defineVariable(scopeCompiler, strdup(var->name), strlen(var->name), var->type);
 
 			i++;
 		}
@@ -800,7 +910,7 @@ void block(Parser* parser, Function *func, TypeList *parameters) {
 	}
 
 	if (scopeCompiler->function != scopeCompiler->outer->function) {// the outermost block of the function body
-		if (strcmp(func->returnType->name, "null") != 0) {
+		if (func->returnType != findType(parser->compiler, "NULL", 4)) {
 			if (!scopeCompiler->hasReturned) {
 				parseError(parser, *parser->current, "not al code paths return a value");
 				return;
@@ -874,6 +984,52 @@ void importStatement(Parser* parser) {
 	free(fileName);
 }
 
+void typeDefinition(Parser* parser) {
+	Token name = consumeToken(parser, TOKEN_IDENTIFIER, "expected type name in definition");
+
+	if (findVariable(parser->compiler, name.word, name.wordLen) != NULL) {
+		parseError(parser, name, "there already exists a variable with this name");
+		return;
+	}
+
+	if (findType(parser->compiler, name.word, name.wordLen) != NULL) {
+		parseError(parser, name, "there already exists a type with this name");
+		return;
+	}
+
+	if (findFunction(parser->compiler, name.word, name.wordLen) != NULL) {
+		parseError(parser, name, "there already exists a function with this name");
+		return;
+	}
+
+	Type *type = defineType(parser->compiler, name.word, name.wordLen, 8, name, NULL, NULL);
+
+	if (consumeToken(parser, TOKEN_LBRACE, "expected '{' after type name").type == TOKEN_ERROR) { return; }
+
+	int i = 0;
+	PropertyList *properties = initPropertyList();
+	TypeList *types = initTypeList();
+
+	while (parser->current->type != TOKEN_RBRACE) {
+		Type *type = consumeType(parser, "expected type property to start with type");
+		Token propertyName = consumeToken(parser, TOKEN_IDENTIFIER, "expected name of property");
+
+		if (type == NULL || propertyName.type == TOKEN_ERROR) { return; }
+
+		addProperty(properties, strndup(propertyName.word, propertyName.wordLen), i, type->size);
+		addType(types, type);
+		i++;
+
+		consumeToken(parser, TOKEN_SEMICOLON, "expected property to end with ';'");
+	}
+
+	type->properties = properties;
+	type->propertyTypes = types->types;
+	free(types);
+
+	consumeToken(parser, TOKEN_RBRACE, "expected '}' after type definition");
+}
+
 void statement(Parser* parser) {
 	if (parser->current->type == TOKEN_VAR) {
 		next(parser);
@@ -891,6 +1047,10 @@ void statement(Parser* parser) {
 		next(parser);
 
 		functionDefinition(parser);
+	} else if (parser->current->type == TOKEN_TYPE) {
+		next(parser);
+
+		typeDefinition(parser);
 	} else if (parser->current->type == TOKEN_RETURN) {
 		next(parser);
 

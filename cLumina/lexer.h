@@ -38,9 +38,12 @@ typedef enum Tokentype {
 	TOKEN_IF,
 	TOKEN_WHILE,
 	TOKEN_FUNC,
+	TOKEN_TYPE,
 	TOKEN_RETURN,
 	TOKEN_IMPORT,
+	TOKEN_SIZEOF,
 	TOKEN_COMMA,
+	TOKEN_PERIOD,
 	TOKEN_IDENTIFIER,
 	TOKEN_END_OF_FILE,
 	TOKEN_ERROR,
@@ -71,15 +74,18 @@ static const char* const tokenTypes[] = {
 	[TOKEN_IF] = "IF",
 	[TOKEN_WHILE] = "WHILE",
 	[TOKEN_FUNC] = "FUNC",
+	[TOKEN_TYPE] = "TYPE",
 	[TOKEN_RETURN] = "RETURN",
 	[TOKEN_IMPORT] = "IMPORT",
+	[TOKEN_SIZEOF] = "SIZEOF",
 	[TOKEN_COMMA] = "COMMA",
+	[TOKEN_PERIOD] = "PERIOD",
 	[TOKEN_IDENTIFIER] = "IDENTIFIER",
 	[TOKEN_END_OF_FILE] = "END OF FILE",
 	[TOKEN_ERROR] = "ERROR",
 };
 
-_Static_assert(TOKEN_TYPES_NUM == 29, "Exhaustive handling of tokenTypes in string conversion\n");
+_Static_assert(TOKEN_TYPES_NUM == 32, "Exhaustive handling of tokenTypes in string conversion\n");
 
 typedef struct Token {
 	char *fileName;

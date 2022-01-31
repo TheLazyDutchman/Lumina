@@ -22,7 +22,7 @@ char* readFile(char *fileName) {
 		exit(1);
 	}
 
-	char *buffer = malloc(len);
+	char *buffer = malloc(len + 1);
 
 	if (buffer == NULL) {
 		printf("[ERROR] could not allocate enough memory to read file '%s'\n", fileName);
@@ -33,6 +33,8 @@ char* readFile(char *fileName) {
 		printf("[ERROR] could not read file '%s'\n", fileName);
 		exit(1);
 	}
+
+	buffer[len] = '\0';
 	
 	fclose(fd);
 	return buffer;
@@ -117,7 +119,8 @@ Token *nextToken(Lexer* lexer){
 		while(isdigit(*lexer->current)) {
 			advance(lexer);
 		}
-	} else if (isalpha(*lexer->current)) {
+	} else if (isalpha(*lexer->current) ||
+			*lexer->current == '_') {
 		switch (*lexer->current) {
 			case 'f':
 				advance(lexer);
@@ -234,6 +237,72 @@ Token *nextToken(Lexer* lexer){
 				}
 
 				token->type = TOKEN_RETURN;
+				break;
+			case 's':
+				advance(lexer);
+				if (*lexer->current != 'i') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 'z') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 'e') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 'o') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 'f') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (isalnum(*lexer->current)) {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				token->type = TOKEN_SIZEOF;
+				break;
+			case 't':
+				advance(lexer);
+				if (*lexer->current != 'y') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 'p') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 'e') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (isalnum(*lexer->current)) {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				token->type = TOKEN_TYPE;
 				break;
 			case 'v':
 				advance(lexer);
@@ -411,6 +480,10 @@ Token *nextToken(Lexer* lexer){
 				break;
 			case ',':
 				token->type = TOKEN_COMMA;
+				advance(lexer);
+				break;
+			case '.':
+				token->type = TOKEN_PERIOD;
 				advance(lexer);
 				break;
 			case '\0':

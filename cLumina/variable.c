@@ -15,7 +15,6 @@ Variable* initVariable(char* name, uint16_t position, uint16_t functionDepth, Ty
 
 void freeVariable(Variable* variable) {
 	free(variable->name);
-	freeType(variable->type);
 	free(variable);
 }
 
