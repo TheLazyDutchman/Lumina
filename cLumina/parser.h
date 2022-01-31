@@ -38,6 +38,7 @@ void parseError(Parser* parser, Token token, char* message);
 void setLastType(Parser* parser, Type* type);
 
 void number(Parser* parser);
+void group(Parser* parser);
 void character(Parser* parser);
 void string(Parser* parser);
 void readIndex(Parser* parser);
@@ -45,7 +46,6 @@ void property(Parser* parser);
 void identifier(Parser* parser);
 void unary(Parser* parser);
 void binary(Parser* parser);
-void typeCast(Parser* parser);
 void typeSize(Parser* parser);
 void expression(Parser* parser);
 void condition(Parser* parser);

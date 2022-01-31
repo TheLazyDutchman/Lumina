@@ -119,7 +119,8 @@ Token *nextToken(Lexer* lexer){
 		while(isdigit(*lexer->current)) {
 			advance(lexer);
 		}
-	} else if (isalpha(*lexer->current)) {
+	} else if (isalpha(*lexer->current) ||
+			*lexer->current == '_') {
 		switch (*lexer->current) {
 			case 'f':
 				advance(lexer);

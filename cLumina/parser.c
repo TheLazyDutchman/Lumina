@@ -132,13 +132,13 @@ ParseRule parseTable[] = {
 	[TOKEN_PLUS] = {NULL, binary, PREC_TERM},
 	[TOKEN_MINUS] = {unary, binary, PREC_UNARY},
 	[TOKEN_EQUAL] = {NULL, NULL, PREC_ASSIGNMENT},
-	[TOKEN_LESS] = {typeCast, binary, PREC_COMPARISON},
+	[TOKEN_LESS] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_GREATER] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_LESSEQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_GREATEREQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_EQUALEQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_RARROW] = {NULL, NULL, PREC_NONE},
-	[TOKEN_LPAREN] = {NULL, NULL, PREC_BLOCK},
+	[TOKEN_LPAREN] = {group, NULL, PREC_PRIMARY},
 	[TOKEN_RPAREN] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_LBRACKET] = {NULL, readIndex, PREC_READ},
 	[TOKEN_RBRACKET] = {NULL, NULL, PREC_BLOCK},
@@ -208,6 +208,24 @@ Token parsePrecedence(Parser* parser, Precedence precedence) {
 
 	rule.prefix(parser);
 
+	token = *parser->current;
+	rule = parseTable[token.type];
+
+	while (rule.precedence >= precedence) {
+		if (rule.infix == NULL) {
+			parseError(parser, token, "unexpected token");
+			next(parser);
+
+			token.type = TOKEN_ERROR;
+			return token;
+		}
+
+		rule.infix(parser);
+
+		token = *parser->current;
+		rule = parseTable[token.type];
+	}
+
 	return token;
 }
 
@@ -235,6 +253,28 @@ Type *consumeType(Parser* parser, char* message) {
 	}
 
 	return type;
+}
+
+void group(Parser* parser) {
+	next(parser);
+
+	if (parser->current->type == TOKEN_IDENTIFIER) {
+		Type *type = findType(parser->compiler, parser->current->word, parser->current->wordLen);
+		if (type != NULL) { // type cast
+			next(parser);
+			consumeToken(parser, TOKEN_RPAREN, "expected closing parenthesis");
+
+			parsePrecedence(parser, PREC_PRIMARY); 
+
+			setLastType(parser, type);
+
+			return;
+		}
+	}
+
+	expression(parser);
+
+	consumeToken(parser, TOKEN_RPAREN, "expected closing parenthesis");
 }
 
 void dumpNumber(Parser* parser, Token value) {
@@ -496,10 +536,12 @@ void binary(Parser* parser) {
 
 			if (strcmp(value1.name, "int") != 0 && strcmp(value1.name, "char") != 0) {
 				parseError(parser, value1.token, "can not add something that is not 'int' or 'char'");
+				printf("NOTE: left hand side is of type: '%s'\n", value1.name);
 				return;
 			}
 			if (strcmp(parser->lastType->name, "int") != 0 && strcmp(parser->lastType->name, "char") != 0) {
 				parseError(parser, parser->lastType->token, "can not add something that is not 'int' or 'char'");
+				printf("NOTE: right hand side is of type: '%s'\n", parser->lastType->name);
 				return;
 			}
 
@@ -522,10 +564,12 @@ void binary(Parser* parser) {
 
 			if (strcmp(value1.name, "int") != 0 && strcmp(value1.name, "char") != 0) {
 				parseError(parser, value1.token, "can not subtract something that is not 'int' or 'char'");
+				printf("NOTE: left hand side is of type: '%s'\n", value1.name);
 				return;
 			}
 			if (strcmp(parser->lastType->name, "int") != 0 && strcmp(parser->lastType->name, "char") != 0) {
 				parseError(parser, parser->lastType->token, "can not subtract something that is not 'int' or 'char'");
+				printf("NOTE: right hand side is of type: '%s'\n", parser->lastType->name);
 				return;
 			}
 
@@ -548,6 +592,7 @@ void binary(Parser* parser) {
 
 			if (strcmp(value1.name, parser->lastType->name) != 0) {
 				parseError(parser, operator, "can not compare two values with different type");
+				printf("NOTE: types are: '%s' and '%s'\n", value1.name, parser->lastType->name);
 				return;
 			}
 
@@ -560,6 +605,7 @@ void binary(Parser* parser) {
 
 			if (strcmp(value1.name, parser->lastType->name) != 0) {
 				parseError(parser, operator, "can not compare two values with different type");
+				printf("NOTE: types are: '%s' and '%s'\n", value1.name, parser->lastType->name);
 				return;
 			}
 
@@ -572,6 +618,7 @@ void binary(Parser* parser) {
 
 			if (strcmp(value1.name, parser->lastType->name) != 0) {
 				parseError(parser, operator, "can not compare two values with different type");
+				printf("NOTE: types are: '%s' and '%s'\n", value1.name, parser->lastType->name);
 				return;
 			}
 
@@ -584,6 +631,7 @@ void binary(Parser* parser) {
 
 			if (strcmp(value1.name, parser->lastType->name) != 0) {
 				parseError(parser, operator, "can not compare two values with different type");
+				printf("NOTE: types are: '%s' and '%s'\n", value1.name, parser->lastType->name);
 				return;
 			}
 
@@ -596,6 +644,7 @@ void binary(Parser* parser) {
 
 			if (strcmp(value1.name, parser->lastType->name) != 0) {
 				parseError(parser, operator, "can not compare two values with different type");
+				printf("NOTE: types are: '%s' and '%s'\n", value1.name, parser->lastType->name);
 				return;
 			}
 
@@ -636,17 +685,6 @@ void unary(Parser* parser) {
 	}
 }
 
-void typeCast(Parser* parser) {
-	next(parser);
-	Type *type = consumeType(parser, "expected type name in type cast");
-	if (type == NULL) { return; }
-
-	consumeToken(parser, TOKEN_GREATER, "expected '>' after type name");
-
-	parsePrecedence(parser, PREC_PRIMARY);
-
-	setLastType(parser, type);
-}
 
 void expression(Parser* parser) {
 	if (parsePrecedence(parser, PREC_EXPR).type == TOKEN_ERROR) {
@@ -872,7 +910,7 @@ void block(Parser* parser, Function *func, VariableList *parameters) {
 	}
 
 	if (scopeCompiler->function != scopeCompiler->outer->function) {// the outermost block of the function body
-		if (strcmp(func->returnType->name, "null") != 0) {
+		if (func->returnType != findType(parser->compiler, "NULL", 4)) {
 			if (!scopeCompiler->hasReturned) {
 				parseError(parser, *parser->current, "not al code paths return a value");
 				return;
