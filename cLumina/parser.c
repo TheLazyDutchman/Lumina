@@ -123,7 +123,7 @@ typedef struct {
 	Precedence precedence;
 } ParseRule;
 
-_Static_assert(TOKEN_TYPES_NUM == 32, "Exhaustive handling of token types in parsing");
+_Static_assert(TOKEN_TYPES_NUM == 33, "Exhaustive handling of token types in parsing");
 
 ParseRule parseTable[] = {
 	[TOKEN_NUMBER] = {number, NULL, PREC_PRIMARY},
@@ -147,6 +147,7 @@ ParseRule parseTable[] = {
 	[TOKEN_SEMICOLON] = {NULL, NULL, PREC_STATEMENT},
 	[TOKEN_VAR] = {NULL, NULL, PREC_ASSIGNMENT},
 	[TOKEN_IF] = {NULL, NULL, PREC_IF_STATEMENT},
+	[TOKEN_ELSE] = {NULL, NULL, PREC_IF_STATEMENT},
 	[TOKEN_WHILE] = {NULL, NULL, PREC_WHILE_STATEMENT},
 	[TOKEN_FUNC] = {NULL, NULL, PREC_FUNC},
 	[TOKEN_TYPE] = {NULL, NULL, PREC_TYPE},

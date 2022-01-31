@@ -122,6 +122,33 @@ Token *nextToken(Lexer* lexer){
 	} else if (isalpha(*lexer->current) ||
 			*lexer->current == '_') {
 		switch (*lexer->current) {
+			case 'e':
+				advance(lexer);
+				if (*lexer->current != 'l') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 's') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 'e') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (isalnum(*lexer->current)) {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				token->type = TOKEN_ELSE;
+				break;
 			case 'f':
 				advance(lexer);
 				if (*lexer->current != 'u') {
