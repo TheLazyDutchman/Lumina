@@ -807,6 +807,31 @@ void ifStatement(Parser* parser) {
 
 	block(parser, NULL, NULL);
 
+	bool hadLastElse = false;
+
+	while (parser->current->type == TOKEN_ELSE) {
+		next(parser);
+
+		uint32_t elseId = parser->numIfs++;
+
+		writeJump(parser->compiler, "addr_if", elseId);
+
+		writeAddress(parser->compiler, "addr_if", ifId);
+
+		if (hadLastElse) { 
+			parseError(parser, *parser->current, "can not have multiple consecutive else blocks");
+			return;
+		}
+
+		ifId = elseId;
+
+		consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'else' block");
+
+		block(parser, NULL, NULL);
+
+		hadLastElse = true;
+	}
+
 	writeAddress(parser->compiler, "addr_if", ifId);
 }
 
