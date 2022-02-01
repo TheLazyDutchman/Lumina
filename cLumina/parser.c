@@ -135,10 +135,10 @@ ParseRule parseTable[] = {
 	[TOKEN_PLUS] = {NULL, binary, PREC_TERM},
 	[TOKEN_MINUS] = {unary, binary, PREC_UNARY},
 	[TOKEN_EQUAL] = {NULL, NULL, PREC_ASSIGNMENT},
-	[TOKEN_AND] = {NULL, NULL, PREC_BITWISE},
-	[TOKEN_ANDAND] = {NULL, NULL, PREC_AND},
-	[TOKEN_PIPE] = {NULL, NULL, PREC_BITWISE},
-	[TOKEN_PIPEPIPE] = {NULL, NULL, PREC_OR},
+	[TOKEN_AND] = {NULL, binary, PREC_BITWISE},
+	[TOKEN_ANDAND] = {NULL, binary, PREC_AND},
+	[TOKEN_PIPE] = {NULL, binary, PREC_BITWISE},
+	[TOKEN_PIPEPIPE] = {NULL, binary, PREC_OR},
 	[TOKEN_LESS] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_GREATER] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_LESSEQUAL] = {NULL, binary, PREC_COMPARISON},
@@ -523,6 +523,16 @@ void binary(Parser* parser) {
 		case TOKEN_MINUS:
 			precedence = PREC_TERM + 1;
 			break;
+		case TOKEN_AND:
+		case TOKEN_PIPE:
+			precedence = PREC_BITWISE + 1;
+			break;
+		case TOKEN_ANDAND:
+			precedence = PREC_AND + 1;
+			break;
+		case TOKEN_PIPEPIPE:
+			precedence = PREC_OR + 1;
+			break;
 		case TOKEN_LESS:
 		case TOKEN_GREATER:
 		case TOKEN_LESSEQUAL:
@@ -594,6 +604,30 @@ void binary(Parser* parser) {
 				setLastType(parser, findType(parser->compiler, "int", 3));
 			}
 
+			break;
+		case TOKEN_AND:
+			dumpBinary(parser, operator);
+
+			if (strcmp(value1.name, "int") != 0 || strcmp(parser->lastType->name, "int") != 0) {
+				parseError(parser, operator, "can not use bitwise and on a value that is not an integer");
+				return;
+			}
+
+			writeBitAnd(parser->compiler);
+
+			setLastType(parser, findType(parser->compiler, "int", 3));
+			break;
+		case TOKEN_PIPE:
+			dumpBinary(parser, operator);
+
+			if (strcmp(value1.name, "int") != 0 || strcmp(parser->lastType->name, "int") != 0) {
+				parseError(parser, operator, "can not use bitwise or on a value that is not an integer");
+				return;
+			}
+
+			writeBitOr(parser->compiler);
+
+			setLastType(parser, findType(parser->compiler, "int", 3));
 			break;
 		case TOKEN_LESS:
 			dumpBinary(parser, operator);

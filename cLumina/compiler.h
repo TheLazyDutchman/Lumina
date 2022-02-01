@@ -49,6 +49,9 @@ void writeReturnEmpty(Compiler* compiler, uint16_t numVars, uint16_t numParamete
 void writeReturnValue(Compiler* compiler, uint16_t numVars, uint16_t numParameters);
 void writeCompare(Compiler* compiler);
 
+void writeBitAnd(Compiler* compiler);
+void writeBitOr(Compiler* compiler);
+
 void writeLess(Compiler* compiler);
 void writeLessEqual(Compiler* compiler);
 void writeGreater(Compiler* compiler);

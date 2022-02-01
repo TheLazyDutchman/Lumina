@@ -356,6 +356,26 @@ void writeCompare(Compiler* compiler) {
 	compiler->currentStackSize -= 2;
 }
 
+void writeBitAnd(Compiler* compiler) {
+	fprintf(compiler->output, "	;; -- bit and --\n");
+	fprintf(compiler->output, "	pop rbx\n");
+	fprintf(compiler->output, "	pop rax\n");
+	fprintf(compiler->output, "	or rax, rbx\n");
+	fprintf(compiler->output, "	push rax\n");
+
+	compiler->currentStackSize--;
+}
+
+void writeBitOr(Compiler* compiler) {
+	fprintf(compiler->output, "	;; -- bit or --\n");
+	fprintf(compiler->output, "	pop rbx\n");
+	fprintf(compiler->output, "	pop rax\n");
+	fprintf(compiler->output, "	and rax, rbx\n");
+	fprintf(compiler->output, "	push rax\n");
+
+	compiler->currentStackSize--;
+}
+
 void writeLess(Compiler* compiler) {
 	fprintf(compiler->output, "	;; -- less --\n");
 	fprintf(compiler->output, "	pop rbx\n");
