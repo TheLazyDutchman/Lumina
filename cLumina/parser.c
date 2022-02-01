@@ -779,7 +779,7 @@ void whileStatement(Parser* parser) {
 	writeAddress(parser->compiler, "addr_while_end", whileId);
 }
 
-void ifStatement(Parser* parser) {
+void ifStatement(Parser* parser, uint32_t elseId) {
 	uint32_t ifId = parser->numIfs++;
 
 	if (consumeToken(parser, TOKEN_LPAREN, "expected '(' after 'if' keyword").type == TOKEN_ERROR) {
@@ -807,32 +807,25 @@ void ifStatement(Parser* parser) {
 
 	block(parser, NULL, NULL);
 
-	bool hadLastElse = false;
-
-	while (parser->current->type == TOKEN_ELSE) {
+	if (parser->current->type == TOKEN_ELSE) {
 		next(parser);
 
-		uint32_t elseId = parser->numIfs++;
-
-		writeJump(parser->compiler, "addr_if", elseId);
+		writeJump(parser->compiler, "addr_else", elseId);
 
 		writeAddress(parser->compiler, "addr_if", ifId);
 
-		if (hadLastElse) { 
-			parseError(parser, *parser->current, "can not have multiple consecutive else blocks");
+		if (parser->current->type == TOKEN_IF) {
+			next(parser);
+			ifStatement(parser, elseId);
 			return;
 		}
-
-		ifId = elseId;
 
 		consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'else' block");
 
 		block(parser, NULL, NULL);
-
-		hadLastElse = true;
 	}
 
-	writeAddress(parser->compiler, "addr_if", ifId);
+	writeAddress(parser->compiler, "addr_else", elseId);
 }
 
 void functionDefinition(Parser* parser) {
@@ -1068,7 +1061,7 @@ void statement(Parser* parser) {
 	} else if (parser->current->type == TOKEN_IF) {
 		next(parser);
 
-		ifStatement(parser);
+		ifStatement(parser, parser->numElses++);
 	} else if (parser->current->type == TOKEN_FUNC) {
 		next(parser);
 

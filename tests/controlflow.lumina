@@ -4,7 +4,11 @@ var a = 10;
 var b = 20;
 
 if (a == b) {
-	print("true");
+	print("equal");
+} else if (a < b) {
+	print("less");
+} else if (a > b) {
+	print("greater");
 } else {
-	print("false");
+	print("unreachable");
 }

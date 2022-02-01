@@ -22,6 +22,7 @@ typedef struct {
 	FILE* outputFile;
 
 	int numIfs;
+	int numElses;
 	int numWhiles;
 	int numFuncs;
 
@@ -50,7 +51,7 @@ void typeSize(Parser* parser);
 void expression(Parser* parser);
 void condition(Parser* parser);
 void whileStatement(Parser* parser);
-void ifStatement(Parser* parser);
+void ifStatement(Parser* parser, uint32_t elseId);
 void importStatement(Parser* parser);
 void variableDefinition(Parser* parser);
 void typeDefinition(Parser* parser);
