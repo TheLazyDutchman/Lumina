@@ -4,11 +4,56 @@ var a = 10;
 var b = 20;
 
 if (a == b) {
-	print("equal");
+	print("equal\n");
 } else if (a < b) {
-	print("less");
+	print("less\n");
 } else if (a > b) {
-	print("greater");
+	print("greater\n");
 } else {
-	print("unreachable");
+	print("unreachable\n");
+}
+
+if (a == a) {
+	print("identity\n");
+}
+
+if (a < b && b < b) {
+	print("should not happen\n");
+}
+
+if (b < b && a < b) {
+	print("should still not happen\n");
+}
+
+if (a < b && b > a) {
+	print("and works\n");
+}
+
+if (b < b || a < b) {
+	print("should be true\n");
+}
+
+if (a < b || b < a) {
+	print("should have jumped\n");
+}
+
+if (a > b || b > b) {
+	print("should not have worked\n");
+}
+
+while (a < b) {
+	print("am looping\n");
+
+	var i = 0;
+	while (i <= 8) {
+		print("nested loop\n");
+		i = i + 1;
+	}
+	a = a + 1;
+}
+
+if (1 < b) {
+	if (a >= a) {
+		print("nested if\n");
+	}
 }

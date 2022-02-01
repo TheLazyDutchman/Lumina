@@ -912,9 +912,11 @@ void ifStatement(Parser* parser, uint32_t elseId) {
 		consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'else' block");
 
 		block(parser, NULL, NULL);
-	}
 
-	writeAddress(parser->compiler, "addr_else", elseId);
+		writeAddress(parser->compiler, "addr_else", elseId);
+	} else {
+		writeAddress(parser->compiler, "addr_if", ifId);
+	}
 }
 
 void functionDefinition(Parser* parser) {
