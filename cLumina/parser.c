@@ -656,6 +656,8 @@ void binary(Parser* parser) {
 
 			writeNumber(parser->compiler, 0); // false
 
+			parser->compiler->currentStackSize--; // we add one of two values to the stack, not both
+
 			writeAddress(parser->compiler, "addr_end_and", andId);
 
 			setLastType(parser, findType(parser->compiler, "bool", 4));
@@ -672,6 +674,8 @@ void binary(Parser* parser) {
 			writeAddress(parser->compiler, "addr_or", orId);
 
 			writeNumber(parser->compiler, 1); // true
+
+			parser->compiler->currentStackSize--; // we add one of two values to the stack, not both
 
 			writeAddress(parser->compiler, "addr_end_or", orId);
 
