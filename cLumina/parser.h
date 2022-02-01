@@ -23,6 +23,8 @@ typedef struct {
 
 	int numIfs;
 	int numElses;
+	int numAnds;
+	int numOrs;
 	int numWhiles;
 	int numFuncs;
 

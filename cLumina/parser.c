@@ -17,6 +17,9 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 	parser->compiler = initCompiler(parser->outputFile, NULL);
 
 	parser->numIfs = 0;
+	parser->numElses = 0;
+	parser->numAnds = 0;
+	parser->numOrs = 0;
 	parser->numWhiles = 0;
 
 	// defining built-in immediates
@@ -546,6 +549,17 @@ void binary(Parser* parser) {
 
 	next(parser);
 
+	uint32_t andId, orId;
+	if (operator.type == TOKEN_ANDAND) {
+		writeCondition(parser->compiler);
+		andId = parser->numAnds++;
+		writeJumpNotEqual(parser->compiler, "addr_and", andId);
+	} else if (operator.type == TOKEN_PIPEPIPE) {
+		writeCondition(parser->compiler);
+		orId = parser->numOrs++;
+		writeJumpEqual(parser->compiler, "addr_or", orId);
+	}
+
 	parsePrecedence(parser, precedence);
 
 	switch (operator.type) {
@@ -628,6 +642,40 @@ void binary(Parser* parser) {
 			writeBitOr(parser->compiler);
 
 			setLastType(parser, findType(parser->compiler, "int", 3));
+			break;
+		case TOKEN_ANDAND:
+			dumpBinary(parser, operator);
+
+			if (strcmp(value1.name, "bool") != 0 || strcmp(parser->lastType->name, "bool") != 0) {
+				parseError(parser, operator, "can not use logical and on a value that is not boolean");
+				return;
+			}
+
+			writeJump(parser->compiler, "addr_end_and", andId);
+			writeAddress(parser->compiler, "addr_and", andId);
+
+			writeNumber(parser->compiler, 0); // false
+
+			writeAddress(parser->compiler, "addr_end_and", andId);
+
+			setLastType(parser, findType(parser->compiler, "bool", 4));
+			break;
+		case TOKEN_PIPEPIPE:
+			dumpBinary(parser, operator);
+
+			if (strcmp(value1.name, "bool") != 0 || strcmp(parser->lastType->name, "bool") != 0) {
+				parseError(parser, operator, "can not use logical or on a value that is not boolean");
+				return;
+			}
+
+			writeJump(parser->compiler, "addr_end_or", orId);
+			writeAddress(parser->compiler, "addr_or", orId);
+
+			writeNumber(parser->compiler, 1); // true
+
+			writeAddress(parser->compiler, "addr_end_or", orId);
+
+			setLastType(parser, findType(parser->compiler, "bool", 4));
 			break;
 		case TOKEN_LESS:
 			dumpBinary(parser, operator);

@@ -60,6 +60,7 @@ void writeEqual(Compiler* compiler);
 void writeCondition(Compiler* compiler);
 
 void writeJump(Compiler* compiler, char* address, uint32_t id);
+void writeJumpEqual(Compiler* compiler, char* address, uint32_t id);
 void writeJumpNotEqual(Compiler* compiler, char* address, uint32_t id);
 
 void writeNumber(Compiler* compiler, int value);
