@@ -472,6 +472,28 @@ Token *nextToken(Lexer* lexer){
 				token->type = TOKEN_RBRACE;
 				advance(lexer);
 				break;
+			case '&':
+				advance(lexer);
+
+				if (*lexer->current == '&') {
+					advance(lexer);
+					token->type = TOKEN_ANDAND;
+					break;
+				}
+
+				token->type = TOKEN_AND;
+				break;
+			case '|':
+				advance(lexer);
+
+				if (*lexer->current == '|') {
+					advance(lexer);
+					token->type = TOKEN_PIPEPIPE;
+					break;
+				}
+
+				token->type = TOKEN_PIPE;
+				break;
 			case '<':
 				advance(lexer);
 

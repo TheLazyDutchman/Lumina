@@ -110,8 +110,11 @@ typedef enum {
 	PREC_ASSIGNMENT,
 	PREC_ARG,
 	PREC_EXPR,
+	PREC_AND,
+	PREC_OR,
 	PREC_COMPARISON,
 	PREC_TERM,
+	PREC_BITWISE,
 	PREC_READ,
 	PREC_UNARY,
 	PREC_PRIMARY
@@ -123,7 +126,7 @@ typedef struct {
 	Precedence precedence;
 } ParseRule;
 
-_Static_assert(TOKEN_TYPES_NUM == 33, "Exhaustive handling of token types in parsing");
+_Static_assert(TOKEN_TYPES_NUM == 37, "Exhaustive handling of token types in parsing");
 
 ParseRule parseTable[] = {
 	[TOKEN_NUMBER] = {number, NULL, PREC_PRIMARY},
@@ -132,6 +135,10 @@ ParseRule parseTable[] = {
 	[TOKEN_PLUS] = {NULL, binary, PREC_TERM},
 	[TOKEN_MINUS] = {unary, binary, PREC_UNARY},
 	[TOKEN_EQUAL] = {NULL, NULL, PREC_ASSIGNMENT},
+	[TOKEN_AND] = {NULL, NULL, PREC_BITWISE},
+	[TOKEN_ANDAND] = {NULL, NULL, PREC_AND},
+	[TOKEN_PIPE] = {NULL, NULL, PREC_BITWISE},
+	[TOKEN_PIPEPIPE] = {NULL, NULL, PREC_OR},
 	[TOKEN_LESS] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_GREATER] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_LESSEQUAL] = {NULL, binary, PREC_COMPARISON},
