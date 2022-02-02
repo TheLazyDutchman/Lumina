@@ -37,7 +37,7 @@ if (a < b || b < a) {
 	print("should have jumped\n");
 }
 
-if (a > b || b > b) {
+if (a > b || b != b) {
 	print("should not have worked\n");
 }
 
