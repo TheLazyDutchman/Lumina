@@ -3,7 +3,7 @@ import "string.lumina"
 func fprint(int fd, str string) -> int {
 	var SYSWRITE = 1;
 	var length = strlen(string);
-	return <int>syscall(<any>SYSWRITE, <any>fd, <any>string, <any>length, <any>0, <any>0, <any>0);
+	return (int)syscall(SYSWRITE, fd, string, length, 0, 0, 0);
 }
 
 func print(str string) -> int {

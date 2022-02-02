@@ -17,6 +17,9 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 	parser->compiler = initCompiler(parser->outputFile, NULL);
 
 	parser->numIfs = 0;
+	parser->numElses = 0;
+	parser->numAnds = 0;
+	parser->numOrs = 0;
 	parser->numWhiles = 0;
 
 	// defining built-in immediates
@@ -110,8 +113,11 @@ typedef enum {
 	PREC_ASSIGNMENT,
 	PREC_ARG,
 	PREC_EXPR,
+	PREC_AND,
+	PREC_OR,
 	PREC_COMPARISON,
 	PREC_TERM,
+	PREC_BITWISE,
 	PREC_READ,
 	PREC_UNARY,
 	PREC_PRIMARY
@@ -123,7 +129,7 @@ typedef struct {
 	Precedence precedence;
 } ParseRule;
 
-_Static_assert(TOKEN_TYPES_NUM == 32, "Exhaustive handling of token types in parsing");
+_Static_assert(TOKEN_TYPES_NUM == 39, "Exhaustive handling of token types in parsing");
 
 ParseRule parseTable[] = {
 	[TOKEN_NUMBER] = {number, NULL, PREC_PRIMARY},
@@ -132,11 +138,17 @@ ParseRule parseTable[] = {
 	[TOKEN_PLUS] = {NULL, binary, PREC_TERM},
 	[TOKEN_MINUS] = {unary, binary, PREC_UNARY},
 	[TOKEN_EQUAL] = {NULL, NULL, PREC_ASSIGNMENT},
+	[TOKEN_AND] = {NULL, binary, PREC_BITWISE},
+	[TOKEN_ANDAND] = {NULL, binary, PREC_AND},
+	[TOKEN_PIPE] = {NULL, binary, PREC_BITWISE},
+	[TOKEN_PIPEPIPE] = {NULL, binary, PREC_OR},
 	[TOKEN_LESS] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_GREATER] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_LESSEQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_GREATEREQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_EQUALEQUAL] = {NULL, binary, PREC_COMPARISON},
+	[TOKEN_BANG] = {NULL, NULL, PREC_OR},
+	[TOKEN_BANGEQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_RARROW] = {NULL, NULL, PREC_NONE},
 	[TOKEN_LPAREN] = {group, NULL, PREC_PRIMARY},
 	[TOKEN_RPAREN] = {NULL, NULL, PREC_BLOCK},
@@ -147,6 +159,7 @@ ParseRule parseTable[] = {
 	[TOKEN_SEMICOLON] = {NULL, NULL, PREC_STATEMENT},
 	[TOKEN_VAR] = {NULL, NULL, PREC_ASSIGNMENT},
 	[TOKEN_IF] = {NULL, NULL, PREC_IF_STATEMENT},
+	[TOKEN_ELSE] = {NULL, NULL, PREC_IF_STATEMENT},
 	[TOKEN_WHILE] = {NULL, NULL, PREC_WHILE_STATEMENT},
 	[TOKEN_FUNC] = {NULL, NULL, PREC_FUNC},
 	[TOKEN_TYPE] = {NULL, NULL, PREC_TYPE},
@@ -515,11 +528,22 @@ void binary(Parser* parser) {
 		case TOKEN_MINUS:
 			precedence = PREC_TERM + 1;
 			break;
+		case TOKEN_AND:
+		case TOKEN_PIPE:
+			precedence = PREC_BITWISE + 1;
+			break;
+		case TOKEN_ANDAND:
+			precedence = PREC_AND + 1;
+			break;
+		case TOKEN_PIPEPIPE:
+			precedence = PREC_OR + 1;
+			break;
 		case TOKEN_LESS:
 		case TOKEN_GREATER:
 		case TOKEN_LESSEQUAL:
 		case TOKEN_GREATEREQUAL:
 		case TOKEN_EQUALEQUAL:
+		case TOKEN_BANGEQUAL:
 			precedence = PREC_COMPARISON + 1;
 			break;
 		default:
@@ -527,6 +551,17 @@ void binary(Parser* parser) {
 	}
 
 	next(parser);
+
+	uint32_t andId, orId;
+	if (operator.type == TOKEN_ANDAND) {
+		writeCondition(parser->compiler);
+		andId = parser->numAnds++;
+		writeJumpNotEqual(parser->compiler, "addr_and", andId);
+	} else if (operator.type == TOKEN_PIPEPIPE) {
+		writeCondition(parser->compiler);
+		orId = parser->numOrs++;
+		writeJumpEqual(parser->compiler, "addr_or", orId);
+	}
 
 	parsePrecedence(parser, precedence);
 
@@ -586,6 +621,68 @@ void binary(Parser* parser) {
 				setLastType(parser, findType(parser->compiler, "int", 3));
 			}
 
+			break;
+		case TOKEN_AND:
+			dumpBinary(parser, operator);
+
+			if (strcmp(value1.name, "int") != 0 || strcmp(parser->lastType->name, "int") != 0) {
+				parseError(parser, operator, "can not use bitwise and on a value that is not an integer");
+				return;
+			}
+
+			writeBitAnd(parser->compiler);
+
+			setLastType(parser, findType(parser->compiler, "int", 3));
+			break;
+		case TOKEN_PIPE:
+			dumpBinary(parser, operator);
+
+			if (strcmp(value1.name, "int") != 0 || strcmp(parser->lastType->name, "int") != 0) {
+				parseError(parser, operator, "can not use bitwise or on a value that is not an integer");
+				return;
+			}
+
+			writeBitOr(parser->compiler);
+
+			setLastType(parser, findType(parser->compiler, "int", 3));
+			break;
+		case TOKEN_ANDAND:
+			dumpBinary(parser, operator);
+
+			if (strcmp(value1.name, "bool") != 0 || strcmp(parser->lastType->name, "bool") != 0) {
+				parseError(parser, operator, "can not use logical and on a value that is not boolean");
+				return;
+			}
+
+			writeJump(parser->compiler, "addr_end_and", andId);
+			writeAddress(parser->compiler, "addr_and", andId);
+
+			writeNumber(parser->compiler, 0); // false
+
+			parser->compiler->currentStackSize--; // we add one of two values to the stack, not both
+
+			writeAddress(parser->compiler, "addr_end_and", andId);
+
+			setLastType(parser, findType(parser->compiler, "bool", 4));
+			break;
+		case TOKEN_PIPEPIPE:
+			dumpBinary(parser, operator);
+
+			if (strcmp(value1.name, "bool") != 0 || strcmp(parser->lastType->name, "bool") != 0) {
+				parseError(parser, operator, "can not use logical or on a value that is not boolean");
+				return;
+			}
+
+			writeJump(parser->compiler, "addr_end_or", orId);
+			writeAddress(parser->compiler, "addr_or", orId);
+
+			writeNumber(parser->compiler, 1); // true
+
+			parser->compiler->currentStackSize--; // we add one of two values to the stack, not both
+
+			writeAddress(parser->compiler, "addr_end_or", orId);
+
+			setLastType(parser, findType(parser->compiler, "bool", 4));
 			break;
 		case TOKEN_LESS:
 			dumpBinary(parser, operator);
@@ -649,6 +746,19 @@ void binary(Parser* parser) {
 			}
 
 			writeEqual(parser->compiler);
+
+			setLastType(parser, findType(parser->compiler, "bool", 4));
+			break;
+		case TOKEN_BANGEQUAL:
+			dumpBinary(parser, operator);
+
+			if (strcmp(value1.name, parser->lastType->name) != 0) {
+				parseError(parser, operator, "can not compare two values with different type");
+				printf("NOTE: types are: '%s' and '%s'\n", value1.name, parser->lastType->name);
+				return;
+			}
+
+			writeNotEqual(parser->compiler);
 
 			setLastType(parser, findType(parser->compiler, "bool", 4));
 			break;
@@ -778,7 +888,7 @@ void whileStatement(Parser* parser) {
 	writeAddress(parser->compiler, "addr_while_end", whileId);
 }
 
-void ifStatement(Parser* parser) {
+void ifStatement(Parser* parser, uint32_t elseId) {
 	uint32_t ifId = parser->numIfs++;
 
 	if (consumeToken(parser, TOKEN_LPAREN, "expected '(' after 'if' keyword").type == TOKEN_ERROR) {
@@ -806,7 +916,27 @@ void ifStatement(Parser* parser) {
 
 	block(parser, NULL, NULL);
 
-	writeAddress(parser->compiler, "addr_if", ifId);
+	if (parser->current->type == TOKEN_ELSE) {
+		next(parser);
+
+		writeJump(parser->compiler, "addr_else", elseId);
+
+		writeAddress(parser->compiler, "addr_if", ifId);
+
+		if (parser->current->type == TOKEN_IF) {
+			next(parser);
+			ifStatement(parser, elseId);
+			return;
+		}
+
+		consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'else' block");
+
+		block(parser, NULL, NULL);
+
+		writeAddress(parser->compiler, "addr_else", elseId);
+	} else {
+		writeAddress(parser->compiler, "addr_if", ifId);
+	}
 }
 
 void functionDefinition(Parser* parser) {
@@ -1042,7 +1172,7 @@ void statement(Parser* parser) {
 	} else if (parser->current->type == TOKEN_IF) {
 		next(parser);
 
-		ifStatement(parser);
+		ifStatement(parser, parser->numElses++);
 	} else if (parser->current->type == TOKEN_FUNC) {
 		next(parser);
 

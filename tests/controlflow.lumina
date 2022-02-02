@@ -1,34 +1,59 @@
+import "../std/io.lumina"
+
 var a = 10;
 var b = 20;
 
 if (a == b) {
-	print('a');
+	print("equal\n");
+} else if (a < b) {
+	print("less\n");
+} else if (a > b) {
+	print("greater\n");
+} else {
+	print("unreachable\n");
 }
-print('b');
-print('
-');
 
-if (a == 10) {
-	var c = 'a';
-	while (b == 20) {
-		print(c);
-		c = c + 1;
-		if (c == 'z') {
-			b = 0;
-		}
+if (a == a) {
+	print("identity\n");
+}
+
+if (a < b && b < b) {
+	print("should not happen\n");
+}
+
+if (b < b && a < b) {
+	print("should still not happen\n");
+}
+
+if (a < b && b > a) {
+	print("and works\n");
+}
+
+if (b < b || a < b) {
+	print("should be true\n");
+}
+
+if (a < b || b < a) {
+	print("should have jumped\n");
+}
+
+if (a > b || b != b) {
+	print("should not have worked\n");
+}
+
+while (a < b) {
+	print("am looping\n");
+
+	var i = 0;
+	while (i < 3) {
+		print("nested loop\n");
+		i = i + 1;
+	}
+	a = a + 1;
+}
+
+if (1 < b) {
+	if (a >= a) {
+		print("nested if\n");
 	}
 }
-
-print(10);
-print('d');
-
-print(10);
-
-var character = 'a';
-
-while (character < 'd') {
-	print(character);
-	character = character + 1;
-}
-
-print(10);

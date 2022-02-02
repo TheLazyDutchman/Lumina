@@ -19,11 +19,17 @@ typedef enum Tokentype {
 	TOKEN_PLUS,
 	TOKEN_MINUS,
 	TOKEN_EQUAL,
+	TOKEN_AND,
+	TOKEN_ANDAND,
+	TOKEN_PIPE,
+	TOKEN_PIPEPIPE,
 	TOKEN_LESS,
 	TOKEN_GREATER,
 	TOKEN_LESSEQUAL,
 	TOKEN_GREATEREQUAL,
 	TOKEN_EQUALEQUAL,
+	TOKEN_BANG,
+	TOKEN_BANGEQUAL,
 	TOKEN_RARROW,
 	TOKEN_LPAREN,
 	TOKEN_RPAREN,
@@ -36,6 +42,7 @@ typedef enum Tokentype {
 	TOKEN_SEMICOLON,
 	TOKEN_VAR,
 	TOKEN_IF,
+	TOKEN_ELSE,
 	TOKEN_WHILE,
 	TOKEN_FUNC,
 	TOKEN_TYPE,
@@ -55,11 +62,17 @@ static const char* const tokenTypes[] = {
 	[TOKEN_PLUS] = "PLUS",
 	[TOKEN_MINUS] = "MINUS",
 	[TOKEN_EQUAL] = "EQUAL",
+	[TOKEN_AND] = "AND",
+	[TOKEN_ANDAND] = "ANDAND",
+	[TOKEN_PIPE] = "PIPE",
+	[TOKEN_PIPEPIPE] = "PIPEPIPE",
 	[TOKEN_LESS] = "LESS",
 	[TOKEN_GREATER] = "GREATER",
 	[TOKEN_LESSEQUAL] = "LESSEQUAL",
 	[TOKEN_GREATER] = "GREATEREQUAL",
 	[TOKEN_EQUALEQUAL] = "EQUALEQUAL",
+	[TOKEN_BANG] = "BANG",
+	[TOKEN_BANGEQUAL] = "BANGEQUAL",
 	[TOKEN_RARROW] = "RARROW",
 	[TOKEN_LPAREN] = "LPAREN",
 	[TOKEN_RPAREN] = "RPAREN",
@@ -72,6 +85,7 @@ static const char* const tokenTypes[] = {
 	[TOKEN_SEMICOLON] = "SEMICOLON",
 	[TOKEN_VAR] = "VAR",
 	[TOKEN_IF] = "IF",
+	[TOKEN_ELSE] = "ELSE",
 	[TOKEN_WHILE] = "WHILE",
 	[TOKEN_FUNC] = "FUNC",
 	[TOKEN_TYPE] = "TYPE",
@@ -85,7 +99,7 @@ static const char* const tokenTypes[] = {
 	[TOKEN_ERROR] = "ERROR",
 };
 
-_Static_assert(TOKEN_TYPES_NUM == 32, "Exhaustive handling of tokenTypes in string conversion\n");
+_Static_assert(TOKEN_TYPES_NUM == 39, "Exhaustive handling of tokenTypes in string conversion\n");
 
 typedef struct Token {
 	char *fileName;

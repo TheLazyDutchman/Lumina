@@ -49,14 +49,19 @@ void writeReturnEmpty(Compiler* compiler, uint16_t numVars, uint16_t numParamete
 void writeReturnValue(Compiler* compiler, uint16_t numVars, uint16_t numParameters);
 void writeCompare(Compiler* compiler);
 
+void writeBitAnd(Compiler* compiler);
+void writeBitOr(Compiler* compiler);
+
 void writeLess(Compiler* compiler);
 void writeLessEqual(Compiler* compiler);
 void writeGreater(Compiler* compiler);
 void writeGreaterEqual(Compiler* compiler);
 void writeEqual(Compiler* compiler);
+void writeNotEqual(Compiler* compiler);
 void writeCondition(Compiler* compiler);
 
 void writeJump(Compiler* compiler, char* address, uint32_t id);
+void writeJumpEqual(Compiler* compiler, char* address, uint32_t id);
 void writeJumpNotEqual(Compiler* compiler, char* address, uint32_t id);
 
 void writeNumber(Compiler* compiler, int value);

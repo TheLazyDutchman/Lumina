@@ -122,6 +122,33 @@ Token *nextToken(Lexer* lexer){
 	} else if (isalpha(*lexer->current) ||
 			*lexer->current == '_') {
 		switch (*lexer->current) {
+			case 'e':
+				advance(lexer);
+				if (*lexer->current != 'l') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 's') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (*lexer->current != 'e') {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				advance(lexer);
+				if (isalnum(*lexer->current)) {
+					lexIdentifier(lexer, token);
+					break;
+				}
+
+				token->type = TOKEN_ELSE;
+				break;
 			case 'f':
 				advance(lexer);
 				if (*lexer->current != 'u') {
@@ -444,6 +471,39 @@ Token *nextToken(Lexer* lexer){
 			case '}':
 				token->type = TOKEN_RBRACE;
 				advance(lexer);
+				break;
+			case '&':
+				advance(lexer);
+
+				if (*lexer->current == '&') {
+					advance(lexer);
+					token->type = TOKEN_ANDAND;
+					break;
+				}
+
+				token->type = TOKEN_AND;
+				break;
+			case '|':
+				advance(lexer);
+
+				if (*lexer->current == '|') {
+					advance(lexer);
+					token->type = TOKEN_PIPEPIPE;
+					break;
+				}
+
+				token->type = TOKEN_PIPE;
+				break;
+			case '!':
+				advance(lexer);
+
+				if (*lexer->current == '=') {
+					advance(lexer);
+					token->type = TOKEN_BANGEQUAL;
+					break;
+				}
+
+				token->type = TOKEN_BANG;
 				break;
 			case '<':
 				advance(lexer);
