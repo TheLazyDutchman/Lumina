@@ -494,6 +494,17 @@ Token *nextToken(Lexer* lexer){
 
 				token->type = TOKEN_PIPE;
 				break;
+			case '!':
+				advance(lexer);
+
+				if (*lexer->current == '=') {
+					advance(lexer);
+					token->type = TOKEN_BANGEQUAL;
+					break;
+				}
+
+				token->type = TOKEN_BANG;
+				break;
 			case '<':
 				advance(lexer);
 
