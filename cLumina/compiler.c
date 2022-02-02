@@ -518,6 +518,26 @@ void writeEqual(Compiler* compiler) {
 	compiler->currentStackSize--;
 }
 
+void writeNotEqual(Compiler* compiler) {
+	fprintf(compiler->output, "	;; -- not equal --\n");
+	fprintf(compiler->output, "	pop rbx\n");
+	fprintf(compiler->output, "	pop rax\n");
+	fprintf(compiler->output, "	cmp rax, rbx\n");
+
+	//select zero flag
+	fprintf(compiler->output, "	pushf\n");
+	fprintf(compiler->output, "	pop rax\n");
+	fprintf(compiler->output, "	shr rax, 6\n");
+	fprintf(compiler->output, "	and rax, 1\n");
+
+	fprintf(compiler->output, "	mov rbx, 1\n");
+	fprintf(compiler->output, "	sub rbx, rax\n");
+
+	fprintf(compiler->output, "	push rbx\n\n");
+
+	compiler->currentStackSize--;
+}
+
 void writeCondition(Compiler* compiler) {
 	fprintf(compiler->output, "	;; -- condition --\n");
 	fprintf(compiler->output, "	pop rax\n");

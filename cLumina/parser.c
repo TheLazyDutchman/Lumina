@@ -148,7 +148,7 @@ ParseRule parseTable[] = {
 	[TOKEN_GREATEREQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_EQUALEQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_BANG] = {NULL, NULL, PREC_OR},
-	[TOKEN_BANGEQUAL] = {NULL, NULL, PREC_COMPARISON},
+	[TOKEN_BANGEQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_RARROW] = {NULL, NULL, PREC_NONE},
 	[TOKEN_LPAREN] = {group, NULL, PREC_PRIMARY},
 	[TOKEN_RPAREN] = {NULL, NULL, PREC_BLOCK},
@@ -543,6 +543,7 @@ void binary(Parser* parser) {
 		case TOKEN_LESSEQUAL:
 		case TOKEN_GREATEREQUAL:
 		case TOKEN_EQUALEQUAL:
+		case TOKEN_BANGEQUAL:
 			precedence = PREC_COMPARISON + 1;
 			break;
 		default:
@@ -745,6 +746,19 @@ void binary(Parser* parser) {
 			}
 
 			writeEqual(parser->compiler);
+
+			setLastType(parser, findType(parser->compiler, "bool", 4));
+			break;
+		case TOKEN_BANGEQUAL:
+			dumpBinary(parser, operator);
+
+			if (strcmp(value1.name, parser->lastType->name) != 0) {
+				parseError(parser, operator, "can not compare two values with different type");
+				printf("NOTE: types are: '%s' and '%s'\n", value1.name, parser->lastType->name);
+				return;
+			}
+
+			writeNotEqual(parser->compiler);
 
 			setLastType(parser, findType(parser->compiler, "bool", 4));
 			break;
