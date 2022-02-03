@@ -152,7 +152,7 @@ ParseRule parseTable[] = {
 	[TOKEN_RARROW] = {NULL, NULL, PREC_NONE},
 	[TOKEN_LPAREN] = {group, NULL, PREC_PRIMARY},
 	[TOKEN_RPAREN] = {NULL, NULL, PREC_BLOCK},
-	[TOKEN_LBRACKET] = {NULL, readIndex, PREC_READ},
+	[TOKEN_LBRACKET] = {NULL, indexArray, PREC_READ},
 	[TOKEN_RBRACKET] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_LBRACE] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_RBRACE] = {NULL, NULL, PREC_BLOCK},
@@ -364,16 +364,33 @@ void string(Parser* parser) {
 	next(parser);
 }
 
-void readIndex(Parser* parser) {
+void indexArray(Parser* parser) {
 	next(parser);
 
-	if (strcmp(parser->lastType->name, "str") != 0) { parseError(parser, parser->lastType->token, "we do not support array indexing for anything other than strings yet"); }
+	Type *type = parser->lastType;
+
+	if (!type->isArray) {
+		parseError(parser, *parser->current, "cannot index from a type that is not an array");
+		return;
+	}
+
+	Type *arrayType = type->arrayType;
+
+	if (arrayType == NULL) {
+		printf("array type is null");
+		return;
+	}
 
 	expression(parser);
 
-	writeReadIndex(parser->compiler);
+	if (strcmp(parser->lastType->name, "int") != 0) {
+		parseError(parser, *parser->current, "expected index to be of type int");
+		return;
+	}
 
-	setLastType(parser, findType(parser->compiler, "char", 4));
+	writeReadIndex(parser->compiler, arrayType->size);
+
+	setLastType(parser, arrayType);
 
 	consumeToken(parser, TOKEN_RBRACKET, "expected ']' after index");
 }

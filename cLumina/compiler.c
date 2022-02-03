@@ -587,13 +587,22 @@ void writeString(Compiler* compiler, int id) {
 	compiler->currentStackSize++;
 }
 
-void writeReadIndex(Compiler* compiler) {
+void writeReadIndex(Compiler* compiler, int size) {
 	fprintf(compiler->output, "	;; -- read at index -- \n");
 	fprintf(compiler->output, "	pop rax ;; index\n");
+	fprintf(compiler->output, "	mul rax, %d\n", size / 4);
 	fprintf(compiler->output, "	pop rbx ;; pointer\n");
 	fprintf(compiler->output, "	add rbx, rax\n");
 	fprintf(compiler->output, "	mov rbx, [rbx]\n");
-	fprintf(compiler->output, "	and rbx, 255 ;; select the lowest character\n");
+	fprintf(compiler->output, "	;; create bit mask\n");
+	if (size < 8) {
+		fprintf(compiler->output, "	mov rcx, 1\n");
+		fprintf(compiler->output, "	shl rcx, %d ;; size\n", 8 * size);
+	} else {
+		fprintf(compiler->output, "	mov rcx, 0\n");
+	}
+	fprintf(compiler->output, "	sub rcx, 1\n");
+	fprintf(compiler->output, "	and rbx, rcx\n");
 	fprintf(compiler->output, "	push rbx\n\n");
 
 	compiler->currentStackSize--;
