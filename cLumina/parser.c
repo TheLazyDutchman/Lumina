@@ -265,9 +265,9 @@ Type *consumeType(Parser* parser, char* message) {
 		parseError(parser, token, message);
 	}
 
-	while (parser->current->type == TOKEN_LPAREN) {
+	while (parser->current->type == TOKEN_LBRACKET) {
 		next(parser);
-		consumeToken(parser, TOKEN_RPAREN, "expected array definition to end with ']'");
+		consumeToken(parser, TOKEN_RBRACKET, "expected array definition to end with ']'");
 
 		type = initType(strdup(""), token, 8, NULL, NULL, true, type);
 	}

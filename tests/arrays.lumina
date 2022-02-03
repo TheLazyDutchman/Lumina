@@ -1,0 +1,8 @@
+type Vec {
+	int x;
+	int y;
+}
+
+type VecArray {
+	Vec[] values;
+}
