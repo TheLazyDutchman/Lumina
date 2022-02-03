@@ -281,7 +281,8 @@ void group(Parser* parser) {
 	if (parser->current->type == TOKEN_IDENTIFIER) {
 		Type *type = findType(parser->compiler, parser->current->word, parser->current->wordLen);
 		if (type != NULL) { // type cast
-			next(parser);
+			type = consumeType(parser, "expected type in typecast"); // this also checks for arrays
+
 			consumeToken(parser, TOKEN_RPAREN, "expected closing parenthesis");
 
 			parsePrecedence(parser, PREC_PRIMARY); 
