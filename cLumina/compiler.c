@@ -608,6 +608,32 @@ void writeReadIndex(Compiler* compiler, int size) {
 	compiler->currentStackSize--;
 }
 
+void writeWriteIndex(Compiler* compiler, int size) {
+	fprintf(compiler->output, "	;; -- write at index -- \n");
+	fprintf(compiler->output, "	pop rcx ;; value\n");
+	fprintf(compiler->output, "	pop rax ;; index\n");
+	fprintf(compiler->output, "	mul rax, %d\n", size / 4);
+	fprintf(compiler->output, "	pop rbx ;; pointer\n");
+	fprintf(compiler->output, "	add rbx, rax\n");
+	fprintf(compiler->output, "	mov r8, [rbx]\n");
+	fprintf(compiler->output, "	;; create bit mask\n");
+	if (size < 8) {
+		fprintf(compiler->output, "	mov r9, 1\n");
+		fprintf(compiler->output, "	shl r9, %d ;; size\n", 8 * size);
+	} else {
+		fprintf(compiler->output, "	mov r9, 0\n");
+	}
+	fprintf(compiler->output, "	sub r9, 1\n");
+	fprintf(compiler->output, "	and rcx, r9\n");
+	fprintf(compiler->output, "	not r9\n");
+	fprintf(compiler->output, "	and r8, r9\n");
+	fprintf(compiler->output, "	add r8, rcx\n");
+	fprintf(compiler->output, "	mov [rbx], r8\n");
+	fprintf(compiler->output, "	push rcx\n\n");
+
+	compiler->currentStackSize -= 2;
+}
+
 void writeReadProperty(Compiler* compiler, int offset, int size) {
 	fprintf(compiler->output, "	;; -- read property -- \n");
 	fprintf(compiler->output, "	pop rax ;; pointer\n");
