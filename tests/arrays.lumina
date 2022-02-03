@@ -1,3 +1,5 @@
+import "../std/memory.lumina"
+
 type Vec {
 	int x;
 	int y;
@@ -6,3 +8,10 @@ type Vec {
 type VecArray {
 	Vec[] values;
 }
+
+var array = (VecArray)malloc(sizeof(VecArray));
+array.values = (Vec[])malloc(64);
+
+array.values[0] = (Vec)malloc(sizeof(Vec));
+
+array.values[0].x = 10;

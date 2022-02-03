@@ -388,11 +388,24 @@ void indexArray(Parser* parser) {
 		return;
 	}
 
-	writeReadIndex(parser->compiler, arrayType->size);
+	consumeToken(parser, TOKEN_RBRACKET, "expected ']' after index");
+
+	if (parser->current->type == TOKEN_EQUAL) {
+		next(parser);
+
+		expression(parser);
+
+		if (strcmp(parser->lastType->name, arrayType->name) != 0) {
+			parseError(parser, *parser->current, "wrong type of value to assign to this array");
+			return;
+		}
+
+		writeWriteIndex(parser->compiler, arrayType->size);
+	} else {
+		writeReadIndex(parser->compiler, arrayType->size);
+	}
 
 	setLastType(parser, arrayType);
-
-	consumeToken(parser, TOKEN_RBRACKET, "expected ']' after index");
 }
 
 void property(Parser* parser) {
