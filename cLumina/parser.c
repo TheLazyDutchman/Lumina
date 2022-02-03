@@ -24,13 +24,13 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 
 	// defining built-in immediates
 	//strdup is used here because these predefined string literals are freed later, because there will be allocated strings in the same place later
-	defineType(parser->compiler, strdup("any"), 3, 8, *parser->current, NULL, NULL); 
-	defineType(parser->compiler, strdup("int"), 3, 8, *parser->current, NULL, NULL);
-	defineType(parser->compiler, strdup("str"), 3, 8, *parser->current, NULL, NULL);
-	defineType(parser->compiler, strdup("ptr"), 3, 8, *parser->current, NULL, NULL);
-	defineType(parser->compiler, strdup("char"), 4, 4, *parser->current, NULL, NULL);
-	defineType(parser->compiler, strdup("bool"), 4, 4, *parser->current, NULL, NULL);
-	defineType(parser->compiler, strdup("NULL"), 4, 8, *parser->current, NULL, NULL);
+	defineType(parser->compiler, strdup("any"), 3, 8, *parser->current, NULL, NULL, false, NULL); 
+	defineType(parser->compiler, strdup("int"), 3, 8, *parser->current, NULL, NULL, false, NULL);
+	defineType(parser->compiler, strdup("str"), 3, 8, *parser->current, NULL, NULL, false, NULL);
+	defineType(parser->compiler, strdup("ptr"), 3, 8, *parser->current, NULL, NULL, false, NULL);
+	defineType(parser->compiler, strdup("char"), 4, 4, *parser->current, NULL, NULL, false, NULL);
+	defineType(parser->compiler, strdup("bool"), 4, 4, *parser->current, NULL, NULL, false, NULL);
+	defineType(parser->compiler, strdup("NULL"), 4, 8, *parser->current, NULL, NULL, false, NULL);
 	
 	// defining sycall built-in
 	char *name = strdup("syscall");
@@ -263,6 +263,13 @@ Type *consumeType(Parser* parser, char* message) {
 
 	if (type == NULL) {
 		parseError(parser, token, message);
+	}
+
+	while (parser->current->type == TOKEN_LPAREN) {
+		next(parser);
+		consumeToken(parser, TOKEN_RPAREN, "expected array definition to end with ']'");
+
+		type = initType(strdup(""), token, 8, NULL, NULL, true, type);
 	}
 
 	return type;
@@ -1132,7 +1139,7 @@ void typeDefinition(Parser* parser) {
 		return;
 	}
 
-	Type *type = defineType(parser->compiler, name.word, name.wordLen, 8, name, NULL, NULL);
+	Type *type = defineType(parser->compiler, name.word, name.wordLen, 8, name, NULL, NULL, false, NULL);
 
 	if (consumeToken(parser, TOKEN_LBRACE, "expected '{' after type name").type == TOKEN_ERROR) { return; }
 
