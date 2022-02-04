@@ -26,9 +26,9 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 	//strdup is used here because these predefined string literals are freed later, because there will be allocated strings in the same place later
 	defineType(parser->compiler, strdup("any"), 3, 8, *parser->current, NULL, NULL, false, NULL); 
 	defineType(parser->compiler, strdup("int"), 3, 8, *parser->current, NULL, NULL, false, NULL);
-	defineType(parser->compiler, strdup("str"), 3, 8, *parser->current, NULL, NULL, false, NULL);
 	defineType(parser->compiler, strdup("ptr"), 3, 8, *parser->current, NULL, NULL, false, NULL);
-	defineType(parser->compiler, strdup("char"), 4, 4, *parser->current, NULL, NULL, false, NULL);
+	Type *charType = defineType(parser->compiler, strdup("char"), 4, 4, *parser->current, NULL, NULL, false, NULL);
+	defineType(parser->compiler, strdup("str"), 3, 8, *parser->current, NULL, NULL, true, charType);
 	defineType(parser->compiler, strdup("bool"), 4, 4, *parser->current, NULL, NULL, false, NULL);
 	defineType(parser->compiler, strdup("NULL"), 4, 8, *parser->current, NULL, NULL, false, NULL);
 	
