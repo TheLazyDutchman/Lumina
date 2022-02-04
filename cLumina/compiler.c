@@ -590,7 +590,7 @@ void writeString(Compiler* compiler, int id) {
 void writeReadIndex(Compiler* compiler, int size) {
 	fprintf(compiler->output, "	;; -- read at index -- \n");
 	fprintf(compiler->output, "	pop rax ;; index\n");
-	fprintf(compiler->output, "	mov rbx, %d\n", size / 4);
+	fprintf(compiler->output, "	mov rbx, %d\n", size);
 	fprintf(compiler->output, "	mul rbx\n");
 	fprintf(compiler->output, "	pop rbx ;; pointer\n");
 	fprintf(compiler->output, "	add rbx, rax\n");
@@ -613,7 +613,7 @@ void writeWriteIndex(Compiler* compiler, int size) {
 	fprintf(compiler->output, "	;; -- write at index -- \n");
 	fprintf(compiler->output, "	pop rcx ;; value\n");
 	fprintf(compiler->output, "	pop rax ;; index\n");
-	fprintf(compiler->output, "	mov rbx, %d\n", size / 4);
+	fprintf(compiler->output, "	mov rbx, %d\n", size);
 	fprintf(compiler->output, "	mul rbx\n");
 	fprintf(compiler->output, "	pop rbx ;; pointer\n");
 	fprintf(compiler->output, "	add rbx, rax\n");
