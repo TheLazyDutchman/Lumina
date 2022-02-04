@@ -221,7 +221,8 @@ void writeHeader(Compiler* compiler) {
 	fprintf(compiler->output, "	lea rax, [callStack + %d]\n", CALLSTACKSIZE);
 	fprintf(compiler->output, "	mov [callrsp], rax\n");
 	fprintf(compiler->output, "	mov rax, rsp\n");
-	fprintf(compiler->output, "	add rax, 16\n"); // this is where argc and argv are stored
+	fprintf(compiler->output, "	add rax, 8\n"); // this is where argc and argv are stored
+	fprintf(compiler->output, "	push rax\n");
 	fprintf(compiler->output, "	mov [basestack], rax\n");
 
 	fprintf(compiler->output, "	;; -- syscall builtin --\n");

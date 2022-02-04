@@ -47,10 +47,10 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 	}
 
 	parser->compiler->currentStackSize++;
-	defineVariable(parser->compiler, strdup("argv"), 4, initType(strdup(""), *parser->current, 8, NULL, NULL, true, strType));
+	defineVariable(parser->compiler, strdup("argc"), 4, intType);
 	parser->compiler->currentStackSize++;
 	defineVariable(parser->compiler, strdup("argv"), 4, initType(strdup(""), *parser->current, 8, NULL, NULL, true, strType));
-	defineVariable(parser->compiler, strdup("argc"), 4, intType);
+
 	defineFunction(parser->compiler, name, nameLen, 0, returnType, parameters);
 
 	parser->numFuncs = 1; // this is because there is a predefined built-in syscall function, which has id 0
