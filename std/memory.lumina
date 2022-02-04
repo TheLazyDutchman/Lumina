@@ -73,7 +73,7 @@ func _block_to_ptr(_heap_block block) -> ptr {
 func malloc(int size) -> ptr {
 	var block = _heap_start;
 
-	while (block.next > (_heap_block)0) {
+	while (block != (_heap_block)0) {
 		if (block.free) {
 			if (block.size > size) {
 				var newBlock = _split_block(block, size);
