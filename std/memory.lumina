@@ -33,7 +33,7 @@ func _expand_heap(int size) -> int {
 }
 
 func _split_block(_heap_block block, int size) -> _heap_block {
-	if (size + sizeof(_heap_block) < block.size) {
+	if (size + sizeof(_heap_block) >= block.size) {
 		return block;
 	}
 
