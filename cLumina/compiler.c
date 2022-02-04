@@ -651,8 +651,6 @@ void writeReadProperty(Compiler* compiler, int offset, int size) {
 	fprintf(compiler->output, "	sub rbx, 1\n");
 	fprintf(compiler->output, "	and rax, rbx\n");
 	fprintf(compiler->output, "	push rax\n\n");
-
-	compiler->currentStackSize--;
 }
 
 void writeWriteProperty(Compiler* compiler, int offset, int size) {
@@ -676,7 +674,7 @@ void writeWriteProperty(Compiler* compiler, int offset, int size) {
 	fprintf(compiler->output, "	mov [rbx], rcx\n");
 	fprintf(compiler->output, "	push rax\n\n");
 
-	compiler->currentStackSize -= 1;
+	compiler->currentStackSize--;
 }
 
 void writeIdentifier(Compiler* compiler, int offset, int currentDepth) {
