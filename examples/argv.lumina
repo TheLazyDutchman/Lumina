@@ -1,0 +1,9 @@
+import "../std/io.lumina"
+
+var i = 0;
+
+while (i < argc) {
+	print(argv[i]);
+	print("\t\n");
+	i = i + 1;
+}

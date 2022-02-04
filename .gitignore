@@ -56,5 +56,8 @@ tests/*
 !tests/*.lumina
 !tests/*.test
 
+examples/*
+!examples/*.lumina
+
 cLumina/test
 lumina
