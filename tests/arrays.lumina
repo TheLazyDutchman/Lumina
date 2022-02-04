@@ -1,0 +1,22 @@
+import "../std/memory.lumina"
+import "../std/io.lumina"
+
+type Vec {
+	int x;
+	int y;
+}
+
+type VecArray {
+	Vec[] values;
+}
+
+var array = (VecArray)malloc(sizeof(VecArray));
+array.values = (Vec[])malloc(64);
+
+array.values[0] = (Vec)malloc(sizeof(Vec));
+
+array.values[0].x = 10;
+
+var string  = "Hello, World!\n";
+
+print(string);

@@ -33,7 +33,7 @@ func _expand_heap(int size) -> int {
 }
 
 func _split_block(_heap_block block, int size) -> _heap_block {
-	if (size + sizeof(_heap_block) < block.size) {
+	if (size + sizeof(_heap_block) >= block.size) {
 		return block;
 	}
 
@@ -66,16 +66,20 @@ func _combine(_heap_block block) {
 	}
 }
 
+func _block_to_ptr(_heap_block block) -> ptr {
+	return (ptr)((int)block + sizeof(_heap_block));
+}
+
 func malloc(int size) -> ptr {
 	var block = _heap_start;
 
-	while (block.next > (_heap_block)0) {
+	while (block != (_heap_block)0) {
 		if (block.free) {
 			if (block.size > size) {
 				var newBlock = _split_block(block, size);
 				newBlock.free = 1 == 0; // false keyword is not implemented yet
 
-				return (ptr)((int)newBlock + sizeof(_heap_block));
+				return _block_to_ptr(newBlock);
 			}
 		}
 		block = block.next;
@@ -93,12 +97,29 @@ func malloc(int size) -> ptr {
 	return malloc(size);
 }
 
+func free(ptr addr) {
+	var block = (_heap_block)((int)addr - sizeof(_heap_block));
+	block.free = 0 == 0; // true keyword not implemented
+
+	if (block.next > (_heap_block)0) {
+		if (block.next.free) {
+			_combine(block);
+		}
+	}
+
+	if (block.prev > (_heap_block)0) {
+		if (block.prev.free) {
+			_combine(block.prev);
+		}
+	}
+}
+
 func realloc(ptr addr, int newSize) -> ptr {
 	var block = (_heap_block)((int)addr - sizeof(_heap_block));
 
-	if (newSize < block.size - sizeof(_heap_block) {
+	if (newSize < block.size - sizeof(_heap_block)) {
 		_split_block(block, newSize);
-		return block;
+		return _block_to_ptr(block);
 	}
 
 	if (newSize > block.size) {
@@ -116,21 +137,6 @@ func realloc(ptr addr, int newSize) -> ptr {
 		free(addr);
 		return target;
 	}
-}
 
-func free(ptr addr) {
-	var block = (_heap_block)((int)addr - sizeof(_heap_block));
-	block.free = 0 == 0; // true keyword not implemented
-
-	if (block.next > (_heap_block)0) {
-		if (block.next.free) {
-			_combine(block);
-		}
-	}
-
-	if (block.prev > (_heap_block)0) {
-		if (block.prev.free) {
-			_combine(block.prev);
-		}
-	}
+	return addr;
 }

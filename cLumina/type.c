@@ -3,7 +3,7 @@
 
 #include "type.h"
 
-Type *initType(const char* name, const Token token, size_t size, PropertyList *properties, Type **propertyTypes) {
+Type *initType(const char* name, const Token token, size_t size, PropertyList *properties, Type **propertyTypes, bool isArray, Type *arrayType) {
 	Type *type = malloc(sizeof(Type));
 
 	type->name = strdup(name);
@@ -11,6 +11,8 @@ Type *initType(const char* name, const Token token, size_t size, PropertyList *p
 	type->size = size;
 	type->properties = properties;
 	type->propertyTypes = propertyTypes;
+	type->isArray = isArray;
+	type->arrayType = arrayType;
 
 	return type;
 }

@@ -30,7 +30,7 @@ Variable *findVariable(Compiler* compiler, char* name, int nameLen);
 Type *findVariableType(Compiler* compiler, char* name, int nameLen);
 Variable *findLocalVariable(Compiler* compiler, char* name, int nameLen);
 
-Type *defineType(Compiler* compiler, char* name, int nameLen, size_t size, Token token, PropertyList *properties, Type **propertyTypes);
+Type *defineType(Compiler* compiler, char* name, int nameLen, size_t size, Token token, PropertyList *properties, Type **propertyTypes, bool isArray, Type *arrayType);
 Type *findType(Compiler* compiler, char* name, int nameLen);
 
 void defineFunction(Compiler* compiler, char* name, int nameLen, int id, Type *type, VariableList *parameters);
@@ -67,7 +67,8 @@ void writeJumpNotEqual(Compiler* compiler, char* address, uint32_t id);
 void writeNumber(Compiler* compiler, int value);
 void writeCharacter(Compiler* compiler, char* *value);
 void writeString(Compiler* compiler, int id);
-void writeReadIndex(Compiler* compiler);
+void writeReadIndex(Compiler* compiler, int size);
+void writeWriteIndex(Compiler* compiler, int size);
 void writeReadProperty(Compiler* compiler, int offset, int size);
 void writeWriteProperty(Compiler* compiler, int offset, int size);
 void writeIdentifier(Compiler* compiler, int offset, int currentDepth);

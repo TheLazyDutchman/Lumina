@@ -24,13 +24,13 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 
 	// defining built-in immediates
 	//strdup is used here because these predefined string literals are freed later, because there will be allocated strings in the same place later
-	defineType(parser->compiler, strdup("any"), 3, 8, *parser->current, NULL, NULL); 
-	defineType(parser->compiler, strdup("int"), 3, 8, *parser->current, NULL, NULL);
-	defineType(parser->compiler, strdup("str"), 3, 8, *parser->current, NULL, NULL);
-	defineType(parser->compiler, strdup("ptr"), 3, 8, *parser->current, NULL, NULL);
-	defineType(parser->compiler, strdup("char"), 4, 4, *parser->current, NULL, NULL);
-	defineType(parser->compiler, strdup("bool"), 4, 4, *parser->current, NULL, NULL);
-	defineType(parser->compiler, strdup("NULL"), 4, 8, *parser->current, NULL, NULL);
+	defineType(parser->compiler, strdup("any"), 3, 8, *parser->current, NULL, NULL, false, NULL); 
+	defineType(parser->compiler, strdup("int"), 3, 8, *parser->current, NULL, NULL, false, NULL);
+	defineType(parser->compiler, strdup("ptr"), 3, 8, *parser->current, NULL, NULL, false, NULL);
+	Type *charType = defineType(parser->compiler, strdup("char"), 4, 1, *parser->current, NULL, NULL, false, NULL);
+	defineType(parser->compiler, strdup("str"), 3, 8, *parser->current, NULL, NULL, true, charType);
+	defineType(parser->compiler, strdup("bool"), 4, 1, *parser->current, NULL, NULL, false, NULL);
+	defineType(parser->compiler, strdup("NULL"), 4, 8, *parser->current, NULL, NULL, false, NULL);
 	
 	// defining sycall built-in
 	char *name = strdup("syscall");
@@ -152,7 +152,7 @@ ParseRule parseTable[] = {
 	[TOKEN_RARROW] = {NULL, NULL, PREC_NONE},
 	[TOKEN_LPAREN] = {group, NULL, PREC_PRIMARY},
 	[TOKEN_RPAREN] = {NULL, NULL, PREC_BLOCK},
-	[TOKEN_LBRACKET] = {NULL, readIndex, PREC_READ},
+	[TOKEN_LBRACKET] = {NULL, indexArray, PREC_READ},
 	[TOKEN_RBRACKET] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_LBRACE] = {NULL, NULL, PREC_BLOCK},
 	[TOKEN_RBRACE] = {NULL, NULL, PREC_BLOCK},
@@ -265,6 +265,13 @@ Type *consumeType(Parser* parser, char* message) {
 		parseError(parser, token, message);
 	}
 
+	while (parser->current->type == TOKEN_LBRACKET) {
+		next(parser);
+		consumeToken(parser, TOKEN_RBRACKET, "expected array definition to end with ']'");
+
+		type = initType(strdup(""), token, 8, NULL, NULL, true, type);
+	}
+
 	return type;
 }
 
@@ -274,7 +281,8 @@ void group(Parser* parser) {
 	if (parser->current->type == TOKEN_IDENTIFIER) {
 		Type *type = findType(parser->compiler, parser->current->word, parser->current->wordLen);
 		if (type != NULL) { // type cast
-			next(parser);
+			type = consumeType(parser, "expected type in typecast"); // this also checks for arrays
+
 			consumeToken(parser, TOKEN_RPAREN, "expected closing parenthesis");
 
 			parsePrecedence(parser, PREC_PRIMARY); 
@@ -357,18 +365,48 @@ void string(Parser* parser) {
 	next(parser);
 }
 
-void readIndex(Parser* parser) {
+void indexArray(Parser* parser) {
 	next(parser);
 
-	if (strcmp(parser->lastType->name, "str") != 0) { parseError(parser, parser->lastType->token, "we do not support array indexing for anything other than strings yet"); }
+	Type *type = parser->lastType;
+
+	if (!type->isArray) {
+		parseError(parser, *parser->current, "cannot index from a type that is not an array");
+		return;
+	}
+
+	Type *arrayType = type->arrayType;
+
+	if (arrayType == NULL) {
+		printf("array type is null");
+		return;
+	}
 
 	expression(parser);
 
-	writeReadIndex(parser->compiler);
-
-	setLastType(parser, findType(parser->compiler, "char", 4));
+	if (strcmp(parser->lastType->name, "int") != 0) {
+		parseError(parser, *parser->current, "expected index to be of type int");
+		return;
+	}
 
 	consumeToken(parser, TOKEN_RBRACKET, "expected ']' after index");
+
+	if (parser->current->type == TOKEN_EQUAL) {
+		next(parser);
+
+		expression(parser);
+
+		if (strcmp(parser->lastType->name, arrayType->name) != 0) {
+			parseError(parser, *parser->current, "wrong type of value to assign to this array");
+			return;
+		}
+
+		writeWriteIndex(parser->compiler, arrayType->size);
+	} else {
+		writeReadIndex(parser->compiler, arrayType->size);
+	}
+
+	setLastType(parser, arrayType);
 }
 
 void property(Parser* parser) {
@@ -1132,7 +1170,7 @@ void typeDefinition(Parser* parser) {
 		return;
 	}
 
-	Type *type = defineType(parser->compiler, name.word, name.wordLen, 8, name, NULL, NULL);
+	Type *type = defineType(parser->compiler, name.word, name.wordLen, 8, name, NULL, NULL, false, NULL);
 
 	if (consumeToken(parser, TOKEN_LBRACE, "expected '{' after type name").type == TOKEN_ERROR) { return; }
 

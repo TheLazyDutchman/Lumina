@@ -126,9 +126,9 @@ Variable *findLocalVariable(Compiler* compiler, char* name, int nameLen) {
 	return NULL;
 }
 
-Type *defineType(Compiler* compiler, char* name, int nameLen, size_t size, Token token, PropertyList *properties, Type **propertyTypes) {
+Type *defineType(Compiler* compiler, char* name, int nameLen, size_t size, Token token, PropertyList *properties, Type **propertyTypes, bool isArray, Type *arrayType) {
 	char* buffer = strndup(name, nameLen);
-	Type* type = initType(buffer, token, size, properties, propertyTypes);
+	Type* type = initType(buffer, token, size, properties, propertyTypes, isArray, arrayType);
 
 	addType(compiler->typeList, type);
 
@@ -587,16 +587,53 @@ void writeString(Compiler* compiler, int id) {
 	compiler->currentStackSize++;
 }
 
-void writeReadIndex(Compiler* compiler) {
+void writeReadIndex(Compiler* compiler, int size) {
 	fprintf(compiler->output, "	;; -- read at index -- \n");
 	fprintf(compiler->output, "	pop rax ;; index\n");
+	fprintf(compiler->output, "	mov rbx, %d\n", size);
+	fprintf(compiler->output, "	mul rbx\n");
 	fprintf(compiler->output, "	pop rbx ;; pointer\n");
 	fprintf(compiler->output, "	add rbx, rax\n");
 	fprintf(compiler->output, "	mov rbx, [rbx]\n");
-	fprintf(compiler->output, "	and rbx, 255 ;; select the lowest character\n");
+	fprintf(compiler->output, "	;; create bit mask\n");
+	if (size < 8) {
+		fprintf(compiler->output, "	mov rcx, 1\n");
+		fprintf(compiler->output, "	shl rcx, %d ;; size\n", 8 * size);
+	} else {
+		fprintf(compiler->output, "	mov rcx, 0\n");
+	}
+	fprintf(compiler->output, "	sub rcx, 1\n");
+	fprintf(compiler->output, "	and rbx, rcx\n");
 	fprintf(compiler->output, "	push rbx\n\n");
 
 	compiler->currentStackSize--;
+}
+
+void writeWriteIndex(Compiler* compiler, int size) {
+	fprintf(compiler->output, "	;; -- write at index -- \n");
+	fprintf(compiler->output, "	pop rcx ;; value\n");
+	fprintf(compiler->output, "	pop rax ;; index\n");
+	fprintf(compiler->output, "	mov rbx, %d\n", size);
+	fprintf(compiler->output, "	mul rbx\n");
+	fprintf(compiler->output, "	pop rbx ;; pointer\n");
+	fprintf(compiler->output, "	add rbx, rax\n");
+	fprintf(compiler->output, "	mov r8, [rbx]\n");
+	fprintf(compiler->output, "	;; create bit mask\n");
+	if (size < 8) {
+		fprintf(compiler->output, "	mov r9, 1\n");
+		fprintf(compiler->output, "	shl r9, %d ;; size\n", 8 * size);
+	} else {
+		fprintf(compiler->output, "	mov r9, 0\n");
+	}
+	fprintf(compiler->output, "	sub r9, 1\n");
+	fprintf(compiler->output, "	and rcx, r9\n");
+	fprintf(compiler->output, "	not r9\n");
+	fprintf(compiler->output, "	and r8, r9\n");
+	fprintf(compiler->output, "	add r8, rcx\n");
+	fprintf(compiler->output, "	mov [rbx], r8\n");
+	fprintf(compiler->output, "	push rcx\n\n");
+
+	compiler->currentStackSize -= 2;
 }
 
 void writeReadProperty(Compiler* compiler, int offset, int size) {
@@ -614,8 +651,6 @@ void writeReadProperty(Compiler* compiler, int offset, int size) {
 	fprintf(compiler->output, "	sub rbx, 1\n");
 	fprintf(compiler->output, "	and rax, rbx\n");
 	fprintf(compiler->output, "	push rax\n\n");
-
-	compiler->currentStackSize--;
 }
 
 void writeWriteProperty(Compiler* compiler, int offset, int size) {
@@ -639,7 +674,7 @@ void writeWriteProperty(Compiler* compiler, int offset, int size) {
 	fprintf(compiler->output, "	mov [rbx], rcx\n");
 	fprintf(compiler->output, "	push rax\n\n");
 
-	compiler->currentStackSize -= 1;
+	compiler->currentStackSize--;
 }
 
 void writeIdentifier(Compiler* compiler, int offset, int currentDepth) {

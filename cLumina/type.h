@@ -1,6 +1,8 @@
 #ifndef cLumina_type_header
 #define cLumina_type_header
 
+#include <stdbool.h>
+
 #include "lexer.h"
 
 typedef struct {
@@ -22,6 +24,8 @@ typedef struct Type{
 	Token token;
 	PropertyList *properties;
 	struct Type **propertyTypes;
+	bool isArray;
+	struct Type *arrayType;
 } Type;
 
 typedef struct {
@@ -42,7 +46,7 @@ void freeTypeList(TypeList* list);
 
 void addType(TypeList* list, Type *type);
 
-Type *initType(const char* name, const Token token, size_t size, PropertyList *properties, Type **propertyTypes);
+Type *initType(const char* name, const Token token, size_t size, PropertyList *properties, Type **propertyTypes, bool isArray, Type *arrayType);
 void freeType(Type *type);
 
 #endif
