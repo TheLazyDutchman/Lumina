@@ -1,0 +1,18 @@
+import "memory.lumina"
+import "string.lumina"
+
+type Path {
+	str[] folders;
+	str name;
+	str extension;
+}
+
+func getPathFromString(str file) -> Path {
+	var path = (path)malloc(sizeof(Path));
+
+	return path;
+}
+
+func getFullPathString(Path path) -> str {
+	return (str)0;
+}
