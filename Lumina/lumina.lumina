@@ -1,5 +1,7 @@
 import "../std/io.lumina"
 
+import "parser.lumina"
+
 func usage() {
 	print("usage: lumina [-debug] [-r] [-s] [-check] <inputFile>\n");
 	print("	-debug: generate a file that can be debugged by gdb\n");
