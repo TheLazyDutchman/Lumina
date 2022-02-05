@@ -6,7 +6,7 @@ it is planned to be:
 * [x] compiled
 * [ ] turing complete
 * [x] statically typed
-* [ ] self hosted
+* [ ] self hosted: see the Lumina folder
 
 ## Arithmatic
 Currently, Lumina supports the following arithmatic operations
