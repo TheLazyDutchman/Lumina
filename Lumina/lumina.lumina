@@ -16,9 +16,22 @@ func main() {
 	var check = (bool)0;
 
 	var i = 1;
-	while (argv[i] != (str)0) {
-		fileName = argv[i];
+
+	var currentArg = argv[1];
+	while (currentArg != (str)0) {
+		if (streq(currentArg, "-r")) {
+			runFile = (bool)1;
+		} else if (streq(currentArg, "-debug")) {
+			debug = (bool)1;
+		} else if (streq(currentArg, "-s")) {
+			suppress = (bool)1;
+		} else if (streq(currentArg, "-check")) {
+			check = (bool)1;
+		} else {
+			fileName = argv[i];
+		}
 		i = i + 1;
+		currentArg = argv[i];
 	}
 
 	if (fileName == (str)0) {

@@ -5,3 +5,25 @@ func strlen(str string) -> int{
 	}
 	return i;
 }
+
+func strneq(str s1, str s2, int n) -> bool {
+	var i = 0;
+
+	while (i < n) {
+		if (s1[i] != s2[i]) {
+			return (bool)0;
+		}
+		i = i + 1;
+	}
+
+	return (bool)1;
+}
+
+func streq(str s1, str s2) -> bool {
+	var len = strlen(s1);
+	if (len != strlen(s2)) {
+		return (bool)0;
+	}
+
+	return strneq(s1, s2, len);
+}
