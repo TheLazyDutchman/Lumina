@@ -1,0 +1,58 @@
+type Lexer {
+	str fileName;
+	str buffer;
+	int current;
+	int line;
+	int column;
+
+	Lexer outer;
+}
+
+// Token types enum
+var TOKEN_NUMBER = 0;
+var TOKEN_PLUS = 1;
+var TOKEN_MINUS = 2;
+var TOKEN_EQUAL = 3;
+var TOKEN_AND = 4;
+var TOKEN_ANDAND = 5;
+var TOKEN_PIPE = 6;
+var TOKEN_PIPEPIPE = 7;
+var TOKEN_LESS = 8;
+var TOKEN_GREATER = 9;
+var TOKEN_LESSEQUAL = 10;
+var TOKEN_GREATEREQUAL = 11;
+var TOKEN_EQUALEQUAL = 12;
+var TOKEN_BANG = 13;
+var TOKEN_BANGEQUAL = 14;
+var TOKEN_RARROW = 15;
+var TOKEN_LPAREN = 16;
+var TOKEN_RPAREN = 17;
+var TOKEN_LBRACKET = 18;
+var TOKEN_RBRACKET = 19;
+var TOKEN_LBRACE = 20;
+var TOKEN_RBRACE = 21;
+var TOKEN_CHAR = 22;
+var TOKEN_STR = 23;
+var TOKEN_SEMICOLON = 24;
+var TOKEN_VAR = 25;
+var TOKEN_IF = 26;
+var TOKEN_ELSE = 27;
+var TOKEN_WHILE = 28;
+var TOKEN_FUNC = 29;
+var TOKEN_TYPE = 30;
+var TOKEN_RETURN = 31;
+var TOKEN_IMPORT = 32;
+var TOKEN_SIZEOF = 33;
+var TOKEN_COMMA = 34;
+var TOKEN_PERIOD = 35;
+var TOKEN_IDENTIFIER = 36;
+var TOKEN_END_OF_FILE = 37;
+var TOKEN_ERROR = 38;
+
+type Token {
+	str fileName;
+	str word;
+	int wordLen;
+	int line;
+	int tokenType;
+}
