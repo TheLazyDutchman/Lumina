@@ -1,0 +1,11 @@
+import "../std/io.lumina"
+
+func usage() {
+	print("usage: lumina [-debug] [-r] [-s] [-check] <inputFile>\n");
+	print("	-debug: generate a file that can be debugged by gdb\n");
+	print("	-r: run the generated executable after compilation finished\n");
+	print("	-s: suppress compiler output in stdout\n");
+	print("	-check: check input file for errors, but doesn't generate code\n");
+}
+
+usage();
