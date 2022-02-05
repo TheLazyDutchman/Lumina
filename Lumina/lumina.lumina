@@ -8,4 +8,23 @@ func usage() {
 	print("	-check: check input file for errors, but doesn't generate code\n");
 }
 
-usage();
+func main() {
+	var fileName = (str)0;
+	var runFile = (bool)0;
+	var debug = (bool)0;
+	var suppress = (bool)0;
+	var check = (bool)0;
+
+	var i = 1;
+	while (argv[i] != (str)0) {
+		fileName = argv[i];
+		i = i + 1;
+	}
+
+	if (fileName == (str)0) {
+		print("[ERROR] expected fileName\n");
+		usage();
+	}
+}
+
+main();
