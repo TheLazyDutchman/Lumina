@@ -42,14 +42,44 @@ uint16_t printEscapedCharacter(Compiler* compiler, char* *string) {
 		char test = *(*string)++;
 
 		switch (test) {
-			case '0':
-				chr = '\0';
+			case 'a':
+				chr = '\a';
+				break;
+			case 'b':
+				chr = '\b';
+				break;
+			case 'e':
+				chr = '\e';
+				break;
+			case 'f':
+				chr = '\f';
+				break;
+			case 'n':
+				chr = '\n';
+				break;
+			case 'r':
+				chr = '\r';
 				break;
 			case 't':
 				chr = '\t';
 				break;
-			case 'n':
-				chr = '\n';
+			case 'v':
+				chr = '\v';
+				break;
+			case '\\':
+				chr = '\\';
+				break;
+			case '\'':
+				chr = '\'';
+				break;
+			case '\"':
+				chr = '\"';
+				break;
+			case '\?':
+				chr = '\?';
+				break;
+			case '0':
+				chr = '\0';
 				break;
 		}
 	}
