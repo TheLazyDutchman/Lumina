@@ -1,3 +1,6 @@
+import "../std/io.lumina"
+import "../std/memory.lumina"
+
 type Lexer {
 	str fileName;
 	str buffer;
@@ -55,4 +58,18 @@ type Token {
 	int wordLen;
 	int line;
 	int tokenType;
+}
+
+func initLexer(str fileName, Lexer outer) -> Lexer {
+	var lexer = (Lexer)malloc(sizeof(Lexer));
+
+	lexer.outer = outer;
+	
+	//TODO: initialize file and buffer
+
+	lexer.current = 0;
+	lexer.line = 0;
+	lexer.column = 0;
+
+	return lexer;
 }
