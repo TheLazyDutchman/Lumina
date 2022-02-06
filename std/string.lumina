@@ -1,3 +1,5 @@
+import "memory.lumina"
+
 func strlen(str string) -> int{
 	var i = 0;
 	while (string[i] > '\0') {
@@ -53,7 +55,7 @@ func strindex(str s, char delim) -> int {
 }
 
 func strndup(str s, int count) -> str {
-	var value = malloc(count + 1);
+	var value = (str)malloc(count + 1);
 
 	var i = 0;
 	while (i < count) {

@@ -1,5 +1,4 @@
 import "../std/io.lumina"
-import "../std/memory.lumina"
 
 type Lexer {
 	str fileName;

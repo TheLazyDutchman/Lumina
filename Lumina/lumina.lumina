@@ -38,6 +38,19 @@ func main() {
 		print("[ERROR] expected fileName\n");
 		usage();
 	}
+	
+	print(fileName);
+
+	var filePath = getPathFromString(fileName);
+
+	var i = 0;
+	var folder = filePath.folders[0];
+
+	while (folder != (str)0) {
+		print(folder);
+		i = i + 1;
+		folder = filePath.folders[i];
+	}
 }
 
 main();

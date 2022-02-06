@@ -7,8 +7,45 @@ type Path {
 	str extension;
 }
 
+
+func _is_outer(str s) -> bool {
+	if (s[0] != '.') { return (bool)0; }
+	if (s[1] != '.') { return (bool)0; }
+	return (bool)1;
+}
+
 func getPathFromString(str file) -> Path {
 	var path = (path)malloc(sizeof(Path));
+
+	var depth = countchr(file, '/');
+	path.folders = (str[])malloc(depth * sizeof(str));
+
+	var name = file;
+
+	var index = strindex(file, '/');
+	var currentDepth = 0;
+
+	if (name[0] == '.' && _is_outer(name) == (bool)0) {
+		depth = depth - 1;
+		name = (str)((int)name + index);
+		index = strindex(name, '/');
+	}
+
+	while (currentDepth < depth) {
+		if (_is_outer(name)) {
+			currentDepth = currentDepth - 1;
+			depth = depth - 2;
+
+			name = (str)((int)name + index);
+			index = strindex(name, '/');
+		}
+
+		path.folders[currentDepth] = strndup(name, index - 1);
+		name = (str)((int)name + index);
+		index = strindex(name, '/');
+
+		currentDepth = currentDepth + 1;
+	}
 
 	return path;
 }
