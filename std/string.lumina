@@ -27,3 +27,41 @@ func streq(str s1, str s2) -> bool {
 
 	return strneq(s1, s2, len);
 }
+
+func countchr(str s, char delim) -> int {
+	var sum = 0;
+	var i = 0;
+	while (s[i] != '\0') {
+		if (s[i] == delim) {
+			sum = sum + 1;
+		}
+		i = i + 1;
+	}
+	return sum;
+}
+
+func strindex(str s, char delim) -> int {
+	var i = 0;
+	while (s[i] != delim) {
+		if (s[i] == '\0') {
+			return -1;
+		}
+
+		i = i + 1;
+	}
+	return i + 1;
+}
+
+func strndup(str s, int count) -> str {
+	var value = malloc(count + 1);
+
+	var i = 0;
+	while (i < count) {
+		value[i] = s[i];
+		i = i + 1;
+	}
+
+	value[count] = '\0';
+
+	return value;
+}
