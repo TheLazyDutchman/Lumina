@@ -13,10 +13,22 @@ typedef enum {
 } ParseFlag;
 
 typedef struct {
+	int size;
+	int maxSize;
+	char** files;
+} FileList;
+
+FileList *initFileList();
+void freeFileList(FileList *list);
+void addFile(FileList* list, char* file);
+
+typedef struct {
 	Lexer* lexer;
 	Token* current;
 	Type* lastType;
 	ParseFlag flags;
+
+	FileList *files;
 
 	Compiler* compiler;
 	FILE* outputFile;

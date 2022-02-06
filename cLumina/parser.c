@@ -12,6 +12,9 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 	parser->lastType = NULL;
 	parser->flags = flags;
 
+	parser->files = initFileList();
+	addFile(parser->files, inputName);
+
 	parser->outputFile = fopen(outputName, "w");
 
 	parser->compiler = initCompiler(parser->outputFile, NULL);
@@ -71,6 +74,8 @@ void freeParser(Parser* parser) {
 
 	freeCompiler(parser->compiler);
 
+	freeFileList(parser->files);
+
 	freeStringList(parser->strings);
 
 	fclose(parser->outputFile);
@@ -84,6 +89,36 @@ void setLastType(Parser* parser, Type* type) {
 	}
 
 	parser->lastType = type;
+}
+
+FileList *initFileList() {
+	FileList *list = malloc(sizeof(FileList));
+
+	list->size = 0;
+	list->maxSize = 8;
+	list->files = malloc(sizeof(char*) * 8);
+	
+	return list;
+}
+
+void freeFileList(FileList *list) {
+	int i = 0;
+	while (i < list->size) {
+		free(list->files[i]);
+		i++;
+	}
+
+	free(list->files);
+	free(list);
+}
+
+void addFile(FileList *list, char* file) {
+	list->files[list->size++] = strdup(file);
+	
+	if (list->size == list->maxSize) {
+		list->maxSize *= 2;
+		list->files = realloc(list->files, sizeof(char*) * list->maxSize);
+	}
 }
 
 Token* next(Parser* parser) {
