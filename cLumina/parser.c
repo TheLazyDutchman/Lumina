@@ -168,6 +168,7 @@ typedef enum {
 	PREC_OR,
 	PREC_COMPARISON,
 	PREC_TERM,
+	PREC_FACTOR,
 	PREC_BITWISE,
 	PREC_READ,
 	PREC_UNARY,
@@ -180,7 +181,7 @@ typedef struct {
 	Precedence precedence;
 } ParseRule;
 
-_Static_assert(TOKEN_TYPES_NUM == 39, "Exhaustive handling of token types in parsing");
+_Static_assert(TOKEN_TYPES_NUM == 40, "Exhaustive handling of token types in parsing");
 
 ParseRule parseTable[] = {
 	[TOKEN_NUMBER] = {number, NULL, PREC_PRIMARY},
@@ -188,6 +189,7 @@ ParseRule parseTable[] = {
 	[TOKEN_STR] = {string, NULL, PREC_PRIMARY},
 	[TOKEN_PLUS] = {NULL, binary, PREC_TERM},
 	[TOKEN_MINUS] = {unary, binary, PREC_UNARY},
+	[TOKEN_STAR] = {NULL, binary, PREC_FACTOR},
 	[TOKEN_EQUAL] = {NULL, NULL, PREC_ASSIGNMENT},
 	[TOKEN_AND] = {NULL, binary, PREC_BITWISE},
 	[TOKEN_ANDAND] = {NULL, binary, PREC_AND},
@@ -617,6 +619,9 @@ void binary(Parser* parser) {
 		case TOKEN_MINUS:
 			precedence = PREC_TERM + 1;
 			break;
+		case TOKEN_STAR:
+			precedence = PREC_FACTOR + 1;
+			break;
 		case TOKEN_AND:
 		case TOKEN_PIPE:
 			precedence = PREC_BITWISE + 1;
@@ -709,6 +714,18 @@ void binary(Parser* parser) {
 			} else {
 				setLastType(parser, findType(parser->compiler, "int", 3));
 			}
+
+			break;
+		case TOKEN_STAR:
+			dumpBinary(parser, operator);
+
+			if (strcmp(value1.name, "int") != 0 || strcmp(parser->lastType->name, "int") != 0) {
+				parseError(parser, operator, "can not multiply something that is not an integer");
+			}
+
+			writeMult(parser->compiler);
+
+			setLastType(parser, findType(parser->compiler, "int", 3));
 
 			break;
 		case TOKEN_AND:

@@ -757,6 +757,16 @@ void writeNegative(Compiler* compiler) {
 	fprintf(compiler->output, "	push rax\n\n");
 }
 
+void writeMult(Compiler* compiler) {
+	fprintf(compiler->output, "	;; -- mult --\n");
+	fprintf(compiler->output, "	pop rbx\n");
+	fprintf(compiler->output, "	pop rax\n");
+	fprintf(compiler->output, "	mul rbx\n");
+	fprintf(compiler->output, "	push rbx\n\n");
+
+	compiler->currentStackSize--;
+}
+
 void writeFooter(Compiler* compiler, StringList *strings) {
 	fprintf(compiler->output, "	mov rax, 60\n");
 	fprintf(compiler->output, "	xor rdi, rdi\n");

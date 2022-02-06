@@ -77,6 +77,7 @@ void writeAssignment(Compiler* compiler, int offset, int currentDepth);
 void writeAdd(Compiler* compiler);
 void writeSubtract(Compiler* compiler);
 void writeNegative(Compiler* compiler);
+void writeMult(Compiler* compiler);
 
 void writePrint(Compiler* compiler); //temporary print function
 
