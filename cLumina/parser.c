@@ -121,6 +121,17 @@ void addFile(FileList *list, char* file) {
 	}
 }
 
+bool findFile(FileList *list, char* file) {
+	int i = 0;
+	while (i < list->size) {
+		if (strcmp(list->files[i], file) == 0) {
+			return true;
+		}
+		i++;
+	}
+	return false;
+}
+
 Token* next(Parser* parser) {
 	if (parser->current != NULL) {
 		freeToken(parser->current);
@@ -1185,6 +1196,13 @@ void importStatement(Parser* parser) {
 
 	char* fileName = strndup(name.word + 1, name.wordLen - 2);
 
+	if (findFile(parser->files, fileName)) {
+		next(parser);
+		free(fileName);
+		return;
+	}
+
+	addFile(parser->files, fileName);
 	Lexer *importFile = initLexer(fileName, parser->lexer);
 	parser->lexer = importFile;
 	parser->current = nextToken(importFile);
