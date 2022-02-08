@@ -51,6 +51,17 @@ func getPathFromString(str file) -> Path {
 	
 	path.folders[depth] = (str)0;
 
+	index = strindex(name, '.');
+
+	if (index == -1) {
+		path.name = name;
+		path.extension = (str)0;
+	} else {
+		path.name = strndup(name, index - 1);
+		name = (str)((int)name + index);
+		path.extension = strndup(name, strlen(name));
+	}
+
 	return path;
 }
 

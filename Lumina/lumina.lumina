@@ -48,9 +48,15 @@ func main() {
 
 	while (folder != (str)0) {
 		print(folder);
+		print("\t\n");
 		i = i + 1;
 		folder = filePath.folders[i];
 	}
+
+	print("\n\n");
+	print(filePath.name);
+	print("\n.");
+	print(filePath.extension);
 }
 
 main();
