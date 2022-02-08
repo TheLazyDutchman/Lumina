@@ -38,13 +38,14 @@ func main() {
 	if (fileName == (str)0) {
 		print("[ERROR] expected fileName\n");
 		usage();
+		return;
 	}
 	
 	print(fileName);
 
 	var filePath = getPathFromString(fileName);
 
-	var i = 0;
+	i = 0;
 	var folder = filePath.folders[0];
 
 	while (folder != (str)0) {
