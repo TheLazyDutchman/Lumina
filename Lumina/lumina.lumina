@@ -53,10 +53,11 @@ func main() {
 		folder = filePath.folders[i];
 	}
 
-	print("\n\n");
 	print(filePath.name);
 	print("\n.");
 	print(filePath.extension);
+
+	fileName = getFullPathString(filePath);
 }
 
 main();

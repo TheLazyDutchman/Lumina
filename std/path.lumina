@@ -66,5 +66,31 @@ func getPathFromString(str file) -> Path {
 }
 
 func getFullPathString(Path path) -> str {
+	var len = 0;
+	var i = 0;
+	while (path.folders[i] != (str)0) {
+		len = len + strlen(path.folders[i]) + 1;
+	}
+
+	var isLocal = (bool)0;
+
+	if (len == 0) {
+		isLocal = (bool)1;
+		len = 2;
+	}
+
+	len = len + strlen(path.name);
+
+	if (path.extension != (str)0) {
+		len = len + strlen(path.extension) + 1;
+	}
+
+	var value = (str)malloc(len + 1);
+
+	if (isLocal) {
+		value[0] = '.';
+		value[1] = '/';
+	}
+
 	return (str)0;
 }
