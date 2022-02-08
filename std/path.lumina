@@ -32,7 +32,9 @@ func getPathFromString(str file) -> Path {
 	}
 
 	while (currentDepth < depth) {
-		if (_is_outer(name)) {
+		if (_is_outer(name) && 
+			_is_outer(path.folders[currentDepth - 1]) == (bool)0 &&
+			currentDepth > 0) {
 			currentDepth = currentDepth - 1;
 			depth = depth - 2;
 
@@ -46,6 +48,8 @@ func getPathFromString(str file) -> Path {
 
 		currentDepth = currentDepth + 1;
 	}
+	
+	path.folders[depth] = (str)0;
 
 	return path;
 }

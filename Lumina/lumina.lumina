@@ -41,8 +41,6 @@ func main() {
 		return;
 	}
 	
-	print(fileName);
-
 	var filePath = getPathFromString(fileName);
 
 	i = 0;
