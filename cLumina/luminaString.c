@@ -1,10 +1,11 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "luminaString.h"
 
 String* initString(Token value, uint16_t id) {
 	String* str = malloc(sizeof(String));
-	str->value = value;
+	str->value = strndup(value.word + 1, value.wordLen - 2);
 	str->id = id;
 
 	return str;

@@ -780,12 +780,13 @@ void writeFooter(Compiler* compiler, StringList *strings) {
 	fprintf(compiler->output, "section .data\n");
 	int i = 0;
 	while (i < strings->size) {
-		Token value = strings->strings[i]->value;
+		char *value = strings->strings[i]->value;
 
 		fprintf(compiler->output, "	string_%d: db ", strings->strings[i]->id);
-		int j = 1;
-		while (j < value.wordLen - 1) {
-			char *chr = value.word + j;
+		int j = 0;
+		int len = strlen(value);
+		while (j < len) {
+			char *chr = value + j;
 
 			j += printEscapedCharacter(compiler, &chr);
 
