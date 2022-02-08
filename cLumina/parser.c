@@ -510,7 +510,14 @@ void typeSize(Parser* parser) {
 	
 	if (type == NULL) { return; }
 
-	writeNumber(parser->compiler, type->properties->totalTypeSize);
+	int size;
+	if (type->properties == NULL) {
+		size = type->size;
+	} else {
+		size = type->properties->totalTypeSize;
+	}
+
+	writeNumber(parser->compiler, size);
 
 	setLastType(parser, findType(parser->compiler, "int", 3));
 

@@ -15,7 +15,7 @@ func _is_outer(str s) -> bool {
 }
 
 func getPathFromString(str file) -> Path {
-	var path = (path)malloc(sizeof(Path));
+	var path = (Path)malloc(sizeof(Path));
 
 	var depth = countchr(file, '/');
 	path.folders = (str[])malloc(depth * sizeof(str));
