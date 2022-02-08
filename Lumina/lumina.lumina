@@ -58,6 +58,7 @@ func main() {
 	print(filePath.extension);
 
 	fileName = getFullPathString(filePath);
+	print(fileName);
 }
 
 main();
