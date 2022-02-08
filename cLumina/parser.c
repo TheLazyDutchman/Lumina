@@ -142,6 +142,11 @@ Token* next(Parser* parser) {
 	if (parser->current->type == TOKEN_END_OF_FILE && parser->lexer->outer != NULL) {
 		Lexer *current = parser->lexer;
 		parser->lexer = current->outer;
+		printf("old lexer: '%s', outer lexer: '%s'\n", current->fileName, parser->lexer->fileName);
+		if (parser->lexer->outer != NULL) {
+			printf("outer: '%s'\n", parser->lexer->outer->fileName);
+		}
+
 		freeLexer(current);
 
 		parser->current = next(parser);
@@ -1222,9 +1227,12 @@ void importStatement(Parser* parser) {
 
 	if (findFile(parser->files, fileName)) {
 		next(parser);
+		printf("not importing file: '%s'\n", fileName);
 		free(fileName);
 		return;
 	}
+
+	printf("importing file: '%s'\n", fileName);
 
 	addFile(parser->files, fileName);
 	Lexer *importFile = initLexer(fileName, parser->lexer);
