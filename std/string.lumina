@@ -89,3 +89,7 @@ func isnumeric(char c) -> bool {
 func isalnum(char c) -> bool {
 	return isalpha(c) || isnumeric(c);
 }
+
+func isspace(char c) -> bool {
+	return c == ' ' || c == '\t' || c == '\n';
+}
