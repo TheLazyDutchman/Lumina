@@ -95,3 +95,25 @@ func initLexer(str fileName, Lexer outer) -> Lexer {
 
 	return lexer;
 }
+
+func advance(Lexer lexer) {
+	lexer.current = (str)((int)(lexer.current) + 1);
+	lexer.column = lexer.column + 1;
+
+	if (lexer.current[0] == '\n') {
+		lexer.column = 0;
+		lexer.line = lexer.line + 1;
+	}
+}
+
+func removeSpace(Lexer lexer) {
+	while (isspace(lexer.current[0])) {
+		advance(lexer);
+	}
+}
+
+func handleComment(Lexer lexer) {
+	while (lexer.current[0] != '\n') {
+		advance(lexer);
+	}
+}
