@@ -1,4 +1,5 @@
 import "../std/io.lumina"
+import "../std/path.lumina"
 
 type Lexer {
 	str fileName;
@@ -57,6 +58,16 @@ type Token {
 	int wordLen;
 	int line;
 	int tokenType;
+}
+
+func readFile(str fileName) -> str {
+	var filePath = getPathFromString(fileName);
+	fileName = getFullPathString(filePath);
+
+	var flags = 0; //READONLY
+	var mode = 0;
+
+	var file = open(fileName, flags, mode);
 }
 
 func initLexer(str fileName, Lexer outer) -> Lexer {
