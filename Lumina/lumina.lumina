@@ -43,22 +43,8 @@ func main() {
 	
 	var filePath = getPathFromString(fileName);
 
-	i = 0;
-	var folder = filePath.folders[0];
-
-	while (folder != (str)0) {
-		print(folder);
-		print("\t\n");
-		i = i + 1;
-		folder = filePath.folders[i];
-	}
-
-	print(filePath.name);
-	print("\n.");
-	print(filePath.extension);
-
 	fileName = getFullPathString(filePath);
-	print(fileName);
+	print(readFile(fileName));
 }
 
 main();

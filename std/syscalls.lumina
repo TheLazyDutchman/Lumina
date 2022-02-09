@@ -131,7 +131,7 @@ var SYSRKT_SIGSUSPEND = 130;
 
 
 
-func read(int fd, ptr buf, int count) -> int {
+func read(int fd, str buf, int count) -> int {
 	return (int)syscall(SYSREAD, fd, buf, count, 0, 0, 0);
 }
 

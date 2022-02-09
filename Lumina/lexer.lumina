@@ -61,13 +61,24 @@ type Token {
 }
 
 func readFile(str fileName) -> str {
-	var filePath = getPathFromString(fileName);
-	fileName = getFullPathString(filePath);
-
 	var flags = 0; //READONLY
 	var mode = 0;
 
 	var file = open(fileName, flags, mode);
+
+	var SEEK_SET = 0; // I have no idea whether these constants are correct
+	var SEEK_END = 2;
+
+	var len = lseek(file, 0, SEEK_END);
+	lseek(file, 0, SEEK_SET);
+
+	var buffer = (str)malloc(len + 1);
+
+	read(file, buffer, len);
+
+	buffer[len] = '\0';
+
+	return buffer;
 }
 
 func initLexer(str fileName, Lexer outer) -> Lexer {
