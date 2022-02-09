@@ -77,3 +77,15 @@ func strndup(str s, int count) -> str {
 
 	return value;
 }
+
+func isalpha(char c) -> bool {
+	return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
+}
+
+func isnumeric(char c) -> bool {
+	return '0' <= c && c <= '9';
+}
+
+func isalnum(char c) -> bool {
+	return isalpha(c) || isnumeric(c);
+}

@@ -4,7 +4,7 @@ import "../std/path.lumina"
 type Lexer {
 	str fileName;
 	str buffer;
-	int current;
+	str current;
 	int line;
 	int column;
 
@@ -86,9 +86,10 @@ func initLexer(str fileName, Lexer outer) -> Lexer {
 
 	lexer.outer = outer;
 	
-	//TODO: initialize file and buffer
+	lexer.fileName = fileName;
+	lexer.buffer = readFile(fileName);
+	lexer.current = lexer.buffer;
 
-	lexer.current = 0;
 	lexer.line = 0;
 	lexer.column = 0;
 
