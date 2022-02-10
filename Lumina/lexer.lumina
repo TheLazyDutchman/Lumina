@@ -98,6 +98,12 @@ func initLexer(str fileName, Lexer outer) -> Lexer {
 	return lexer;
 }
 
+func freeLexer(Lexer lexer) {
+	free((ptr)(lexer.buffer));
+	free((ptr)(lexer.fileName));
+	free((ptr)lexer);
+}
+
 func advance(Lexer lexer) {
 	lexer.current = (str)((int)(lexer.current) + 1);
 	lexer.column = lexer.column + 1;
@@ -105,12 +111,6 @@ func advance(Lexer lexer) {
 	if (lexer.current[0] == '\n') {
 		lexer.column = 0;
 		lexer.line = lexer.line + 1;
-	}
-}
-
-func removeSpace(Lexer lexer) {
-	while (isspace(lexer.current[0])) {
-		advance(lexer);
 	}
 }
 
@@ -388,4 +388,24 @@ func lexPunctuation(Lexer lexer) -> Token {
 	token.wordLen = (int)(lexer.current) - (int)(token.word);
 
 	return token;
+}
+
+func nextToken(Lexer lexer) -> Token {
+	while (isspace(lexer.current[0])) {
+		advance(lexer);
+
+		if (lexer.current[0] == '/' && lexer.current[1] == '/') {
+			advance(lexer);
+			advance(lexer);
+			handleComment(lexer);
+		}
+	}
+
+	if (isnumeric(lexer.current[0])) {
+		return lexNumber(lexer);
+	}
+	if (isalpha(lexer.current[0]) || lexer.current[0] == '_') {
+		return lexKeyWords(lexer);
+	}
+	return lexPunctuation(lexer);
 }
