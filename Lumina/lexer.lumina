@@ -51,6 +51,7 @@ var TOKEN_PERIOD = 35;
 var TOKEN_IDENTIFIER = 36;
 var TOKEN_END_OF_FILE = 37;
 var TOKEN_ERROR = 38;
+var TOKEN_STAR = 39;
 
 type Token {
 	str fileName;
@@ -117,6 +118,13 @@ func handleComment(Lexer lexer) {
 	while (lexer.current[0] != '\n') {
 		advance(lexer);
 	}
+}
+
+func lexerError(Lexer lexer, str message) {
+	print(lexer.fileName);
+	print(":error: ");
+	print(message);
+	print("\t\n");
 }
 
 func lexNumber(Lexer lexer) -> Token{
@@ -269,5 +277,115 @@ func lexKeyWords(Lexer lexer) -> Token {
 	}
 
 	token.wordLen = (int)(lexer.current) - (int)(token.word);
+	return token;
+}
+
+func lexPunctuation(Lexer lexer) -> Token {
+	var token = (Token)malloc(sizeof(Token));
+
+	token.fileName = lexer.fileName;
+	token.word = lexer.current;
+	token.line = lexer.line;
+	token.column = lexer.column;
+
+	if (lexer.current[0] == '+') {
+		token.tokenType = TOKEN_PLUS;
+		advance(lexer);
+	} else if (lexer.current[0] == '-') {
+		advance(lexer);
+		token.tokenType = TOKEN_MINUS;
+
+		if (lexer.current[0] == '>') {
+			advance(lexer);
+			token.tokenType = TOKEN_RARROW;
+		}
+	} else if (lexer.current[0] == '*') {
+		advance(lexer);
+		token.tokenType = TOKEN_STAR;
+	} else if (lexer.current[0] == ';') {
+		advance(lexer);
+		token.tokenType = TOKEN_SEMICOLON;
+	} else if (lexer.current[0] == '(') {
+		advance(lexer);
+		token.tokenType = TOKEN_LPAREN;
+	} else if (lexer.current[0] == ')') {
+		advance(lexer);
+		token.tokenType = TOKEN_RPAREN;
+	} else if (lexer.current[0] == '[') {
+		advance(lexer);
+		token.tokenType = TOKEN_LBRACKET;
+	} else if (lexer.current[0] == ']') {
+		advance(lexer);
+		token.tokenType = TOKEN_RBRACKET;
+	} else if (lexer.current[0] == '{') {
+		advance(lexer);
+		token.tokenType = TOKEN_LBRACE;
+	} else if (lexer.current[0] == '}') {
+		advance(lexer);
+		token.tokenType = TOKEN_RBRACE;
+	} else if (lexer.current[0] == '&') {
+		advance(lexer);
+		token.tokenType = TOKEN_AND;
+
+		if (lexer.current[0] == '&') {
+			advance(lexer);
+			token.tokenType = TOKEN_ANDAND;
+		}
+	} else if (lexer.current[0] == '|') {
+		advance(lexer);
+		token.tokenType = TOKEN_PIPE;
+
+		if (lexer.current[0] == '|') {
+			advance(lexer);
+			token.tokenType = TOKEN_PIPEPIPE;
+		}
+	} else if (lexer.current[0] == '!') {
+		advance(lexer);
+		token.tokenType = TOKEN_BANG;
+
+		if (lexer.current[0] == '=') {
+			advance(lexer);
+			token.tokenType = TOKEN_BANGEQUAL;
+		}
+	} else if (lexer.current[0] == '<') {
+		advance(lexer);
+		token.tokenType = TOKEN_LESS;
+
+		if (lexer.current[0] == '=') {
+			advance(lexer);
+			token.tokenType = TOKEN_LESSEQUAL;
+		}
+	} else if (lexer.current[0] == '>') {
+		advance(lexer);
+		token.tokenType = TOKEN_GREATER;
+
+		if (lexer.current[0] == '=') {
+			advance(lexer);
+			token.tokenType = TOKEN_GREATEREQUAL;
+		}
+	} else if (lexer.current[0] == '=') {
+		advance(lexer);
+		token.tokenType = TOKEN_EQUAL;
+
+		if (lexer.current[0] == '=') {
+			advance(lexer);
+			token.tokenType = TOKEN_EQUALEQUAL;
+		}
+	} else if (lexer.current[0] == ',') {
+		advance(lexer);
+		token.tokenType = TOKEN_COMMA;
+	} else if (lexer.current[0] == '.') {
+		advance(lexer);
+		token.tokenType = TOKEN_PERIOD;
+	} else if (lexer.current[0] == '\0') {
+		advance(lexer);
+		token.tokenType = TOKEN_END_OF_FILE;
+	} else {
+		lexerError(lexer, "could not recognize character");
+		token.tokenType = TOKEN_ERROR;
+	}
+
+	token.wordLen = (int)(lexer.current) - (int)(token.word);
+
 	return token;
 }
