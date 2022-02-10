@@ -57,6 +57,7 @@ type Token {
 	str word;
 	int wordLen;
 	int line;
+	int column;
 	int tokenType;
 }
 
@@ -116,4 +117,157 @@ func handleComment(Lexer lexer) {
 	while (lexer.current[0] != '\n') {
 		advance(lexer);
 	}
+}
+
+func lexNumber(Lexer lexer) -> Token{
+	var token = (Token)malloc(sizeof(Token));
+	token.tokenType = TOKEN_NUMBER;
+
+	token.fileName = lexer.fileName;
+	token.word = lexer.current;
+	token.line = lexer.line;
+	token.column = lexer.column;
+
+	while (isnumeric(lexer.current[0])) {
+		advance(lexer);
+	}
+
+	token.wordLen = (int)(lexer.current) - (int)(token.word);
+
+	return token;
+}
+
+func lexIdentifier(Lexer lexer, Token token) -> Token {
+	token.tokenType = TOKEN_IDENTIFIER;
+
+	while (isalnum(lexer.current[0]) || lexer.current[0] == '_') {
+		advance(lexer);
+	}
+
+	token.wordLen = (int)(lexer.current) - (int)(token.word);
+
+	return token;
+}
+
+func lexKeyWords(Lexer lexer) -> Token {
+	var token = (Token)malloc(sizeof(Token));
+	token.word = lexer.current;
+
+	token.fileName = lexer.fileName;
+	token.line = lexer.line;
+	token.column = lexer.column;
+
+	if (strneq(lexer.current, "var", 3)) {
+		token.tokenType = TOKEN_VAR;
+		var i = 0;
+		while (i < 3) {
+			advance(lexer);
+			i = i + 1;
+		}
+
+		if (isalnum(lexer.current[0]) || lexer.current[0] == '_') {
+			return lexIdentifier(lexer, token);
+		}
+	} else if (strneq(lexer.current, "func", 4)) {
+		token.tokenType = TOKEN_FUNC;
+
+		var i = 0;
+		while (i < 4) {
+			advance(lexer);
+			i = i + 1;
+		}
+
+		if (isalnum(lexer.current[0]) || lexer.current[0] == '_') {
+			return lexIdentifier(lexer, token);
+		}
+	} else if (strneq(lexer.current, "if", 2)) {
+		token.tokenType = TOKEN_IF;
+
+		var i = 0;
+		while (i < 2) {
+			advance(lexer);
+			i = i + 1;
+		}
+
+		if (isalnum(lexer.current[0]) || lexer.current[0] == '_') {
+			return lexIdentifier(lexer, token);
+		}
+	} else if (strneq(lexer.current, "else", 4)) {
+		token.tokenType = TOKEN_ELSE;
+
+		var i = 0;
+		while (i < 4) {
+			advance(lexer);
+			i = i + 1;
+		}
+
+		if (isalnum(lexer.current[0]) || lexer.current[0] == '_') {
+			return lexIdentifier(lexer, token);
+		}
+	} else if (strneq(lexer.current, "type", 4)) {
+		token.tokenType = TOKEN_TYPE;
+
+		var i = 0;
+		while (i < 4) {
+			advance(lexer);
+			i = i + 1;
+		}
+
+		if (isalnum(lexer.current[0]) || lexer.current[0] == '_') {
+			return lexIdentifier(lexer, token);
+		}
+	} else if (strneq(lexer.current, "while", 5)) {
+		token.tokenType = TOKEN_WHILE;
+
+		var i = 0;
+		while (i < 5) {
+			advance(lexer);
+			i = i + 1;
+		}
+
+		if (isalnum(lexer.current[0]) || lexer.current[0] == '_') {
+			return lexIdentifier(lexer, token);
+		}
+	} else if (strneq(lexer.current, "return", 6)) {
+		token.tokenType = TOKEN_RETURN;
+
+		var i = 0;
+		while (i < 6) {
+			advance(lexer);
+			i = i + 1;
+		}
+
+		if (isalnum(lexer.current[0]) || lexer.current[0] == '_') {
+			return lexIdentifier(lexer, token);
+		}
+	} else if (strneq(lexer.current, "import", 6)) {
+		token.tokenType = TOKEN_IMPORT;
+
+		var i = 0;
+		while (i < 6) {
+			advance(lexer);
+			i = i + 1;
+		}
+
+		if (isalnum(lexer.current[0]) || lexer.current[0] == '_') {
+			return lexIdentifier(lexer, token);
+		}
+	} else if (strneq(lexer.current, "sizeof", 6)) {
+		token.tokenType = TOKEN_SIZEOF;
+
+		var i = 0;
+		while (i < 6) {
+			advance(lexer);
+			i = i + 1;
+		}
+
+		if (isalnum(lexer.current[0]) || lexer.current[0] == '_') {
+			return lexIdentifier(lexer, token);
+		}
+	} else {
+		return lexIdentifier(lexer, token);
+	}
+
+	token.wordLen = (int)(lexer.current) - (int)(token.word);
+	return token;
 }
