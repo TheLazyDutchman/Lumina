@@ -1,1 +1,49 @@
 import "lexer.lumina"
+
+type Parser {
+	Lexer lexer;
+	Token current;
+
+	int outputFile; // int here is a file descriptor
+
+	int numIfs;
+	int numElses;
+	int numAnds;
+	int numOrs;
+	int numWhiles;
+	int numFuncs;
+
+	bool hadError;
+}
+
+func initParser(str inputName, str outputName, bool isChecking) -> Parser {
+	var parser = (Parser)malloc(sizeof(Parser));
+
+	parser.lexer = initLexer(inputName, (Lexer)0);
+	parser.current = nextToken(parser.lexer);
+
+	parser.outputFile = open(outputName, 0, 0);
+
+	parser.numIfs = 0;
+	parser.numElses = 0;
+	parser.numAnds = 0;
+	parser.numOrs = 0;
+	parser.numWhiles = 0;
+	parser.numFuncs = 0;
+
+	parser.hadError = (bool)0;
+
+	return parser;
+}
+
+func freeParser(Parser parser) {
+	freeLexer(parser.lexer);
+
+	if (parser.current != (Token)0) {
+		free((ptr)(parser.current));
+	}
+
+	close(parser.outputFile);
+
+	free((ptr)parser);
+}
