@@ -45,7 +45,11 @@ func main() {
 
 	fileName = getFullPathString(filePath);
 
-	var lexer = initLexer(fileName, (Lexer)0);
+	filePath.extension = "asm";
+
+	var outputName = getFullPathString(filePath);
+
+	var parser = initParser(fileName, outputName, check);
 }
 
 main();
