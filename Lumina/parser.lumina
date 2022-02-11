@@ -1,9 +1,11 @@
 import "lexer.lumina"
+import "compiler.lumina"
 
 type Parser {
 	Lexer lexer;
 	Token current;
 
+	Compiler compiler;
 	int outputFile; // int here is a file descriptor
 
 	int numIfs;
@@ -23,6 +25,7 @@ func initParser(str inputName, str outputName, bool isChecking) -> Parser {
 	parser.current = nextToken(parser.lexer);
 
 	parser.outputFile = open(outputName, 0, 0);
+	parser.compiler = initCompiler(parser.outputFile, (Compiler)0);
 
 	parser.numIfs = 0;
 	parser.numElses = 0;
@@ -44,6 +47,7 @@ func freeParser(Parser parser) {
 	}
 
 	close(parser.outputFile);
+	freeCompiler(parser.compiler);
 
 	free((ptr)parser);
 }

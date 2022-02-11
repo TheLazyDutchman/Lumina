@@ -1,0 +1,19 @@
+type Compiler {
+	int output;
+	int currentStackSize;
+	Compiler outer;
+}
+
+func initCompiler(int output, Compiler outer) -> Compiler {
+	var compiler = (Compiler)malloc(sizeof(Compiler));
+
+	compiler.output = output;
+	compiler.currentStackSize = 0;
+	compiler.outer = outer;
+
+	return compiler;
+}
+
+func freeCompiler(Compiler compiler) {
+	free((ptr)compiler);
+}
