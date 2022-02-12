@@ -1,10 +1,12 @@
+var CALLSTACKSIZE = 2048;
+
 type Compiler {
 	int output;
 	int currentStackSize;
 	Compiler outer;
 }
 
-func initCompiler(int output, Compiler outer) -> Compiler {
+func initCompiler(int output, Compiler outer) . Compiler {
 	var compiler = (Compiler)malloc(sizeof(Compiler));
 
 	compiler.output = output;
@@ -16,4 +18,46 @@ func initCompiler(int output, Compiler outer) -> Compiler {
 
 func freeCompiler(Compiler compiler) {
 	free((ptr)compiler);
+}
+
+func writeHeader(Compiler compiler) {
+	printf(compiler.output, "section .text\n");
+	printf(compiler.output, "global _start\n");
+	printf(compiler.output, "_start:\n");
+	printf(compiler.output, "	;; -- initializing call stack --\n");
+	printf(compiler.output, "	lea rax, [callStack + ");
+	//print call stack size
+	printf(compiler.output, "]\n");
+	printf(compiler.output, "	mov [callrsp], rax\n");
+	printf(compiler.output, "	mov rax, rsp\n");
+	printf(compiler.output, "	add rax, 8\n"); // this is where argc and argv are stored
+	printf(compiler.output, "	push rax\n");
+	printf(compiler.output, "	mov [basestack], rax\n");
+
+	printf(compiler.output, "	;; -- syscall builtin --\n");
+	printf(compiler.output, "	jmp addr_func_end_0\n");
+	printf(compiler.output, "addr_func_0:\n");
+	printf(compiler.output, "	pop r9\n");
+	printf(compiler.output, "	pop r8\n");
+	printf(compiler.output, "	pop r10\n");
+	printf(compiler.output, "	pop rdx\n");
+	printf(compiler.output, "	pop rsi\n");
+	printf(compiler.output, "	pop rdi\n");
+	printf(compiler.output, "	pop rax\n");
+	printf(compiler.output, "	syscall\n");
+
+	printf(compiler.output, "	;; -- return --\n");
+
+	printf(compiler.output, "	;; -- push return value --\n");
+	printf(compiler.output, "	push rax\n");
+	
+	printf(compiler.output, "	;; -- pop return address --\n");
+	printf(compiler.output, "	mov rax, [callrsp]\n");
+	printf(compiler.output, "	add rax, 8\n");
+	printf(compiler.output, "	mov [callrsp], rax\n");
+	// jump to address
+	printf(compiler.output, "	mov rax, [callrsp]\n");
+	printf(compiler.output, "	jmp [rax]\n");
+
+	printf(compiler.output, "addr_func_end_0:\n");
 }
