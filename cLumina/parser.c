@@ -200,7 +200,7 @@ ParseRule parseTable[] = {
 	[TOKEN_LESSEQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_GREATEREQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_EQUALEQUAL] = {NULL, binary, PREC_COMPARISON},
-	[TOKEN_BANG] = {NULL, NULL, PREC_OR},
+	[TOKEN_BANG] = {unary, NULL, PREC_OR},
 	[TOKEN_BANGEQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_RARROW] = {NULL, NULL, PREC_NONE},
 	[TOKEN_LPAREN] = {group, NULL, PREC_PRIMARY},
@@ -901,6 +901,17 @@ void unary(Parser* parser) {
 			}
 
 			writeNegative(parser->compiler);
+
+			break;
+		case TOKEN_BANG:
+			dumpUnary(parser, operator);
+
+			if (strcmp(parser->lastType->name, "int") != 0) {
+				parseError(parser, parser->lastType->token, "cannot take the inverse of this type");
+				return;
+			}
+
+			writeBitNot(parser->compiler);
 
 			break;
 		default:

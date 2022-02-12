@@ -51,6 +51,7 @@ void writeCompare(Compiler* compiler);
 
 void writeBitAnd(Compiler* compiler);
 void writeBitOr(Compiler* compiler);
+void writeBitNot(Compiler* compiler);
 
 void writeLess(Compiler* compiler);
 void writeLessEqual(Compiler* compiler);

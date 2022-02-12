@@ -1,2 +1,10 @@
-print('0' + 15 - 6);
-print('0' + -8 - -14);
+import "../std/io.lumina"
+
+printi(1);
+print("\t\n");
+printi(9);
+print("\t\n");
+printi(15);
+print("\t\n");
+printi(36 - 125);
+print("\t\n");

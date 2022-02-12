@@ -409,6 +409,13 @@ void writeBitOr(Compiler* compiler) {
 	compiler->currentStackSize--;
 }
 
+void writeBitNot(Compiler* compiler) {
+	fprintf(compiler->output, "	;; -- bit not --\n");
+	fprintf(compiler->output, "	pop rax\n");
+	fprintf(compiler->output, "	not rax\n");
+	fprintf(compiler->output, "	push rax\n\n");
+}
+
 void writeLess(Compiler* compiler) {
 	fprintf(compiler->output, "	;; -- less --\n");
 	fprintf(compiler->output, "	pop rbx\n");
@@ -762,7 +769,7 @@ void writeMult(Compiler* compiler) {
 	fprintf(compiler->output, "	pop rbx\n");
 	fprintf(compiler->output, "	pop rax\n");
 	fprintf(compiler->output, "	mul rbx\n");
-	fprintf(compiler->output, "	push rbx\n\n");
+	fprintf(compiler->output, "	push rax\n\n");
 
 	compiler->currentStackSize--;
 }

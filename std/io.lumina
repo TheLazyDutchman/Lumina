@@ -6,8 +6,47 @@ func fprint(int fd, str string) -> int {
 	return (int)syscall(SYSWRITE, fd, string, length, 0, 0, 0);
 }
 
+var STDOUT = 1;
+
 func print(str string) -> int {
-	var STDOUT = 1;
-	
 	return fprint(STDOUT, string);
+}
+
+func fprinti(int file, int number) {
+	var buffer = (str)malloc(22); //enough size for any number
+	var isNegative = number < 0;
+	if (isNegative) {
+		number = (!number + 1); //two's complement
+		buffer[0] = "-";
+	}
+
+	var index = (int)isNegative;
+
+	while (number > 0) {
+		var size = 1;
+
+		while (size * 10 <= number) {
+			size = size * 10;
+		}
+
+		var counter = 0;
+		
+		while (size <= number) {
+			number = number - size;
+			counter = counter + 1;
+		}
+
+		buffer[index] = "0" + counter;
+		index = index + 1;
+	}
+	
+	buffer[index] = "\0";
+
+	fprint(file, buffer);
+
+	free((ptr)buffer);
+}
+
+func printi(int number) {
+	fprinti(STDOUT, number);
 }
