@@ -88,7 +88,12 @@ func initLexer(str fileName, Lexer outer) -> Lexer {
 
 	lexer.outer = outer;
 	
-	lexer.fileName = fileName;
+	if (lexer.outer == (Lexer)0) { lexer.fileName = fileName; }
+	else {
+		var filePath = getLocalFilePath(lexer.outer.fileName, fileName);
+		lexer.fileName = getFullPathString(filePath);
+	}
+
 	lexer.buffer = readFile(fileName);
 	lexer.current = lexer.buffer;
 
@@ -291,13 +296,13 @@ func lexKeyWords(Lexer lexer) -> Token {
 func lexCharacter(Lexer lexer) -> Token {
 	var token = (Token)malloc(sizeof(Token));
 
+	advance(lexer);
+
 	token.fileName = lexer.fileName;
 	token.word = lexer.current;
 	token.line = lexer.line;
 	token.column = lexer.column;
 	
-	advance(lexer);
-
 	if (lexer.current[0] == '\\') {
 		advance(lexer);
 	}
@@ -309,20 +314,20 @@ func lexCharacter(Lexer lexer) -> Token {
 		token.tokenType = TOKEN_ERROR;
 	}
 
-	token.wordLen = (int)(lexer.current) - (int)(token.word);
+	token.wordLen = (int)(lexer.current) - (int)(token.word) - 1;
 	return token;
 }
 
 func lexString(Lexer lexer) -> Token {
 	var token = (Token)malloc(sizeof(Token));
 
+	advance(lexer);
+
 	token.fileName = lexer.fileName;
 	token.word = lexer.current;
 	token.line = lexer.line;
 	token.column = lexer.column;
 	
-	advance(lexer);
-
 	while (lexer.current[0] != '"' && lexer.current[0] != '\0') {
 		if (lexer.current[0] == '\\') {
 			advance(lexer);
@@ -336,7 +341,7 @@ func lexString(Lexer lexer) -> Token {
 		token.tokenType = TOKEN_ERROR;
 	}
 
-	token.wordLen = (int)(lexer.current) - (int)(token.word);
+	token.wordLen = (int)(lexer.current) - (int)(token.word) - 1;
 	return token;
 }
 

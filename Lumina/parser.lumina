@@ -79,23 +79,43 @@ func parseError(Parser parser, Token token, str message) {
 	}
 }
 
-func consumeToken(Parser parser, int tokenType, str message) {
-	if (parser.current.tokenType != tokenType) {
+func consumeToken(Parser parser, int tokenType, str message) -> Token{
+	var token = parser.current;
+	if (token.tokenType != tokenType) {
 		parseError(parser, parser.current, message);
-		return;
+		token.tokenType = TOKEN_ERROR;
+		return token;
 	}
 
 	next(parser);
+	return token;
 }
 
 
 func expression(Parser parser) {
 }
 
-func statement(Parser parser) {
-	expression(parser);
+func importStatement(Parser parser) {
+	next(parser);
+	var nameToken = consumeToken(parser, TOKEN_STR, "expected name of import file");
+	var name = strndup(nameToken.word, nameToken.wordLen);
+	
+	// check if file was imported before
 
-	consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after expression");
+	parser.lexer = initLexer(name, parser.lexer);
+	parser.current = nextToken(parser.lexer);
+
+	free((ptr)name);
+}
+
+func statement(Parser parser) {
+	if (parser.current.tokenType == TOKEN_IMPORT) {
+		importStatement(parser);
+	} else {
+		expression(parser);
+
+		consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after expression");
+	}
 }
 
 func parse(Parser parser) {

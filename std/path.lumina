@@ -65,6 +65,88 @@ func getPathFromString(str file) -> Path {
 	return path;
 }
 
+func getLocalFilePath(str outerFile, str file) -> Path {
+	var path = (Path)malloc(sizeof(Path));
+
+	var outerDepth = countchr(outerFile, '/');
+	var depth = outerDepth + countchr(file, '/');
+	path.folders = (str[])malloc((depth + 1) * sizeof(str));
+
+	var name = outerFile;
+
+	var index = strindex(outerFile, '/');
+	var currentDepth = 0;
+
+	if (name[0] == '.' && _is_outer(name) == (bool)0) {
+		outerDepth = outerDepth - 1;
+		depth = depth - 1;
+		name = (str)((int)name + index);
+		index = strindex(name, '/');
+	}
+
+	while (currentDepth < outerDepth) {
+		if (_is_outer(name) && 
+			_is_outer(path.folders[currentDepth - 1]) == (bool)0 &&
+			currentDepth > 0) {
+			currentDepth = currentDepth - 1;
+			outerDepth = outerDepth - 2;
+			depth = depth - 2;
+
+			name = (str)((int)name + index);
+			index = strindex(name, '/');
+		}
+
+		path.folders[currentDepth] = strndup(name, index - 1);
+		name = (str)((int)name + index);
+		index = strindex(name, '/');
+
+		currentDepth = currentDepth + 1;
+	}
+
+	name = file;
+
+	index = strindex(file, '/');
+	
+	if (name[0] == '.' && _is_outer(name) == (bool)0) {
+		depth = depth - 1;
+		name = (str)((int)name + index);
+		index = strindex(name, '/');
+	}
+
+	while (currentDepth < depth) {
+		if (_is_outer(name) &&
+			_is_outer(path.folders[currentDepth - 1]) == (bool)0 &&
+			currentDepth > 0) {
+			currentDepth = currentDepth - 1;
+			depth = depth - 2;
+
+			name = (str)((int)name + index);
+			index = strindex(name, '/');
+		}
+
+		path.folders[currentDepth] = strndup(name, index - 1);
+		name = (str)((int)name + index);
+		index = strindex(name, '/');
+
+		currentDepth = currentDepth + 1;
+	}
+	
+	path.folders[currentDepth] = (str)0;
+
+	index = strindex(name, '.');
+
+	if (index == -1) {
+		path.name = name;
+		path.extension = (str)0;
+	} else {
+		path.name = strndup(name, index - 1);
+		name = (str)((int)name + index);
+		path.extension = strndup(name, strlen(name));
+	}
+
+	return path;
+}
+
 func getFullPathString(Path path) -> str {
 	var len = 0;
 	var i = 0;
