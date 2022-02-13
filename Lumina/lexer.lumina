@@ -127,6 +127,10 @@ func handleComment(Lexer lexer) {
 
 func lexerError(Lexer lexer, str message) {
 	print(lexer.fileName);
+	print(": ");
+	printi(lexer.line);
+	print(": ");
+	printi(lexer.column);
 	print(":error: at character: '");
 
 	var character = (str)malloc(2);
@@ -302,6 +306,7 @@ func lexCharacter(Lexer lexer) -> Token {
 	token.word = lexer.current;
 	token.line = lexer.line;
 	token.column = lexer.column;
+	token.tokenType = TOKEN_CHAR;
 	
 	if (lexer.current[0] == '\\') {
 		advance(lexer);
@@ -327,6 +332,7 @@ func lexString(Lexer lexer) -> Token {
 	token.word = lexer.current;
 	token.line = lexer.line;
 	token.column = lexer.column;
+	token.tokenType = TOKEN_STR;
 	
 	while (lexer.current[0] != '"' && lexer.current[0] != '\0') {
 		if (lexer.current[0] == '\\') {
@@ -336,9 +342,9 @@ func lexString(Lexer lexer) -> Token {
 		advance(lexer);
 	}
 
-	if (lexer.current[0] != '"') {
+	if (lexer.current[0] == '\0') {
 		lexerError(lexer, "expected '\"' after string");
-		token.tokenType = TOKEN_ERROR;
+		token.tokenType = TOKEN_END_OF_FILE;
 	}
 
 	token.wordLen = (int)(lexer.current) - (int)(token.word) - 1;
