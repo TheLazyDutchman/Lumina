@@ -18,7 +18,7 @@ func getPathFromString(str file) -> Path {
 	var path = (Path)malloc(sizeof(Path));
 
 	var depth = countchr(file, '/');
-	path.folders = (str[])malloc(depth * sizeof(str));
+	path.folders = (str[])malloc((depth + 1) * sizeof(str));
 
 	var name = file;
 
@@ -90,8 +90,9 @@ func getFullPathString(Path path) -> str {
 	var buffer = value;
 
 	if (isLocal) {
-		value[0] = '.';
-		value[1] = '/';
+		buffer[0] = '.';
+		buffer[1] = '/';
+		buffer = (str)((int)buffer + 2);
 	}
 
 	i = 0;
@@ -118,6 +119,8 @@ func getFullPathString(Path path) -> str {
 	}
 
 	buffer[0] = '\0';
+
+	print(value);
 
 	return value;
 }

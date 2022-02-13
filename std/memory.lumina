@@ -71,6 +71,10 @@ func _block_to_ptr(_heap_block block) -> ptr {
 }
 
 func malloc(int size) -> ptr {
+	if (size <= 0) {
+		return (ptr)0;
+	}
+
 	var block = _heap_start;
 
 	while (block != (_heap_block)0) {
