@@ -74,7 +74,7 @@ func parseError(Parser parser, Token token, str message) {
 	print(message);
 	print(" \n");
 
-	while (parser.current.tokenType != TOKEN_SEMICOLON) {
+	while (parser.current.tokenType != TOKEN_SEMICOLON && parser.current.tokenType != TOKEN_END_OF_FILE) {
 		next(parser);
 	}
 }

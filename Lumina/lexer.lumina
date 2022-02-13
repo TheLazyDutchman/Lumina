@@ -128,6 +128,7 @@ func lexerError(Lexer lexer, str message) {
 	character[0] = lexer.current[0];
 	character[1] = '\0';
 	print(character);
+	free((ptr)character);
 
 	print("' :");
 	print(message);
@@ -287,6 +288,58 @@ func lexKeyWords(Lexer lexer) -> Token {
 	return token;
 }
 
+func lexCharacter(Lexer lexer) -> Token {
+	var token = (Token)malloc(sizeof(Token));
+
+	token.fileName = lexer.fileName;
+	token.word = lexer.current;
+	token.line = lexer.line;
+	token.column = lexer.column;
+	
+	advance(lexer);
+
+	if (lexer.current[0] == '\\') {
+		advance(lexer);
+	}
+
+	advance(lexer);
+
+	if (lexer.current[0] != '\'') {
+		lexerError(lexer, "expected '\'' after character");
+		token.tokenType = TOKEN_ERROR;
+	}
+
+	token.wordLen = (int)(lexer.current) - (int)(token.word);
+	return token;
+}
+
+func lexString(Lexer lexer) -> Token {
+	var token = (Token)malloc(sizeof(Token));
+
+	token.fileName = lexer.fileName;
+	token.word = lexer.current;
+	token.line = lexer.line;
+	token.column = lexer.column;
+	
+	advance(lexer);
+
+	while (lexer.current[0] != '"') {
+		if (lexer.current[0] == '\\') {
+			advance(lexer);
+		}
+
+		advance(lexer);
+	}
+
+	if (lexer.current[0] != '"') {
+		lexerError(lexer, "expected '\"' after string");
+		token.tokenType = TOKEN_ERROR;
+	}
+
+	token.wordLen = (int)(lexer.current) - (int)(token.word);
+	return token;
+}
+
 func lexPunctuation(Lexer lexer) -> Token {
 	var token = (Token)malloc(sizeof(Token));
 
@@ -411,8 +464,18 @@ func nextToken(Lexer lexer) -> Token {
 	if (isnumeric(lexer.current[0])) {
 		return lexNumber(lexer);
 	}
+
 	if (isalpha(lexer.current[0]) || lexer.current[0] == '_') {
 		return lexKeyWords(lexer);
 	}
+
+	if (lexer.current[0] == '\'') {
+		return lexCharacter(lexer);
+	}
+
+	if (lexer.current[0] == '\"') {
+		return lexString(lexer);
+	}
+
 	return lexPunctuation(lexer);
 }

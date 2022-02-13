@@ -21,11 +21,17 @@ func fprinti(int file, int number) {
 	}
 
 	var index = (int)isNegative;
+	var nextSize = 1;
 
-	while (number > 0) {
+	while (nextSize * 10 <= number) {
+		nextSize = nextSize * 10;
+	}
+
+	while (nextSize > 1) {
 		var size = 1;
 
-		while (size * 10 <= number) {
+		while (size * 10 <= nextSize) {
+			nextSize = size;
 			size = size * 10;
 		}
 
@@ -39,8 +45,9 @@ func fprinti(int file, int number) {
 		buffer[index] = "0" + counter;
 		index = index + 1;
 	}
-	
-	buffer[index] = "\0";
+
+	buffer[index] = "0" + number; // the last loop leaves the last digit
+	buffer[index + 1] = "\0";
 
 	fprint(file, buffer);
 
