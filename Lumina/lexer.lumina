@@ -122,7 +122,14 @@ func handleComment(Lexer lexer) {
 
 func lexerError(Lexer lexer, str message) {
 	print(lexer.fileName);
-	print(":error: ");
+	print(":error: at character: '");
+
+	var character = (str)malloc(2);
+	character[0] = lexer.current[0];
+	character[1] = '\0';
+	print(character);
+
+	print("' :");
 	print(message);
 	print("\t\n");
 }

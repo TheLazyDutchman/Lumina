@@ -120,7 +120,5 @@ func getFullPathString(Path path) -> str {
 
 	buffer[0] = '\0';
 
-	print(value);
-
 	return value;
 }

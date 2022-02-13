@@ -51,7 +51,7 @@ func main() {
 
 	var parser = initParser(fileName, outputName, check);
 
-	//parse(parser);
+	parse(parser);
 }
 
 main();
