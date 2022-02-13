@@ -53,3 +53,53 @@ func freeParser(Parser parser) {
 
 	free((ptr)parser);
 }
+
+func next(Parser parser) -> Token {
+	if (parser.current != (Token)0) {
+		free((ptr)(parser.current));
+	}
+
+	parser.current = nextToken(parser.lexer);
+
+	return parser.current;
+}
+
+func parseError(Parser parser, Token token, str message) {
+	print(token.fileName);
+	print(": ");
+	printi(token.line);
+	print(": ");
+	printi(token.column);
+	print(":error: ");
+	print(message);
+	print(" \n");
+
+	while (parser.current.tokenType != TOKEN_SEMICOLON) {
+		next(parser);
+	}
+}
+
+func consumeToken(Parser parser, int tokenType, str message) {
+	if (parser.current.tokenType != tokenType) {
+		parseError(parser, parser.current, message);
+		return;
+	}
+
+	next(parser);
+}
+
+
+func expression(Parser parser) {
+}
+
+func statement(Parser parser) {
+	expression(parser);
+
+	consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after expression");
+}
+
+func parse(Parser parser) {
+	while (parser.current.tokenType != TOKEN_END_OF_FILE) {
+		statement(parser);
+	}
+}

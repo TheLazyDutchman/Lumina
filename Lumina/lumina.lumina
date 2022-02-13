@@ -50,6 +50,8 @@ func main() {
 	var outputName = getFullPathString(filePath);
 
 	var parser = initParser(fileName, outputName, check);
+
+	parse(parser);
 }
 
 main();
