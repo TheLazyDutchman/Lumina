@@ -3,6 +3,7 @@ import "compiler.lumina"
 
 type Parser {
 	Lexer lexer;
+	Token last;
 	Token current;
 
 	Compiler compiler;
@@ -23,6 +24,7 @@ func initParser(str inputName, str outputName, bool isChecking) -> Parser {
 	var parser = (Parser)malloc(sizeof(Parser));
 
 	parser.lexer = initLexer(inputName, (Lexer)0);
+	parser.last = (Token)0;
 	parser.current = nextToken(parser.lexer);
 
 	parser.outputFile = open(outputName, 0, 0);
@@ -44,6 +46,10 @@ func initParser(str inputName, str outputName, bool isChecking) -> Parser {
 func freeParser(Parser parser) {
 	freeLexer(parser.lexer);
 
+	if (parser.last != (Token)0) {
+		free((ptr)(parser.last));
+	}
+
 	if (parser.current != (Token)0) {
 		free((ptr)(parser.current));
 	}
@@ -55,10 +61,11 @@ func freeParser(Parser parser) {
 }
 
 func next(Parser parser) -> Token {
-	if (parser.current != (Token)0) {
-		free((ptr)(parser.current));
+	if (parser.last != (Token)0) {
+		free((ptr)(parser.last));
 	}
 
+	parser.last = parser.current;
 	parser.current = nextToken(parser.lexer);
 
 	return parser.current;
@@ -99,7 +106,7 @@ func importStatement(Parser parser) {
 	next(parser);
 	var nameToken = consumeToken(parser, TOKEN_STR, "expected name of import file");
 	var name = strndup(nameToken.word, nameToken.wordLen);
-	
+
 	// check if file was imported before
 
 	parser.lexer = initLexer(name, parser.lexer);

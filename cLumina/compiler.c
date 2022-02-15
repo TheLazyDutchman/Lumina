@@ -441,7 +441,7 @@ void writeLess(Compiler* compiler) {
 }
 
 void writeLessEqual(Compiler* compiler) {
-	fprintf(compiler->output, "	;; -- less --\n");
+	fprintf(compiler->output, "	;; -- less equal --\n");
 	fprintf(compiler->output, "	pop rbx\n");
 	fprintf(compiler->output, "	pop rax\n");
 	fprintf(compiler->output, "	cmp rax, rbx\n");
@@ -510,7 +510,7 @@ void writeGreater(Compiler* compiler) {
 }
 
 void writeGreaterEqual(Compiler* compiler) {
-	fprintf(compiler->output, "	;; -- greater --\n");
+	fprintf(compiler->output, "	;; -- greater equal --\n");
 	fprintf(compiler->output, "	pop rbx\n");
 	fprintf(compiler->output, "	pop rax\n");
 	fprintf(compiler->output, "	cmp rax, rbx\n");

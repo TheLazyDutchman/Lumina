@@ -30,10 +30,11 @@ func fprinti(int file, int number) {
 	while (nextSize > 1) {
 		var size = 1;
 
-		while (size * 10 <= nextSize) {
-			nextSize = size;
+		while (size * 10 < nextSize) {
 			size = size * 10;
 		}
+		nextSize = size;
+		size = size * 10;
 
 		var counter = 0;
 		
@@ -43,6 +44,7 @@ func fprinti(int file, int number) {
 		}
 
 		buffer[index] = "0" + counter;
+
 		index = index + 1;
 	}
 

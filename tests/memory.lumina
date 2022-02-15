@@ -1,0 +1,26 @@
+import "../std/io.lumina"
+
+var oldBreak = curEnd;
+
+var size = _expand_heap(10);
+
+print("size: ");
+printi(size);
+print("\nallocated: ");
+printi((int)curEnd - (int)oldBreak);
+
+if ((int)curEnd - (int)oldBreak != size) {
+	print("\nerror\n");
+} else {
+	print("\nok\n");
+}
+
+_heap_start.size = _heap_start.size + size;
+
+var block = _split_block(_heap_start, 4096 + 100);
+
+if ((ptr)(block.next) > oldBreak) {
+	print("using new break\n");
+} else {
+	print("not using allocated memory\n");
+}

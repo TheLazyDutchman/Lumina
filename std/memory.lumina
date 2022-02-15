@@ -10,8 +10,9 @@ type _heap_block {
 }
 
 var _heap_start = (_heap_block)brk((ptr)0);
+var _last_block = _heap_start;
 
-brk((ptr)((int)_heap_start + PAGESIZE)); // allocate memory for the heap
+var curEnd = brk((ptr)((int)_heap_start + PAGESIZE)); // allocate memory for the heap
 
 _heap_start.size = PAGESIZE - sizeof(_heap_block); // initialize the first block
 _heap_start.free = 0 == 0; // true keyword is not implemented yet
@@ -27,7 +28,7 @@ func _expand_heap(int size) -> int {
 	}
 
 	var current = (int)brk((ptr)0);
-	brk((ptr)(current + val));
+	curEnd = brk((ptr)(current + val));
 
 	return val;
 }
@@ -52,12 +53,20 @@ func _split_block(_heap_block block, int size) -> _heap_block {
 
 	block.next = newBlock;
 
+	if (_last_block == block) {
+		_last_block = newBlock;
+	}
+
 	return block;
 }
 
 
 func _combine(_heap_block block) {
 	block.size = block.size + sizeof(_heap_block) + block.next.size;
+
+	if (block.next == _last_block) {
+		_last_block = block;
+	}
 
 	block.next = block.next.next;
 
@@ -91,12 +100,19 @@ func malloc(int size) -> ptr {
 
 	var expandedSize = _expand_heap(size);
 
-	var newBlock = (_heap_block)((int)block + sizeof(_heap_block) + block.size);
+	var newBlock = (_heap_block)((int)_last_block + sizeof(_heap_block) + _last_block.size);
+
 	newBlock.free = 0 == 0;
 	newBlock.size = expandedSize - sizeof(_heap_block);
-	newBlock.prev = block;
-	block.next = newBlock;
+	newBlock.prev = _last_block;
+	_last_block.next = newBlock;
 	newBlock.next = 0;
+
+	_last_block = newBlock;
+
+	if (newBlock.prev.free) {
+		_combine(newBlock.prev);
+	}
 
 	return malloc(size);
 }
