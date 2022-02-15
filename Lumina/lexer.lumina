@@ -72,26 +72,10 @@ func readFile(str fileName) -> str {
 	var SEEK_END = 2;
 
 	var len = lseek(file, 0, SEEK_END);
-	printi(len);
-	print(" len\n");
-	print(fileName);
-	print(" \n");
 	lseek(file, 0, SEEK_SET);
 
 	var buffer = (str)malloc(len + 1);
 
-	if ((ptr)curEnd != brk((ptr)0)) {
-		print("error when expanding heap");
-	}
-
-	if (len + (int)buffer > (int)curEnd) {
-		print("error\n");
-		printi((int)buffer);
-		print(" \n");
-		printi((int)curEnd);
-		print(" \n");
-	}
-	
 	len = read(file, buffer, len);
 
 	if (len == -1) {
@@ -99,12 +83,6 @@ func readFile(str fileName) -> str {
 		print(fileName);
 		print("'\n");
 	}
-
-	print("sysbreak: ");
-	printi((int)curEnd);
-	print("\nbuffer end: ");
-	printi((int)buffer);
-	print("\n\n");
 
 	buffer[len] = '\0';
 
