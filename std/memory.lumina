@@ -41,7 +41,7 @@ func _split_block(_heap_block block, int size) -> _heap_block {
 	var newBlock = (_heap_block)((int)block + size + sizeof(_heap_block));
 
 	newBlock.free = 0 == 0;
-	newBlock.size = block.size - size - sizeof(_heap_block);
+	newBlock.size = (block.size - size) - sizeof(_heap_block);
 	block.size = size;
 
 	newBlock.prev = block;
