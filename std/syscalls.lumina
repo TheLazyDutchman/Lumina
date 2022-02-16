@@ -368,8 +368,8 @@ func execve() -> int {
 	return (int)syscall(SYSEXECVE, 0, 0, 0, 0, 0, 0);
 }
 
-func exit() -> int {
-	return (int)syscall(SYSEXIT, 0, 0, 0, 0, 0, 0);
+func exit(int error_code) -> int {
+	return (int)syscall(SYSEXIT, error_code, 0, 0, 0, 0, 0);
 }
 
 func wait4() -> int {

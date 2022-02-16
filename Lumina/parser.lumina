@@ -121,9 +121,27 @@ func importStatement(Parser parser) {
 	free((ptr)name);
 }
 
+func variableDefinition(Parser parser) {
+	next(parser);
+
+	var nameToken = consumeToken(parser, TOKEN_IDENTIFIER, "expected name of variable");
+
+	if (nameToken.tokenType == TOKEN_ERROR) {
+		return;
+	}
+
+	if (consumeToken(parser, TOKEN_EQUAL, "expected '=' in variable definition").tokenType == TOKEN_ERROR) { return; }
+
+	expression(parser);
+
+	consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after variable definition");
+}
+
 func statement(Parser parser) {
 	if (parser.current.tokenType == TOKEN_IMPORT) {
 		importStatement(parser);
+	} else if (parser.current.tokenType == TOKEN_VAR) {
+		variableDefinition(parser);
 	} else {
 		expression(parser);
 
