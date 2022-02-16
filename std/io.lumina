@@ -1,12 +1,20 @@
 import "string.lumina"
 
-func fprint(int fd, str string) -> int {
+func fprintn(int fd, str string, int length) -> int {
 	var SYSWRITE = 1;
-	var length = strlen(string);
 	return (int)syscall(SYSWRITE, fd, string, length, 0, 0, 0);
 }
 
+func fprint(int fd, str string) -> int {
+	var length = strlen(string);
+	return fprintn(fd, string, length);
+}
+
 var STDOUT = 1;
+
+func printn(str string, int length) -> int {
+	return fprintn(STDOUT, string, length);
+}
 
 func print(str string) -> int {
 	return fprint(STDOUT, string);

@@ -72,12 +72,18 @@ func next(Parser parser) -> Token {
 }
 
 func parseError(Parser parser, Token token, str message) {
+	parser.hadError = (bool)1;
+
 	print(token.fileName);
 	print(": ");
 	printi(token.line);
 	print(": ");
 	printi(token.column);
-	print(":error: ");
+
+	print(":error: at '");
+	printn(token.word, token.wordLen);
+	print("', ");
+
 	print(message);
 	print(" \n");
 
