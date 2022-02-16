@@ -1,0 +1,66 @@
+import "types.lumina"
+import "variables.lumina"
+
+type Function {
+	str name;
+	Type returnType;
+	VariableList parameters;
+	int id;
+	int numCalls;
+}
+
+type FunctionList {
+	int size;
+	int maxSize;
+	Function[] functions;
+}
+
+func initFunction(str name, int id, int numCalls, Type returnType, VariableList parameters) -> Function {
+	var function = (Function)malloc(sizeof(Function));
+
+	function.name = name;
+	function.id = id;
+	function.numCalls = numCalls;
+	function.returnType = returnType;
+	function.parameters = parameters;
+
+	return function;
+}
+
+func freeFunction(Function function) {
+	free((ptr)(function.name));
+	freeVariableList(function.parameters);
+	free((ptr)function);
+}
+
+func initFunctionList() -> FunctionList {
+	var list = (FunctionList)malloc(sizeof(FunctionList));
+
+	list.size = 0;
+	list.maxSize = 8;
+	list.functions = (Function[])malloc(8 * 8); // pointer size is 8
+
+	return list;
+}
+
+func freeFunctionList(FunctionList list) {
+	var i = 0;
+	while (i < list.size) {
+		freeFunction(list.functions[i]);
+		i = i + 1;
+	}
+
+	free((ptr)(list.functions));
+	free((ptr)list);
+}
+
+func addFunction(FunctionList list, str name, int id, int numCalls, Type returnType, VariableList parameters) {
+	list.functions[list.size] = initFunction(name, id, numCalls, returnType, parameters);
+
+	list.size = list.size + 1;
+
+	if (list.size == list.maxSize) {
+		list.maxSize = list.maxSize * 2;
+		list.functions = realloc((ptr)(list.functions), 8 * list.maxSize);
+	}
+}

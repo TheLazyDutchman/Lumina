@@ -1,8 +1,16 @@
+import "variables.lumina"
+import "functions.lumina"
+import "types.lumina"
+
 var CALLSTACKSIZE = 2048;
 
 type Compiler {
 	int output;
 	int currentStackSize;
+
+	VariableList variableList;
+	FunctionList functionList;
+	TypeList typeList;
 	
 	int functionDepth;
 
@@ -14,6 +22,11 @@ func initCompiler(int output, Compiler outer) -> Compiler {
 
 	compiler.output = output;
 	compiler.currentStackSize = 0;
+
+	compiler.variableList = initVariableList();
+	compiler.functionList = initFunctionList();
+	compiler.typeList = initTypeList();
+
 	compiler.outer = outer;
 
 	return compiler;

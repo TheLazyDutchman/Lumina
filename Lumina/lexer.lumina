@@ -364,7 +364,7 @@ func lexString(Lexer lexer) -> Token {
 
 	advance(lexer);
 	
-	token.wordLen = (int)(lexer.current) - (int)(token.word);
+	token.wordLen = ((int)(lexer.current) - (int)(token.word)) - 1;
 	return token;
 }
 

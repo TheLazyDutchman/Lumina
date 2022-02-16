@@ -136,13 +136,14 @@ func free(ptr addr) {
 
 func realloc(ptr addr, int newSize) -> ptr {
 	var block = (_heap_block)((int)addr - sizeof(_heap_block));
+	var oldSize = block.size;
 
-	if (newSize < block.size - sizeof(_heap_block)) {
+	if (newSize < oldSize - sizeof(_heap_block)) {
 		_split_block(block, newSize);
 		return _block_to_ptr(block);
 	}
 
-	if (newSize > block.size) {
+	if (newSize > oldSize) {
 		if (block.next > (_heap_block)0) {
 			if (block.next.free) {
 				_combine(block);
@@ -152,7 +153,7 @@ func realloc(ptr addr, int newSize) -> ptr {
 
 		var target = malloc(newSize);
 
-		// copy data from addr to target
+		strncpy(addr, target, oldSize);
 
 		free(addr);
 		return target;
