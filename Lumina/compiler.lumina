@@ -682,19 +682,20 @@ func writeMult(Compiler compiler) {
 }
 
 //func writeFooter(Compiler compiler, StringList *strings) {
-//	fprint(compiler.output, "	mov rax, 60\n");
-//	fprint(compiler.output, "	xor rdi, rdi\n");
-//	fprint(compiler.output, "	syscall\n\n");
-//
-//	fprint(compiler.output, "section .bss\n");
-//	fprint(compiler.output, "	basestack: resq ");
-//	fprinti(compiler.output, CALLSTACKSIZE);
-//	fprint(compiler.output, " \n");
-//	fprint(compiler.output, "	callrsp: resq 1\n");
-//	fprint(compiler.output, "	callStack: resq ");
-//	fprinti(compiler.output, CALLSTACKSIZE);
-//	fprint(compiler.output, " \n");
-//
+func writeFooter(Compiler compiler) {
+	fprint(compiler.output, "	mov rax, 60\n");
+	fprint(compiler.output, "	xor rdi, rdi\n");
+	fprint(compiler.output, "	syscall\n\n");
+
+	fprint(compiler.output, "section .bss\n");
+	fprint(compiler.output, "	basestack: resq ");
+	fprinti(compiler.output, CALLSTACKSIZE);
+	fprint(compiler.output, " \n");
+	fprint(compiler.output, "	callrsp: resq 1\n");
+	fprint(compiler.output, "	callStack: resq ");
+	fprinti(compiler.output, CALLSTACKSIZE);
+	fprint(compiler.output, " \n");
+
 //	fprint(compiler.output, "section .data\n");
 //	int i = 0;
 //	while (i < strings.size) {
@@ -717,4 +718,4 @@ func writeMult(Compiler compiler) {
 //
 //		i = i + 1;
 //	}
-//}
+}

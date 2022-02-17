@@ -27,7 +27,15 @@ func initParser(str inputName, str outputName, bool isChecking) -> Parser {
 	parser.last = (Token)0;
 	parser.current = nextToken(parser.lexer);
 
-	parser.outputFile = open(outputName, 0, 0);
+	parser.outputFile = open(outputName, 577, 0);
+
+	if (parser.outputFile < 0) {
+		print("could not open/create file '");
+		print(outputName);
+		print("'\n");
+		exit(1);
+	}
+
 	parser.compiler = initCompiler(parser.outputFile, (Compiler)0);
 
 	parser.numIfs = 0;
@@ -177,7 +185,11 @@ func statement(Parser parser) {
 }
 
 func parse(Parser parser) {
+	writeHeader(parser.compiler);
+
 	while (parser.current.tokenType != TOKEN_END_OF_FILE) {
 		statement(parser);
 	}
+
+	writeFooter(parser.compiler);
 }
