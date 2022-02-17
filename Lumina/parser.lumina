@@ -16,7 +16,7 @@ type Parser {
 	int numWhiles;
 	int numFuncs;
 
-	bool hadError;
+	bool hasError;
 	bool isChecking;
 }
 
@@ -27,12 +27,21 @@ func initParser(str inputName, str outputName, bool isChecking) -> Parser {
 	parser.last = (Token)0;
 	parser.current = nextToken(parser.lexer);
 
-	parser.outputFile = open(outputName, 577, 0);
+	if (isChecking) {
+		parser.outputFile = open("/dev/null", 1, 0);
+	} else {
+		parser.outputFile = open(outputName, 577, 0);
+	}
 
 	if (parser.outputFile < 0) {
 		print("could not open/create file '");
 		print(outputName);
 		print("'\n");
+
+		print("error code: ");
+		printi(parser.outputFile);
+		print(" \n");
+
 		exit(1);
 	}
 
@@ -72,7 +81,7 @@ func initParser(str inputName, str outputName, bool isChecking) -> Parser {
 
 	parser.numFuncs = 1;
 
-	parser.hadError = (bool)0;
+	parser.hasError = (bool)0;
 	parser.isChecking = isChecking;
 
 	return parser;
@@ -107,7 +116,7 @@ func next(Parser parser) -> Token {
 }
 
 func parseError(Parser parser, Token token, str message) {
-	parser.hadError = (bool)1;
+	parser.hasError = (bool)1;
 
 	print(token.fileName);
 	print(": ");

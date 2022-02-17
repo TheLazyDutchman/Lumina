@@ -162,7 +162,9 @@ func getFullPathString(Path path) -> str {
 		len = 2;
 	}
 
-	len = len + strlen(path.name);
+	if (path.name != (str)0) {
+		len = len + strlen(path.name);
+	}
 
 	if (path.extension != (str)0) {
 		len = len + strlen(path.extension) + 1;
@@ -187,17 +189,19 @@ func getFullPathString(Path path) -> str {
 		i = i + 1;
 	}
 
-	var nameLen = strlen(path.name);
-	strncpy(path.name, buffer, nameLen);
-	buffer = (str)((int)buffer + nameLen);
+	if (path.name != (str)0) {
+		var nameLen = strlen(path.name);
+		strncpy(path.name, buffer, nameLen);
+		buffer = (str)((int)buffer + nameLen);
 
-	if (path.extension != (str)0) {
-		buffer[0] = '.';
-		buffer = (str)((int)buffer + 1);
+		if (path.extension != (str)0) {
+			buffer[0] = '.';
+			buffer = (str)((int)buffer + 1);
 
-		var extLen = strlen(path.extension);
-		strncpy(path.extension, buffer, extLen);
-		buffer = (str)((int)buffer + extLen);
+			var extLen = strlen(path.extension);
+			strncpy(path.extension, buffer, extLen);
+			buffer = (str)((int)buffer + extLen);
+		}
 	}
 
 	buffer[0] = '\0';

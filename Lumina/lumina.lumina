@@ -52,6 +52,10 @@ func main() {
 	var parser = initParser(fileName, outputName, check);
 
 	parse(parser);
+
+	if (parser.hasError) {
+		exit(1);
+	}
 }
 
 main();
