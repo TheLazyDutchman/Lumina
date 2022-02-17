@@ -35,7 +35,34 @@ func initParser(str inputName, str outputName, bool isChecking) -> Parser {
 	parser.numAnds = 0;
 	parser.numOrs = 0;
 	parser.numWhiles = 0;
-	parser.numFuncs = 0;
+
+	var anyType = defineType(parser.compiler, "any", 3, 8, (PropertyList)0, (Type[])0, (bool)0, (Type)0);
+	var intType = defineType(parser.compiler, "int", 3, 8, (PropertyList)0, (Type[])0, (bool)0, (Type)0);
+	defineType(parser.compiler, "ptr", 3, 8, (PropertyList)0, (Type[])0, (bool)0, (Type)0);
+	var charType = defineType(parser.compiler, "char", 4, 1, (PropertyList)0, (Type[])0, (bool)0, (Type)0);
+	var strType = defineType(parser.compiler, "str", 3, 8, (PropertyList)0, (Type[])0, (bool)1, charType);
+	defineType(parser.compiler, "bool", 4, 1, (PropertyList)0, (Type[])0, (bool)0, (Type)0);
+	defineType(parser.compiler, "null", 4, 8, (PropertyList)0, (Type[])0, (bool)0, (Type)0);
+
+	var name = "syscall";
+	var nameLen = strlen(name);
+	var id = 0;
+	
+	var parameters = initVariableList();
+	var i = 0;
+	while (i < 7) {
+		addVariable(parameters, "  ", i, 0, anyType);
+		i = i + 1;
+	}
+
+	parser.compiler.currentStackSize = parser.compiler.currentStackSize + 1;
+	defineVariable(parser.compiler, "argc", 4, intType);
+	parser.compiler.currentStackSize = parser.compiler.currentStackSize + 1;
+	defineVariable(parser.compiler, "argv", 4, initType("  ", 8, (PropertyList)0, (Type[])0, (bool)1, strType));
+
+	defineFunction(parser.compiler, name, nameLen, 0, anyType, parameters);
+
+	parser.numFuncs = 1;
 
 	parser.hadError = (bool)0;
 	parser.isChecking = isChecking;

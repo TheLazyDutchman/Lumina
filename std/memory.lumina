@@ -153,7 +153,14 @@ func realloc(ptr addr, int newSize) -> ptr {
 
 		var target = malloc(newSize);
 
-		strncpy(addr, target, oldSize);
+		var src = (int[])addr;
+		var dst = (int[])target;
+
+		var i = 0;
+		while (i < oldSize) {
+			dst[i] = src[i];
+			i = i + 1;
+		}
 
 		free(addr);
 		return target;

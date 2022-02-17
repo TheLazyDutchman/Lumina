@@ -12,6 +12,8 @@ type Compiler {
 	FunctionList functionList;
 	TypeList typeList;
 	
+	Function function;
+	bool hasReturned;
 	int functionDepth;
 
 	Compiler outer;
@@ -33,7 +35,42 @@ func initCompiler(int output, Compiler outer) -> Compiler {
 }
 
 func freeCompiler(Compiler compiler) {
+	freeVariableList(compiler.variableList);
+	freeFunctionList(compiler.functionList);
+	freeTypeList(compiler.typeList);
 	free((ptr)compiler);
+}
+
+func defineVariable(Compiler compiler, str name, int nameLen, Type varType) {
+	var buffer = strndup(name, nameLen);
+
+	var position = compiler.currentStackSize;
+	var outer = compiler.outer;
+
+	while (outer != (Compiler)0) {
+		position = position + outer.currentStackSize;
+		outer = outer.outer;
+		if (outer.function != compiler.function) {
+			outer = (Compiler)0;
+		}
+	}
+
+	addVariable(compiler.variableList, buffer, position, compiler.functionDepth, varType);
+}
+
+func defineType(Compiler compiler, str name, int nameLen, int size, PropertyList properties, Type[] propertyTypes, bool isArray, Type arrayType) -> Type {
+	var buffer = strndup(name, nameLen);
+	var typeObj = initType(buffer, size, properties, propertyTypes, isArray, arrayType);
+
+	addType(compiler.typeList, typeObj);
+
+	return typeObj;
+}
+
+func defineFunction(Compiler compiler, str name, int nameLen, int id, Type returnType, VariableList parameters) {
+	var buffer = strndup(name, nameLen);
+
+	addFunction(compiler.functionList, buffer, id, returnType, parameters);
 }
 
 func writeHeader(Compiler compiler) {
