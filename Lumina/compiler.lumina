@@ -73,6 +73,28 @@ func defineFunction(Compiler compiler, str name, int nameLen, int id, Type retur
 	addFunction(compiler.functionList, buffer, id, returnType, parameters);
 }
 
+func findFunction(Compiler compiler, str name, int nameLen) -> Function {
+	var list = compiler.functionList;
+
+	var i = 0;
+	while (i < list.size) {
+		var function = list.functions[i];
+
+		if (strlen(function.name) == nameLen && strneq(function.name, name, nameLen)) {
+			return function;
+		}
+
+		i = i + 1;
+	}
+
+	if (compiler.outer == (Compiler)0) {
+		return (Function)0;
+	}
+
+	return findFunction(compiler.outer, name, nameLen);
+}
+
+
 func writeHeader(Compiler compiler) {
 	fprint(compiler.output, "section .text\n");
 	fprint(compiler.output, "global _start\n");
@@ -480,10 +502,10 @@ func writeJumpNotEqual(Compiler compiler, str address, int id) {
 	fprint(compiler.output, "\n\n");
 }
 
-func writeNumber(Compiler compiler, int value) {
+func writeNumber(Compiler compiler, str value) {
 	fprint(compiler.output, "	;; -- number --\n");
 	fprint(compiler.output, "	mov rax, ");
-	fprinti(compiler.output, value);
+	fprint(compiler.output, value);
 	fprint(compiler.output, " \n");
 	fprint(compiler.output, "	push rax\n\n");
 
