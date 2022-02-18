@@ -2,6 +2,8 @@ import "variables.lumina"
 import "functions.lumina"
 import "types.lumina"
 
+import "luminaStrings.lumina"
+
 var CALLSTACKSIZE = 2048;
 
 type Compiler {
@@ -703,8 +705,7 @@ func writeMult(Compiler compiler) {
 	compiler.currentStackSize = compiler.currentStackSize - 1;
 }
 
-//func writeFooter(Compiler compiler, StringList *strings) {
-func writeFooter(Compiler compiler) {
+func writeFooter(Compiler compiler, StringList strings) {
 	fprint(compiler.output, "	mov rax, 60\n");
 	fprint(compiler.output, "	xor rdi, rdi\n");
 	fprint(compiler.output, "	syscall\n\n");
@@ -718,13 +719,12 @@ func writeFooter(Compiler compiler) {
 	fprinti(compiler.output, CALLSTACKSIZE);
 	fprint(compiler.output, " \n");
 
-//	fprint(compiler.output, "section .data\n");
-//	int i = 0;
-//	while (i < strings.size) {
-//		char *value = strings.strings[i].value;
-//
-//		fprint(compiler.output, "	string_");
-//		fprinti(compiler.output, strings.strings[i].id);
+	fprint(compiler.output, "section .data\n");
+	var i = 0;
+	while (i < strings.size) {
+		fprint(compiler.output, "	string_");
+		fprinti(compiler.output, i);
+		fprint(compiler.output, ": db \""); // this does not handle escaped characters
 //		fprint(compiler.output, ": db ");
 //		int j = 0;
 //		int len = strlen(value);
@@ -737,7 +737,10 @@ func writeFooter(Compiler compiler) {
 //		}
 //
 //		fprint(compiler.output, "0x00\n");
-//
-//		i = i + 1;
-//	}
+
+		fprint(compiler.output, strings.strings[i]);
+		fprint(compiler.output, ", 0x00\n");
+
+		i = i + 1;
+	}
 }

@@ -1,6 +1,8 @@
 import "lexer.lumina"
 import "compiler.lumina"
 
+import "luminaStrings.lumina"
+
 type Parser {
 	Lexer lexer;
 	Token last;
@@ -15,6 +17,8 @@ type Parser {
 	int numOrs;
 	int numWhiles;
 	int numFuncs;
+
+	StringList stringList;
 
 	bool hasError;
 	bool isChecking;
@@ -81,6 +85,8 @@ func initParser(str inputName, str outputName, bool isChecking) -> Parser {
 
 	parser.numFuncs = 1;
 
+	parser.stringList = initStringList();
+
 	parser.hasError = (bool)0;
 	parser.isChecking = isChecking;
 
@@ -97,6 +103,8 @@ func freeParser(Parser parser) {
 	if (parser.current != (Token)0) {
 		free((ptr)(parser.current));
 	}
+
+	freeStringList(parser.stringList);
 
 	close(parser.outputFile);
 	freeCompiler(parser.compiler);
@@ -201,6 +209,15 @@ func expression(Parser parser) {
 		next(parser);
 	}
 
+	func string(Parser parser) {
+		var id = parser.stringList.size;
+
+		addString(parser.stringList, strndup(parser.current.word, parser.current.wordLen));
+		writeString(parser.compiler, id);
+
+		next(parser);
+	}
+
 	func unary(Parser parser) {
 		var currentType = parser.current.tokenType;
 
@@ -208,6 +225,8 @@ func expression(Parser parser) {
 			identifier(parser);
 		} else if (currentType == TOKEN_NUMBER) {
 			number(parser);
+		} else if (currentType == TOKEN_STR) {
+			string(parser);
 		} else {
 			parseError(parser, parser.current, "this token is not recognised as a unary");
 		}
@@ -264,5 +283,5 @@ func parse(Parser parser) {
 		statement(parser);
 	}
 
-	writeFooter(parser.compiler);
+	writeFooter(parser.compiler, parser.stringList);
 }
