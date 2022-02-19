@@ -364,8 +364,8 @@ func vfork() -> int {
 	return (int)syscall(SYSVFORK, 0, 0, 0, 0, 0, 0);
 }
 
-func execve() -> int {
-	return (int)syscall(SYSEXECVE, 0, 0, 0, 0, 0, 0);
+func execve(str fileName, str[] argv, str[] envp) -> int {
+	return (int)syscall(SYSEXECVE, fileName, argv, envp, 0, 0, 0);
 }
 
 func exit(int error_code) -> int {

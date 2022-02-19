@@ -34,7 +34,7 @@ func initParser(str inputName, str outputName, bool isChecking) -> Parser {
 	if (isChecking) {
 		parser.outputFile = open("/dev/null", 1, 0);
 	} else {
-		parser.outputFile = open(outputName, 577, 0);
+		parser.outputFile = open(outputName, 577, 511);
 	}
 
 	if (parser.outputFile < 0) {

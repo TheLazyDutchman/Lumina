@@ -96,6 +96,87 @@ func findFunction(Compiler compiler, str name, int nameLen) -> Function {
 	return findFunction(compiler.outer, name, nameLen);
 }
 
+func printEscapedCharacter(Compiler compiler, str charPtr) -> int {
+	var chr = charPtr[0];
+	var length = 1;
+
+	if (chr == '\\') {
+		length = 2;
+
+		var test = charPtr[1];
+
+		if (test == 'a') {
+			chr = '\a';
+		} else if (test == 'b') {
+			chr = '\b';
+		} else if (test == 'e') {
+			chr = '\e';
+		} else if (test == 'f') {
+			chr = '\f';
+		} else if (test == 'n') {
+			chr = '\n';
+		} else if (test == 'r') {
+			chr = '\r';
+		} else if (test == 't') {
+			chr = '\t';
+		} else if (test == 'v') {
+			chr = '\v';
+		} else if (test == '\\') {
+			chr = '\\';
+		} else if (test == '\'') {
+			chr = '\'';
+		} else if (test == '\"') {
+			chr = '\"';
+		} else if (test == '?') {
+			chr = '\?';
+		} else if (test == '0') { // cannot do octal yet, just 0
+			chr = '\0';
+		} else {
+			chr = test;
+		}
+	}
+
+	//split the higher and lower 4 bits of the character
+	var lower = (int)chr;
+
+	var higher = 0;
+	while (lower >= 16) {
+		higher = higher + 1;
+		lower = lower - 16;
+	}
+
+	if (higher >= 16) {
+		print("[ERROR] could not convert char '");
+		printn(charPtr, length);
+		print("' to hex\n");
+
+		return -1;
+	}
+
+	var charString = (str)malloc(5);
+
+	charString[0] = '0';
+	charString[1] = 'x';
+
+	if (0 <= higher && higher <= 9) {
+		charString[2] = '0' + higher;
+	} else {
+		charString[2] = 'A' + (higher - 10);
+	}
+
+	if (0 <= lower && lower <= 9) {
+		charString[3] = '0' + lower;
+	} else {
+		charString[3] = 'A' + (lower - 10);
+	}
+
+	charString[4] = '\0';
+
+	fprint(compiler.output, charString);
+
+	return length;
+}
+
 
 func writeHeader(Compiler compiler) {
 	fprint(compiler.output, "section .text\n");
@@ -724,22 +805,25 @@ func writeFooter(Compiler compiler, StringList strings) {
 	while (i < strings.size) {
 		fprint(compiler.output, "	string_");
 		fprinti(compiler.output, i);
-		fprint(compiler.output, ": db \""); // this does not handle escaped characters
-//		fprint(compiler.output, ": db ");
-//		int j = 0;
-//		int len = strlen(value);
-//		while (j < len) {
-//			char *chr = value + j;
-//
-//			j = j + printEscapedCharacter(compiler, &chr);
-//
-//			fprint(compiler.output, ", ");
-//		}
-//
-//		fprint(compiler.output, "0x00\n");
+		fprint(compiler.output, ": db ");
+		var j = 0;
+		var string = strings.strings[i];
+		var len = strlen(string);
+		while (j < len) {
+			var chr = (str)((int)string + j);
 
-		fprint(compiler.output, strings.strings[i]);
-		fprint(compiler.output, ", 0x00\n");
+			var length = printEscapedCharacter(compiler, chr);
+
+			j = j + length; 
+
+			fprint(compiler.output, ", ");
+
+			if (length == -1) {
+				j = len;
+			}
+		}
+
+		fprint(compiler.output, "0x00\n");
 
 		i = i + 1;
 	}

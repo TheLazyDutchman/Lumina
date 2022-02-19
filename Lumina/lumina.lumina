@@ -9,6 +9,38 @@ func usage() {
 	print("	-check: check input file for errors, but doesn't generate code\n");
 }
 
+func createChild(str name, str[] args) -> int {
+	var child_pid = fork();
+	if (child_pid < 0) {
+		print("[ERROR] could not generate child process to call '");
+		print(name);
+		print("'\n");
+		exit(1);
+	}
+
+	if (child_pid > 0) {
+		print("[CMD]");
+		var i = 0;
+		print(args[0]);
+		while (args[i] != (str)0) {
+			print("  ");
+			print(args[i]);
+			i = i + 1;
+		}
+		print(" \n");
+	} else {
+		var returnCode = execve(name, args, (str[])0);
+		print("[ERROR] problem occurred when trying to call ");
+		print(name);
+		print(": error code: ");
+		printi(returnCode);
+		print(" \n");
+		exit(1);
+	}
+
+	return child_pid;
+}
+
 func main() {
 	var fileName = (str)0;
 	var runFile = (bool)0;
@@ -45,6 +77,10 @@ func main() {
 
 	fileName = getFullPathString(filePath);
 
+	print("[FILE] opening file '");
+	print(fileName);
+	print("'\n");
+
 	filePath.extension = "asm";
 
 	var outputName = getFullPathString(filePath);
@@ -55,6 +91,37 @@ func main() {
 
 	if (parser.hasError) {
 		exit(1);
+	}
+
+	if (check) {
+		print("[CHECK] succussfully check '");
+		print(fileName);
+		print("'\n");
+		exit(0);
+	}
+
+	var nasmDebugArgs = (str[])malloc(8 * 8); // ptr size is 8
+	nasmDebugArgs[0] = "nasm";
+	nasmDebugArgs[1] = "-f";
+	nasmDebugArgs[2] = "elf64";
+	nasmDebugArgs[3] = "-F";
+	nasmDebugArgs[4] = "dwarf";
+	nasmDebugArgs[5] = "-g";
+	nasmDebugArgs[6] = outputName;
+	nasmDebugArgs[7] = (str)0;
+
+	var nasmArgs = (str[])malloc(8 * 5); // ptr size is 8
+	nasmArgs[0] = "nasm";
+	nasmArgs[1] = "-f";
+	nasmArgs[2] = "elf64";
+	nasmArgs[3] = outputName;
+	nasmArgs[4] = (str)0;
+
+	var nasm_pid = 0;
+	if (debug) {
+		nasm_pid = createChild("nasm", nasmDebugArgs);
+	} else {
+		nasm_pid = createChild("nasm", nasmArgs);
 	}
 }
 
