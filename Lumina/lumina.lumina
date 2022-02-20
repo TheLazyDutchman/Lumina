@@ -21,7 +21,6 @@ func createChild(str name, str[] args) -> int {
 	if (child_pid > 0) {
 		print("[CMD]");
 		var i = 0;
-		print(args[0]);
 		while (args[i] != (str)0) {
 			print("  ");
 			print(args[i]);
@@ -29,7 +28,7 @@ func createChild(str name, str[] args) -> int {
 		}
 		print(" \n");
 	} else {
-		var returnCode = execve(name, args, (str[])0);
+		var returnCode = execvp(name, args);
 		print("[ERROR] problem occurred when trying to call ");
 		print(name);
 		print(": error code: ");

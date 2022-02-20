@@ -129,6 +129,8 @@ var SYSRT_SIGTIMEDWAIT = 128;
 var SYSRT_SIGQUEUEINFO = 129;
 var SYSRKT_SIGSUSPEND = 130;
 
+var SYSOPENAT = 257;
+
 
 
 func read(int fd, str buf, int count) -> int {
@@ -650,4 +652,9 @@ func rt_sigqueueinfo() -> int {
 
 func rkt_sigsuspend(ptr unewset, int sigsetsize) -> int {
 	return (int)syscall(SYSRKT_SIGSUSPEND, unewset, sigsetsize, 0, 0, 0, 0);
+}
+
+
+func openat(int dir_fd, str fileName, int flags, int mode) -> int {
+	return (int)syscall(SYSOPENAT, dir_fd, fileName, flags, mode, 0, 0);
 }
