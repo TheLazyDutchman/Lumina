@@ -122,6 +122,22 @@ func main() {
 	} else {
 		nasm_pid = createChild("nasm", nasmArgs);
 	}
+
+	var nasmStatus = (int[])malloc(8); // pointer to int
+	if (wait4(nasm_pid, nasmStatus, 0, (ptr)0) < 0) {
+		print("[ERROR] wait4 failed\n");
+		exit(1);
+	}
+
+	if (WIFEXITED(nasmStatus[0])) {
+		var code = WIFEXITSTATUS(nasmStatus[0]);  
+		if (code > 0) {
+			print("[ERROR] in nasm, error code: ");
+			printi(code);
+			print(" \n");
+			exit(code);
+		}
+	}
 }
 
 main();

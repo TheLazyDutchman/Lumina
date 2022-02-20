@@ -374,8 +374,8 @@ func exit(int error_code) -> int {
 	return (int)syscall(SYSEXIT, error_code, 0, 0, 0, 0, 0);
 }
 
-func wait4() -> int {
-	return (int)syscall(SYSWAIT4, 0, 0, 0, 0, 0, 0);
+func wait4(int pid, int[] wstatus, int options, ptr rusage) -> int { // int[] here is a wierd way of getting a pointer to an integer
+	return (int)syscall(SYSWAIT4, pid, wstatus, options, rusage, 0, 0);
 }
 
 func kill() -> int {

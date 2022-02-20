@@ -100,7 +100,7 @@ func execvp(str fileName, str[] args) -> int {
 			printi(-dir_fd);
 			print(" \n");
 
-			return 1;
+			return -1;
 		}
 
 		var file_fd = openat(dir_fd, fileName, 2097152, 0);
@@ -138,4 +138,17 @@ func execvp(str fileName, str[] args) -> int {
 	}
 
 	return -2;
+}
+
+func WIFEXITED(int status) -> bool {
+	return status & 127 == 0;
+}
+
+func WIFEXITSTATUS(int status) -> int {
+	var value = 0;
+	while (256 <= status) {
+		value = value + 1;
+		status = status - 256;
+	}
+	return value;
 }
