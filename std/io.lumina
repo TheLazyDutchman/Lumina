@@ -71,11 +71,28 @@ func printi(int number) {
 
 func execvp(str fileName, str[] args) -> int {
 	var path = getEnvironmentVariable("PATH");
-	var numPaths = countchr(path, ":") + 2;
+	var numPaths = countchr(path, ":") + 3;
 	var paths = (str[])malloc(numPaths * 8); // ptr size is 8
 
 	var index = strindex(path, ":");
-	var i = 0;
+	var i = 1;
+
+	var cwdLength = 64;
+	var cwd = (str)malloc(cwdLength);
+	var code = getcwd(cwd, cwdLength);
+	while (code < 0) {
+		if (code != -34) { 
+			print("[ERROR] can not get current working directory, code: ");
+			printi(-code);
+			print(" \n");
+		}
+
+		cwdLength = cwdLength * 2;
+		cwd = (str)realloc((ptr)cwd, cwdLength);
+		code = getcwd(cwd, cwdLength);
+	}
+
+	paths[0] = cwd;
 
 	while (index > 0) {
 		paths[i] = strndup(path, index - 1);
@@ -136,6 +153,8 @@ func execvp(str fileName, str[] args) -> int {
 		i = i + 1;
 		dir = paths[i];
 	}
+
+	free((ptr)cwd);
 
 	return -2;
 }

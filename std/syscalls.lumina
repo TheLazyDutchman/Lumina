@@ -446,8 +446,8 @@ func getdents() -> int {
 	return (int)syscall(SYSGETDENTS, 0, 0, 0, 0, 0, 0);
 }
 
-func getcwd() -> int {
-	return (int)syscall(SYSGETCWD, 0, 0, 0, 0, 0, 0);
+func getcwd(str buf, int size) -> int {
+	return (int)syscall(SYSGETCWD, buf, size, 0, 0, 0, 0);
 }
 
 func chdir() -> int {

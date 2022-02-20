@@ -46,6 +46,7 @@ func main() {
 	var debug = (bool)0;
 	var suppress = (bool)0;
 	var check = (bool)0;
+	var runArgs = (str[])0;
 
 	var i = 1;
 
@@ -61,6 +62,8 @@ func main() {
 			check = (bool)1;
 		} else {
 			fileName = argv[i];
+			runArgs = (str[])((int)argv + 8 * i);
+			i = argc - 1; //terminate loop
 		}
 		i = i + 1;
 		currentArg = argv[i];
@@ -93,7 +96,7 @@ func main() {
 	}
 
 	if (check) {
-		print("[CHECK] succussfully check '");
+		print("[CHECK] successfully checked '");
 		print(fileName);
 		print("'\n");
 		exit(0);
@@ -138,6 +141,68 @@ func main() {
 			exit(code);
 		}
 	}
+
+	var oString = (str)malloc(2);
+	oString[0] = 'o';
+	oString[1] = '\0';
+
+	filePath.extension = oString;
+	var objectName = getFullPathString(filePath);
+	filePath.extension =(str)0;
+	var executableName = getFullPathString(filePath);
+
+	free((ptr)oString);
+
+
+	var linkerArgs = (str[])malloc(8 * 5);
+	linkerArgs[0] = "ld";
+	linkerArgs[1] = "-o";
+	linkerArgs[2] = executableName;
+	linkerArgs[3] = objectName;
+	linkerArgs[4] = (str)0;
+
+	var linkerStatus = (int[])malloc(8); // pointer to int
+	var linker_pid = createChild("ld", linkerArgs);
+
+	if (wait4(linker_pid, linkerStatus, 0, (ptr)0) < 0) {
+		print("[ERROR] wait4 failed\n");
+		exit(1);
+	}
+
+	if (WIFEXITED(linkerStatus[0])) {
+		var code = WIFEXITSTATUS(linkerStatus[0]);
+		if (code > 0) {
+			print("[ERROR] in linker, error code: ");
+			printi(code);
+			print(" \n");
+			exit(code);
+		}
+	}
+
+	if (runFile) {
+		var fileStatus = (int[])malloc(8); // int pointer
+
+		var file_pid = createChild(executableName, runArgs);
+
+		if (wait4(file_pid, fileStatus, 0, (ptr)0) < 0) {
+			print("[ERROR] wait4 failed\n");
+			exit(1);
+		}
+
+		if (WIFEXITED(fileStatus[0])) {
+			var code = WIFEXITSTATUS(fileStatus[0]);
+			if (code > 0) {
+				print("[ERROR] in executable, error code: ");
+				printi(code);
+				print(" \n");
+				exit(code);
+			}
+		}
+	}
+
+	free((ptr)outputName);
+	free((ptr)objectName);
+	free((ptr)executableName);
 }
 
 main();
