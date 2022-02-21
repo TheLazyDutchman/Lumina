@@ -1,10 +1,14 @@
-var a = 'a';
+var hello = "Hello, World!\nNow with Variables\n";
+var length = 35;
+var STDOUT = 1;
+var SYS_write = 1;
 
-print(a);
-
-var b = a + 2;
-
-print(b);
-
-a = '4';
-print(a);
+syscall(
+	SYS_write,
+	STDOUT,
+	hello,
+	length,
+	0,
+	0,
+	0
+);

@@ -60,6 +60,27 @@ func defineVariable(Compiler compiler, str name, int nameLen, Type varType) {
 	addVariable(compiler.variableList, buffer, position, compiler.functionDepth, varType);
 }
 
+func findVariable(Compiler compiler, str name, int nameLen, bool isLocal) -> Variable {
+	var list = compiler.variableList;
+
+	var i = 0;
+	while (i < list.size) {
+		var variable = list.variables[i];
+
+		if (strlen(variable.name) == nameLen && strneq(variable.name, name, nameLen)) {
+			return variable;
+		}
+
+		i = i + 1;
+	}
+
+	if (compiler.outer == (Compiler)0 || isLocal) {
+		return (Variable)0;
+	}
+
+	return findVariable(compiler.outer, name, nameLen, (bool)0);
+}
+
 func defineType(Compiler compiler, str name, int nameLen, int size, PropertyList properties, Type[] propertyTypes, bool isArray, Type arrayType) -> Type {
 	var buffer = strndup(name, nameLen);
 	var typeObj = initType(buffer, size, properties, propertyTypes, isArray, arrayType);
@@ -75,7 +96,7 @@ func defineFunction(Compiler compiler, str name, int nameLen, int id, Type retur
 	addFunction(compiler.functionList, buffer, id, returnType, parameters);
 }
 
-func findFunction(Compiler compiler, str name, int nameLen) -> Function {
+func findFunction(Compiler compiler, str name, int nameLen, bool isLocal) -> Function {
 	var list = compiler.functionList;
 
 	var i = 0;
@@ -89,11 +110,11 @@ func findFunction(Compiler compiler, str name, int nameLen) -> Function {
 		i = i + 1;
 	}
 
-	if (compiler.outer == (Compiler)0) {
+	if (compiler.outer == (Compiler)0 || isLocal) {
 		return (Function)0;
 	}
 
-	return findFunction(compiler.outer, name, nameLen);
+	return findFunction(compiler.outer, name, nameLen, (bool)0);
 }
 
 func printEscapedCharacter(Compiler compiler, str charPtr) -> int {

@@ -147,7 +147,9 @@ func parseError(Parser parser, Token token, str message) {
 	print(message);
 	print(" \n");
 
-	while (parser.current.tokenType != TOKEN_SEMICOLON && parser.current.tokenType != TOKEN_END_OF_FILE) {
+	while (parser.current.tokenType != TOKEN_SEMICOLON &&
+		parser.current.tokenType != TOKEN_COMMA && 
+		parser.current.tokenType != TOKEN_END_OF_FILE) {
 		next(parser);
 	}
 }
@@ -169,6 +171,12 @@ func consumeToken(Parser parser, int tokenType, str message) -> Token{
 
 
 func expression(Parser parser) {
+	func parseVariable(Parser parser, Variable variable) {
+		next(parser);
+
+		writeIdentifier(parser.compiler, variable.position, parser.compiler.functionDepth);
+	}
+
 	func functionCall(Parser parser, Function function) {
 		next(parser);
 
@@ -200,12 +208,21 @@ func expression(Parser parser) {
 	func identifier(Parser parser) {
 		var token = parser.current;
 
-		var function = findFunction(parser.compiler, token.word, token.wordLen);
+		var variable = findVariable(parser.compiler, token.word, token.wordLen, (bool)0);
+
+		if (variable != (Variable)0) {
+			parseVariable(parser, variable);
+			return;
+		}
+
+		var function = findFunction(parser.compiler, token.word, token.wordLen, (bool)0);
 
 		if (function != (Function)0) {
 			functionCall(parser, function);
 			return;
 		}
+
+		parseError(parser, token, "can not find a value with this name");
 	}
 
 	func number(Parser parser) {
@@ -263,13 +280,28 @@ func variableDefinition(Parser parser) {
 
 	var nameToken = consumeToken(parser, TOKEN_IDENTIFIER, "expected name of variable");
 
+	var varName = nameToken.word;
+	var varNameLen = nameToken.wordLen;
+
 	if (nameToken.tokenType == TOKEN_ERROR) {
 		return;
 	}
 
+	if (findVariable(parser.compiler, nameToken.word, nameToken.wordLen, (bool)1) != (Variable)0) {
+		parseError(parser, nameToken, "a variable with this name already exists in this scope");
+		return;
+	}
+
+	if (findFunction(parser.compiler, nameToken.word, nameToken.wordLen, (bool)0) != (Function)0) {
+		parseError(parser, nameToken, "a function with this name already exists");
+		return;
+	}
+	
 	if (consumeToken(parser, TOKEN_EQUAL, "expected '=' in variable definition").tokenType == TOKEN_ERROR) { return; }
 
 	expression(parser);
+
+	defineVariable(parser.compiler, varName, varNameLen, (Type)0); // TODO: add type checking
 
 	consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after variable definition");
 }
