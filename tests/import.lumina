@@ -1,0 +1,33 @@
+syscall(
+	1, // write
+	1, // STDOUT
+	"Before importing\n",
+	17, // length
+	0,
+	0,
+	0
+);
+
+import "functionCall.lumina"
+
+syscall(
+	1, // write
+	1, // STDOUT
+	"After importing\n",
+	16, // length
+	0,
+	0,
+	0
+);
+
+import "empty.lumina"
+
+syscall(
+	1, // write
+	1, // STDOUT
+	"After empty\n",
+	12, // length
+	0,
+	0,
+	0
+);

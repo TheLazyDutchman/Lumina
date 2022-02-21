@@ -120,6 +120,14 @@ func next(Parser parser) -> Token {
 	parser.last = parser.current;
 	parser.current = nextToken(parser.lexer);
 
+	if (parser.current.tokenType == TOKEN_END_OF_FILE && parser.lexer.outer != (Lexer)0) {
+		var current = parser.lexer;
+		parser.lexer = parser.lexer.outer;
+		freeLexer(current);
+
+		parser.current = next(parser);
+	}
+
 	return parser.current;
 }
 
@@ -237,13 +245,15 @@ func expression(Parser parser) {
 
 func importStatement(Parser parser) {
 	next(parser);
-	var nameToken = consumeToken(parser, TOKEN_STR, "expected name of import file");
+	var nameToken = parser.current;
+	if (nameToken.tokenType != TOKEN_STR) { parseError(parser, parser.current, "expected name of import file"); }
+
 	var name = strndup(nameToken.word, nameToken.wordLen);
 
 	// check if file was imported before
 
 	parser.lexer = initLexer(name, parser.lexer);
-	parser.current = nextToken(parser.lexer);
+	next(parser);
 
 	free((ptr)name);
 }

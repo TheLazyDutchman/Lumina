@@ -1,3 +1,0 @@
-import "importA.lumina"
-
-hello();

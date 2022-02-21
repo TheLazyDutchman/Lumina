@@ -5,8 +5,8 @@
 syscall(
 	1, // write
 	1, // STDOUT
-	"Hello, World",
-	12, // length
+	"Hello, World\n",
+	13, // length
 	0,
 	0,
 	0
