@@ -95,6 +95,8 @@ func main() {
 		exit(1);
 	}
 
+	freeParser(parser);
+
 	if (check) {
 		print("[CHECK] successfully checked '");
 		print(fileName);
@@ -131,9 +133,9 @@ func main() {
 		print("[ERROR] wait4 failed\n");
 		exit(1);
 	}
-
+	
 	if (WIFEXITED(nasmStatus[0])) {
-		var code = WIFEXITSTATUS(nasmStatus[0]);  
+		var code = WIFEXITSTATUS(nasmStatus[0] & 127);  
 		if (code > 0) {
 			print("[ERROR] in nasm, error code: ");
 			printi(code);
@@ -170,7 +172,7 @@ func main() {
 	}
 
 	if (WIFEXITED(linkerStatus[0])) {
-		var code = WIFEXITSTATUS(linkerStatus[0]);
+		var code = WIFEXITSTATUS(linkerStatus[0] & 127);
 		if (code > 0) {
 			print("[ERROR] in linker, error code: ");
 			printi(code);
@@ -190,7 +192,7 @@ func main() {
 		}
 
 		if (WIFEXITED(fileStatus[0])) {
-			var code = WIFEXITSTATUS(fileStatus[0]);
+			var code = WIFEXITSTATUS(fileStatus[0] & 127);
 			if (code > 0) {
 				print("[ERROR] in executable, error code: ");
 				printi(code);

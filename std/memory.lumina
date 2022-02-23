@@ -27,8 +27,7 @@ func _expand_heap(int size) -> int {
 		val = val + PAGESIZE;
 	}
 
-	var current = (int)brk((ptr)0);
-	curEnd = brk((ptr)(current + val));
+	curEnd = brk((ptr)((int)curEnd + val));
 
 	return val;
 }
@@ -46,12 +45,20 @@ func _split_block(_heap_block block, int size) -> _heap_block {
 
 	newBlock.prev = block;
 	newBlock.next = block.next;
+
+	if ((ptr)(newBlock.next) > curEnd) {
+		syscall(1, 1, "6\n", 2, 0, 0, 0);
+	}
 	
 	if (newBlock.next > (_heap_block)0) {
 		newBlock.next.prev = newBlock;
 	}
 
 	block.next = newBlock;
+	if ((ptr)(block.next) > curEnd) {
+		syscall(1, 1, "7\n", 2, 0, 0, 0);
+	}
+	
 
 	if (_last_block == block) {
 		_last_block = newBlock;
@@ -69,6 +76,14 @@ func _combine(_heap_block block) {
 	}
 
 	block.next = block.next.next;
+	if ((ptr)(block.next) > curEnd) {
+		syscall(1, 1, "8\n", 2, 0, 0, 0);
+	}
+	
+
+	if ((ptr)(block.next) > curEnd) {
+		syscall(1, 1, "4\n", 2, 0, 0, 0);
+	}
 
 	if (block.next > (_heap_block)0) {
 		block.next.prev = block;
@@ -87,13 +102,20 @@ func malloc(int size) -> ptr {
 	var block = _heap_start;
 
 	while (block != (_heap_block)0) {
+		if ((ptr)block > curEnd) {
+			syscall(1, 1, "1\n", 2, 0, 0, 0);
+		}
+
 		if (block.free) {
-			if (block.size > size) {
+			if (block.size >= size) {
 				var newBlock = _split_block(block, size);
 				newBlock.free = 1 == 0; // false keyword is not implemented yet
 
 				return _block_to_ptr(newBlock);
 			}
+		}
+		if ((ptr)(block.next) > curEnd) {
+			syscall(1, 1, "2\n", 2, 0, 0, 0);
 		}
 		block = block.next;
 	}
@@ -106,7 +128,15 @@ func malloc(int size) -> ptr {
 	newBlock.size = expandedSize - sizeof(_heap_block);
 	newBlock.prev = _last_block;
 	_last_block.next = newBlock;
+	if ((ptr)(_last_block.next) > curEnd) {
+		syscall(1, 1, "9\n", 2, 0, 0, 0);
+	}
+	
 	newBlock.next = 0;
+	if ((ptr)(newBlock.next) > curEnd) {
+		syscall(1, 1, "5\n", 2, 0, 0, 0);
+	}
+
 
 	_last_block = newBlock;
 

@@ -72,7 +72,7 @@ func initParser(str inputName, str outputName, bool isChecking) -> Parser {
 	var parameters = initVariableList();
 	var i = 0;
 	while (i < 7) {
-		addVariable(parameters, "  ", i, 0, anyType);
+		addVariable(parameters, strdup("  "), i, 0, anyType);
 		i = i + 1;
 	}
 
@@ -149,6 +149,7 @@ func parseError(Parser parser, Token token, str message) {
 
 	while (parser.current.tokenType != TOKEN_SEMICOLON &&
 		parser.current.tokenType != TOKEN_COMMA && 
+		parser.current.tokenType != TOKEN_RPAREN &&
 		parser.current.tokenType != TOKEN_END_OF_FILE) {
 		next(parser);
 	}
@@ -156,19 +157,18 @@ func parseError(Parser parser, Token token, str message) {
 
 func consumeToken(Parser parser, int tokenType, str message) -> Token{
 	var token = parser.current;
+	next(parser);
+
 	if (token.tokenType != tokenType) {
-		parseError(parser, parser.current, message);
+		parseError(parser, token, message);
 
 		if (token.tokenType != TOKEN_END_OF_FILE) {
 			token.tokenType = TOKEN_ERROR;
 		}
 		return token;
 	}
-
-	next(parser);
 	return token;
 }
-
 
 func expression(Parser parser) {
 	func parseVariable(Parser parser, Variable variable) {
@@ -252,12 +252,55 @@ func expression(Parser parser) {
 			number(parser);
 		} else if (currentType == TOKEN_STR) {
 			string(parser);
+		} else if (currentType == TOKEN_MINUS) {
+			next(parser);
+
+			unary(parser);
+
+			writeNegative(parser.compiler);
 		} else {
 			parseError(parser, parser.current, "this token is not recognised as a unary");
 		}
 	}
 
-	unary(parser);
+	func factor(Parser parser) {
+		unary(parser);
+
+		var tokenType = parser.current.tokenType;
+		while (tokenType == TOKEN_STAR) {
+			next(parser);
+
+			unary(parser);
+
+			writeMult(parser.compiler);
+
+			tokenType = parser.current.tokenType;
+		}
+	}
+
+	func term(Parser parser) {
+		factor(parser);
+
+		var tokenType = parser.current.tokenType;
+		while (tokenType == TOKEN_PLUS ||
+			tokenType == TOKEN_MINUS) {
+			next(parser);
+
+			factor(parser);
+
+			if (tokenType == TOKEN_PLUS) {
+				writeAdd(parser.compiler);
+			}
+
+			if (tokenType == TOKEN_MINUS) {
+				writeSubtract(parser.compiler);
+			}
+
+			tokenType = parser.current.tokenType;
+		}
+	}
+
+	term(parser);
 }
 
 func importStatement(Parser parser) {

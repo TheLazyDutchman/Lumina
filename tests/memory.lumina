@@ -24,3 +24,8 @@ if ((ptr)(block.next) > oldBreak) {
 } else {
 	print("not using allocated memory\n");
 }
+
+print("block size: ");
+printi(block.size);
+print("\nnext size: ");
+printi(block.next.size);

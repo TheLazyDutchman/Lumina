@@ -114,8 +114,12 @@ func addProperty(PropertyList list, str name, int index, int size) {
 
 func freeType(Type typeObj) {
 	free((ptr)(typeObj.name));
-	freePropertyList(typeObj.properties);
-	free((ptr)(typeObj.propertyTypes));
+	if (typeObj.properties != (PropertyList)0) {
+		freePropertyList(typeObj.properties);
+	}
+	if ((int)(typeObj.propertyTypes) != 0) {
+		free((ptr)(typeObj.propertyTypes));
+	}
 	free((ptr)typeObj);
 }
 

@@ -195,6 +195,8 @@ func printEscapedCharacter(Compiler compiler, str charPtr) -> int {
 
 	fprint(compiler.output, charString);
 
+	free((ptr)charString);
+
 	return length;
 }
 
@@ -834,7 +836,7 @@ func writeFooter(Compiler compiler, StringList strings) {
 			var chr = (str)((int)string + j);
 
 			var length = printEscapedCharacter(compiler, chr);
-
+			
 			j = j + length; 
 
 			fprint(compiler.output, ", ");

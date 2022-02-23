@@ -145,7 +145,7 @@ func execvp(str fileName, str[] args) -> int {
 
 			strncpy(fileName, buffer, strlen(fileName));
 
-			buffer[length] = '\0';
+			fullPath[length] = '\0';
 
 			return execve(fullPath, args, (str[])0);
 		}
