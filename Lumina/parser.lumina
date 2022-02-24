@@ -372,10 +372,31 @@ func variableDefinition(Parser parser) {
 }
 
 func statement(Parser parser) {
+	func block(Parser parser) {
+	}
+
+	func ifStatement(Parser parser) {
+		next(parser);
+
+		consumeToken(parser, TOKEN_LPAREN, "expected '(' before 'if' condition");
+
+		expression(parser);
+
+		if (parser.lastType != findType(parser.compiler, "bool", 4, (bool)0)) {
+			parseError(parser, parser.current, "expected 'if' condition to be of type 'bool'");
+		}
+
+		consumeToken(parser, TOKEN_RPAREN, "expected ')' after 'if' condition");
+
+		consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'if' block");
+	}
+
 	if (parser.current.tokenType == TOKEN_IMPORT) {
 		importStatement(parser);
 	} else if (parser.current.tokenType == TOKEN_VAR) {
 		variableDefinition(parser);
+	} else if (parser.current.tokenType == TOKEN_IF) {
+		ifStatement(parser);
 	} else {
 		expression(parser);
 
