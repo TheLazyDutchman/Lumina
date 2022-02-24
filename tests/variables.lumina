@@ -1,7 +1,20 @@
 var hello = "Hello, World!\nNow with Variables\n";
-var length = 35;
+var length = 33;
 var STDOUT = 1;
 var SYS_write = 1;
+
+syscall(
+	SYS_write,
+	STDOUT,
+	hello,
+	length,
+	0,
+	0,
+	0
+);
+
+hello = "redefined\n";
+length = 10;
 
 syscall(
 	SYS_write,

@@ -90,6 +90,27 @@ func defineType(Compiler compiler, str name, int nameLen, int size, PropertyList
 	return typeObj;
 }
 
+func findType(Compiler compiler, str name, int nameLen, bool isLocal) -> Type {
+	var list = compiler.typeList;
+
+	var i = 0;
+	while (i < list.size) {
+		var typeObj = list.types[i];
+
+		if (strlen(typeObj.name) == nameLen && strneq(typeObj.name, name, nameLen)) {
+			return typeObj;
+		}
+
+		i = i + 1;
+	}
+
+	if (compiler.outer == (Compiler)0 || isLocal) {
+		return (Type)0;
+	}
+
+	return findType(compiler.outer, name, nameLen, (bool)0);
+}
+
 func defineFunction(Compiler compiler, str name, int nameLen, int id, Type returnType, VariableList parameters) {
 	var buffer = strndup(name, nameLen);
 

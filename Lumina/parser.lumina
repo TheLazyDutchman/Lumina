@@ -8,6 +8,8 @@ type Parser {
 	Token last;
 	Token current;
 
+	Type lastType;
+
 	Compiler compiler;
 	int outputFile; // int here is a file descriptor
 
@@ -174,7 +176,21 @@ func expression(Parser parser) {
 	func parseVariable(Parser parser, Variable variable) {
 		next(parser);
 
-		writeIdentifier(parser.compiler, variable.position, parser.compiler.functionDepth);
+		if (parser.current.tokenType == TOKEN_EQUAL) {
+			next(parser);
+
+			expression(parser);
+
+			if (parser.lastType != variable.varType) {
+				parseError(parser, parser.current, "cannot assign a value with a different type");
+			}
+
+			writeAssignment(parser.compiler, variable.position, parser.compiler.functionDepth);
+		} else {
+			writeIdentifier(parser.compiler, variable.position, parser.compiler.functionDepth);
+		}
+
+		parser.lastType = variable.varType;
 	}
 
 	func functionCall(Parser parser, Function function) {
@@ -203,6 +219,8 @@ func expression(Parser parser) {
 		
 		writeCall(parser.compiler, function.id, function.numCalls);
 		function.numCalls = function.numCalls + 1;
+
+		parser.lastType = function.returnType;
 	}
 
 	func identifier(Parser parser) {
@@ -232,6 +250,8 @@ func expression(Parser parser) {
 		free((ptr)numberString);
 
 		next(parser);
+
+		parser.lastType = findType(parser.compiler, "int", 3, (bool)0);
 	}
 
 	func string(Parser parser) {
@@ -241,6 +261,8 @@ func expression(Parser parser) {
 		writeString(parser.compiler, id);
 
 		next(parser);
+
+		parser.lastType = findType(parser.compiler, "str", 3, (bool)0);
 	}
 
 	func unary(Parser parser) {
@@ -344,7 +366,7 @@ func variableDefinition(Parser parser) {
 
 	expression(parser);
 
-	defineVariable(parser.compiler, varName, varNameLen, (Type)0); // TODO: add type checking
+	defineVariable(parser.compiler, varName, varNameLen, parser.lastType);
 
 	consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after variable definition");
 }
