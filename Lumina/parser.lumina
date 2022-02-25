@@ -265,34 +265,59 @@ func expression(Parser parser) {
 		parser.lastType = findType(parser.compiler, "str", 3, (bool)0);
 	}
 
-	func unary(Parser parser) {
-		var currentType = parser.current.tokenType;
+	func property(Parser parser) {
+		func unary(Parser parser) {
+			var currentType = parser.current.tokenType;
 
-		if (currentType == TOKEN_IDENTIFIER) {
-			identifier(parser);
-		} else if (currentType == TOKEN_NUMBER) {
-			number(parser);
-		} else if (currentType == TOKEN_STR) {
-			string(parser);
-		} else if (currentType == TOKEN_MINUS) {
-			next(parser);
+			if (currentType == TOKEN_IDENTIFIER) {
+				identifier(parser);
+			} else if (currentType == TOKEN_NUMBER) {
+				number(parser);
+			} else if (currentType == TOKEN_STR) {
+				string(parser);
+			} else if (currentType == TOKEN_MINUS) {
+				next(parser);
 
-			unary(parser);
+				unary(parser);
 
-			writeNegative(parser.compiler);
-		} else {
-			parseError(parser, parser.current, "this token is not recognised as a unary");
+				writeNegative(parser.compiler);
+			} else if (currentType == TOKEN_LPAREN) {
+				next(parser);
+
+				var current = parser.current;
+				if (current.tokenType == TOKEN_IDENTIFIER) {
+					var castType = findType(parser.compiler, current.word, current.wordLen, (bool)0);
+					if (castType != (Type)0) {
+						next(parser);
+						
+						consumeToken(parser, TOKEN_RPAREN, "expected ')' after casting type");
+
+						property(parser);
+
+						parser.lastType = castType;
+						return;
+					}
+				}
+
+				expression(parser);
+
+				consumeToken(parser, TOKEN_RPAREN, "expected ')' after group");
+			} else {
+				parseError(parser, parser.current, "this token is not recognised as a unary");
+			}
 		}
+
+		unary(parser);
 	}
 
 	func factor(Parser parser) {
-		unary(parser);
+		property(parser);
 
 		var tokenType = parser.current.tokenType;
 		while (tokenType == TOKEN_STAR) {
 			next(parser);
 
-			unary(parser);
+			property(parser);
 
 			writeMult(parser.compiler);
 
@@ -373,6 +398,16 @@ func variableDefinition(Parser parser) {
 
 func statement(Parser parser) {
 	func block(Parser parser) {
+		var scopeCompiler = initCompiler(parser.outputFile, parser.compiler);
+
+		while (parser.current.tokenType != TOKEN_RBRACE && parser.current.tokenType != TOKEN_END_OF_FILE) {
+			statement(parser);
+		}
+
+		consumeToken(parser, TOKEN_RBRACE, "expected '}' after block");
+
+		parser.compiler = scopeCompiler.outer;
+		freeCompiler(scopeCompiler);
 	}
 
 	func ifStatement(Parser parser) {
@@ -389,6 +424,38 @@ func statement(Parser parser) {
 		consumeToken(parser, TOKEN_RPAREN, "expected ')' after 'if' condition");
 
 		consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'if' block");
+
+		block(parser);
+
+		var hadElse = (bool)0;
+
+		while (parser.current.tokenType == TOKEN_ELSE && hadElse == (bool)0) {
+			next(parser);
+
+			if (parser.current.tokenType == TOKEN_IF) {
+				next(parser);
+
+				consumeToken(parser, TOKEN_LPAREN, "expected '(' before 'else if' condition");
+
+				expression(parser);
+
+				if (parser.lastType != findType(parser.compiler, "bool", 4, (bool)0)) {
+					parseError(parser, parser.current, "expected 'else if' condition to be of type 'bool'");
+				}
+
+				consumeToken(parser, TOKEN_RPAREN, "expected ')' after 'else if' condition");
+
+				consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'else if' block");
+
+				block(parser);
+			} else {
+				consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'else' block");
+
+				block(parser);
+
+				hadElse = (bool)1;
+			}
+		}
 	}
 
 	if (parser.current.tokenType == TOKEN_IMPORT) {
