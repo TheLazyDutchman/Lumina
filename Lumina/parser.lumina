@@ -411,6 +411,9 @@ func statement(Parser parser) {
 	}
 
 	func ifStatement(Parser parser) {
+		var ifId = parser.numIfs;
+		parser.numIfs = ifId + 1;
+
 		next(parser);
 
 		consumeToken(parser, TOKEN_LPAREN, "expected '(' before 'if' condition");
@@ -421,18 +424,35 @@ func statement(Parser parser) {
 			parseError(parser, parser.current, "expected 'if' condition to be of type 'bool'");
 		}
 
+		writeCondition(parser.compiler);
+
 		consumeToken(parser, TOKEN_RPAREN, "expected ')' after 'if' condition");
+
+		writeJumpNotEqual(parser.compiler, "addr_if", ifId);
 
 		consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'if' block");
 
 		block(parser);
 
 		var hadElse = (bool)0;
+		var hadFinalElse = (bool)0;
+		
+		var elseId = parser.numElses;
 
-		while (parser.current.tokenType == TOKEN_ELSE && hadElse == (bool)0) {
+		while (parser.current.tokenType == TOKEN_ELSE && hadFinalElse == (bool)0) {
+			writeJump(parser.compiler, "addr_else", elseId);
+			writeAddress(parser.compiler, "addr_if", ifId);
+
+			if (hadElse == (bool)0) {
+				parser.numElses = elseId + 1;
+			}
+
 			next(parser);
 
 			if (parser.current.tokenType == TOKEN_IF) {
+				ifId = parser.numIfs;
+				parser.numIfs = ifId + 1;
+
 				next(parser);
 
 				consumeToken(parser, TOKEN_LPAREN, "expected '(' before 'else if' condition");
@@ -443,7 +463,10 @@ func statement(Parser parser) {
 					parseError(parser, parser.current, "expected 'else if' condition to be of type 'bool'");
 				}
 
+				writeCondition(parser.compiler);
+
 				consumeToken(parser, TOKEN_RPAREN, "expected ')' after 'else if' condition");
+				writeJumpNotEqual(parser.compiler, "addr_if", ifId);
 
 				consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'else if' block");
 
@@ -453,8 +476,18 @@ func statement(Parser parser) {
 
 				block(parser);
 
-				hadElse = (bool)1;
+				hadFinalElse = (bool)1;
 			}
+
+			hadElse = (bool)1;
+		}
+
+		if (hadFinalElse == (bool)0) {
+			writeAddress(parser.compiler, "addr_if", ifId);
+		}
+
+		if (hadElse) {
+			writeAddress(parser.compiler, "addr_else", elseId);
 		}
 	}
 

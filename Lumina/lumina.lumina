@@ -74,7 +74,7 @@ func main() {
 		usage();
 		return;
 	}
-	
+
 	var filePath = getPathFromString(fileName);
 
 	fileName = getFullPathString(filePath);

@@ -65,7 +65,7 @@ func strncpy(str src, str dst, int count) {
 }
 
 func strndup(str s, int count) -> str {
-	var value = (str)malloc(count + 1);
+	var value = (str)malloc(count + 2); // adding 2 instead of 1 because otherwise we get a segfault
 
 	var i = 0;
 	while (i < count) {
