@@ -46,20 +46,12 @@ func _split_block(_heap_block block, int size) -> _heap_block {
 	newBlock.prev = block;
 	newBlock.next = block.next;
 
-	if ((ptr)(newBlock.next) > curEnd) {
-		syscall(1, 1, "6\n", 2, 0, 0, 0);
-	}
-	
 	if (newBlock.next > (_heap_block)0) {
 		newBlock.next.prev = newBlock;
 	}
 
 	block.next = newBlock;
-	if ((ptr)(block.next) > curEnd) {
-		syscall(1, 1, "7\n", 2, 0, 0, 0);
-	}
 	
-
 	if (_last_block == block) {
 		_last_block = newBlock;
 	}
@@ -76,14 +68,6 @@ func _combine(_heap_block block) {
 	}
 
 	block.next = block.next.next;
-	if ((ptr)(block.next) > curEnd) {
-		syscall(1, 1, "8\n", 2, 0, 0, 0);
-	}
-	
-
-	if ((ptr)(block.next) > curEnd) {
-		syscall(1, 1, "4\n", 2, 0, 0, 0);
-	}
 
 	if (block.next > (_heap_block)0) {
 		block.next.prev = block;
@@ -101,11 +85,7 @@ func malloc(int size) -> ptr {
 
 	var block = _heap_start;
 
-	while (block != (_heap_block)0) {
-		if ((ptr)block > curEnd) {
-			syscall(1, 1, "1\n", 2, 0, 0, 0);
-		}
-
+	while (block != (_heap_block)0 && (ptr)block < (ptr)((int)curEnd - sizeof(_heap_block))) {
 		if (block.free) {
 			if (block.size >= size) {
 				var newBlock = _split_block(block, size);
@@ -113,9 +93,6 @@ func malloc(int size) -> ptr {
 
 				return _block_to_ptr(newBlock);
 			}
-		}
-		if ((ptr)(block.next) > curEnd) {
-			syscall(1, 1, "2\n", 2, 0, 0, 0);
 		}
 		block = block.next;
 	}
@@ -128,15 +105,8 @@ func malloc(int size) -> ptr {
 	newBlock.size = expandedSize - sizeof(_heap_block);
 	newBlock.prev = _last_block;
 	_last_block.next = newBlock;
-	if ((ptr)(_last_block.next) > curEnd) {
-		syscall(1, 1, "9\n", 2, 0, 0, 0);
-	}
 	
 	newBlock.next = 0;
-	if ((ptr)(newBlock.next) > curEnd) {
-		syscall(1, 1, "5\n", 2, 0, 0, 0);
-	}
-
 
 	_last_block = newBlock;
 
@@ -183,8 +153,8 @@ func realloc(ptr addr, int newSize) -> ptr {
 
 		var target = malloc(newSize);
 
-		var src = (int[])addr;
-		var dst = (int[])target;
+		var src = (char[])addr;
+		var dst = (char[])target;
 
 		var i = 0;
 		while (i < oldSize) {
