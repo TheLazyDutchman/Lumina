@@ -1,51 +1,219 @@
-var a = 'a';
-var b = 'b';
-var z = 'z';
+var numbers = "0123456789";
+var SYS_write = 1;
+var STDOUT = 1;
 
-if (a < z) {
-	print('1');
-}
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)(0 == 0),
+	0,
+	0,
+	0
+);
 
-if (z < a) {
-	print('2');
-}
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
 
-if (a > z) {
-	print('3');
-}
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)(1 == 0),
+	0,
+	0,
+	0
+);
 
-if (z > a) {
-	print('4');
-}
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
 
-if (a == z) {
-	print('5');
-}
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)(0 == 1),
+	0,
+	0,
+	0
+);
 
-if (z == z) {
-	print('6');
-}
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
 
-if (a <= b) {
-	print('7');
-}
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)(0 <= 0),
+	0,
+	0,
+	0
+);
 
-if (b <= a) {
-	print('8');
-}
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
 
-if (a <= a) {
-	print('9');
-}
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)(1 <= 0),
+	0,
+	0,
+	0
+);
 
-if (b >= a) {
-	print('1');
-}
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
 
-if (a >= b) {
-	print('2');
-}
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)(0 <= 1),
+	0,
+	0,
+	0
+);
 
-if (a >= a) {
-	print('3');
-}
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)(0 >= 0),
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)(1 >= 0),
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)(0 >= 1),
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)(0 != 0),
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)(1 != 0),
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)(0 != 1),
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)(0 < 0),
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)(1 < 0),
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)(0 < 1),
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)(0 > 0),
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)(1 > 0),
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)(0 > 1),
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);

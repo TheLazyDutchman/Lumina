@@ -151,7 +151,6 @@ func parseError(Parser parser, Token token, str message) {
 
 	while (parser.current.tokenType != TOKEN_SEMICOLON &&
 		parser.current.tokenType != TOKEN_COMMA && 
-		parser.current.tokenType != TOKEN_RPAREN &&
 		parser.current.tokenType != TOKEN_END_OF_FILE) {
 		next(parser);
 	}
@@ -347,7 +346,53 @@ func expression(Parser parser) {
 		}
 	}
 
-	term(parser);
+	func comparison(Parser parser) {
+		term(parser);
+
+		var firstType = parser.lastType;
+
+		var tokenType = parser.current.tokenType;
+		if (tokenType == TOKEN_EQUALEQUAL ||
+			tokenType == TOKEN_BANGEQUAL ||
+			tokenType == TOKEN_LESS ||
+			tokenType == TOKEN_LESSEQUAL ||
+			tokenType == TOKEN_GREATER ||
+			tokenType == TOKEN_GREATEREQUAL) {
+			next(parser);
+
+			term(parser);
+
+			if (firstType != parser.lastType) {
+				parseError(parser, parser.current, "cannot make a comparison between values of different types");
+			}
+
+			if (tokenType == TOKEN_EQUALEQUAL) {
+				writeEqual(parser.compiler);
+			}
+
+			if (tokenType == TOKEN_BANGEQUAL) {
+				writeNotEqual(parser.compiler);
+			}
+
+			if (tokenType == TOKEN_LESS) {
+				writeLess(parser.compiler);
+			}
+
+			if (tokenType == TOKEN_LESSEQUAL) {
+				writeLessEqual(parser.compiler);
+			}
+
+			if (tokenType == TOKEN_GREATER) {
+				writeGreater(parser.compiler);
+			}
+
+			if (tokenType == TOKEN_GREATEREQUAL) {
+				writeGreaterEqual(parser.compiler);
+			}
+		}
+	}
+
+	comparison(parser);
 }
 
 func importStatement(Parser parser) {
