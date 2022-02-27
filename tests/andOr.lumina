@@ -1,0 +1,99 @@
+var SYS_write = 1;
+var STDOUT = 1;
+var numbers = "0123456789";
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)((bool)0 && (bool)0),
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)((bool)1 && (bool)0),
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)((bool)0 && (bool)1),
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)((bool)1 && (bool)1),
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)((bool)0 || (bool)0),
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)((bool)1 || (bool)0),
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)((bool)0 || (bool)1),
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1 + (int)((bool)1 || (bool)1),
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);

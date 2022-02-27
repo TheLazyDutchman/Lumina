@@ -166,7 +166,6 @@ func consumeToken(Parser parser, int tokenType, str message) -> Token{
 		if (token.tokenType != TOKEN_END_OF_FILE) {
 			token.tokenType = TOKEN_ERROR;
 		}
-		return token;
 	}
 	return token;
 }
@@ -392,7 +391,83 @@ func expression(Parser parser) {
 		}
 	}
 
-	comparison(parser);
+	func logicAnd(Parser parser) {
+		comparison(parser);
+
+		var tokenType = parser.current.tokenType;
+		while (tokenType == TOKEN_ANDAND) {
+			next(parser);
+
+			var andId = parser.numAnds;
+			parser.numAnds = andId + 1;
+
+			if (parser.lastType != findType(parser.compiler, "bool", 4, (bool)0)) {
+				parseError(parser, parser.current, "left hand side of '&&' operation is not of type 'bool'");
+				return;
+			}
+
+			writeCondition(parser.compiler);
+			writeJumpNotEqual(parser.compiler, "addr_and", andId);
+
+			comparison(parser);
+
+			if (parser.lastType != findType(parser.compiler, "bool", 4, (bool)0)) {
+				parseError(parser, parser.current, "right hand side of '&&' operation is not of type 'bool'");
+				return;
+			}
+
+			writeJump(parser.compiler, "addr_end_and", andId);
+			writeAddress(parser.compiler, "addr_and", andId);
+
+			writeNumber(parser.compiler, "0 "); // false
+
+			parser.compiler.currentStackSize = parser.compiler.currentStackSize - 1; // we add one of two values to the stack, not both
+
+			writeAddress(parser.compiler, "addr_end_and", andId);
+
+			tokenType = parser.current.tokenType;
+		}
+	}
+
+	func logicOr(Parser parser) {
+		logicAnd(parser);
+
+		var tokenType = parser.current.tokenType;
+		while (tokenType == TOKEN_PIPEPIPE) {
+			next(parser);
+
+			var orId = parser.numOrs;
+			parser.numOrs = orId + 1;
+
+			if (parser.lastType != findType(parser.compiler, "bool", 4, (bool)0)) {
+				parseError(parser, parser.current, "left hand side of '||' operation is not of type 'bool'");
+				return;
+			}
+
+			writeCondition(parser.compiler);
+			writeJumpEqual(parser.compiler, "addr_or", orId);
+
+			logicAnd(parser);
+
+			if (parser.lastType != findType(parser.compiler, "bool", 4, (bool)0)) {
+				parseError(parser, parser.current, "right hand side of '||' operation is not of type 'bool'");
+				return;
+			}
+
+			writeJump(parser.compiler, "addr_end_or", orId);
+			writeAddress(parser.compiler, "addr_or", orId);
+
+			writeNumber(parser.compiler, "1 "); // false
+
+			parser.compiler.currentStackSize = parser.compiler.currentStackSize - 1; // we add one of two values to the stack, not both
+
+			writeAddress(parser.compiler, "addr_end_or", orId);
+
+			tokenType = parser.current.tokenType;
+		}
+	}
+
+	logicOr(parser);
 }
 
 func importStatement(Parser parser) {
