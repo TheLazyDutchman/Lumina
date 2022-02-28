@@ -12,4 +12,14 @@ func print(str string, int len) {
 hello();
 
 print("This is a new function\n", 23);
-print("This is a different string\n", 27);
+
+func max(int a, int b) -> int {
+	if (a > b) {
+		return a;
+	}
+	return b;
+}
+
+print("This is a different string\n", max(27, 10));
+
+max(14, 16);

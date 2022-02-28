@@ -31,7 +31,16 @@ func initCompiler(int output, Compiler outer) -> Compiler {
 	compiler.functionList = initFunctionList();
 	compiler.typeList = initTypeList();
 
+	compiler.hasReturned = (bool)0;
 	compiler.outer = outer;
+
+	if (outer != (Compiler)0) {
+		compiler.function = outer.function;
+		compiler.functionDepth = outer.functionDepth;
+	} else {
+		compiler.function = (Function)0;
+		compiler.functionDepth = 0;
+	}
 
 	return compiler;
 }

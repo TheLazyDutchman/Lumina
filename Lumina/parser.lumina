@@ -402,6 +402,8 @@ func expression(Parser parser) {
 			if (tokenType == TOKEN_GREATEREQUAL) {
 				writeGreaterEqual(parser.compiler);
 			}
+
+			parser.lastType = findType(parser.compiler, "bool", 4, (bool)0);
 		}
 	}
 
@@ -555,12 +557,12 @@ func statement(Parser parser) {
 			statement(parser);
 		}
 
-		if (scopeCompiler.function != scopeCompiler.outer.function) {
-			if (scopeCompiler.hasReturned == (bool)0) {
-				if (streq(scopeCompiler.function.returnType.name, "null")) {
-					var numVars = (parser.compiler.currentStackSize - scopeCompiler.function.parameters.size) - 1;
-					writeReturnEmpty(parser.compiler, numVars, scopeCompiler.function.parameters.size);
-				}
+		if (scopeCompiler.function != scopeCompiler.outer.function && scopeCompiler.hasReturned == (bool)0) {
+			if (streq(scopeCompiler.function.returnType.name, "null")) {
+				var numVars = (parser.compiler.currentStackSize - scopeCompiler.function.parameters.size) - 1;
+				writeReturnEmpty(parser.compiler, numVars, scopeCompiler.function.parameters.size);
+			} else {
+				parseError(parser, parser.current, "not all code paths return a value");
 			}
 		}
 
@@ -640,6 +642,43 @@ func statement(Parser parser) {
 		block(parser, function);
 
 		writeAddress(parser.compiler, "addr_func_end_", funcId);
+	}
+
+	func returnStatement(Parser parser) {
+		if (parser.compiler.function == (Function)0) {
+			parseError(parser, parser.current, "can not return from outside a function");
+			consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after a return statement");
+			return;
+		}
+
+		next(parser);
+
+		var function = parser.compiler.function;
+
+		var numVars = (parser.compiler.currentStackSize - function.parameters.size) - 1;
+		var currentCompiler = parser.compiler.outer;
+
+		while (currentCompiler.function == function) {
+			numVars = numVars + currentCompiler.currentStackSize;
+			currentCompiler = currentCompiler.outer;
+		}
+
+		if (function.returnType == findType(parser.compiler, "null", 4, (bool)0)) {
+			consumeToken(parser, TOKEN_SEMICOLON, "expected an empty return in a 'null' function");
+			writeReturnEmpty(parser.compiler, numVars, function.parameters.size);
+		} else {
+			expression(parser);
+
+			if (parser.lastType != function.returnType) {
+				parseError(parser, parser.current, "incorrect return type");
+			}
+
+			consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after return statement");
+
+			writeReturnValue(parser.compiler, numVars, function.parameters.size);
+		}
+
+		parser.compiler.hasReturned = (bool)1;
 	}
 
 	func ifStatement(Parser parser) {
@@ -729,6 +768,8 @@ func statement(Parser parser) {
 		variableDefinition(parser);
 	} else if (parser.current.tokenType == TOKEN_FUNC) {
 		functionDefinition(parser);
+	} else if (parser.current.tokenType == TOKEN_RETURN) {
+		returnStatement(parser);
 	} else if (parser.current.tokenType == TOKEN_IF) {
 		ifStatement(parser);
 	} else {
