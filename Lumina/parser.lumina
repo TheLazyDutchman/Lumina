@@ -181,6 +181,13 @@ func consumeType(Parser parser, str message) -> Type {
 		parseError(parser, token, "can not find a type with this name");
 	}
 
+	while (parser.current.tokenType == TOKEN_LBRACKET) {
+		next(parser);
+		consumeToken(parser, TOKEN_RBRACKET, "expected ']' after '[' to define an array");
+
+		tokenType = findArrayType(parser.compiler, tokenType);
+	}
+
 	return tokenType;
 }
 
@@ -215,11 +222,20 @@ func expression(Parser parser) {
 		} else {
 			expression(parser);
 
+			var params = function.parameters.variables;
+			if (params[0].varType != parser.lastType && streq(params[0].varType.name, "any") == (bool)0) {
+				parseError(parser, parser.current, "parameter is not of the right type");
+			}
+
 			var i = 1;
 			while (i < function.parameters.size) {
 				consumeToken(parser, TOKEN_COMMA, "expected ',' between arguments");
 
 				expression(parser);
+
+				if (params[i].varType != parser.lastType && streq(params[i].varType.name, "any") == (bool)0) {
+					parseError(parser, parser.current, "parameter is not of the right type");
+				}
 
 				i = i + 1;
 			}
@@ -266,6 +282,14 @@ func expression(Parser parser) {
 		parser.lastType = findType(parser.compiler, "int", 3, (bool)0);
 	}
 
+	func character(Parser parser) {
+		writeCharacter(parser.compiler, parser.current.word);
+
+		next(parser);
+
+		parser.lastType = findType(parser.compiler, "char", 4, (bool)0);
+	}
+
 	func string(Parser parser) {
 		var id = parser.stringList.size;
 
@@ -285,6 +309,8 @@ func expression(Parser parser) {
 				identifier(parser);
 			} else if (currentType == TOKEN_NUMBER) {
 				number(parser);
+			} else if (currentType == TOKEN_CHAR) {
+				character(parser);
 			} else if (currentType == TOKEN_STR) {
 				string(parser);
 			} else if (currentType == TOKEN_MINUS) {
@@ -300,7 +326,7 @@ func expression(Parser parser) {
 				if (current.tokenType == TOKEN_IDENTIFIER) {
 					var castType = findType(parser.compiler, current.word, current.wordLen, (bool)0);
 					if (castType != (Type)0) {
-						next(parser);
+						castType = consumeType(parser, "expected type in typecast");
 						
 						consumeToken(parser, TOKEN_RPAREN, "expected ')' after casting type");
 
@@ -320,6 +346,48 @@ func expression(Parser parser) {
 		}
 
 		unary(parser);
+
+		func parseIndex(Parser parser) {
+			if (parser.lastType.isArray == (bool)0) {
+				parseError(parser, parser.current, "can not index from a value that is not an array");
+				return;
+			}
+
+			var arrayType = parser.lastType.arrayType;
+
+			next(parser);
+
+			expression(parser);
+
+			if (parser.lastType != findType(parser.compiler, "int", 3, (bool)0)) {
+				parseError(parser, parser.current, "expected array index to be of type 'int'");
+				return;
+			}
+
+			consumeToken(parser, TOKEN_RBRACKET, "expected ']' after array index");
+
+			if (parser.current.tokenType == TOKEN_EQUAL) {
+				next(parser);
+
+				expression(parser);
+
+				if (arrayType != parser.lastType) {
+					parseError(parser, parser.current, "can not set a value of an array to a value of a different type");
+				}
+
+				writeWriteIndex(parser.compiler, arrayType.size);
+			} else {
+				writeReadIndex(parser.compiler, arrayType.size);
+			}
+
+			parser.lastType = arrayType;
+		}
+
+		while (parser.current.tokenType == TOKEN_LBRACKET) {
+			if (parser.current.tokenType == TOKEN_LBRACKET) {
+				parseIndex(parser);
+			}
+		}
 	}
 
 	func factor(Parser parser) {

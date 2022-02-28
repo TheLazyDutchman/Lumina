@@ -334,7 +334,9 @@ func lexCharacter(Lexer lexer) -> Token {
 		token.tokenType = TOKEN_ERROR;
 	}
 
-	token.wordLen = (int)(lexer.current) - (int)(token.word) - 1;
+	advance(lexer);
+
+	token.wordLen = ((int)(lexer.current) - (int)(token.word)) - 1;
 	return token;
 }
 

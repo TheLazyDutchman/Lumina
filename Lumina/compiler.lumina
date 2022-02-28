@@ -121,6 +121,37 @@ func findType(Compiler compiler, str name, int nameLen, bool isLocal) -> Type {
 	return findType(compiler.outer, name, nameLen, (bool)0);
 }
 
+func findArrayType(Compiler compiler, Type arrayType) -> Type {
+	var list = compiler.typeList;
+
+	var foundType = (bool)0;
+
+	var i = 0;
+	while (i < list.size) {
+		if (list.types[i].isArray && list.types[i].arrayType == arrayType) {
+			return list.types[i];
+		}
+
+		if (list.types[i] == arrayType) {
+			foundType = (bool)1;
+		}
+		i = i + 1;
+	}
+
+	if (foundType) {
+		var array = initType(strdup("  "), 8, (PropertyList)0, (Type[])0, (bool)1, arrayType);
+		addType(compiler.typeList, array);
+
+		return array;
+	}
+
+	if (compiler.outer == (Compiler)0) {
+		return (Type)0;
+	}
+
+	return findArrayType(compiler.outer, arrayType);
+}
+
 func defineFunction(Compiler compiler, str name, int nameLen, int id, Type returnType, VariableList parameters) -> Function {
 	var buffer = strndup(name, nameLen);
 
@@ -649,15 +680,15 @@ func writeNumber(Compiler compiler, str value) {
 	compiler.currentStackSize = compiler.currentStackSize + 1;
 }
 
-//func writeCharacter(Compiler compiler, str *value) {
-//	fprint(compiler.output, "	;; -- character --\n");
-//	fprint(compiler.output, "	mov rax, ");
-//	printEscapedCharacter(compiler, value);
-//	fprint(compiler.output, "\n");
-//	fprint(compiler.output, "	push rax\n\n");
-//
-//	compiler.currentStackSize = compiler.currentStackSize + 1;
-//}
+func writeCharacter(Compiler compiler, str value) {
+	fprint(compiler.output, "	;; -- character --\n");
+	fprint(compiler.output, "	mov rax, ");
+	printEscapedCharacter(compiler, value);
+	fprint(compiler.output, " \n");
+	fprint(compiler.output, "	push rax\n\n");
+
+	compiler.currentStackSize = compiler.currentStackSize + 1;
+}
 
 func writeString(Compiler compiler, int id) {
 	fprint(compiler.output, "	;; -- string --\n");
