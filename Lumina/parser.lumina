@@ -156,7 +156,7 @@ func parseError(Parser parser, Token token, str message) {
 	}
 }
 
-func consumeToken(Parser parser, int tokenType, str message) -> Token{
+func consumeToken(Parser parser, int tokenType, str message) -> Token {
 	var token = parser.current;
 	next(parser);
 
@@ -168,6 +168,20 @@ func consumeToken(Parser parser, int tokenType, str message) -> Token{
 		}
 	}
 	return token;
+}
+
+func consumeType(Parser parser, str message) -> Type {
+	var token = consumeToken(parser, TOKEN_IDENTIFIER, message);
+	if (token.tokenType == TOKEN_ERROR) {
+		return (Type)0;
+	}
+
+	var tokenType = findType(parser.compiler, token.word, token.wordLen, (bool)0);
+	if (tokenType == (Type)0) {
+		parseError(parser, token, "can not find a type with this name");
+	}
+
+	return tokenType;
 }
 
 func expression(Parser parser) {
@@ -183,9 +197,9 @@ func expression(Parser parser) {
 				parseError(parser, parser.current, "cannot assign a value with a different type");
 			}
 
-			writeAssignment(parser.compiler, variable.position, parser.compiler.functionDepth);
+			writeAssignment(parser.compiler, variable.position, variable.functionDepth);
 		} else {
-			writeIdentifier(parser.compiler, variable.position, parser.compiler.functionDepth);
+			writeIdentifier(parser.compiler, variable.position, variable.functionDepth);
 		}
 
 		parser.lastType = variable.varType;
@@ -215,7 +229,7 @@ func expression(Parser parser) {
 			consumeToken(parser, TOKEN_RPAREN, "expected ')' after arguments");
 		}
 		
-		writeCall(parser.compiler, function.id, function.numCalls);
+		writeCall(parser.compiler, function.id, function.parameters.size, function.numCalls);
 		function.numCalls = function.numCalls + 1;
 
 		parser.lastType = function.returnType;
@@ -517,17 +531,115 @@ func variableDefinition(Parser parser) {
 }
 
 func statement(Parser parser) {
-	func block(Parser parser) {
+	func block(Parser parser, Function function) {
 		var scopeCompiler = initCompiler(parser.outputFile, parser.compiler);
+		parser.compiler = scopeCompiler;
+
+		if (function != (Function)0) {
+			scopeCompiler.function = function;
+			scopeCompiler.functionDepth = scopeCompiler.functionDepth + 1;
+
+			var i = 0;
+			while (i < function.parameters.size) {
+				scopeCompiler.currentStackSize = scopeCompiler.currentStackSize + 1;
+				var variable = function.parameters.variables[i];
+				defineVariable(scopeCompiler, variable.name, strlen(variable.name), variable.varType);
+
+				i = i + 1;
+			}
+
+			scopeCompiler.currentStackSize = scopeCompiler.currentStackSize + 1;
+		}
 
 		while (parser.current.tokenType != TOKEN_RBRACE && parser.current.tokenType != TOKEN_END_OF_FILE) {
 			statement(parser);
+		}
+
+		if (scopeCompiler.function != scopeCompiler.outer.function) {
+			if (scopeCompiler.hasReturned == (bool)0) {
+				if (streq(scopeCompiler.function.returnType.name, "null")) {
+					var numVars = (parser.compiler.currentStackSize - scopeCompiler.function.parameters.size) - 1;
+					writeReturnEmpty(parser.compiler, numVars, scopeCompiler.function.parameters.size);
+				}
+			}
 		}
 
 		consumeToken(parser, TOKEN_RBRACE, "expected '}' after block");
 
 		parser.compiler = scopeCompiler.outer;
 		freeCompiler(scopeCompiler);
+	}
+
+	func functionDefinition(Parser parser) {
+		var funcId = parser.numFuncs;
+		parser.numFuncs = funcId + 1;
+
+		next(parser);
+
+		var nameToken = consumeToken(parser, TOKEN_IDENTIFIER, "expected function name in definition");
+		var name = nameToken.word;
+		var nameLen = nameToken.wordLen;
+
+		if (findVariable(parser.compiler, nameToken.word, nameToken.wordLen, (bool)0) != (Variable)0) {
+			parseError(parser, nameToken, "can not define a function with the same name as a variable");
+		}
+
+		if (findType(parser.compiler, nameToken.word, nameToken.wordLen, (bool)0) != (Type)0) {
+			parseError(parser, nameToken, "can not define a function with the same name as a type");
+		}
+
+		if (findFunction(parser.compiler, nameToken.word, nameToken.wordLen, (bool)1) != (Function)0) {
+			parseError(parser, nameToken, "there already exists a function with this name in this scope");
+		}
+
+		consumeToken(parser, TOKEN_LPAREN, "expected '(' after function name");
+
+		var parameters = initVariableList();
+
+		var i = 0;
+		var depth = parser.compiler.functionDepth + 1;
+
+		if (parser.current.tokenType != TOKEN_RPAREN) {
+			var varType = consumeType(parser, "expected type of function argument");
+
+			var argName = consumeToken(parser, TOKEN_IDENTIFIER, "expected name of function argument");
+
+			addVariable(parameters, strndup(argName.word, argName.wordLen), i, depth, varType);
+
+			i = i + 1;
+		}
+
+		while (parser.current.tokenType == TOKEN_COMMA) {
+			next(parser);
+
+			var varType = consumeType(parser, "expected type of function argument");
+
+			var argName = consumeToken(parser, TOKEN_IDENTIFIER, "expected name of function argument");
+
+			addVariable(parameters, strndup(argName.word, argName.wordLen), i, depth, varType);
+
+			i = i + 1;
+		}
+
+		consumeToken(parser, TOKEN_RPAREN, "expected ')' after function arguments");
+
+		var returnType = findType(parser.compiler, "null", 4, (bool)0);
+
+		if (parser.current.tokenType == TOKEN_RARROW) {
+			next(parser);
+
+			returnType = consumeType(parser, "expected return type");
+		}
+
+		var function = defineFunction(parser.compiler, name, nameLen, funcId, returnType, parameters);
+
+		consumeToken(parser, TOKEN_LBRACE, "expected '{' before function block");
+
+		writeBeginFunction(parser.compiler, funcId, parameters.size);
+
+		block(parser, function);
+
+		writeAddress(parser.compiler, "addr_func_end_", funcId);
 	}
 
 	func ifStatement(Parser parser) {
@@ -552,7 +664,7 @@ func statement(Parser parser) {
 
 		consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'if' block");
 
-		block(parser);
+		block(parser, (Function)0);
 
 		var hadElse = (bool)0;
 		var hadFinalElse = (bool)0;
@@ -590,11 +702,11 @@ func statement(Parser parser) {
 
 				consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'else if' block");
 
-				block(parser);
+				block(parser, (Function)0);
 			} else {
 				consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'else' block");
 
-				block(parser);
+				block(parser, (Function)0);
 
 				hadFinalElse = (bool)1;
 			}
@@ -615,12 +727,15 @@ func statement(Parser parser) {
 		importStatement(parser);
 	} else if (parser.current.tokenType == TOKEN_VAR) {
 		variableDefinition(parser);
+	} else if (parser.current.tokenType == TOKEN_FUNC) {
+		functionDefinition(parser);
 	} else if (parser.current.tokenType == TOKEN_IF) {
 		ifStatement(parser);
 	} else {
 		expression(parser);
 
 		consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after expression");
+		writePop(parser.compiler, 1);
 	}
 }
 

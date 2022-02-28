@@ -43,21 +43,22 @@ func freeCompiler(Compiler compiler) {
 	free((ptr)compiler);
 }
 
-func defineVariable(Compiler compiler, str name, int nameLen, Type varType) {
+func defineVariable(Compiler compiler, str name, int nameLen, Type varType) -> Variable {
 	var buffer = strndup(name, nameLen);
 
 	var position = compiler.currentStackSize;
 	var outer = compiler.outer;
 
 	while (outer != (Compiler)0) {
-		position = position + outer.currentStackSize;
-		outer = outer.outer;
 		if (outer.function != compiler.function) {
 			outer = (Compiler)0;
+		} else {
+			outer = outer.outer;
+			position = position + outer.currentStackSize;
 		}
 	}
 
-	addVariable(compiler.variableList, buffer, position, compiler.functionDepth, varType);
+	return addVariable(compiler.variableList, buffer, position, compiler.functionDepth, varType);
 }
 
 func findVariable(Compiler compiler, str name, int nameLen, bool isLocal) -> Variable {
@@ -111,10 +112,10 @@ func findType(Compiler compiler, str name, int nameLen, bool isLocal) -> Type {
 	return findType(compiler.outer, name, nameLen, (bool)0);
 }
 
-func defineFunction(Compiler compiler, str name, int nameLen, int id, Type returnType, VariableList parameters) {
+func defineFunction(Compiler compiler, str name, int nameLen, int id, Type returnType, VariableList parameters) -> Function {
 	var buffer = strndup(name, nameLen);
 
-	addFunction(compiler.functionList, buffer, id, returnType, parameters);
+	return addFunction(compiler.functionList, buffer, id, returnType, parameters);
 }
 
 func findFunction(Compiler compiler, str name, int nameLen, bool isLocal) -> Function {
@@ -304,7 +305,7 @@ func writeBeginFunction(Compiler compiler, int id, int numParams) {
 	fprint(compiler.output, "], rax\n\n");
 }
 
-func writeCall(Compiler compiler, int id, int numCalls) {
+func writeCall(Compiler compiler, int id, int numParameters, int numCalls) {
 	fprint(compiler.output, "	;; -- function call -- \n");
 	fprint(compiler.output, "	;; -- push current address --\n");
 	// get current address
@@ -331,7 +332,7 @@ func writeCall(Compiler compiler, int id, int numCalls) {
 	fprinti(compiler.output, numCalls);
 	fprint(compiler.output, ": ;; first number is function id, second number id call id\n\n");
 
-	compiler.currentStackSize = compiler.currentStackSize + 1;
+	compiler.currentStackSize = compiler.currentStackSize - numParameters + 1;
 }
 
 func writeReturnEmpty(Compiler compiler, int numVars, int numParameters) {

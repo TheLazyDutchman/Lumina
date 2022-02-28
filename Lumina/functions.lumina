@@ -54,8 +54,9 @@ func freeFunctionList(FunctionList list) {
 	free((ptr)list);
 }
 
-func addFunction(FunctionList list, str name, int id, Type returnType, VariableList parameters) {
-	list.functions[list.size] = initFunction(name, id, returnType, parameters);
+func addFunction(FunctionList list, str name, int id, Type returnType, VariableList parameters) -> Function {
+	var function = initFunction(name, id, returnType, parameters);
+	list.functions[list.size] = function;
 
 	list.size = list.size + 1;
 
@@ -63,4 +64,6 @@ func addFunction(FunctionList list, str name, int id, Type returnType, VariableL
 		list.maxSize = list.maxSize * 2;
 		list.functions = realloc((ptr)(list.functions), 8 * list.maxSize);
 	}
+
+	return function;
 }

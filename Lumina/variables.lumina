@@ -50,8 +50,9 @@ func freeVariableList(VariableList list) {
 	free((ptr)list);
 }
 
-func addVariable(VariableList list, str name, int position, int functionDepth, Type varType) {
-	list.variables[list.size] = initVariable(name, position, functionDepth, varType);
+func addVariable(VariableList list, str name, int position, int functionDepth, Type varType) -> Variable {
+	var variable = initVariable(name, position, functionDepth, varType);
+	list.variables[list.size] = variable;
 
 	list.size = list.size + 1;
 
@@ -59,4 +60,6 @@ func addVariable(VariableList list, str name, int position, int functionDepth, T
 		list.maxSize = list.maxSize * 2;
 		list.variables = realloc((ptr)(list.variables), 8 * list.maxSize);
 	}
+
+	return variable;
 }
