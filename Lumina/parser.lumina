@@ -762,6 +762,36 @@ func statement(Parser parser) {
 		}
 	}
 
+	func whileStatement(Parser parser) {
+		var whileId = parser.numWhiles;
+		parser.numWhiles = whileId + 1;
+
+		next(parser);
+
+		consumeToken(parser, TOKEN_LPAREN, "expected '(' before 'while' condition");
+
+		writeAddress(parser.compiler, "addr_while_condition", whileId);
+
+		expression(parser);
+
+		if (parser.lastType != findType(parser.compiler, "bool", 4, (bool)0)) {
+			parseError(parser, parser.current, "expected 'while' condition to be of type 'bool'");
+		}
+
+		writeCondition(parser.compiler);
+
+		consumeToken(parser, TOKEN_RPAREN, "expected ')' after 'while' condition");
+
+		writeJumpNotEqual(parser.compiler, "addr_while_end", whileId);
+
+		consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'if' block");
+
+		block(parser, (Function)0);
+
+		writeJump(parser.compiler, "addr_while_condition", whileId);
+		writeAddress(parser.compiler, "addr_while_end", whileId);
+	}
+
 	if (parser.current.tokenType == TOKEN_IMPORT) {
 		importStatement(parser);
 	} else if (parser.current.tokenType == TOKEN_VAR) {
@@ -772,6 +802,8 @@ func statement(Parser parser) {
 		returnStatement(parser);
 	} else if (parser.current.tokenType == TOKEN_IF) {
 		ifStatement(parser);
+	} else if (parser.current.tokenType == TOKEN_WHILE) {
+		whileStatement(parser);
 	} else {
 		expression(parser);
 
