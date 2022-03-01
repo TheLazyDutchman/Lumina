@@ -1,35 +1,17 @@
-import "../std/syscalls.lumina"
-import "../std/io.lumina"
-
-type IntVector {
-	str name;
-	int x;
-	int y;
+type StringView {
+	str value;
+	int length;
 }
 
-var prot = 0;
-var flags = 0;
-var fd = 0;
+var SYS_brk = 12;
 
-func addVec(IntVector a, IntVector b) -> IntVector {
-	return a;
-}
+var start = syscall(SYS_brk, 0, 0, 0, 0, 0, 0);
+syscall(SYS_brk, (int)start + 16, 0, 0, 0, 0, 0); // allocate 16 bytes
 
-var heap_start = <int>brk(<ptr>0);
-var page_size = 4096;
-var page_end = heap_start + page_size;
-brk(<ptr>page_end);
+var string = (StringView)start;
+string.value = "Hello, World!\n";
+string.length = 14;
 
-func initVec() -> IntVector {
-	var vec = <IntVector>heap_start;
-
-	vec.name = "Hello, World!\n";
-	vec.x = 10;
-
-	return vec;
-}
-
-var a = initVec();
-
-var b = a.x;
-print(a.name);
+var SYS_write = 1;
+var STDOUT = 1;
+syscall(SYS_write, STDOUT, string.value, string.length, 0, 0, 0);

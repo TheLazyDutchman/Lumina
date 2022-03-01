@@ -112,6 +112,22 @@ func addProperty(PropertyList list, str name, int index, int size) {
 	}
 }
 
+func findProperty(PropertyList list, str name, int nameLen) -> Property {
+	var i = 0;
+	while (i < list.size) {
+		var propertyObj = list.properties[i];
+
+		i = i + 1;
+
+		if (strlen(propertyObj.name) == nameLen &&
+			strneq(propertyObj.name, name, nameLen)) {
+			return propertyObj;
+		}
+	}
+
+	return (Property)0;
+}
+
 func freeType(Type typeObj) {
 	free((ptr)(typeObj.name));
 	if (typeObj.properties != (PropertyList)0) {
