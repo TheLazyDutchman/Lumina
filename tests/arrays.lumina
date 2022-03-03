@@ -1,22 +1,11 @@
-import "../std/memory.lumina"
-import "../std/io.lumina"
+var SYS_write = 1;
+var STDOUT = 1;
 
-type Vec {
-	int x;
-	int y;
-}
+var string = "123\n";
 
-type VecArray {
-	Vec[] values;
-}
+syscall(SYS_write, STDOUT, string, 4, 0, 0, 0);
 
-var array = (VecArray)malloc(sizeof(VecArray));
-array.values = (Vec[])malloc(64);
+string[0] = '3';
+string[2] = '1';
 
-array.values[0] = (Vec)malloc(sizeof(Vec));
-
-array.values[0].x = 10;
-
-var string  = "Hello, World!\n";
-
-print(string);
+syscall(SYS_write, STDOUT, string, 4, 0, 0, 0);

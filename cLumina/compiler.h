@@ -51,6 +51,7 @@ void writeCompare(Compiler* compiler);
 
 void writeBitAnd(Compiler* compiler);
 void writeBitOr(Compiler* compiler);
+void writeBitNot(Compiler* compiler);
 
 void writeLess(Compiler* compiler);
 void writeLessEqual(Compiler* compiler);
@@ -77,6 +78,7 @@ void writeAssignment(Compiler* compiler, int offset, int currentDepth);
 void writeAdd(Compiler* compiler);
 void writeSubtract(Compiler* compiler);
 void writeNegative(Compiler* compiler);
+void writeMult(Compiler* compiler);
 
 void writePrint(Compiler* compiler); //temporary print function
 

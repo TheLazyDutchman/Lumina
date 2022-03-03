@@ -12,6 +12,9 @@ Parser* initParser(char* inputName, char* outputName, ParseFlag flags) {
 	parser->lastType = NULL;
 	parser->flags = flags;
 
+	parser->files = initFileList();
+	addFile(parser->files, inputName);
+
 	parser->outputFile = fopen(outputName, "w");
 
 	parser->compiler = initCompiler(parser->outputFile, NULL);
@@ -71,6 +74,8 @@ void freeParser(Parser* parser) {
 
 	freeCompiler(parser->compiler);
 
+	freeFileList(parser->files);
+
 	freeStringList(parser->strings);
 
 	fclose(parser->outputFile);
@@ -84,6 +89,47 @@ void setLastType(Parser* parser, Type* type) {
 	}
 
 	parser->lastType = type;
+}
+
+FileList *initFileList() {
+	FileList *list = malloc(sizeof(FileList));
+
+	list->size = 0;
+	list->maxSize = 8;
+	list->files = malloc(sizeof(char*) * 8);
+	
+	return list;
+}
+
+void freeFileList(FileList *list) {
+	int i = 0;
+	while (i < list->size) {
+		free(list->files[i]);
+		i++;
+	}
+
+	free(list->files);
+	free(list);
+}
+
+void addFile(FileList *list, char* file) {
+	list->files[list->size++] = strdup(file);
+	
+	if (list->size == list->maxSize) {
+		list->maxSize *= 2;
+		list->files = realloc(list->files, sizeof(char*) * list->maxSize);
+	}
+}
+
+bool findFile(FileList *list, char* file) {
+	int i = 0;
+	while (i < list->size) {
+		if (strcmp(list->files[i], file) == 0) {
+			return true;
+		}
+		i++;
+	}
+	return false;
 }
 
 Token* next(Parser* parser) {
@@ -122,6 +168,7 @@ typedef enum {
 	PREC_OR,
 	PREC_COMPARISON,
 	PREC_TERM,
+	PREC_FACTOR,
 	PREC_BITWISE,
 	PREC_READ,
 	PREC_UNARY,
@@ -134,7 +181,7 @@ typedef struct {
 	Precedence precedence;
 } ParseRule;
 
-_Static_assert(TOKEN_TYPES_NUM == 39, "Exhaustive handling of token types in parsing");
+_Static_assert(TOKEN_TYPES_NUM == 40, "Exhaustive handling of token types in parsing");
 
 ParseRule parseTable[] = {
 	[TOKEN_NUMBER] = {number, NULL, PREC_PRIMARY},
@@ -142,6 +189,7 @@ ParseRule parseTable[] = {
 	[TOKEN_STR] = {string, NULL, PREC_PRIMARY},
 	[TOKEN_PLUS] = {NULL, binary, PREC_TERM},
 	[TOKEN_MINUS] = {unary, binary, PREC_UNARY},
+	[TOKEN_STAR] = {NULL, binary, PREC_FACTOR},
 	[TOKEN_EQUAL] = {NULL, NULL, PREC_ASSIGNMENT},
 	[TOKEN_AND] = {NULL, binary, PREC_BITWISE},
 	[TOKEN_ANDAND] = {NULL, binary, PREC_AND},
@@ -152,7 +200,7 @@ ParseRule parseTable[] = {
 	[TOKEN_LESSEQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_GREATEREQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_EQUALEQUAL] = {NULL, binary, PREC_COMPARISON},
-	[TOKEN_BANG] = {NULL, NULL, PREC_OR},
+	[TOKEN_BANG] = {unary, NULL, PREC_OR},
 	[TOKEN_BANGEQUAL] = {NULL, binary, PREC_COMPARISON},
 	[TOKEN_RARROW] = {NULL, NULL, PREC_NONE},
 	[TOKEN_LPAREN] = {group, NULL, PREC_PRIMARY},
@@ -462,7 +510,14 @@ void typeSize(Parser* parser) {
 	
 	if (type == NULL) { return; }
 
-	writeNumber(parser->compiler, type->properties->totalTypeSize);
+	int size;
+	if (type->properties == NULL) {
+		size = type->size;
+	} else {
+		size = type->properties->totalTypeSize;
+	}
+
+	writeNumber(parser->compiler, size);
 
 	setLastType(parser, findType(parser->compiler, "int", 3));
 
@@ -571,6 +626,9 @@ void binary(Parser* parser) {
 		case TOKEN_MINUS:
 			precedence = PREC_TERM + 1;
 			break;
+		case TOKEN_STAR:
+			precedence = PREC_FACTOR + 1;
+			break;
 		case TOKEN_AND:
 		case TOKEN_PIPE:
 			precedence = PREC_BITWISE + 1;
@@ -663,6 +721,18 @@ void binary(Parser* parser) {
 			} else {
 				setLastType(parser, findType(parser->compiler, "int", 3));
 			}
+
+			break;
+		case TOKEN_STAR:
+			dumpBinary(parser, operator);
+
+			if (strcmp(value1.name, "int") != 0 || strcmp(parser->lastType->name, "int") != 0) {
+				parseError(parser, operator, "can not multiply something that is not an integer");
+			}
+
+			writeMult(parser->compiler);
+
+			setLastType(parser, findType(parser->compiler, "int", 3));
 
 			break;
 		case TOKEN_AND:
@@ -831,6 +901,17 @@ void unary(Parser* parser) {
 			}
 
 			writeNegative(parser->compiler);
+
+			break;
+		case TOKEN_BANG:
+			dumpUnary(parser, operator);
+
+			if (strcmp(parser->lastType->name, "int") != 0) {
+				parseError(parser, parser->lastType->token, "cannot take the inverse of this type");
+				return;
+			}
+
+			writeBitNot(parser->compiler);
 
 			break;
 		default:
@@ -1121,7 +1202,7 @@ void returnStatement(Parser* parser) {
 		currentCompiler = currentCompiler->outer;
 	}
 
-	if (strcmp(func->returnType->name, "null") == 0) {
+	if (strcmp(func->returnType->name, "NULL") == 0) {
 		consumeToken(parser, TOKEN_SEMICOLON, "expected empty return in a 'null' function");
 
 		writeReturnEmpty(parser->compiler, numVars, func->parameters->size);
@@ -1150,6 +1231,13 @@ void importStatement(Parser* parser) {
 
 	char* fileName = strndup(name.word + 1, name.wordLen - 2);
 
+	if (findFile(parser->files, fileName)) {
+		next(parser);
+		free(fileName);
+		return;
+	}
+
+	addFile(parser->files, fileName);
 	Lexer *importFile = initLexer(fileName, parser->lexer);
 	parser->lexer = importFile;
 	parser->current = nextToken(importFile);

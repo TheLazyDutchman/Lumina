@@ -1,0 +1,65 @@
+import "types.lumina"
+
+type Variable {
+	str name;
+	int position;
+	int functionDepth;
+	Type varType;
+}
+
+type VariableList {
+	int size;
+	int maxSize;
+	Variable[] variables;
+}
+
+func initVariable(str name, int position, int functionDepth, Type varType) -> Variable {
+	var variable = (Variable)malloc(sizeof(Variable));
+
+	variable.name = name;
+	variable.position = position;
+	variable.functionDepth = functionDepth;
+	variable.varType = varType;
+
+	return variable;
+}
+
+func freeVariable(Variable variable) {
+	free((ptr)(variable.name));
+	free((ptr)variable);
+}
+
+func initVariableList() -> VariableList {
+	var list = (VariableList)malloc(sizeof(VariableList));
+
+	list.size = 0;
+	list.maxSize = 8;
+	list.variables = (Variable[])malloc(8 * 8); // pointer size is 8
+
+	return list;
+}
+
+func freeVariableList(VariableList list) {
+	var i = 0;
+	while (i < list.size) {
+		freeVariable(list.variables[i]);
+		i = i + 1;
+	}
+
+	free((ptr)(list.variables));
+	free((ptr)list);
+}
+
+func addVariable(VariableList list, str name, int position, int functionDepth, Type varType) -> Variable {
+	var variable = initVariable(name, position, functionDepth, varType);
+	list.variables[list.size] = variable;
+
+	list.size = list.size + 1;
+
+	if (list.size == list.maxSize) {
+		list.maxSize = list.maxSize * 2;
+		list.variables = (Variable[])realloc((ptr)(list.variables), 8 * list.maxSize);
+	}
+
+	return variable;
+}

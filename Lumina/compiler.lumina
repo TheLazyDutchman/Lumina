@@ -1,0 +1,915 @@
+import "variables.lumina"
+import "functions.lumina"
+import "types.lumina"
+
+import "luminaStrings.lumina"
+
+var CALLSTACKSIZE = 2048;
+
+type Compiler {
+	int output;
+	int currentStackSize;
+
+	VariableList variableList;
+	FunctionList functionList;
+	TypeList typeList;
+	
+	Function function;
+	bool hasReturned;
+	int functionDepth;
+
+	Compiler outer;
+}
+
+func initCompiler(int output, Compiler outer) -> Compiler {
+	var compiler = (Compiler)malloc(sizeof(Compiler));
+
+	compiler.output = output;
+	compiler.currentStackSize = 0;
+
+	compiler.variableList = initVariableList();
+	compiler.functionList = initFunctionList();
+	compiler.typeList = initTypeList();
+
+	compiler.hasReturned = (bool)0;
+	compiler.outer = outer;
+
+	if (outer != (Compiler)0) {
+		compiler.function = outer.function;
+		compiler.functionDepth = outer.functionDepth;
+	} else {
+		compiler.function = (Function)0;
+		compiler.functionDepth = 0;
+	}
+
+	return compiler;
+}
+
+func freeCompiler(Compiler compiler) {
+	freeVariableList(compiler.variableList);
+	freeFunctionList(compiler.functionList);
+	freeTypeList(compiler.typeList);
+	free((ptr)compiler);
+}
+
+func defineVariable(Compiler compiler, str name, int nameLen, Type varType) -> Variable {
+	var buffer = strndup(name, nameLen);
+
+	var position = compiler.currentStackSize;
+	var outer = compiler.outer;
+
+	while (outer != (Compiler)0) {
+		if (outer.function != compiler.function) {
+			outer = (Compiler)0;
+		} else {
+			position = position + outer.currentStackSize;
+			outer = outer.outer;
+		}
+	}
+
+	return addVariable(compiler.variableList, buffer, position, compiler.functionDepth, varType);
+}
+
+func findVariable(Compiler compiler, str name, int nameLen, bool isLocal) -> Variable {
+	var list = compiler.variableList;
+
+	var i = 0;
+	while (i < list.size) {
+		var variable = list.variables[i];
+
+		if (strlen(variable.name) == nameLen && strneq(variable.name, name, nameLen)) {
+			return variable;
+		}
+
+		i = i + 1;
+	}
+
+	if (compiler.outer == (Compiler)0 || isLocal) {
+		return (Variable)0;
+	}
+
+	return findVariable(compiler.outer, name, nameLen, (bool)0);
+}
+
+func defineType(Compiler compiler, str name, int nameLen, int size, PropertyList properties, Type[] propertyTypes, bool isArray, Type arrayType) -> Type {
+	var buffer = strndup(name, nameLen);
+	var typeObj = initType(buffer, size, properties, propertyTypes, isArray, arrayType);
+
+	addType(compiler.typeList, typeObj);
+
+	return typeObj;
+}
+
+func findType(Compiler compiler, str name, int nameLen, bool isLocal) -> Type {
+	var list = compiler.typeList;
+
+	var i = 0;
+	while (i < list.size) {
+		var typeObj = list.types[i];
+
+		if (strlen(typeObj.name) == nameLen && strneq(typeObj.name, name, nameLen)) {
+			return typeObj;
+		}
+
+		i = i + 1;
+	}
+
+	if (compiler.outer == (Compiler)0 || isLocal) {
+		return (Type)0;
+	}
+
+	return findType(compiler.outer, name, nameLen, (bool)0);
+}
+
+func findArrayType(Compiler compiler, Type arrayType) -> Type {
+	var list = compiler.typeList;
+
+	var foundType = (bool)0;
+
+	var i = 0;
+	while (i < list.size) {
+		if (list.types[i].isArray && list.types[i].arrayType == arrayType) {
+			return list.types[i];
+		}
+
+		if (list.types[i] == arrayType) {
+			foundType = (bool)1;
+		}
+		i = i + 1;
+	}
+
+	if (foundType) {
+		var array = initType(strdup("  "), 8, (PropertyList)0, (Type[])0, (bool)1, arrayType);
+		addType(compiler.typeList, array);
+
+		return array;
+	}
+
+	if (compiler.outer == (Compiler)0) {
+		return (Type)0;
+	}
+
+	return findArrayType(compiler.outer, arrayType);
+}
+
+func defineFunction(Compiler compiler, str name, int nameLen, int id, Type returnType, VariableList parameters) -> Function {
+	var buffer = strndup(name, nameLen);
+
+	return addFunction(compiler.functionList, buffer, id, returnType, parameters);
+}
+
+func findFunction(Compiler compiler, str name, int nameLen, bool isLocal) -> Function {
+	var list = compiler.functionList;
+
+	var i = 0;
+	while (i < list.size) {
+		var function = list.functions[i];
+
+		if (strlen(function.name) == nameLen && strneq(function.name, name, nameLen)) {
+			return function;
+		}
+
+		i = i + 1;
+	}
+
+	if (compiler.outer == (Compiler)0 || isLocal) {
+		return (Function)0;
+	}
+
+	return findFunction(compiler.outer, name, nameLen, (bool)0);
+}
+
+func printEscapedCharacter(Compiler compiler, str charPtr) -> int {
+	var chr = charPtr[0];
+	var length = 1;
+
+	if (chr == '\\') {
+		length = 2;
+
+		var test = charPtr[1];
+
+		if (test == 'a') {
+			chr = '\a';
+		} else if (test == 'b') {
+			chr = '\b';
+		} else if (test == 'e') {
+			chr = '\e';
+		} else if (test == 'f') {
+			chr = '\f';
+		} else if (test == 'n') {
+			chr = '\n';
+		} else if (test == 'r') {
+			chr = '\r';
+		} else if (test == 't') {
+			chr = '\t';
+		} else if (test == 'v') {
+			chr = '\v';
+		} else if (test == '\\') {
+			chr = '\\';
+		} else if (test == '\'') {
+			chr = '\'';
+		} else if (test == '\"') {
+			chr = '\"';
+		} else if (test == '?') {
+			chr = '\?';
+		} else if (test == '0') { // cannot do octal yet, just 0
+			chr = '\0';
+		} else {
+			chr = test;
+		}
+	}
+
+	//split the higher and lower 4 bits of the character
+	var lower = (int)chr;
+
+	var higher = 0;
+	while (lower >= 16) {
+		higher = higher + 1;
+		lower = lower - 16;
+	}
+
+	if (higher >= 16) {
+		print("[ERROR] could not convert char '");
+		printn(charPtr, length);
+		print("' to hex\n");
+
+		return -1;
+	}
+
+	var charString = (str)malloc(5);
+
+	charString[0] = '0';
+	charString[1] = 'x';
+
+	if (0 <= higher && higher <= 9) {
+		charString[2] = '0' + higher;
+	} else {
+		charString[2] = 'A' + (higher - 10);
+	}
+
+	if (0 <= lower && lower <= 9) {
+		charString[3] = '0' + lower;
+	} else {
+		charString[3] = 'A' + (lower - 10);
+	}
+
+	charString[4] = '\0';
+
+	fprint(compiler.output, charString);
+
+	free((ptr)charString);
+
+	return length;
+}
+
+
+func writeHeader(Compiler compiler) {
+	fprint(compiler.output, "section .text\n");
+	fprint(compiler.output, "global _start\n");
+	fprint(compiler.output, "_start:\n");
+	fprint(compiler.output, "	;; -- initializing call stack --\n");
+	fprint(compiler.output, "	lea rax, [callStack + ");
+	fprinti(compiler.output, CALLSTACKSIZE);
+	fprint(compiler.output, "]\n");
+	fprint(compiler.output, "	mov [callrsp], rax\n");
+	fprint(compiler.output, "	mov rax, rsp\n");
+	fprint(compiler.output, "	add rax, 8\n"); // this is where argc and argv are stored
+	fprint(compiler.output, "	push rax\n");
+	fprint(compiler.output, "	mov [basestack], rax\n");
+
+	fprint(compiler.output, "	;; -- syscall builtin --\n");
+	fprint(compiler.output, "	jmp addr_func_end_0\n");
+	fprint(compiler.output, "addr_func_0:\n");
+	fprint(compiler.output, "	pop r9\n");
+	fprint(compiler.output, "	pop r8\n");
+	fprint(compiler.output, "	pop r10\n");
+	fprint(compiler.output, "	pop rdx\n");
+	fprint(compiler.output, "	pop rsi\n");
+	fprint(compiler.output, "	pop rdi\n");
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	syscall\n");
+
+	fprint(compiler.output, "	;; -- return --\n");
+
+	fprint(compiler.output, "	;; -- push return value --\n");
+	fprint(compiler.output, "	push rax\n");
+	
+	fprint(compiler.output, "	;; -- pop return address --\n");
+	fprint(compiler.output, "	mov rax, [callrsp]\n");
+	fprint(compiler.output, "	add rax, 8\n");
+	fprint(compiler.output, "	mov [callrsp], rax\n");
+	// jump to address
+	fprint(compiler.output, "	mov rax, [callrsp]\n");
+	fprint(compiler.output, "	jmp [rax]\n");
+
+	fprint(compiler.output, "addr_func_end_0:\n");
+}
+
+func writePop(Compiler compiler, int amount) {
+	fprint(compiler.output, "	;; -- pop --\n");
+	fprint(compiler.output, "	add rsp, ");
+	fprinti(compiler.output, amount * 8);
+	fprint(compiler.output, "\n\n");
+
+	compiler.currentStackSize = compiler.currentStackSize - amount;
+}
+
+func writeAddress(Compiler compiler, str address, int id) {
+	fprint(compiler.output, address);
+	fprinti(compiler.output, id);
+	fprint(compiler.output, ":\n");
+}
+
+func writeBeginFunction(Compiler compiler, int id, int numParams) {
+	fprint(compiler.output, "	;; -- function --\n");
+	fprint(compiler.output, "	jmp addr_func_end_");
+	fprinti(compiler.output, id);
+	fprint(compiler.output, " \n");
+	fprint(compiler.output, "addr_func_");
+	fprinti(compiler.output, id);
+	fprint(compiler.output, ":\n");
+	fprint(compiler.output, "	mov rax, rsp\n");
+	fprint(compiler.output, "	add rax, 8 * "); 
+	fprinti(compiler.output, numParams);
+	fprint(compiler.output, "\n\n");
+
+	fprint(compiler.output, "	;; -- save current stack frame --\n");
+	fprint(compiler.output, "	mov rbx, [basestack + 8 * ");
+	fprinti(compiler.output, compiler.functionDepth + 1);
+	fprint(compiler.output, "]\n");
+	fprint(compiler.output, "	push rbx\n\n");
+
+	fprint(compiler.output, "	;; -- create new stack frame --\n");
+	fprint(compiler.output, "	mov [basestack + 8 * ");
+	fprinti(compiler.output, compiler.functionDepth + 1);
+	fprint(compiler.output, "], rax\n\n");
+}
+
+func writeCall(Compiler compiler, int id, int numParameters, int numCalls) {
+	fprint(compiler.output, "	;; -- function call -- \n");
+	fprint(compiler.output, "	;; -- push current address --\n");
+	// get current address
+	fprint(compiler.output, "	mov rax, ret_func_");
+	fprinti(compiler.output, id);
+	fprint(compiler.output, "__");
+	fprinti(compiler.output, numCalls);
+	fprint(compiler.output, " \n");
+
+	fprint(compiler.output, "	mov rbx, [callrsp]\n");
+	fprint(compiler.output, "	mov [rbx], rax\n");
+	// decrease callrsp
+	fprint(compiler.output, "	sub rbx, 8\n");
+	fprint(compiler.output, "	mov [callrsp], rbx\n");
+	
+	fprint(compiler.output, "	;; -- jump --\n");
+	fprint(compiler.output, "	jmp addr_func_");
+	fprinti(compiler.output, id);
+	fprint(compiler.output, " \n");
+
+	fprint(compiler.output, "	ret_func_");
+	fprinti(compiler.output, id);
+	fprint(compiler.output, "__");
+	fprinti(compiler.output, numCalls);
+	fprint(compiler.output, ": ;; first number is function id, second number id call id\n\n");
+
+	compiler.currentStackSize = compiler.currentStackSize - numParameters + 1;
+}
+
+func writeReturnEmpty(Compiler compiler, int numVars, int numParameters) {
+	fprint(compiler.output, "	;; -- return --\n");
+
+	fprint(compiler.output, "	;; -- pop local variables --\n");
+	fprint(compiler.output, "	add rsp, ");
+	fprinti(compiler.output, 8 * numVars);
+	fprint(compiler.output, " \n");
+
+	fprint(compiler.output, "	;; -- restore stackframe -- \n");
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, " mov [basestack + 8 * ");
+	fprinti(compiler.output, compiler.functionDepth);
+	fprint(compiler.output, "], rax\n");
+
+	fprint(compiler.output, "	;; -- pop parameters --\n");
+	fprint(compiler.output, "	add rsp, ");
+	fprinti(compiler.output, 8 * numParameters);
+	fprint(compiler.output, " \n");
+
+	fprint(compiler.output, "	;; -- return empty --\n");
+	fprint(compiler.output, "	push 0\n");
+	
+	fprint(compiler.output, "	;; -- jump to return address --\n");
+	fprint(compiler.output, "	mov rax, [callrsp]\n");
+	fprint(compiler.output, "	add rax, 8\n");
+	fprint(compiler.output, "	mov [callrsp], rax\n");
+	// jump to address
+	fprint(compiler.output, "	mov rax, [callrsp]\n");
+	fprint(compiler.output, "	jmp [rax]\n");
+}
+
+func writeReturnValue(Compiler compiler, int numVars, int numParameters) {
+	fprint(compiler.output, "	;; -- return --\n");
+
+	fprint(compiler.output, "	;; -- store return value --\n");
+	fprint(compiler.output, "	pop rax\n");
+
+	fprint(compiler.output, "	;; -- pop local variables --\n");
+	fprint(compiler.output, "	add rsp, ");
+	fprinti(compiler.output, 8 * numVars);
+	fprint(compiler.output, " \n");
+
+	fprint(compiler.output, "	;; -- restore stackframe -- \n");
+	fprint(compiler.output, "	pop rbx\n");
+	fprint(compiler.output, " mov [basestack + 8 * ");
+	fprinti(compiler.output, compiler.functionDepth);
+	fprint(compiler.output, "], rbx\n");
+
+	fprint(compiler.output, "	;; -- pop parameters --\n");
+	fprint(compiler.output, "	add rsp, ");
+	fprinti(compiler.output, 8 * numParameters);
+	fprint(compiler.output, " \n");
+
+	fprint(compiler.output, "	;; -- push return value --\n");
+	fprint(compiler.output, "	push rax\n");
+	
+	fprint(compiler.output, "	;; -- pop return address --\n");
+	fprint(compiler.output, "	mov rax, [callrsp]\n");
+	fprint(compiler.output, "	add rax, 8\n");
+	fprint(compiler.output, "	mov [callrsp], rax\n");
+	// jump to address
+	fprint(compiler.output, "	mov rax, [callrsp]\n");
+	fprint(compiler.output, "	jmp [rax]\n");
+}
+
+func writeCompare(Compiler compiler) {
+	fprint(compiler.output, "	;; -- comparison --\n");
+	fprint(compiler.output, "	pop rbx\n");
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	cmp rax, rbx\n\n");
+	
+	compiler.currentStackSize = compiler.currentStackSize - 2;
+}
+
+func writeBitAnd(Compiler compiler) {
+	fprint(compiler.output, "	;; -- bit and --\n");
+	fprint(compiler.output, "	pop rbx\n");
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	and rax, rbx\n");
+	fprint(compiler.output, "	push rax\n");
+
+	compiler.currentStackSize = compiler.currentStackSize - 1;
+}
+
+func writeBitOr(Compiler compiler) {
+	fprint(compiler.output, "	;; -- bit or --\n");
+	fprint(compiler.output, "	pop rbx\n");
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	or rax, rbx\n");
+	fprint(compiler.output, "	push rax\n");
+
+	compiler.currentStackSize = compiler.currentStackSize - 1;
+}
+
+func writeBitNot(Compiler compiler) {
+	fprint(compiler.output, "	;; -- bit not --\n");
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	not rax\n");
+	fprint(compiler.output, "	push rax\n\n");
+}
+
+func writeLess(Compiler compiler) {
+	fprint(compiler.output, "	;; -- less --\n");
+	fprint(compiler.output, "	pop rbx\n");
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	cmp rax, rbx\n");
+
+	//select sign flag
+	fprint(compiler.output, "	pushf\n");
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	shr rax, 7\n");
+	fprint(compiler.output, "	and rax, 1\n");
+
+	//select overflow flag
+	fprint(compiler.output, "	pushf\n");
+	fprint(compiler.output, "	pop rbx\n");
+	fprint(compiler.output, "	shr rbx, 11\n");
+	fprint(compiler.output, "	and rbx, 1\n");
+
+	fprint(compiler.output, "	xor rax, rbx\n");
+	fprint(compiler.output, "	push rax\n\n");
+
+	compiler.currentStackSize = compiler.currentStackSize - 1;
+}
+
+func writeLessEqual(Compiler compiler) {
+	fprint(compiler.output, "	;; -- less --\n");
+	fprint(compiler.output, "	pop rbx\n");
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	cmp rax, rbx\n");
+
+	fprint(compiler.output, "	pushf\n");
+	fprint(compiler.output, "	pushf\n");
+	fprint(compiler.output, "	pushf\n");
+
+	//select sign flag
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	shr rax, 7\n");
+	fprint(compiler.output, "	and rax, 1\n");
+
+	//select overflow flag
+	fprint(compiler.output, "	pop rbx\n");
+	fprint(compiler.output, "	shr rbx, 11\n");
+	fprint(compiler.output, "	and rbx, 1\n");
+
+	//select zero flag
+	fprint(compiler.output, "	pop rcx\n");
+	fprint(compiler.output, "	shr rcx, 6\n");
+	fprint(compiler.output, "	and rcx, 1\n");
+
+	fprint(compiler.output, "	xor rax, rbx\n");
+	fprint(compiler.output, "	or rax, rcx\n");
+	fprint(compiler.output, "	push rax\n\n");
+
+	compiler.currentStackSize = compiler.currentStackSize - 1;
+}
+
+func writeGreater(Compiler compiler) {
+	fprint(compiler.output, "	;; -- greater --\n");
+	fprint(compiler.output, "	pop rbx\n");
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	cmp rax, rbx\n");
+
+	fprint(compiler.output, "	pushf\n");
+	fprint(compiler.output, "	pop rax\n");
+
+	fprint(compiler.output, "	pushf\n");
+	fprint(compiler.output, "	pop rbx\n");
+
+	fprint(compiler.output, "	pushf\n");
+	fprint(compiler.output, "	pop rcx\n");
+
+	//select sign flag
+	fprint(compiler.output, "	shr rax, 7\n");
+	fprint(compiler.output, "	and rax, 1\n");
+
+	//select overflow flag
+	fprint(compiler.output, "	shr rbx, 11\n");
+	fprint(compiler.output, "	and rbx, 1\n");
+
+	//select zero flag
+	fprint(compiler.output, "	shr rcx, 6\n");
+	fprint(compiler.output, "	and rcx, 1\n");
+
+	fprint(compiler.output, "	xor rax, rbx\n");
+
+	fprint(compiler.output, "	or rax, rcx\n");
+	fprint(compiler.output, "	mov rbx, 1\n");
+	fprint(compiler.output, "	sub rbx, rax\n");
+	fprint(compiler.output, "	push rbx\n");
+
+	compiler.currentStackSize = compiler.currentStackSize - 1;
+}
+
+func writeGreaterEqual(Compiler compiler) {
+	fprint(compiler.output, "	;; -- greater --\n");
+	fprint(compiler.output, "	pop rbx\n");
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	cmp rax, rbx\n");
+
+	fprint(compiler.output, "	pushf\n");
+	fprint(compiler.output, "	pop rax\n");
+
+	fprint(compiler.output, "	pushf\n");
+	fprint(compiler.output, "	pop rbx\n");
+
+	fprint(compiler.output, "	pushf\n");
+	fprint(compiler.output, "	pop rcx\n");
+
+	//select sign flag
+	fprint(compiler.output, "	shr rax, 7\n");
+	fprint(compiler.output, "	and rax, 1\n");
+
+	//select overflow flag
+	fprint(compiler.output, "	shr rbx, 11\n");
+	fprint(compiler.output, "	and rbx, 1\n");
+
+	fprint(compiler.output, "	xor rax, rbx\n");
+
+	fprint(compiler.output, "	mov rbx, 1\n");
+	fprint(compiler.output, "	sub rbx, rax\n");
+	fprint(compiler.output, "	push rbx\n");
+
+	compiler.currentStackSize = compiler.currentStackSize - 1;
+}
+
+func writeEqual(Compiler compiler) {
+	fprint(compiler.output, "	;; -- equal --\n");
+	fprint(compiler.output, "	pop rbx\n");
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	cmp rax, rbx\n");
+
+	//select zero flag
+	fprint(compiler.output, "	pushf\n");
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	shr rax, 6\n");
+	fprint(compiler.output, "	and rax, 1\n");
+
+	fprint(compiler.output, "	push rax\n\n");
+
+	compiler.currentStackSize = compiler.currentStackSize - 1;
+}
+
+func writeNotEqual(Compiler compiler) {
+	fprint(compiler.output, "	;; -- not equal --\n");
+	fprint(compiler.output, "	pop rbx\n");
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	cmp rax, rbx\n");
+
+	//select zero flag
+	fprint(compiler.output, "	pushf\n");
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	shr rax, 6\n");
+	fprint(compiler.output, "	and rax, 1\n");
+
+	fprint(compiler.output, "	mov rbx, 1\n");
+	fprint(compiler.output, "	sub rbx, rax\n");
+
+	fprint(compiler.output, "	push rbx\n\n");
+
+	compiler.currentStackSize = compiler.currentStackSize - 1;
+}
+
+func writeCondition(Compiler compiler) {
+	fprint(compiler.output, "	;; -- condition --\n");
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	cmp rax, 1\n\n");
+	
+	compiler.currentStackSize = compiler.currentStackSize - 1;
+}
+
+func writeJump(Compiler compiler, str address, int id) {
+	fprint(compiler.output, "	;; -- jump --\n");
+	fprint(compiler.output, "	jmp "); 
+	fprint(compiler.output, address);
+	fprinti(compiler.output, id);
+	fprint(compiler.output, "\n\n");
+}
+
+func writeJumpEqual(Compiler compiler, str address, int id) {
+	fprint(compiler.output, "	;; -- jump --\n");
+	fprint(compiler.output, "	je ");
+	fprint(compiler.output, address);
+	fprinti(compiler.output, id);
+	fprint(compiler.output, "\n\n");
+}
+
+func writeJumpNotEqual(Compiler compiler, str address, int id) {
+	fprint(compiler.output, "	;; -- jump if not equal --\n");
+	fprint(compiler.output, "	jne ");
+	fprint(compiler.output, address);
+	fprinti(compiler.output, id);
+	fprint(compiler.output, "\n\n");
+}
+
+func writeNumber(Compiler compiler, str value) {
+	fprint(compiler.output, "	;; -- number --\n");
+	fprint(compiler.output, "	mov rax, ");
+	fprint(compiler.output, value);
+	fprint(compiler.output, " \n");
+	fprint(compiler.output, "	push rax\n\n");
+
+	compiler.currentStackSize = compiler.currentStackSize + 1;
+}
+
+func writeCharacter(Compiler compiler, str value) {
+	fprint(compiler.output, "	;; -- character --\n");
+	fprint(compiler.output, "	mov rax, ");
+	printEscapedCharacter(compiler, value);
+	fprint(compiler.output, " \n");
+	fprint(compiler.output, "	push rax\n\n");
+
+	compiler.currentStackSize = compiler.currentStackSize + 1;
+}
+
+func writeString(Compiler compiler, int id) {
+	fprint(compiler.output, "	;; -- string --\n");
+	fprint(compiler.output, "	mov rax, string_");
+	fprinti(compiler.output, id);
+	fprint(compiler.output, " \n");
+	fprint(compiler.output, "	push rax\n\n");
+
+	compiler.currentStackSize = compiler.currentStackSize + 1;
+}
+
+func writeReadIndex(Compiler compiler, int size) {
+	fprint(compiler.output, "	;; -- read at index -- \n");
+	fprint(compiler.output, "	pop rax ;; index\n");
+	fprint(compiler.output, "	mov rbx, ");
+	fprinti(compiler.output, size);
+	fprint(compiler.output, " \n");
+	fprint(compiler.output, "	mul rbx\n");
+	fprint(compiler.output, "	pop rbx ;; pointer\n");
+	fprint(compiler.output, "	add rbx, rax\n");
+	fprint(compiler.output, "	mov rbx, [rbx]\n");
+	fprint(compiler.output, "	;; create bit mask\n");
+	if (size < 8) {
+		fprint(compiler.output, "	mov rcx, 1\n");
+		fprint(compiler.output, "	shl rcx, ");
+		fprinti(compiler.output, 8 * size);
+		fprint(compiler.output, " ;; size\n");
+	} else {
+		fprint(compiler.output, "	mov rcx, 0\n");
+	}
+	fprint(compiler.output, "	sub rcx, 1\n");
+	fprint(compiler.output, "	and rbx, rcx\n");
+	fprint(compiler.output, "	push rbx\n\n");
+
+	compiler.currentStackSize = compiler.currentStackSize - 1;
+}
+
+func writeWriteIndex(Compiler compiler, int size) {
+	fprint(compiler.output, "	;; -- write at index -- \n");
+	fprint(compiler.output, "	pop rcx ;; value\n");
+	fprint(compiler.output, "	pop rax ;; index\n");
+	fprint(compiler.output, "	mov rbx, ");
+	fprinti(compiler.output, size);
+	fprint(compiler.output, " \n");
+	fprint(compiler.output, "	mul rbx\n");
+	fprint(compiler.output, "	pop rbx ;; pointer\n");
+	fprint(compiler.output, "	add rbx, rax\n");
+	fprint(compiler.output, "	mov r8, [rbx]\n");
+	fprint(compiler.output, "	;; create bit mask\n");
+	if (size < 8) {
+		fprint(compiler.output, "	mov r9, 1\n");
+		fprint(compiler.output, "	shl r9, ");
+		fprinti(compiler.output, 8 * size);
+		fprint(compiler.output, ";; size\n");
+	} else {
+		fprint(compiler.output, "	mov r9, 0\n");
+	}
+	fprint(compiler.output, "	sub r9, 1\n");
+	fprint(compiler.output, "	and rcx, r9\n");
+	fprint(compiler.output, "	not r9\n");
+	fprint(compiler.output, "	and r8, r9\n");
+	fprint(compiler.output, "	add r8, rcx\n");
+	fprint(compiler.output, "	mov [rbx], r8\n");
+	fprint(compiler.output, "	push rcx\n\n");
+
+	compiler.currentStackSize = compiler.currentStackSize - 2;
+}
+
+func writeReadProperty(Compiler compiler, int offset, int size) {
+	fprint(compiler.output, "	;; -- read property -- \n");
+	fprint(compiler.output, "	pop rax ;; pointer\n");
+	fprint(compiler.output, "	add rax, ");
+	fprinti(compiler.output, offset);
+	fprint(compiler.output, " \n");
+	fprint(compiler.output, "	mov rax, [rax]\n");
+	fprint(compiler.output, "	;; create bit mask\n");
+	if (size < 8) {
+		fprint(compiler.output, "	mov rbx, 1\n");
+		fprint(compiler.output, "	shl rbx, ");
+		fprinti(compiler.output, 8 * size);
+		fprint(compiler.output, " ;; size\n");
+	} else {
+		fprint(compiler.output, "	mov rbx, 0\n");
+	}
+	fprint(compiler.output, "	sub rbx, 1\n");
+	fprint(compiler.output, "	and rax, rbx\n");
+	fprint(compiler.output, "	push rax\n\n");
+}
+
+func writeWriteProperty(Compiler compiler, int offset, int size) {
+	fprint(compiler.output, "	;; -- write property -- \n");
+	fprint(compiler.output, "	pop rax ;; value\n");
+	fprint(compiler.output, "	pop rbx ;; pointer\n");
+	fprint(compiler.output, "	add rbx, ");
+	fprinti(compiler.output, offset);
+	fprint(compiler.output, " \n");
+	fprint(compiler.output, "	mov rcx, [rbx]\n");
+	fprint(compiler.output, "	;; create bit mask\n");
+	if (size < 8) {
+		fprint(compiler.output, "	mov r9, 1\n");
+		fprint(compiler.output, "	shl r9, ");
+		fprinti(compiler.output, 8 * size);
+		fprint(compiler.output, " ;; size\n");
+	} else {
+		fprint(compiler.output, "	mov r9, 0\n");
+	}
+	fprint(compiler.output, "	sub r9, 1\n");
+	fprint(compiler.output, "	and rax, r9\n");
+	fprint(compiler.output, "	not r9\n");
+	fprint(compiler.output, "	and rcx, r9\n");
+	fprint(compiler.output, "	add rcx, rax\n");
+	fprint(compiler.output, "	mov [rbx], rcx\n");
+	fprint(compiler.output, "	push rax\n\n");
+
+	compiler.currentStackSize = compiler.currentStackSize - 1;
+}
+
+func writeIdentifier(Compiler compiler, int offset, int currentDepth) {
+	fprint(compiler.output, "	;; -- identifier --\n");
+	fprint(compiler.output, "	mov rax, [basestack + 8 * ");
+	fprinti(compiler.output, currentDepth);
+	fprint(compiler.output, "]\n");
+	fprint(compiler.output, "	mov rbx, ");
+	fprinti(compiler.output, 8 * offset);
+	fprint(compiler.output, " \n");
+	fprint(compiler.output, "	sub rax, rbx\n");
+	fprint(compiler.output, "	mov rax, [rax]\n");
+	fprint(compiler.output, "	push rax\n\n");
+
+	compiler.currentStackSize = compiler.currentStackSize + 1;
+}
+
+func writeAssignment(Compiler compiler, int offset, int currentDepth) {
+	fprint(compiler.output, "	;; -- assignment --\n");
+	fprint(compiler.output, "	mov rax, [basestack + 8 * ");
+	fprinti(compiler.output, currentDepth);
+	fprint(compiler.output, "]\n");
+	fprint(compiler.output, "	mov rbx, ");
+	fprinti(compiler.output, 8 * offset);
+	fprint(compiler.output, " \n");
+	fprint(compiler.output, "	sub rax, rbx\n");
+	fprint(compiler.output, "	mov rbx, [rsp]\n");
+	fprint(compiler.output, "	mov [rax], rbx\n\n");
+}
+
+func writeAdd(Compiler compiler) {
+	fprint(compiler.output, "	;; -- add --\n");
+	fprint(compiler.output, "	pop rbx\n");
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	add rax, rbx\n");
+	fprint(compiler.output, "	push rax\n\n");
+
+	compiler.currentStackSize = compiler.currentStackSize - 1;
+}
+
+func writeSubtract(Compiler compiler) {
+	fprint(compiler.output, "	;; -- subtract --\n");
+	fprint(compiler.output, "	pop rbx\n");
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	sub rax, rbx\n");
+	fprint(compiler.output, "	push rax\n\n");
+
+	compiler.currentStackSize = compiler.currentStackSize - 1;
+}
+
+func writeNegative(Compiler compiler) {
+	fprint(compiler.output, "	;; -- negative --\n");
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	neg rax\n");
+	fprint(compiler.output, "	push rax\n\n");
+}
+
+func writeMult(Compiler compiler) {
+	fprint(compiler.output, "	;; -- mult --\n");
+	fprint(compiler.output, "	pop rbx\n");
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	mul rbx\n");
+	fprint(compiler.output, "	push rax\n\n");
+
+	compiler.currentStackSize = compiler.currentStackSize - 1;
+}
+
+func writeFooter(Compiler compiler, StringList strings) {
+	fprint(compiler.output, "	mov rax, 60\n");
+	fprint(compiler.output, "	xor rdi, rdi\n");
+	fprint(compiler.output, "	syscall\n\n");
+
+	fprint(compiler.output, "section .bss\n");
+	fprint(compiler.output, "	basestack: resq ");
+	fprinti(compiler.output, CALLSTACKSIZE);
+	fprint(compiler.output, " \n");
+	fprint(compiler.output, "	callrsp: resq 1\n");
+	fprint(compiler.output, "	callStack: resq ");
+	fprinti(compiler.output, CALLSTACKSIZE);
+	fprint(compiler.output, " \n");
+
+	fprint(compiler.output, "section .data\n");
+	var i = 0;
+	while (i < strings.size) {
+		fprint(compiler.output, "	string_");
+		fprinti(compiler.output, i);
+		fprint(compiler.output, ": db ");
+		var j = 0;
+		var string = strings.strings[i];
+		var len = strlen(string);
+		while (j < len) {
+			var chr = (str)((int)string + j);
+
+			var length = printEscapedCharacter(compiler, chr);
+			
+			j = j + length; 
+
+			fprint(compiler.output, ", ");
+
+			if (length == -1) {
+				j = len;
+			}
+		}
+
+		fprint(compiler.output, "0x00\n");
+
+		i = i + 1;
+	}
+}

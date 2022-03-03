@@ -1,0 +1,506 @@
+import "../std/io.lumina"
+import "../std/path.lumina"
+
+type Lexer {
+	str fileName;
+	str buffer;
+	str current;
+	int line;
+	int column;
+
+	Lexer outer;
+}
+
+// Token types enum
+var TOKEN_NUMBER = 0;
+var TOKEN_PLUS = 1;
+var TOKEN_MINUS = 2;
+var TOKEN_EQUAL = 3;
+var TOKEN_AND = 4;
+var TOKEN_ANDAND = 5;
+var TOKEN_PIPE = 6;
+var TOKEN_PIPEPIPE = 7;
+var TOKEN_LESS = 8;
+var TOKEN_GREATER = 9;
+var TOKEN_LESSEQUAL = 10;
+var TOKEN_GREATEREQUAL = 11;
+var TOKEN_EQUALEQUAL = 12;
+var TOKEN_BANG = 13;
+var TOKEN_BANGEQUAL = 14;
+var TOKEN_RARROW = 15;
+var TOKEN_LPAREN = 16;
+var TOKEN_RPAREN = 17;
+var TOKEN_LBRACKET = 18;
+var TOKEN_RBRACKET = 19;
+var TOKEN_LBRACE = 20;
+var TOKEN_RBRACE = 21;
+var TOKEN_CHAR = 22;
+var TOKEN_STR = 23;
+var TOKEN_SEMICOLON = 24;
+var TOKEN_VAR = 25;
+var TOKEN_IF = 26;
+var TOKEN_ELSE = 27;
+var TOKEN_WHILE = 28;
+var TOKEN_FUNC = 29;
+var TOKEN_TYPE = 30;
+var TOKEN_RETURN = 31;
+var TOKEN_IMPORT = 32;
+var TOKEN_SIZEOF = 33;
+var TOKEN_COMMA = 34;
+var TOKEN_PERIOD = 35;
+var TOKEN_IDENTIFIER = 36;
+var TOKEN_END_OF_FILE = 37;
+var TOKEN_ERROR = 38;
+var TOKEN_STAR = 39;
+
+type Token {
+	str fileName;
+	str word;
+	int wordLen;
+	int line;
+	int column;
+	int tokenType;
+}
+
+func readFile(str fileName) -> str {
+	var flags = 0; //READONLY
+	var mode = 0;
+
+	var file = open(fileName, flags, mode);
+
+	if (file < 0) {
+		print("[ERROR] can not open file '");
+		print(fileName);
+		print("'\n");
+		exit(1);
+	}
+
+	var SEEK_SET = 0;
+	var SEEK_END = 2;
+
+	var len = lseek(file, 0, SEEK_END);
+	lseek(file, 0, SEEK_SET);
+
+	var buffer = (str)malloc(len + 1);
+
+	len = read(file, buffer, len);
+
+	if (len < 0) {
+		print("[ERROR] when reading file '");
+		print(fileName);
+		print("'\n");
+
+		exit(1);
+	}
+
+	buffer[len] = '\0';
+
+	return buffer;
+}
+
+func initLexer(str fileName, Lexer outer) -> Lexer {
+	var lexer = (Lexer)malloc(sizeof(Lexer));
+
+	lexer.outer = outer;
+	
+	lexer.fileName = fileName;
+
+	lexer.buffer = readFile(lexer.fileName);
+	lexer.current = lexer.buffer;
+
+	lexer.line = 0;
+	lexer.column = 0;
+
+	return lexer;
+}
+
+func freeLexer(Lexer lexer) {
+	free((ptr)(lexer.buffer));
+	free((ptr)(lexer.fileName));
+	free((ptr)lexer);
+}
+
+func advance(Lexer lexer) {
+	lexer.current = (str)((int)(lexer.current) + 1);
+	lexer.column = lexer.column + 1;
+
+	if (lexer.current[0] == '\n') {
+		lexer.column = 0;
+		lexer.line = lexer.line + 1;
+	}
+}
+
+func handleComment(Lexer lexer) {
+	while (lexer.current[0] != '\n') {
+		advance(lexer);
+	}
+}
+
+func lexerError(Lexer lexer, str message) {
+	print(lexer.fileName);
+	print(": ");
+	printi(lexer.line);
+	print(": ");
+	printi(lexer.column);
+	print(":error: at character: '");
+
+	var character = (str)malloc(2);
+	character[0] = lexer.current[0];
+	character[1] = '\0';
+	print(character);
+	free((ptr)character);
+
+	print("' :");
+	print(message);
+	print("\t\n");
+}
+
+func lexNumber(Lexer lexer) -> Token{
+	var token = (Token)malloc(sizeof(Token));
+	token.tokenType = TOKEN_NUMBER;
+
+	token.fileName = lexer.fileName;
+	token.word = lexer.current;
+	token.line = lexer.line;
+	token.column = lexer.column;
+
+	while (isnumeric(lexer.current[0])) {
+		advance(lexer);
+	}
+
+	token.wordLen = (int)(lexer.current) - (int)(token.word);
+
+	return token;
+}
+
+func lexIdentifier(Lexer lexer, Token token) -> Token {
+	token.tokenType = TOKEN_IDENTIFIER;
+
+	while (isalnum(lexer.current[0]) || lexer.current[0] == '_') {
+		advance(lexer);
+	}
+
+	token.wordLen = (int)(lexer.current) - (int)(token.word);
+
+	return token;
+}
+
+func lexKeyWords(Lexer lexer) -> Token {
+	var token = (Token)malloc(sizeof(Token));
+	token.word = lexer.current;
+
+	token.fileName = lexer.fileName;
+	token.line = lexer.line;
+	token.column = lexer.column;
+
+	if (strneq(lexer.current, "var", 3)) {
+		token.tokenType = TOKEN_VAR;
+		var i = 0;
+		while (i < 3) {
+			advance(lexer);
+			i = i + 1;
+		}
+
+		if (isalnum(lexer.current[0]) || lexer.current[0] == '_') {
+			return lexIdentifier(lexer, token);
+		}
+	} else if (strneq(lexer.current, "func", 4)) {
+		token.tokenType = TOKEN_FUNC;
+
+		var i = 0;
+		while (i < 4) {
+			advance(lexer);
+			i = i + 1;
+		}
+
+		if (isalnum(lexer.current[0]) || lexer.current[0] == '_') {
+			return lexIdentifier(lexer, token);
+		}
+	} else if (strneq(lexer.current, "if", 2)) {
+		token.tokenType = TOKEN_IF;
+
+		var i = 0;
+		while (i < 2) {
+			advance(lexer);
+			i = i + 1;
+		}
+
+		if (isalnum(lexer.current[0]) || lexer.current[0] == '_') {
+			return lexIdentifier(lexer, token);
+		}
+	} else if (strneq(lexer.current, "else", 4)) {
+		token.tokenType = TOKEN_ELSE;
+
+		var i = 0;
+		while (i < 4) {
+			advance(lexer);
+			i = i + 1;
+		}
+
+		if (isalnum(lexer.current[0]) || lexer.current[0] == '_') {
+			return lexIdentifier(lexer, token);
+		}
+	} else if (strneq(lexer.current, "type", 4)) {
+		token.tokenType = TOKEN_TYPE;
+
+		var i = 0;
+		while (i < 4) {
+			advance(lexer);
+			i = i + 1;
+		}
+
+		if (isalnum(lexer.current[0]) || lexer.current[0] == '_') {
+			return lexIdentifier(lexer, token);
+		}
+	} else if (strneq(lexer.current, "while", 5)) {
+		token.tokenType = TOKEN_WHILE;
+
+		var i = 0;
+		while (i < 5) {
+			advance(lexer);
+			i = i + 1;
+		}
+
+		if (isalnum(lexer.current[0]) || lexer.current[0] == '_') {
+			return lexIdentifier(lexer, token);
+		}
+	} else if (strneq(lexer.current, "return", 6)) {
+		token.tokenType = TOKEN_RETURN;
+
+		var i = 0;
+		while (i < 6) {
+			advance(lexer);
+			i = i + 1;
+		}
+
+		if (isalnum(lexer.current[0]) || lexer.current[0] == '_') {
+			return lexIdentifier(lexer, token);
+		}
+	} else if (strneq(lexer.current, "import", 6)) {
+		token.tokenType = TOKEN_IMPORT;
+
+		var i = 0;
+		while (i < 6) {
+			advance(lexer);
+			i = i + 1;
+		}
+
+		if (isalnum(lexer.current[0]) || lexer.current[0] == '_') {
+			return lexIdentifier(lexer, token);
+		}
+	} else if (strneq(lexer.current, "sizeof", 6)) {
+		token.tokenType = TOKEN_SIZEOF;
+
+		var i = 0;
+		while (i < 6) {
+			advance(lexer);
+			i = i + 1;
+		}
+
+		if (isalnum(lexer.current[0]) || lexer.current[0] == '_') {
+			return lexIdentifier(lexer, token);
+		}
+	} else {
+		return lexIdentifier(lexer, token);
+	}
+
+	token.wordLen = (int)(lexer.current) - (int)(token.word);
+	return token;
+}
+
+func lexCharacter(Lexer lexer) -> Token {
+	var token = (Token)malloc(sizeof(Token));
+
+	advance(lexer);
+
+	token.fileName = lexer.fileName;
+	token.word = lexer.current;
+	token.line = lexer.line;
+	token.column = lexer.column;
+	token.tokenType = TOKEN_CHAR;
+	
+	if (lexer.current[0] == '\\') {
+		advance(lexer);
+	}
+
+	advance(lexer);
+
+	if (lexer.current[0] != '\'') {
+		lexerError(lexer, "expected '\'' after character");
+		token.tokenType = TOKEN_ERROR;
+	}
+
+	advance(lexer);
+
+	token.wordLen = ((int)(lexer.current) - (int)(token.word)) - 1;
+	return token;
+}
+
+func lexString(Lexer lexer) -> Token {
+	var token = (Token)malloc(sizeof(Token));
+
+	advance(lexer);
+
+	token.fileName = lexer.fileName;
+	token.word = lexer.current;
+	token.line = lexer.line;
+	token.column = lexer.column;
+	token.tokenType = TOKEN_STR;
+	
+	while (lexer.current[0] != '"' && lexer.current[0] != '\0') {
+		if (lexer.current[0] == '\\') {
+			advance(lexer);
+		}
+
+		advance(lexer);
+	}
+
+	if (lexer.current[0] == '\0') {
+		lexerError(lexer, "expected '\"' after string");
+		token.tokenType = TOKEN_END_OF_FILE;
+	}
+
+	advance(lexer);
+	
+	token.wordLen = ((int)(lexer.current) - (int)(token.word)) - 1;
+	return token;
+}
+
+func lexPunctuation(Lexer lexer) -> Token {
+	var token = (Token)malloc(sizeof(Token));
+
+	token.fileName = lexer.fileName;
+	token.word = lexer.current;
+	token.line = lexer.line;
+	token.column = lexer.column;
+
+	if (lexer.current[0] == '+') {
+		token.tokenType = TOKEN_PLUS;
+		advance(lexer);
+	} else if (lexer.current[0] == '-') {
+		advance(lexer);
+		token.tokenType = TOKEN_MINUS;
+
+		if (lexer.current[0] == '>') {
+			advance(lexer);
+			token.tokenType = TOKEN_RARROW;
+		}
+	} else if (lexer.current[0] == '*') {
+		advance(lexer);
+		token.tokenType = TOKEN_STAR;
+	} else if (lexer.current[0] == ';') {
+		advance(lexer);
+		token.tokenType = TOKEN_SEMICOLON;
+	} else if (lexer.current[0] == '(') {
+		advance(lexer);
+		token.tokenType = TOKEN_LPAREN;
+	} else if (lexer.current[0] == ')') {
+		advance(lexer);
+		token.tokenType = TOKEN_RPAREN;
+	} else if (lexer.current[0] == '[') {
+		advance(lexer);
+		token.tokenType = TOKEN_LBRACKET;
+	} else if (lexer.current[0] == ']') {
+		advance(lexer);
+		token.tokenType = TOKEN_RBRACKET;
+	} else if (lexer.current[0] == '{') {
+		advance(lexer);
+		token.tokenType = TOKEN_LBRACE;
+	} else if (lexer.current[0] == '}') {
+		advance(lexer);
+		token.tokenType = TOKEN_RBRACE;
+	} else if (lexer.current[0] == '&') {
+		advance(lexer);
+		token.tokenType = TOKEN_AND;
+
+		if (lexer.current[0] == '&') {
+			advance(lexer);
+			token.tokenType = TOKEN_ANDAND;
+		}
+	} else if (lexer.current[0] == '|') {
+		advance(lexer);
+		token.tokenType = TOKEN_PIPE;
+
+		if (lexer.current[0] == '|') {
+			advance(lexer);
+			token.tokenType = TOKEN_PIPEPIPE;
+		}
+	} else if (lexer.current[0] == '!') {
+		advance(lexer);
+		token.tokenType = TOKEN_BANG;
+
+		if (lexer.current[0] == '=') {
+			advance(lexer);
+			token.tokenType = TOKEN_BANGEQUAL;
+		}
+	} else if (lexer.current[0] == '<') {
+		advance(lexer);
+		token.tokenType = TOKEN_LESS;
+
+		if (lexer.current[0] == '=') {
+			advance(lexer);
+			token.tokenType = TOKEN_LESSEQUAL;
+		}
+	} else if (lexer.current[0] == '>') {
+		advance(lexer);
+		token.tokenType = TOKEN_GREATER;
+
+		if (lexer.current[0] == '=') {
+			advance(lexer);
+			token.tokenType = TOKEN_GREATEREQUAL;
+		}
+	} else if (lexer.current[0] == '=') {
+		advance(lexer);
+		token.tokenType = TOKEN_EQUAL;
+
+		if (lexer.current[0] == '=') {
+			advance(lexer);
+			token.tokenType = TOKEN_EQUALEQUAL;
+		}
+	} else if (lexer.current[0] == ',') {
+		advance(lexer);
+		token.tokenType = TOKEN_COMMA;
+	} else if (lexer.current[0] == '.') {
+		advance(lexer);
+		token.tokenType = TOKEN_PERIOD;
+	} else if (lexer.current[0] == '\0') {
+		token.tokenType = TOKEN_END_OF_FILE;
+	} else {
+		lexerError(lexer, "could not recognize character");
+		token.tokenType = TOKEN_ERROR;
+	}
+
+	token.wordLen = (int)(lexer.current) - (int)(token.word);
+
+	return token;
+}
+
+func nextToken(Lexer lexer) -> Token {
+	while (isspace(lexer.current[0])) {
+		advance(lexer);
+
+		if (lexer.current[0] == '/' && lexer.current[1] == '/') {
+			advance(lexer);
+			advance(lexer);
+			handleComment(lexer);
+		}
+	}
+
+	if (isnumeric(lexer.current[0])) {
+		return lexNumber(lexer);
+	}
+
+	if (isalpha(lexer.current[0]) || lexer.current[0] == '_') {
+		return lexKeyWords(lexer);
+	}
+
+	if (lexer.current[0] == '\'') {
+		return lexCharacter(lexer);
+	}
+
+	if (lexer.current[0] == '\"') {
+		return lexString(lexer);
+	}
+
+	return lexPunctuation(lexer);
+}

@@ -10,13 +10,14 @@ type _heap_block {
 }
 
 var _heap_start = (_heap_block)brk((ptr)0);
+var _last_block = _heap_start;
 
-brk((ptr)((int)_heap_start + PAGESIZE)); // allocate memory for the heap
+var curEnd = brk((ptr)((int)_heap_start + PAGESIZE)); // allocate memory for the heap
 
 _heap_start.size = PAGESIZE - sizeof(_heap_block); // initialize the first block
 _heap_start.free = 0 == 0; // true keyword is not implemented yet
-_heap_start.prev = 0;
-_heap_start.next = 0;
+_heap_start.prev = (_heap_block)0;
+_heap_start.next = (_heap_block)0;
 
 
 func _expand_heap(int size) -> int {
@@ -26,8 +27,7 @@ func _expand_heap(int size) -> int {
 		val = val + PAGESIZE;
 	}
 
-	var current = (int)brk((ptr)0);
-	brk((ptr)(current + val));
+	curEnd = brk((ptr)((int)curEnd + val));
 
 	return val;
 }
@@ -40,17 +40,21 @@ func _split_block(_heap_block block, int size) -> _heap_block {
 	var newBlock = (_heap_block)((int)block + size + sizeof(_heap_block));
 
 	newBlock.free = 0 == 0;
-	newBlock.size = block.size - size - sizeof(_heap_block);
+	newBlock.size = (block.size - size) - sizeof(_heap_block);
 	block.size = size;
 
 	newBlock.prev = block;
 	newBlock.next = block.next;
-	
+
 	if (newBlock.next > (_heap_block)0) {
 		newBlock.next.prev = newBlock;
 	}
 
 	block.next = newBlock;
+	
+	if (_last_block == block) {
+		_last_block = newBlock;
+	}
 
 	return block;
 }
@@ -58,6 +62,10 @@ func _split_block(_heap_block block, int size) -> _heap_block {
 
 func _combine(_heap_block block) {
 	block.size = block.size + sizeof(_heap_block) + block.next.size;
+
+	if (block.next == _last_block) {
+		_last_block = block;
+	}
 
 	block.next = block.next.next;
 
@@ -71,11 +79,15 @@ func _block_to_ptr(_heap_block block) -> ptr {
 }
 
 func malloc(int size) -> ptr {
+	if (size <= 0) {
+		return (ptr)0;
+	}
+
 	var block = _heap_start;
 
-	while (block != (_heap_block)0) {
+	while (block != (_heap_block)0 && (ptr)block < (ptr)((int)curEnd - sizeof(_heap_block))) {
 		if (block.free) {
-			if (block.size > size) {
+			if (block.size >= size) {
 				var newBlock = _split_block(block, size);
 				newBlock.free = 1 == 0; // false keyword is not implemented yet
 
@@ -87,12 +99,20 @@ func malloc(int size) -> ptr {
 
 	var expandedSize = _expand_heap(size);
 
-	var newBlock = (_heap_block)((int)block + sizeof(_heap_block) + block.size);
+	var newBlock = (_heap_block)((int)_last_block + sizeof(_heap_block) + _last_block.size);
+
 	newBlock.free = 0 == 0;
 	newBlock.size = expandedSize - sizeof(_heap_block);
-	newBlock.prev = block;
-	block.next = newBlock;
-	newBlock.next = 0;
+	newBlock.prev = _last_block;
+	_last_block.next = newBlock;
+	
+	newBlock.next = (_heap_block)0;
+
+	_last_block = newBlock;
+
+	if (newBlock.prev.free) {
+		_combine(newBlock.prev);
+	}
 
 	return malloc(size);
 }
@@ -116,13 +136,14 @@ func free(ptr addr) {
 
 func realloc(ptr addr, int newSize) -> ptr {
 	var block = (_heap_block)((int)addr - sizeof(_heap_block));
+	var oldSize = block.size;
 
-	if (newSize < block.size - sizeof(_heap_block)) {
+	if (newSize < oldSize - sizeof(_heap_block)) {
 		_split_block(block, newSize);
 		return _block_to_ptr(block);
 	}
 
-	if (newSize > block.size) {
+	if (newSize > oldSize) {
 		if (block.next > (_heap_block)0) {
 			if (block.next.free) {
 				_combine(block);
@@ -132,7 +153,14 @@ func realloc(ptr addr, int newSize) -> ptr {
 
 		var target = malloc(newSize);
 
-		// copy data from addr to target
+		var src = (char[])addr;
+		var dst = (char[])target;
+
+		var i = 0;
+		while (i < oldSize) {
+			dst[i] = src[i];
+			i = i + 1;
+		}
 
 		free(addr);
 		return target;

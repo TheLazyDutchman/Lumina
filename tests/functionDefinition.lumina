@@ -1,0 +1,25 @@
+func hello() {
+	syscall(1, 1, "Hello, World\n", 13, 0, 0, 0);
+}
+
+hello();
+hello();
+
+func print(str string, int len) {
+	syscall(1, 1, string, len, 0, 0, 0);
+}
+
+hello();
+
+print("This is a new function\n", 23);
+
+func max(int a, int b) -> int {
+	if (a > b) {
+		return a;
+	}
+	return b;
+}
+
+print("This is a different string\n", max(27, 10));
+
+max(14, 16);

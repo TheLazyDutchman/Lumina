@@ -1,2 +1,87 @@
-print('0' + 15 - 6);
-print('0' + -8 - -14);
+var SYS_write = 1;
+var STDOUT = 1;
+var numbers = "123456789";
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	2+4, // length
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, " \n", 2, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	4-2, // length
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, " \n", 2, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	-2+4, // length
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, " \n", 2, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	2*4, // length
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, " \n", 2, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	1+2*3, // length
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, " \n", 2, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	8 - 4 - 2, // length
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, " \n", 2, 0, 0, 0);
+
+syscall(
+	SYS_write,
+	STDOUT,
+	numbers,
+	2*3*2 - 4 * 2 + 4, // length
+	0,
+	0,
+	0
+);
+
+syscall(SYS_write, STDOUT, " \n", 2, 0, 0, 0);

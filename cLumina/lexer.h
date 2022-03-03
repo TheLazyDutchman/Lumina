@@ -18,6 +18,7 @@ typedef enum Tokentype {
 	TOKEN_NUMBER,
 	TOKEN_PLUS,
 	TOKEN_MINUS,
+	TOKEN_STAR,
 	TOKEN_EQUAL,
 	TOKEN_AND,
 	TOKEN_ANDAND,
@@ -61,6 +62,7 @@ static const char* const tokenTypes[] = {
 	[TOKEN_NUMBER] = "NUMBER",
 	[TOKEN_PLUS] = "PLUS",
 	[TOKEN_MINUS] = "MINUS",
+	[TOKEN_STAR] = "STAR",
 	[TOKEN_EQUAL] = "EQUAL",
 	[TOKEN_AND] = "AND",
 	[TOKEN_ANDAND] = "ANDAND",
@@ -99,7 +101,7 @@ static const char* const tokenTypes[] = {
 	[TOKEN_ERROR] = "ERROR",
 };
 
-_Static_assert(TOKEN_TYPES_NUM == 39, "Exhaustive handling of tokenTypes in string conversion\n");
+_Static_assert(TOKEN_TYPES_NUM == 40, "Exhaustive handling of tokenTypes in string conversion\n");
 
 typedef struct Token {
 	char *fileName;

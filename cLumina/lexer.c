@@ -444,6 +444,10 @@ Token *nextToken(Lexer* lexer){
 
 				token->type = TOKEN_MINUS;
 				break;
+			case '*':
+				advance(lexer);
+				token->type = TOKEN_STAR;
+				break;
 			case ';':
 				token->type = TOKEN_SEMICOLON;
 				advance(lexer);

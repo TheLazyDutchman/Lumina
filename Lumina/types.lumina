@@ -1,0 +1,151 @@
+import "lexer.lumina"
+
+type Property {
+	str name;
+	int index;
+	int offset;
+}
+
+type PropertyList {
+	int size;
+	int maxSize;
+	int totalTypeSize;
+	Property[] properties;
+}
+
+type Type {
+	str name;
+	int size;
+	PropertyList properties;
+	Type[] propertyTypes;
+	bool isArray;
+	Type arrayType;
+}
+
+type TypeList {
+	int size;
+	int maxSize;
+	Type[] types;
+}
+
+func initType(str name, int size, PropertyList properties, Type[] propertyTypes, bool isArray, Type arrayType) -> Type {
+	var typeObj = (Type)malloc(sizeof(Type));
+
+	typeObj.name = name;
+	typeObj.size = size;
+	typeObj.properties = properties;
+	typeObj.propertyTypes = propertyTypes;
+	typeObj.isArray = isArray;
+	typeObj.arrayType = arrayType;
+
+	return typeObj;
+}
+
+func initTypeList() -> TypeList {
+	var list = (TypeList)malloc(sizeof(TypeList));
+
+	list.size = 0;
+	list.maxSize = 8;
+	list.types = (Type[])malloc(8 * 8); // pointer size is 8
+
+	return list;
+}
+
+func addType(TypeList list, Type typeObj) {
+	list.types[list.size] = typeObj;
+
+	list.size = list.size + 1;
+
+	if (list.size == list.maxSize) {
+		list.maxSize = list.maxSize * 2;
+		list.types = (Type[])realloc((ptr)(list.types), 8 * list.maxSize);
+	}
+}
+
+func initPropertyList() -> PropertyList{
+	var list = (PropertyList)malloc(sizeof(PropertyList));
+
+	list.size = 0;
+	list.maxSize = 8;
+	list.totalTypeSize = 0;
+	list.properties = (Property[])malloc(8 * 8); // pointer size is 8
+	
+	return list;
+}
+
+func freeProperty(Property property) {
+	free((ptr)(property.name));
+	free((ptr)property);
+}
+
+func freePropertyList(PropertyList list) {
+	var i = 0;
+
+	while (i < list.size) {
+		freeProperty(list.properties[i]);
+		i = i + 1;
+	}
+
+	free((ptr)(list.properties));
+	free((ptr)list);
+}
+
+func initProperty(str name, int index, int offset) -> Property {
+	var property = (Property)malloc(sizeof(Property));
+
+	property.name = name;
+	property.index = index;
+	property.offset = offset;
+
+	return property;
+}
+
+func addProperty(PropertyList list, str name, int index, int size) {
+	list.properties[list.size] = initProperty(name, index, list.totalTypeSize);
+
+	list.size = list.size + 1;
+	list.totalTypeSize = list.totalTypeSize + size;
+
+	if (list.size == list.maxSize) {
+		list.maxSize = list.maxSize * 2;
+		list.properties = (Property[])realloc((ptr)(list.properties), 8 * list.maxSize);
+	}
+}
+
+func findProperty(PropertyList list, str name, int nameLen) -> Property {
+	var i = 0;
+	while (i < list.size) {
+		var propertyObj = list.properties[i];
+
+		i = i + 1;
+
+		if (strlen(propertyObj.name) == nameLen &&
+			strneq(propertyObj.name, name, nameLen)) {
+			return propertyObj;
+		}
+	}
+
+	return (Property)0;
+}
+
+func freeType(Type typeObj) {
+	free((ptr)(typeObj.name));
+	if (typeObj.properties != (PropertyList)0) {
+		freePropertyList(typeObj.properties);
+	}
+	if ((int)(typeObj.propertyTypes) != 0) {
+		free((ptr)(typeObj.propertyTypes));
+	}
+	free((ptr)typeObj);
+}
+
+func freeTypeList(TypeList list) {
+	var i = 0;
+	while (i < list.size) {
+		freeType(list.types[i]);
+		i = i + 1;
+	}
+
+	free((ptr)(list.types));
+	free((ptr)list);
+}

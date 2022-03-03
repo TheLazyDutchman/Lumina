@@ -393,7 +393,7 @@ void writeBitAnd(Compiler* compiler) {
 	fprintf(compiler->output, "	;; -- bit and --\n");
 	fprintf(compiler->output, "	pop rbx\n");
 	fprintf(compiler->output, "	pop rax\n");
-	fprintf(compiler->output, "	or rax, rbx\n");
+	fprintf(compiler->output, "	and rax, rbx\n");
 	fprintf(compiler->output, "	push rax\n");
 
 	compiler->currentStackSize--;
@@ -403,10 +403,17 @@ void writeBitOr(Compiler* compiler) {
 	fprintf(compiler->output, "	;; -- bit or --\n");
 	fprintf(compiler->output, "	pop rbx\n");
 	fprintf(compiler->output, "	pop rax\n");
-	fprintf(compiler->output, "	and rax, rbx\n");
+	fprintf(compiler->output, "	or rax, rbx\n");
 	fprintf(compiler->output, "	push rax\n");
 
 	compiler->currentStackSize--;
+}
+
+void writeBitNot(Compiler* compiler) {
+	fprintf(compiler->output, "	;; -- bit not --\n");
+	fprintf(compiler->output, "	pop rax\n");
+	fprintf(compiler->output, "	not rax\n");
+	fprintf(compiler->output, "	push rax\n\n");
 }
 
 void writeLess(Compiler* compiler) {
@@ -434,7 +441,7 @@ void writeLess(Compiler* compiler) {
 }
 
 void writeLessEqual(Compiler* compiler) {
-	fprintf(compiler->output, "	;; -- less --\n");
+	fprintf(compiler->output, "	;; -- less equal --\n");
 	fprintf(compiler->output, "	pop rbx\n");
 	fprintf(compiler->output, "	pop rax\n");
 	fprintf(compiler->output, "	cmp rax, rbx\n");
@@ -503,7 +510,7 @@ void writeGreater(Compiler* compiler) {
 }
 
 void writeGreaterEqual(Compiler* compiler) {
-	fprintf(compiler->output, "	;; -- greater --\n");
+	fprintf(compiler->output, "	;; -- greater equal --\n");
 	fprintf(compiler->output, "	pop rbx\n");
 	fprintf(compiler->output, "	pop rax\n");
 	fprintf(compiler->output, "	cmp rax, rbx\n");
@@ -757,6 +764,16 @@ void writeNegative(Compiler* compiler) {
 	fprintf(compiler->output, "	push rax\n\n");
 }
 
+void writeMult(Compiler* compiler) {
+	fprintf(compiler->output, "	;; -- mult --\n");
+	fprintf(compiler->output, "	pop rbx\n");
+	fprintf(compiler->output, "	pop rax\n");
+	fprintf(compiler->output, "	mul rbx\n");
+	fprintf(compiler->output, "	push rax\n\n");
+
+	compiler->currentStackSize--;
+}
+
 void writeFooter(Compiler* compiler, StringList *strings) {
 	fprintf(compiler->output, "	mov rax, 60\n");
 	fprintf(compiler->output, "	xor rdi, rdi\n");
@@ -770,12 +787,13 @@ void writeFooter(Compiler* compiler, StringList *strings) {
 	fprintf(compiler->output, "section .data\n");
 	int i = 0;
 	while (i < strings->size) {
-		Token value = strings->strings[i]->value;
+		char *value = strings->strings[i]->value;
 
 		fprintf(compiler->output, "	string_%d: db ", strings->strings[i]->id);
-		int j = 1;
-		while (j < value.wordLen - 1) {
-			char *chr = value.word + j;
+		int j = 0;
+		int len = strlen(value);
+		while (j < len) {
+			char *chr = value + j;
 
 			j += printEscapedCharacter(compiler, &chr);
 

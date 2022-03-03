@@ -129,9 +129,11 @@ var SYSRT_SIGTIMEDWAIT = 128;
 var SYSRT_SIGQUEUEINFO = 129;
 var SYSRKT_SIGSUSPEND = 130;
 
+var SYSOPENAT = 257;
 
 
-func read(int fd, ptr buf, int count) -> int {
+
+func read(int fd, str buf, int count) -> int {
 	return (int)syscall(SYSREAD, fd, buf, count, 0, 0, 0);
 }
 
@@ -364,16 +366,16 @@ func vfork() -> int {
 	return (int)syscall(SYSVFORK, 0, 0, 0, 0, 0, 0);
 }
 
-func execve() -> int {
-	return (int)syscall(SYSEXECVE, 0, 0, 0, 0, 0, 0);
+func execve(str fileName, str[] argv, str[] envp) -> int {
+	return (int)syscall(SYSEXECVE, fileName, argv, envp, 0, 0, 0);
 }
 
-func exit() -> int {
-	return (int)syscall(SYSEXIT, 0, 0, 0, 0, 0, 0);
+func exit(int error_code) -> int {
+	return (int)syscall(SYSEXIT, error_code, 0, 0, 0, 0, 0);
 }
 
-func wait4() -> int {
-	return (int)syscall(SYSWAIT4, 0, 0, 0, 0, 0, 0);
+func wait4(int pid, int[] wstatus, int options, ptr rusage) -> int { // int[] here is a wierd way of getting a pointer to an integer
+	return (int)syscall(SYSWAIT4, pid, wstatus, options, rusage, 0, 0);
 }
 
 func kill() -> int {
@@ -444,8 +446,8 @@ func getdents() -> int {
 	return (int)syscall(SYSGETDENTS, 0, 0, 0, 0, 0, 0);
 }
 
-func getcwd() -> int {
-	return (int)syscall(SYSGETCWD, 0, 0, 0, 0, 0, 0);
+func getcwd(str buf, int size) -> int {
+	return (int)syscall(SYSGETCWD, buf, size, 0, 0, 0, 0);
 }
 
 func chdir() -> int {
@@ -650,4 +652,9 @@ func rt_sigqueueinfo() -> int {
 
 func rkt_sigsuspend(ptr unewset, int sigsetsize) -> int {
 	return (int)syscall(SYSRKT_SIGSUSPEND, unewset, sigsetsize, 0, 0, 0, 0);
+}
+
+
+func openat(int dir_fd, str fileName, int flags, int mode) -> int {
+	return (int)syscall(SYSOPENAT, dir_fd, fileName, flags, mode, 0, 0);
 }

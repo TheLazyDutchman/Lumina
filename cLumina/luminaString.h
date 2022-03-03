@@ -6,7 +6,7 @@
 #include "lexer.h"
 
 typedef struct {
-	Token value;
+	char *value;
 	uint16_t id;
 } String;
 

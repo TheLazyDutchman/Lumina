@@ -1,0 +1,210 @@
+import "memory.lumina"
+import "string.lumina"
+
+type Path {
+	str[] folders;
+	str name;
+	str extension;
+}
+
+
+func _is_outer(str s) -> bool {
+	if (s[0] != '.') { return (bool)0; }
+	if (s[1] != '.') { return (bool)0; }
+	return (bool)1;
+}
+
+func getPathFromString(str file) -> Path {
+	var path = (Path)malloc(sizeof(Path));
+
+	var depth = countchr(file, '/');
+	path.folders = (str[])malloc((depth + 1) * sizeof(str));
+
+	var name = file;
+
+	var index = strindex(file, '/');
+	var currentDepth = 0;
+
+	if (name[0] == '.' && _is_outer(name) == (bool)0) {
+		depth = depth - 1;
+		name = (str)((int)name + index);
+		index = strindex(name, '/');
+	}
+
+	while (currentDepth < depth) {
+		if (_is_outer(name) && 
+			_is_outer(path.folders[currentDepth - 1]) == (bool)0 &&
+			currentDepth > 0) {
+			currentDepth = currentDepth - 1;
+			depth = depth - 2;
+
+			name = (str)((int)name + index);
+			index = strindex(name, '/');
+		}
+
+		path.folders[currentDepth] = strndup(name, index - 1);
+		name = (str)((int)name + index);
+		index = strindex(name, '/');
+
+		currentDepth = currentDepth + 1;
+	}
+	
+	path.folders[depth] = (str)0;
+
+	index = strindex(name, '.');
+
+	if (index == -1) {
+		path.name = name;
+		path.extension = (str)0;
+	} else {
+		path.name = strndup(name, index - 1);
+		name = (str)((int)name + index);
+		path.extension = strndup(name, strlen(name));
+	}
+
+	return path;
+}
+
+func getLocalFilePath(str outerFile, str file) -> Path {
+	var path = (Path)malloc(sizeof(Path));
+
+	var outerDepth = countchr(outerFile, '/');
+	var depth = outerDepth + countchr(file, '/');
+	path.folders = (str[])malloc((depth + 1) * sizeof(str));
+
+	var name = outerFile;
+
+	var index = strindex(outerFile, '/');
+	var currentDepth = 0;
+
+	if (name[0] == '.' && _is_outer(name) == (bool)0) {
+		outerDepth = outerDepth - 1;
+		depth = depth - 1;
+		name = (str)((int)name + index);
+		index = strindex(name, '/');
+	}
+
+	while (currentDepth < outerDepth) {
+		if (_is_outer(name) && 
+			_is_outer(path.folders[currentDepth - 1]) == (bool)0 &&
+			currentDepth > 0) {
+			currentDepth = currentDepth - 1;
+			outerDepth = outerDepth - 2;
+			depth = depth - 2;
+
+			name = (str)((int)name + index);
+			index = strindex(name, '/');
+		}
+
+		path.folders[currentDepth] = strndup(name, index - 1);
+		name = (str)((int)name + index);
+		index = strindex(name, '/');
+
+		currentDepth = currentDepth + 1;
+	}
+
+	name = file;
+
+	index = strindex(file, '/');
+	
+	if (name[0] == '.' && _is_outer(name) == (bool)0) {
+		depth = depth - 1;
+		name = (str)((int)name + index);
+		index = strindex(name, '/');
+	}
+
+	while (currentDepth < depth) {
+		if (_is_outer(name) &&
+			_is_outer(path.folders[currentDepth - 1]) == (bool)0 &&
+			currentDepth > 0) {
+			currentDepth = currentDepth - 1;
+			depth = depth - 2;
+
+			name = (str)((int)name + index);
+			index = strindex(name, '/');
+		}
+
+		path.folders[currentDepth] = strndup(name, index - 1);
+		name = (str)((int)name + index);
+		index = strindex(name, '/');
+
+		currentDepth = currentDepth + 1;
+	}
+	
+	path.folders[currentDepth] = (str)0;
+
+	index = strindex(name, '.');
+
+	if (index == -1) {
+		path.name = name;
+		path.extension = (str)0;
+	} else {
+		path.name = strndup(name, index - 1);
+		name = (str)((int)name + index);
+		path.extension = strndup(name, strlen(name));
+	}
+
+	return path;
+}
+
+func getFullPathString(Path path) -> str {
+	var len = 0;
+	var i = 0;
+	while (path.folders[i] != (str)0) {
+		len = len + strlen(path.folders[i]) + 1;
+		i = i + 1;
+	}
+
+	var isLocal = (bool)0;
+
+	if (len == 0) {
+		isLocal = (bool)1;
+		len = 2;
+	}
+
+	if (path.name != (str)0) {
+		len = len + strlen(path.name);
+	}
+
+	if (path.extension != (str)0) {
+		len = len + strlen(path.extension) + 1;
+	}
+
+	var value = (str)malloc(len + 1);
+	var buffer = value;
+
+	if (isLocal) {
+		buffer[0] = '.';
+		buffer[1] = '/';
+		buffer = (str)((int)buffer + 2);
+	}
+
+	i = 0;
+	while (path.folders[i] != (str)0) {
+		var folderLen = strlen(path.folders[i]);
+		strncpy(path.folders[i], buffer, folderLen);
+		buffer[folderLen] = '/';
+
+		buffer = (str)((int)buffer + folderLen + 1);
+		i = i + 1;
+	}
+
+	if (path.name != (str)0) {
+		var nameLen = strlen(path.name);
+		strncpy(path.name, buffer, nameLen);
+		buffer = (str)((int)buffer + nameLen);
+
+		if (path.extension != (str)0) {
+			buffer[0] = '.';
+			buffer = (str)((int)buffer + 1);
+
+			var extLen = strlen(path.extension);
+			strncpy(path.extension, buffer, extLen);
+			buffer = (str)((int)buffer + extLen);
+		}
+	}
+
+	buffer[0] = '\0';
+
+	return value;
+}

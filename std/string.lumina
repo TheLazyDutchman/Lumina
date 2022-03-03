@@ -1,7 +1,143 @@
+import "memory.lumina"
+
 func strlen(str string) -> int{
 	var i = 0;
 	while (string[i] > '\0') {
 		i = i + 1;
 	}
 	return i;
+}
+
+func strneq(str s1, str s2, int n) -> bool {
+	var i = 0;
+
+	while (i < n) {
+		if (s1[i] != s2[i]) {
+			return (bool)0;
+		}
+		i = i + 1;
+	}
+
+	return (bool)1;
+}
+
+func streq(str s1, str s2) -> bool {
+	var len = strlen(s1);
+	if (len != strlen(s2)) {
+		return (bool)0;
+	}
+
+	return strneq(s1, s2, len);
+}
+
+func countchr(str s, char delim) -> int {
+	var sum = 0;
+	var i = 0;
+	while (s[i] != '\0') {
+		if (s[i] == delim) {
+			sum = sum + 1;
+		}
+		i = i + 1;
+	}
+	return sum;
+}
+
+func strindex(str s, char delim) -> int {
+	var i = 0;
+	while (s[i] != delim) {
+		if (s[i] == '\0') {
+			return -1;
+		}
+
+		i = i + 1;
+	}
+	return i + 1;
+}
+
+func strncpy(str src, str dst, int count) {
+	// it is currently assumed that src and dst are longer than count
+
+	var i = 0;
+	while (i < count) {
+		dst[i] = src[i];
+		i = i + 1;
+	}
+}
+
+func strndup(str s, int count) -> str {
+	var value = (str)malloc(count + 20); // adding 20 instead of 1 because otherwise we get a segfault
+	//TODO: find where this actually goes wrong, propable malloc?
+
+	var i = 0;
+	while (i < count) {
+		value[i] = s[i];
+		i = i + 1;
+	}
+
+	value[count] = '\0';
+
+	return value;
+}
+
+func strdup(str s) -> str {
+	var length = strlen(s);
+	return strndup(s, length);
+}
+
+func isalpha(char c) -> bool {
+	return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
+}
+
+func isnumeric(char c) -> bool {
+	return '0' <= c && c <= '9';
+}
+
+func isalnum(char c) -> bool {
+	return isalpha(c) || isnumeric(c);
+}
+
+func isspace(char c) -> bool {
+	return c == ' ' || c == '\t' || c == '\n';
+}
+
+func intToString(int number) -> str {
+	var buffer = (str)malloc(22); //enough size for any number
+	var isNegative = number < 0;
+	if (isNegative) {
+		number = -number;
+		buffer[0] = '-';
+	}
+
+	var index = (int)isNegative;
+	var nextSize = 1;
+
+	while (nextSize * 10 <= number) {
+		nextSize = nextSize * 10;
+	}
+
+	while (nextSize > 1) {
+		var size = 1;
+
+		while (size * 10 < nextSize) {
+			size = size * 10;
+		}
+		nextSize = size;
+		size = size * 10;
+
+		var counter = 0;
+		
+		while (size <= number) {
+			number = number - size;
+			counter = counter + 1;
+		}
+
+		buffer[index] = '0' + counter;
+
+		index = index + 1;
+	}
+
+	buffer[index] = '0' + number; // the last loop leaves the last digit
+	buffer[index + 1] = '\0';
+
+	return buffer;
 }

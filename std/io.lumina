@@ -1,13 +1,137 @@
 import "string.lumina"
+import "environment.lumina"
 
-func fprint(int fd, str string) -> int {
+func fprintn(int fd, str string, int length) -> int {
 	var SYSWRITE = 1;
-	var length = strlen(string);
 	return (int)syscall(SYSWRITE, fd, string, length, 0, 0, 0);
 }
 
+func fprint(int fd, str string) -> int {
+	var length = strlen(string);
+	return fprintn(fd, string, length);
+}
+
+var STDOUT = 1;
+
+func printn(str string, int length) -> int {
+	return fprintn(STDOUT, string, length);
+}
+
 func print(str string) -> int {
-	var STDOUT = 1;
-	
 	return fprint(STDOUT, string);
+}
+
+func fprinti(int file, int number) {
+	var buffer = intToString(number);
+
+	fprint(file, buffer);
+
+	free((ptr)buffer);
+}
+
+func printi(int number) {
+	fprinti(STDOUT, number);
+}
+
+func execvp(str fileName, str[] args) -> int {
+	var path = getEnvironmentVariable("PATH");
+	var numPaths = countchr(path, ':') + 3;
+	var paths = (str[])malloc(numPaths * 8); // ptr size is 8
+
+	var index = strindex(path, ':');
+	var i = 1;
+
+	var cwdLength = 64;
+	var cwd = (str)malloc(cwdLength);
+	var code = getcwd(cwd, cwdLength);
+	while (code < 0) {
+		if (code != -34) { 
+			print("[ERROR] can not get current working directory, code: ");
+			printi(-code);
+			print(" \n");
+		}
+
+		cwdLength = cwdLength * 2;
+		cwd = (str)realloc((ptr)cwd, cwdLength);
+		code = getcwd(cwd, cwdLength);
+	}
+
+	paths[0] = cwd;
+
+	while (index > 0) {
+		paths[i] = strndup(path, index - 1);
+		path = (str)((int)path + index);
+		index = strindex(path, ':');
+		i = i + 1;
+	}
+
+	paths[i] = strdup(path);
+	paths[numPaths - 1] = (str)0;
+
+	i = 0;
+
+	var dir = paths[0];
+	while (dir != (str)0) {
+		var dir_fd = open(paths[i], 2162688, 0);
+
+		if (dir_fd < 0) {
+			print("[ERROR] could not open dir '");
+			print(paths[i]);
+			print("', error code: ");
+			printi(-dir_fd);
+			print(" \n");
+
+			return -1;
+		}
+
+		var file_fd = openat(dir_fd, fileName, 2097152, 0);
+		if (file_fd > 0) {
+			var length = strlen(dir);
+			var hasNoSlash = (bool)0;
+
+			if (dir[length] != '/') {
+				length = length + 1;
+				hasNoSlash = (bool)1;
+			}
+
+			length = length + strlen(fileName);
+
+			var buffer = (str)malloc(length + 1);
+			var fullPath = buffer;
+
+			strncpy(dir, buffer, strlen(dir));
+			buffer = (str)((int)buffer + strlen(dir));
+
+			if (hasNoSlash) {
+				buffer[0] = '/';
+				buffer = (str)((int)buffer + 1);
+			}
+
+			strncpy(fileName, buffer, strlen(fileName));
+
+			fullPath[length] = '\0';
+
+			return execve(fullPath, args, (str[])0);
+		}
+
+		i = i + 1;
+		dir = paths[i];
+	}
+
+	free((ptr)cwd);
+
+	return -2;
+}
+
+func WIFEXITED(int status) -> bool {
+	return status & 127 == 0;
+}
+
+func WIFEXITSTATUS(int status) -> int {
+	var value = 0;
+	while (256 <= status) {
+		value = value + 1;
+		status = status - 256;
+	}
+	return value;
 }
