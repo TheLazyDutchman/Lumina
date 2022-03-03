@@ -460,14 +460,43 @@ func expression(Parser parser) {
 		}
 	}
 
-	func factor(Parser parser) {
+	func bitWise(Parser parser) {
 		property(parser);
+
+		var currentType = parser.lastType;
+		var intType = findType(parser.compiler, "int", 3, (bool)0);
+
+		var tokenType = parser.current.tokenType;
+		while (tokenType == TOKEN_AND ||
+			tokenType == TOKEN_PIPE) {
+			next(parser);
+
+			property(parser);
+
+			if (currentType != intType || parser.lastType != intType) {
+				parseError(parser, parser.current, "can not use '&' or '|' on values that are not of type 'int'");
+				return;
+			}
+
+			if (tokenType == TOKEN_AND) {
+				writeBitAnd(parser.compiler);
+			}
+			if (tokenType == TOKEN_PIPE) {
+				writeBitOr(parser.compiler);
+			}
+
+			tokenType = parser.current.tokenType;
+		}
+	}
+
+	func factor(Parser parser) {
+		bitWise(parser);
 
 		var tokenType = parser.current.tokenType;
 		while (tokenType == TOKEN_STAR) {
 			next(parser);
 
-			property(parser);
+			bitWise(parser);
 
 			writeMult(parser.compiler);
 
