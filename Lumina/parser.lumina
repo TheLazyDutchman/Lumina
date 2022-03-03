@@ -8,6 +8,8 @@ type Parser {
 	Token last;
 	Token current;
 
+	StringList fileList;
+
 	Type lastType;
 
 	Compiler compiler;
@@ -32,6 +34,8 @@ func initParser(str inputName, str outputName, bool isChecking) -> Parser {
 	parser.lexer = initLexer(inputName, (Lexer)0);
 	parser.last = (Token)0;
 	parser.current = nextToken(parser.lexer);
+
+	parser.fileList = initStringList();
 
 	if (isChecking) {
 		parser.outputFile = open("/dev/null", 1, 0);
@@ -106,6 +110,8 @@ func freeParser(Parser parser) {
 		free((ptr)(parser.current));
 	}
 
+	freeStringList(parser.fileList);
+
 	freeStringList(parser.stringList);
 
 	close(parser.outputFile);
@@ -122,12 +128,13 @@ func next(Parser parser) -> Token {
 	parser.last = parser.current;
 	parser.current = nextToken(parser.lexer);
 
-	if (parser.current.tokenType == TOKEN_END_OF_FILE && parser.lexer.outer != (Lexer)0) {
+	while (parser.current.tokenType == TOKEN_END_OF_FILE && parser.lexer.outer != (Lexer)0) {
 		var current = parser.lexer;
 		parser.lexer = parser.lexer.outer;
 		freeLexer(current);
 
-		parser.current = next(parser);
+		free((ptr)(parser.current));
+		parser.current = nextToken(parser.lexer);
 	}
 
 	return parser.current;
@@ -301,6 +308,25 @@ func expression(Parser parser) {
 		parser.lastType = findType(parser.compiler, "str", 3, (bool)0);
 	}
 
+	func parseSize(Parser parser) {
+		next(parser);
+
+		consumeToken(parser, TOKEN_LPAREN, "expected '(' after 'sizeof'");
+
+		var typeObj = consumeType(parser, "expected type in 'sizeof'");
+
+		if (typeObj == (Type)0) { return; }
+
+		consumeToken(parser, TOKEN_RPAREN, "expected ')' after type in sizeof");
+
+		var size = typeObj.properties.totalTypeSize;
+
+		var numString = intToString(size);
+		writeNumber(parser.compiler, numString);
+
+		free((ptr)numString);
+	}
+
 	func property(Parser parser) {
 		func unary(Parser parser) {
 			var currentType = parser.current.tokenType;
@@ -340,6 +366,8 @@ func expression(Parser parser) {
 				expression(parser);
 
 				consumeToken(parser, TOKEN_RPAREN, "expected ')' after group");
+			} else if (currentType == TOKEN_SIZEOF) {
+				parseSize(parser);
 			} else {
 				parseError(parser, parser.current, "this token is not recognised as a unary");
 			}
@@ -603,12 +631,26 @@ func importStatement(Parser parser) {
 
 	var name = strndup(nameToken.word, nameToken.wordLen);
 
-	// check if file was imported before
+	var filePath = getLocalFilePath(parser.lexer.fileName, name);
+	var fileName = getFullPathString(filePath);
 
-	parser.lexer = initLexer(name, parser.lexer);
+	var i = 0;
+	while (i < parser.fileList.size) {
+		if (streq(parser.fileList.strings[i], fileName)) {
+			free((ptr)fileName);
+			free((ptr)name);
+
+			next(parser);
+			return;
+		}
+		i = i + 1;
+	}
+
+	parser.lexer = initLexer(fileName, parser.lexer);
 	next(parser);
 
 	free((ptr)name);
+	free((ptr)fileName);
 }
 
 func variableDefinition(Parser parser) {
@@ -674,7 +716,7 @@ func typeDefinition(Parser parser) {
 		return;
 	}
 
-	var typeObj = defineType(parser.compiler, nameToken.word, nameToken.wordLen, 8, (PropertyList)0, (Type[])0, (bool)0, (Type)0);
+	var typeObj = defineType(parser.compiler, typeName, typeNameLen, 8, (PropertyList)0, (Type[])0, (bool)0, (Type)0);
 	
 	if (consumeToken(parser, TOKEN_LBRACE, "expected '{' in type definition").tokenType == TOKEN_ERROR) { return; }
 
@@ -736,8 +778,8 @@ func statement(Parser parser) {
 			}
 		}
 
-		consumeToken(parser, TOKEN_RBRACE, "expected '}' after block");
-		if (function != (Function)0) {
+		
+		if (consumeToken(parser, TOKEN_RBRACE, "expected '}' after block").tokenType == TOKEN_ERROR && function != (Function)0) {
 			print("[NOTE] this was in function: '");
 			print(function.name);
 			print("'\n");

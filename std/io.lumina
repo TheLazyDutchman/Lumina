@@ -22,43 +22,7 @@ func print(str string) -> int {
 }
 
 func fprinti(int file, int number) {
-	var buffer = (str)malloc(22); //enough size for any number
-	var isNegative = number < 0;
-	if (isNegative) {
-		number = (!number + 1); //two's complement
-		buffer[0] = "-";
-	}
-
-	var index = (int)isNegative;
-	var nextSize = 1;
-
-	while (nextSize * 10 <= number) {
-		nextSize = nextSize * 10;
-	}
-
-	while (nextSize > 1) {
-		var size = 1;
-
-		while (size * 10 < nextSize) {
-			size = size * 10;
-		}
-		nextSize = size;
-		size = size * 10;
-
-		var counter = 0;
-		
-		while (size <= number) {
-			number = number - size;
-			counter = counter + 1;
-		}
-
-		buffer[index] = "0" + counter;
-
-		index = index + 1;
-	}
-
-	buffer[index] = "0" + number; // the last loop leaves the last digit
-	buffer[index + 1] = "\0";
+	var buffer = intToString(number);
 
 	fprint(file, buffer);
 

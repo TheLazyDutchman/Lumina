@@ -103,11 +103,7 @@ func initLexer(str fileName, Lexer outer) -> Lexer {
 
 	lexer.outer = outer;
 	
-	if (lexer.outer == (Lexer)0) { lexer.fileName = fileName; }
-	else {
-		var filePath = getLocalFilePath(lexer.outer.fileName, fileName);
-		lexer.fileName = getFullPathString(filePath);
-	}
+	lexer.fileName = fileName;
 
 	lexer.buffer = readFile(lexer.fileName);
 	lexer.current = lexer.buffer;
