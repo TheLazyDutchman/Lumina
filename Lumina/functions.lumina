@@ -62,7 +62,7 @@ func addFunction(FunctionList list, str name, int id, Type returnType, VariableL
 
 	if (list.size == list.maxSize) {
 		list.maxSize = list.maxSize * 2;
-		list.functions = realloc((ptr)(list.functions), 8 * list.maxSize);
+		list.functions = (Function[])realloc((ptr)(list.functions), 8 * list.maxSize);
 	}
 
 	return function;

@@ -319,10 +319,17 @@ func expression(Parser parser) {
 
 		consumeToken(parser, TOKEN_RPAREN, "expected ')' after type in sizeof");
 
-		var size = typeObj.properties.totalTypeSize;
+		var size = 0;
+		if (typeObj.properties == (PropertyList)0) {
+			size = typeObj.size;
+		} else {
+			size = typeObj.properties.totalTypeSize;
+		}
 
 		var numString = intToString(size);
 		writeNumber(parser.compiler, numString);
+
+		parser.lastType = findType(parser.compiler, "int", 3, (bool)0);
 
 		free((ptr)numString);
 	}

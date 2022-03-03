@@ -58,7 +58,7 @@ func addType(TypeList list, Type typeObj) {
 
 	if (list.size == list.maxSize) {
 		list.maxSize = list.maxSize * 2;
-		list.types = realloc((ptr)(list.types), 8 * list.maxSize);
+		list.types = (Type[])realloc((ptr)(list.types), 8 * list.maxSize);
 	}
 }
 
@@ -108,7 +108,7 @@ func addProperty(PropertyList list, str name, int index, int size) {
 
 	if (list.size == list.maxSize) {
 		list.maxSize = list.maxSize * 2;
-		list.properties = realloc((ptr)(list.properties), 8 * list.maxSize);
+		list.properties = (Property[])realloc((ptr)(list.properties), 8 * list.maxSize);
 	}
 }
 

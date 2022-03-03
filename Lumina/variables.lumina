@@ -58,7 +58,7 @@ func addVariable(VariableList list, str name, int position, int functionDepth, T
 
 	if (list.size == list.maxSize) {
 		list.maxSize = list.maxSize * 2;
-		list.variables = realloc((ptr)(list.variables), 8 * list.maxSize);
+		list.variables = (Variable[])realloc((ptr)(list.variables), 8 * list.maxSize);
 	}
 
 	return variable;
