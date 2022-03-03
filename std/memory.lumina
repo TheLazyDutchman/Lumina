@@ -16,8 +16,8 @@ var curEnd = brk((ptr)((int)_heap_start + PAGESIZE)); // allocate memory for the
 
 _heap_start.size = PAGESIZE - sizeof(_heap_block); // initialize the first block
 _heap_start.free = 0 == 0; // true keyword is not implemented yet
-_heap_start.prev = 0;
-_heap_start.next = 0;
+_heap_start.prev = (_heap_block)0;
+_heap_start.next = (_heap_block)0;
 
 
 func _expand_heap(int size) -> int {
@@ -106,7 +106,7 @@ func malloc(int size) -> ptr {
 	newBlock.prev = _last_block;
 	_last_block.next = newBlock;
 	
-	newBlock.next = 0;
+	newBlock.next = (_heap_block)0;
 
 	_last_block = newBlock;
 

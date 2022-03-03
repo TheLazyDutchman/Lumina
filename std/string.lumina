@@ -103,8 +103,8 @@ func intToString(int number) -> str {
 	var buffer = (str)malloc(22); //enough size for any number
 	var isNegative = number < 0;
 	if (isNegative) {
-		number = (!number + 1); //two's complement
-		buffer[0] = "-";
+		number = -number;
+		buffer[0] = '-';
 	}
 
 	var index = (int)isNegative;
@@ -130,13 +130,13 @@ func intToString(int number) -> str {
 			counter = counter + 1;
 		}
 
-		buffer[index] = "0" + counter;
+		buffer[index] = '0' + counter;
 
 		index = index + 1;
 	}
 
-	buffer[index] = "0" + number; // the last loop leaves the last digit
-	buffer[index + 1] = "\0";
+	buffer[index] = '0' + number; // the last loop leaves the last digit
+	buffer[index + 1] = '\0';
 
 	return buffer;
 }

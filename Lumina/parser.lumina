@@ -478,6 +478,10 @@ func expression(Parser parser) {
 	func term(Parser parser) {
 		factor(parser);
 
+		var currentType = parser.lastType;
+		var intType = findType(parser.compiler, "int", 3, (bool)0);
+		var charType = findType(parser.compiler, "char", 4, (bool)0);
+
 		var tokenType = parser.current.tokenType;
 		while (tokenType == TOKEN_PLUS ||
 			tokenType == TOKEN_MINUS) {
@@ -486,10 +490,46 @@ func expression(Parser parser) {
 			factor(parser);
 
 			if (tokenType == TOKEN_PLUS) {
+				if (currentType == intType) {
+					if (parser.lastType != intType && parser.lastType != charType) {
+						parseError(parser, parser.current, "right hand side of addition is not of type 'int' or 'char'");
+					}
+				} else if (currentType == charType) {
+					if (parser.lastType == intType) {
+						parser.lastType = charType;
+					} else if (parser.lastType == charType) {
+						parseError(parser, parser.current, "can not add two characters");
+					} else {
+						parseError(parser, parser.current, "right hand side of addition is not of type 'int' or 'char'");
+					}
+				} else {
+					parseError(parser, parser.current, "left hand side of addition is not of type 'int' or 'char'");
+				}
+
 				writeAdd(parser.compiler);
 			}
 
 			if (tokenType == TOKEN_MINUS) {
+				if (currentType == intType) {
+					if (parser.lastType != intType) {
+						if (parser.lastType != charType) {
+							parseError(parser, parser.current, "can not subtract a character from an integer");
+						} else {
+							parseError(parser, parser.current, "right hand side of subtraction is not of type 'int' or 'char'");
+						}
+					}
+				} else if (currentType == charType) {
+					if (parser.lastType != charType) {
+						if (parser.lastType == intType) {
+							parser.lastType = charType;
+						} else {
+							parseError(parser, parser.current, "right hand side of subtraction is not of type 'int' or 'char'");
+						}
+					}
+				} else {
+					parseError(parser, parser.current, "left hand side of subtraction is not of type 'int' or 'char'");
+				}
+
 				writeSubtract(parser.compiler);
 			}
 
@@ -646,11 +686,11 @@ func importStatement(Parser parser) {
 		i = i + 1;
 	}
 
-	parser.lexer = initLexer(fileName, parser.lexer);
+	addString(parser.fileList, fileName);
+	parser.lexer = initLexer(strdup(fileName), parser.lexer);
 	next(parser);
 
 	free((ptr)name);
-	free((ptr)fileName);
 }
 
 func variableDefinition(Parser parser) {
