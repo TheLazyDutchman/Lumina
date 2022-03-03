@@ -62,8 +62,8 @@ func defineVariable(Compiler compiler, str name, int nameLen, Type varType) -> V
 		if (outer.function != compiler.function) {
 			outer = (Compiler)0;
 		} else {
-			outer = outer.outer;
 			position = position + outer.currentStackSize;
+			outer = outer.outer;
 		}
 	}
 
