@@ -637,7 +637,7 @@ func expression(Parser parser) {
 			}
 
 			writeCondition(parser.compiler);
-			writeJumpNotEqual(parser.compiler, "addr_and", andId);
+			writeJumpNotEqual(parser.compiler, "addr_and_", andId);
 
 			comparison(parser);
 
@@ -646,14 +646,14 @@ func expression(Parser parser) {
 				return;
 			}
 
-			writeJump(parser.compiler, "addr_end_and", andId);
-			writeAddress(parser.compiler, "addr_and", andId);
+			writeJump(parser.compiler, "addr_end_and_", andId);
+			writeAddress(parser.compiler, "addr_and_", andId);
 
 			writeNumber(parser.compiler, "0 "); // false
 
 			parser.compiler.currentStackSize = parser.compiler.currentStackSize - 1; // we add one of two values to the stack, not both
 
-			writeAddress(parser.compiler, "addr_end_and", andId);
+			writeAddress(parser.compiler, "addr_end_and_", andId);
 
 			tokenType = parser.current.tokenType;
 		}
@@ -675,7 +675,7 @@ func expression(Parser parser) {
 			}
 
 			writeCondition(parser.compiler);
-			writeJumpEqual(parser.compiler, "addr_or", orId);
+			writeJumpEqual(parser.compiler, "addr_or_", orId);
 
 			logicAnd(parser);
 
@@ -684,14 +684,14 @@ func expression(Parser parser) {
 				return;
 			}
 
-			writeJump(parser.compiler, "addr_end_or", orId);
-			writeAddress(parser.compiler, "addr_or", orId);
+			writeJump(parser.compiler, "addr_end_or_", orId);
+			writeAddress(parser.compiler, "addr_or_", orId);
 
 			writeNumber(parser.compiler, "1 "); // false
 
 			parser.compiler.currentStackSize = parser.compiler.currentStackSize - 1; // we add one of two values to the stack, not both
 
-			writeAddress(parser.compiler, "addr_end_or", orId);
+			writeAddress(parser.compiler, "addr_end_or_", orId);
 
 			tokenType = parser.current.tokenType;
 		}
@@ -845,13 +845,18 @@ func statement(Parser parser) {
 			statement(parser);
 		}
 
-		if (scopeCompiler.function != scopeCompiler.outer.function && scopeCompiler.hasReturned == (bool)0) {
+		if (scopeCompiler.function != scopeCompiler.outer.function) {
 			if (streq(scopeCompiler.function.returnType.name, "null")) {
-				var numVars = (parser.compiler.currentStackSize - scopeCompiler.function.parameters.size) - 1;
-				writeReturnEmpty(parser.compiler, numVars, scopeCompiler.function.parameters.size);
-			} else {
-				parseError(parser, parser.current, "not all code paths return a value");
+				if (scopeCompiler.hasReturned == (bool)0) {
+					var numVars = (parser.compiler.currentStackSize - scopeCompiler.function.parameters.size) - 1;
+					writeReturnEmpty(parser.compiler, numVars, scopeCompiler.function.parameters.size);
+				} else {
+					parseError(parser, parser.current, "not all code paths return a value");
+				}
 			}
+		} else {
+			var numLocalVariables = scopeCompiler.variableList.size;
+			writePop(scopeCompiler, numLocalVariables);
 		}
 
 		
@@ -992,7 +997,7 @@ func statement(Parser parser) {
 
 		consumeToken(parser, TOKEN_RPAREN, "expected ')' after 'if' condition");
 
-		writeJumpNotEqual(parser.compiler, "addr_if", ifId);
+		writeJumpNotEqual(parser.compiler, "addr_if_", ifId);
 
 		consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'if' block");
 
@@ -1004,8 +1009,8 @@ func statement(Parser parser) {
 		var elseId = parser.numElses;
 
 		while (parser.current.tokenType == TOKEN_ELSE && hadFinalElse == (bool)0) {
-			writeJump(parser.compiler, "addr_else", elseId);
-			writeAddress(parser.compiler, "addr_if", ifId);
+			writeJump(parser.compiler, "addr_else_", elseId);
+			writeAddress(parser.compiler, "addr_if_", ifId);
 
 			if (hadElse == (bool)0) {
 				parser.numElses = elseId + 1;
@@ -1030,7 +1035,7 @@ func statement(Parser parser) {
 				writeCondition(parser.compiler);
 
 				consumeToken(parser, TOKEN_RPAREN, "expected ')' after 'else if' condition");
-				writeJumpNotEqual(parser.compiler, "addr_if", ifId);
+				writeJumpNotEqual(parser.compiler, "addr_if_", ifId);
 
 				consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'else if' block");
 
@@ -1047,11 +1052,11 @@ func statement(Parser parser) {
 		}
 
 		if (hadFinalElse == (bool)0) {
-			writeAddress(parser.compiler, "addr_if", ifId);
+			writeAddress(parser.compiler, "addr_if_", ifId);
 		}
 
 		if (hadElse) {
-			writeAddress(parser.compiler, "addr_else", elseId);
+			writeAddress(parser.compiler, "addr_else_", elseId);
 		}
 	}
 
@@ -1063,7 +1068,7 @@ func statement(Parser parser) {
 
 		consumeToken(parser, TOKEN_LPAREN, "expected '(' before 'while' condition");
 
-		writeAddress(parser.compiler, "addr_while_condition", whileId);
+		writeAddress(parser.compiler, "addr_while_condition_", whileId);
 
 		expression(parser);
 
@@ -1075,14 +1080,14 @@ func statement(Parser parser) {
 
 		consumeToken(parser, TOKEN_RPAREN, "expected ')' after 'while' condition");
 
-		writeJumpNotEqual(parser.compiler, "addr_while_end", whileId);
+		writeJumpNotEqual(parser.compiler, "addr_while_end_", whileId);
 
 		consumeToken(parser, TOKEN_LBRACE, "expected '{' before 'if' block");
 
 		block(parser, (Function)0);
 
-		writeJump(parser.compiler, "addr_while_condition", whileId);
-		writeAddress(parser.compiler, "addr_while_end", whileId);
+		writeJump(parser.compiler, "addr_while_condition_", whileId);
+		writeAddress(parser.compiler, "addr_while_end_", whileId);
 	}
 
 	if (parser.current.tokenType == TOKEN_IMPORT) {

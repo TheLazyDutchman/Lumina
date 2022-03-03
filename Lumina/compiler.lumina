@@ -453,7 +453,7 @@ func writeBitAnd(Compiler compiler) {
 	fprint(compiler.output, "	;; -- bit and --\n");
 	fprint(compiler.output, "	pop rbx\n");
 	fprint(compiler.output, "	pop rax\n");
-	fprint(compiler.output, "	or rax, rbx\n");
+	fprint(compiler.output, "	and rax, rbx\n");
 	fprint(compiler.output, "	push rax\n");
 
 	compiler.currentStackSize = compiler.currentStackSize - 1;
@@ -463,7 +463,7 @@ func writeBitOr(Compiler compiler) {
 	fprint(compiler.output, "	;; -- bit or --\n");
 	fprint(compiler.output, "	pop rbx\n");
 	fprint(compiler.output, "	pop rax\n");
-	fprint(compiler.output, "	and rax, rbx\n");
+	fprint(compiler.output, "	or rax, rbx\n");
 	fprint(compiler.output, "	push rax\n");
 
 	compiler.currentStackSize = compiler.currentStackSize - 1;
