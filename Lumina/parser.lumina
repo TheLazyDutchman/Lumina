@@ -765,6 +765,42 @@ func variableDefinition(Parser parser) {
 	consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after variable definition");
 }
 
+func constantDefinition(Parser parser) {
+	next(parser);
+
+	var nameToken = consumeToken(parser, TOKEN_IDENTIFIER, "expected name of constant");
+
+	var constName = nameToken.word;
+	var constNameLen = nameToken.wordLen;
+
+	if (nameToken.tokenType == TOKEN_ERROR) {
+		return;
+	}
+
+	if (findVariable(parser.compiler, nameToken.word, nameToken.wordLen, (bool)0) != (Variable)0) {
+		parseError(parser, nameToken, "a variable with this name already exists");
+		return;
+	}
+
+	if (findType(parser.compiler, nameToken.word, nameToken.wordLen, (bool)0) != (Type)0) {
+		parseError(parser, nameToken, "a type with this name already exists");
+		return;
+	}
+
+	if (findFunction(parser.compiler, nameToken.word, nameToken.wordLen, (bool)0) != (Function)0) {
+		parseError(parser, nameToken, "a function with this name already exists");
+		return;
+	}
+
+	if (consumeToken(parser, TOKEN_EQUAL, "expected '=' in variable definition").tokenType == TOKEN_ERROR) { return; }
+
+	// evaluate constant
+
+	// define constant
+
+	consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after constant definition");
+}
+
 func typeDefinition(Parser parser) {
 	next(parser);
 
@@ -1094,6 +1130,8 @@ func statement(Parser parser) {
 		importStatement(parser);
 	} else if (parser.current.tokenType == TOKEN_VAR) {
 		variableDefinition(parser);
+	} else if (parser.current.tokenType == TOKEN_CONST) {
+		constantDefinition(parser);
 	} else if (parser.current.tokenType == TOKEN_TYPE) {
 		typeDefinition(parser);
 	} else if (parser.current.tokenType == TOKEN_FUNC) {

@@ -52,6 +52,7 @@ var TOKEN_IDENTIFIER = 36;
 var TOKEN_END_OF_FILE = 37;
 var TOKEN_ERROR = 38;
 var TOKEN_STAR = 39;
+var TOKEN_CONST = 40;
 
 type Token {
 	str fileName;
@@ -293,6 +294,18 @@ func lexKeyWords(Lexer lexer) -> Token {
 
 		var i = 0;
 		while (i < 6) {
+			advance(lexer);
+			i = i + 1;
+		}
+
+		if (isalnum(lexer.current[0]) || lexer.current[0] == '_') {
+			return lexIdentifier(lexer, token);
+		}
+	} else if (strneq(lexer.current, "const", 5)) {
+		token.tokenType = TOKEN_CONST;
+
+		var i = 0;
+		while (i < 5) {
 			advance(lexer);
 			i = i + 1;
 		}
