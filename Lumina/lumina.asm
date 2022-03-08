@@ -23874,6 +23874,14 @@ addr_func_end_165:
 	mov rax, 39 
 	push rax
 
+	;; -- number --
+	mov rax, 41 
+	push rax
+
+	;; -- number --
+	mov rax, 42 
+	push rax
+
 	;; -- function --
 	jmp addr_func_end_166 
 addr_func_166:
@@ -33298,7 +33306,124 @@ addr_if_84:
 	;; -- pop --
 	add rsp, 0
 
+	;; -- jump --
+	jmp addr_else_4
+
 addr_if_87:
+	;; -- identifier --
+	mov rax, [basestack + 8 * 1]
+	mov rbx, 8 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- read property -- 
+	pop rax ;; pointer
+	add rax, 16 
+	mov rax, [rax]
+	;; create bit mask
+	mov rbx, 0
+	sub rbx, 1
+	and rax, rbx
+	push rax
+
+	;; -- number --
+	mov rax, 0 
+	push rax
+
+	;; -- read at index -- 
+	pop rax ;; index
+	mov rbx, 1 
+	mul rbx
+	pop rbx ;; pointer
+	add rbx, rax
+	mov rbx, [rbx]
+	;; create bit mask
+	mov rcx, 1
+	shl rcx, 8 ;; size
+	sub rcx, 1
+	and rbx, rcx
+	push rbx
+
+	;; -- character --
+	mov rax, 0x3C 
+	push rax
+
+	;; -- equal --
+	pop rbx
+	pop rax
+	cmp rax, rbx
+	pushf
+	pop rax
+	shr rax, 6
+	and rax, 1
+	push rax
+
+	;; -- condition --
+	pop rax
+	cmp rax, 1
+
+	;; -- jump if not equal --
+	jne addr_if_88
+
+	;; -- identifier --
+	mov rax, [basestack + 8 * 1]
+	mov rbx, 8 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- function call -- 
+	;; -- push current address --
+	mov rax, ret_func_169__39 
+	mov rbx, [callrsp]
+	mov [rbx], rax
+	sub rbx, 8
+	mov [callrsp], rbx
+	;; -- jump --
+	jmp addr_func_169 
+	ret_func_169__39: ;; first number is function id, second number id call id
+
+	;; -- pop --
+	add rsp, 8
+
+	;; -- identifier --
+	mov rax, [basestack + 8 * 1]
+	mov rbx, 24 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- identifier --
+	mov rax, [basestack + 8 * 0]
+	mov rbx, 1440 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- write property -- 
+	pop rax ;; value
+	pop rbx ;; pointer
+	add rbx, 40 
+	mov rcx, [rbx]
+	;; create bit mask
+	mov r9, 0
+	sub r9, 1
+	and rax, r9
+	not r9
+	and rcx, r9
+	add rcx, rax
+	mov [rbx], rcx
+	push rax
+
+	;; -- pop --
+	add rsp, 8
+
+	;; -- pop --
+	add rsp, 0
+
+addr_if_88:
+addr_else_4:
 	;; -- pop --
 	add rsp, 0
 
@@ -33360,7 +33485,7 @@ addr_if_86:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_88
+	jne addr_if_89
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -33371,14 +33496,14 @@ addr_if_86:
 
 	;; -- function call -- 
 	;; -- push current address --
-	mov rax, ret_func_169__39 
+	mov rax, ret_func_169__40 
 	mov rbx, [callrsp]
 	mov [rbx], rax
 	sub rbx, 8
 	mov [callrsp], rbx
 	;; -- jump --
 	jmp addr_func_169 
-	ret_func_169__39: ;; first number is function id, second number id call id
+	ret_func_169__40: ;; first number is function id, second number id call id
 
 	;; -- pop --
 	add rsp, 8
@@ -33469,7 +33594,7 @@ addr_if_86:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_89
+	jne addr_if_90
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -33480,14 +33605,14 @@ addr_if_86:
 
 	;; -- function call -- 
 	;; -- push current address --
-	mov rax, ret_func_169__40 
+	mov rax, ret_func_169__41 
 	mov rbx, [callrsp]
 	mov [rbx], rax
 	sub rbx, 8
 	mov [callrsp], rbx
 	;; -- jump --
 	jmp addr_func_169 
-	ret_func_169__40: ;; first number is function id, second number id call id
+	ret_func_169__41: ;; first number is function id, second number id call id
 
 	;; -- pop --
 	add rsp, 8
@@ -33527,14 +33652,131 @@ addr_if_86:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_89:
+	;; -- jump --
+	jmp addr_else_5
+
+addr_if_90:
+	;; -- identifier --
+	mov rax, [basestack + 8 * 1]
+	mov rbx, 8 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- read property -- 
+	pop rax ;; pointer
+	add rax, 16 
+	mov rax, [rax]
+	;; create bit mask
+	mov rbx, 0
+	sub rbx, 1
+	and rax, rbx
+	push rax
+
+	;; -- number --
+	mov rax, 0 
+	push rax
+
+	;; -- read at index -- 
+	pop rax ;; index
+	mov rbx, 1 
+	mul rbx
+	pop rbx ;; pointer
+	add rbx, rax
+	mov rbx, [rbx]
+	;; create bit mask
+	mov rcx, 1
+	shl rcx, 8 ;; size
+	sub rcx, 1
+	and rbx, rcx
+	push rbx
+
+	;; -- character --
+	mov rax, 0x3E 
+	push rax
+
+	;; -- equal --
+	pop rbx
+	pop rax
+	cmp rax, rbx
+	pushf
+	pop rax
+	shr rax, 6
+	and rax, 1
+	push rax
+
+	;; -- condition --
+	pop rax
+	cmp rax, 1
+
+	;; -- jump if not equal --
+	jne addr_if_91
+
+	;; -- identifier --
+	mov rax, [basestack + 8 * 1]
+	mov rbx, 8 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- function call -- 
+	;; -- push current address --
+	mov rax, ret_func_169__42 
+	mov rbx, [callrsp]
+	mov [rbx], rax
+	sub rbx, 8
+	mov [callrsp], rbx
+	;; -- jump --
+	jmp addr_func_169 
+	ret_func_169__42: ;; first number is function id, second number id call id
+
+	;; -- pop --
+	add rsp, 8
+
+	;; -- identifier --
+	mov rax, [basestack + 8 * 1]
+	mov rbx, 24 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- identifier --
+	mov rax, [basestack + 8 * 0]
+	mov rbx, 1448 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- write property -- 
+	pop rax ;; value
+	pop rbx ;; pointer
+	add rbx, 40 
+	mov rcx, [rbx]
+	;; create bit mask
+	mov r9, 0
+	sub r9, 1
+	and rax, r9
+	not r9
+	and rcx, r9
+	add rcx, rax
+	mov [rbx], rcx
+	push rax
+
+	;; -- pop --
+	add rsp, 8
+
+	;; -- pop --
+	add rsp, 0
+
+addr_if_91:
+addr_else_5:
 	;; -- pop --
 	add rsp, 0
 
 	;; -- jump --
 	jmp addr_else_3
 
-addr_if_88:
+addr_if_89:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -33589,7 +33831,7 @@ addr_if_88:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_90
+	jne addr_if_92
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -33600,14 +33842,14 @@ addr_if_88:
 
 	;; -- function call -- 
 	;; -- push current address --
-	mov rax, ret_func_169__41 
+	mov rax, ret_func_169__43 
 	mov rbx, [callrsp]
 	mov [rbx], rax
 	sub rbx, 8
 	mov [callrsp], rbx
 	;; -- jump --
 	jmp addr_func_169 
-	ret_func_169__41: ;; first number is function id, second number id call id
+	ret_func_169__43: ;; first number is function id, second number id call id
 
 	;; -- pop --
 	add rsp, 8
@@ -33698,7 +33940,7 @@ addr_if_88:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_91
+	jne addr_if_93
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -33709,14 +33951,14 @@ addr_if_88:
 
 	;; -- function call -- 
 	;; -- push current address --
-	mov rax, ret_func_169__42 
+	mov rax, ret_func_169__44 
 	mov rbx, [callrsp]
 	mov [rbx], rax
 	sub rbx, 8
 	mov [callrsp], rbx
 	;; -- jump --
 	jmp addr_func_169 
-	ret_func_169__42: ;; first number is function id, second number id call id
+	ret_func_169__44: ;; first number is function id, second number id call id
 
 	;; -- pop --
 	add rsp, 8
@@ -33756,14 +33998,14 @@ addr_if_88:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_91:
+addr_if_93:
 	;; -- pop --
 	add rsp, 0
 
 	;; -- jump --
 	jmp addr_else_3
 
-addr_if_90:
+addr_if_92:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -33818,7 +34060,7 @@ addr_if_90:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_92
+	jne addr_if_94
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -33829,14 +34071,14 @@ addr_if_90:
 
 	;; -- function call -- 
 	;; -- push current address --
-	mov rax, ret_func_169__43 
+	mov rax, ret_func_169__45 
 	mov rbx, [callrsp]
 	mov [rbx], rax
 	sub rbx, 8
 	mov [callrsp], rbx
 	;; -- jump --
 	jmp addr_func_169 
-	ret_func_169__43: ;; first number is function id, second number id call id
+	ret_func_169__45: ;; first number is function id, second number id call id
 
 	;; -- pop --
 	add rsp, 8
@@ -33879,7 +34121,7 @@ addr_if_90:
 	;; -- jump --
 	jmp addr_else_3
 
-addr_if_92:
+addr_if_94:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -33934,7 +34176,7 @@ addr_if_92:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_93
+	jne addr_if_95
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -33945,14 +34187,14 @@ addr_if_92:
 
 	;; -- function call -- 
 	;; -- push current address --
-	mov rax, ret_func_169__44 
+	mov rax, ret_func_169__46 
 	mov rbx, [callrsp]
 	mov [rbx], rax
 	sub rbx, 8
 	mov [callrsp], rbx
 	;; -- jump --
 	jmp addr_func_169 
-	ret_func_169__44: ;; first number is function id, second number id call id
+	ret_func_169__46: ;; first number is function id, second number id call id
 
 	;; -- pop --
 	add rsp, 8
@@ -33995,7 +34237,7 @@ addr_if_92:
 	;; -- jump --
 	jmp addr_else_3
 
-addr_if_93:
+addr_if_95:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -34050,7 +34292,7 @@ addr_if_93:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_94
+	jne addr_if_96
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -34090,7 +34332,7 @@ addr_if_93:
 	;; -- jump --
 	jmp addr_else_3
 
-addr_if_94:
+addr_if_96:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -34319,14 +34561,14 @@ addr_while_condition_36:
 
 	;; -- function call -- 
 	;; -- push current address --
-	mov rax, ret_func_169__45 
+	mov rax, ret_func_169__47 
 	mov rbx, [callrsp]
 	mov [rbx], rax
 	sub rbx, 8
 	mov [callrsp], rbx
 	;; -- jump --
 	jmp addr_func_169 
-	ret_func_169__45: ;; first number is function id, second number id call id
+	ret_func_169__47: ;; first number is function id, second number id call id
 
 	;; -- pop --
 	add rsp, 8
@@ -34450,7 +34692,7 @@ addr_end_and_15:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_95
+	jne addr_if_97
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -34461,14 +34703,14 @@ addr_end_and_15:
 
 	;; -- function call -- 
 	;; -- push current address --
-	mov rax, ret_func_169__46 
+	mov rax, ret_func_169__48 
 	mov rbx, [callrsp]
 	mov [rbx], rax
 	sub rbx, 8
 	mov [callrsp], rbx
 	;; -- jump --
 	jmp addr_func_169 
-	ret_func_169__46: ;; first number is function id, second number id call id
+	ret_func_169__48: ;; first number is function id, second number id call id
 
 	;; -- pop --
 	add rsp, 8
@@ -34482,14 +34724,14 @@ addr_end_and_15:
 
 	;; -- function call -- 
 	;; -- push current address --
-	mov rax, ret_func_169__47 
+	mov rax, ret_func_169__49 
 	mov rbx, [callrsp]
 	mov [rbx], rax
 	sub rbx, 8
 	mov [callrsp], rbx
 	;; -- jump --
 	jmp addr_func_169 
-	ret_func_169__47: ;; first number is function id, second number id call id
+	ret_func_169__49: ;; first number is function id, second number id call id
 
 	;; -- pop --
 	add rsp, 8
@@ -34518,7 +34760,7 @@ addr_end_and_15:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_95:
+addr_if_97:
 	;; -- pop --
 	add rsp, 0
 
@@ -34577,7 +34819,7 @@ addr_while_end_36:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_96
+	jne addr_if_98
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -34618,7 +34860,7 @@ addr_while_end_36:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_96:
+addr_if_98:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -34735,7 +34977,7 @@ addr_end_or_14:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_97
+	jne addr_if_99
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -34776,7 +35018,7 @@ addr_end_or_14:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_97:
+addr_if_99:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -34831,7 +35073,7 @@ addr_if_97:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_98
+	jne addr_if_100
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -34872,7 +35114,7 @@ addr_if_97:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_98:
+addr_if_100:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -34927,7 +35169,7 @@ addr_if_98:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_99
+	jne addr_if_101
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -34968,7 +35210,7 @@ addr_if_98:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_99:
+addr_if_101:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -35591,7 +35833,7 @@ addr_func_181:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_100
+	jne addr_if_102
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -35728,7 +35970,7 @@ addr_func_181:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_100:
+addr_if_102:
 	;; -- return --
 	;; -- pop local variables --
 	add rsp, 0 
@@ -36653,7 +36895,7 @@ addr_func_186:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_101
+	jne addr_if_103
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -36790,7 +37032,7 @@ addr_func_186:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_101:
+addr_if_103:
 	;; -- return --
 	;; -- pop local variables --
 	add rsp, 0 
@@ -37044,7 +37286,7 @@ addr_end_and_16:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_102
+	jne addr_if_104
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -37074,7 +37316,7 @@ addr_end_and_16:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_102:
+addr_if_104:
 	;; -- pop --
 	add rsp, 8
 
@@ -37187,7 +37429,7 @@ addr_func_188:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_103
+	jne addr_if_105
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -37223,7 +37465,7 @@ addr_func_188:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_103:
+addr_if_105:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -37262,7 +37504,7 @@ addr_if_103:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_104
+	jne addr_if_106
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -37298,7 +37540,7 @@ addr_if_103:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_104:
+addr_if_106:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -38414,7 +38656,7 @@ addr_func_194:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_105
+	jne addr_if_107
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -38551,7 +38793,7 @@ addr_func_194:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_105:
+addr_if_107:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 56 
@@ -39497,7 +39739,7 @@ addr_func_199:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_106
+	jne addr_if_108
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -39634,7 +39876,7 @@ addr_func_199:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_106:
+addr_if_108:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 56 
@@ -40217,7 +40459,7 @@ addr_func_202:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_107
+	jne addr_if_109
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -40354,7 +40596,7 @@ addr_func_202:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_107:
+addr_if_109:
 	;; -- return --
 	;; -- pop local variables --
 	add rsp, 0 
@@ -40663,7 +40905,7 @@ addr_func_203:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_108
+	jne addr_if_110
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -40753,9 +40995,9 @@ addr_func_203:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_4
+	jmp addr_else_6
 
-addr_if_108:
+addr_if_110:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 32 
@@ -40817,7 +41059,7 @@ addr_if_108:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_4:
+addr_else_6:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 32 
@@ -41142,7 +41384,7 @@ addr_while_condition_43:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_109
+	jne addr_if_111
 
 	;; -- number --
 	mov rax, 0 
@@ -41162,9 +41404,9 @@ addr_while_condition_43:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_5
+	jmp addr_else_7
 
-addr_if_109:
+addr_if_111:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 56 
@@ -41235,7 +41477,7 @@ addr_if_109:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_5:
+addr_else_7:
 	;; -- pop --
 	add rsp, 0
 
@@ -41554,7 +41796,7 @@ addr_end_and_17:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_110
+	jne addr_if_112
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -41584,7 +41826,7 @@ addr_end_and_17:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_110:
+addr_if_112:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 56 
@@ -41678,7 +41920,7 @@ addr_end_or_15:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_111
+	jne addr_if_113
 
 	;; -- number --
 	mov rax, 0 
@@ -41705,7 +41947,7 @@ addr_end_or_15:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_111:
+addr_if_113:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -42152,7 +42394,7 @@ addr_end_and_18:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_112
+	jne addr_if_114
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -42182,7 +42424,7 @@ addr_end_and_18:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_112:
+addr_if_114:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 56 
@@ -42276,7 +42518,7 @@ addr_end_or_16:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_113
+	jne addr_if_115
 
 	;; -- number --
 	mov rax, 0 
@@ -42303,7 +42545,7 @@ addr_end_or_16:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_113:
+addr_if_115:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -42587,7 +42829,7 @@ addr_end_and_19:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_114
+	jne addr_if_116
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -42647,7 +42889,7 @@ addr_end_and_19:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_114:
+addr_if_116:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 32 
@@ -42707,7 +42949,7 @@ addr_if_114:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_115
+	jne addr_if_117
 
 	;; -- number --
 	mov rax, 1 
@@ -42726,7 +42968,7 @@ addr_if_114:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_115:
+addr_if_117:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 48 
@@ -42773,7 +43015,7 @@ addr_while_end_46:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_116
+	jne addr_if_118
 
 	;; -- string --
 	mov rax, string_27 
@@ -42890,7 +43132,7 @@ addr_while_end_46:
 	;; -- pop --
 	add rsp, 8
 
-addr_if_116:
+addr_if_118:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -42927,7 +43169,7 @@ addr_if_116:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_117
+	jne addr_if_119
 
 	;; -- number --
 	mov rax, 0 
@@ -42954,7 +43196,7 @@ addr_if_116:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_117:
+addr_if_119:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -43348,7 +43590,7 @@ addr_end_and_20:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_118
+	jne addr_if_120
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -43378,7 +43620,7 @@ addr_end_and_20:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_118:
+addr_if_120:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 56 
@@ -43472,7 +43714,7 @@ addr_end_or_17:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_119
+	jne addr_if_121
 
 	;; -- number --
 	mov rax, 0 
@@ -43499,7 +43741,7 @@ addr_end_or_17:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_119:
+addr_if_121:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -43633,7 +43875,7 @@ addr_func_212:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_120
+	jne addr_if_122
 
 	;; -- number --
 	mov rax, 2 
@@ -43700,7 +43942,7 @@ addr_func_212:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_121
+	jne addr_if_123
 
 	;; -- character --
 	mov rax, 0x07 
@@ -43720,9 +43962,9 @@ addr_func_212:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_6
+	jmp addr_else_8
 
-addr_if_121:
+addr_if_123:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 48 
@@ -43749,7 +43991,7 @@ addr_if_121:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_122
+	jne addr_if_124
 
 	;; -- character --
 	mov rax, 0x08 
@@ -43769,9 +44011,9 @@ addr_if_121:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_6
+	jmp addr_else_8
 
-addr_if_122:
+addr_if_124:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 48 
@@ -43798,7 +44040,7 @@ addr_if_122:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_123
+	jne addr_if_125
 
 	;; -- character --
 	mov rax, 0x1B 
@@ -43818,9 +44060,9 @@ addr_if_122:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_6
+	jmp addr_else_8
 
-addr_if_123:
+addr_if_125:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 48 
@@ -43847,7 +44089,7 @@ addr_if_123:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_124
+	jne addr_if_126
 
 	;; -- character --
 	mov rax, 0x0C 
@@ -43867,9 +44109,9 @@ addr_if_123:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_6
+	jmp addr_else_8
 
-addr_if_124:
+addr_if_126:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 48 
@@ -43896,7 +44138,7 @@ addr_if_124:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_125
+	jne addr_if_127
 
 	;; -- character --
 	mov rax, 0x0A 
@@ -43916,9 +44158,9 @@ addr_if_124:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_6
+	jmp addr_else_8
 
-addr_if_125:
+addr_if_127:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 48 
@@ -43945,7 +44187,7 @@ addr_if_125:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_126
+	jne addr_if_128
 
 	;; -- character --
 	mov rax, 0x0D 
@@ -43965,9 +44207,9 @@ addr_if_125:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_6
+	jmp addr_else_8
 
-addr_if_126:
+addr_if_128:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 48 
@@ -43994,7 +44236,7 @@ addr_if_126:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_127
+	jne addr_if_129
 
 	;; -- character --
 	mov rax, 0x09 
@@ -44014,9 +44256,9 @@ addr_if_126:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_6
+	jmp addr_else_8
 
-addr_if_127:
+addr_if_129:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 48 
@@ -44043,7 +44285,7 @@ addr_if_127:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_128
+	jne addr_if_130
 
 	;; -- character --
 	mov rax, 0x0B 
@@ -44063,105 +44305,7 @@ addr_if_127:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_6
-
-addr_if_128:
-	;; -- identifier --
-	mov rax, [basestack + 8 * 1]
-	mov rbx, 48 
-	sub rax, rbx
-	mov rax, [rax]
-	push rax
-
-	;; -- character --
-	mov rax, 0x5C 
-	push rax
-
-	;; -- equal --
-	pop rbx
-	pop rax
-	cmp rax, rbx
-	pushf
-	pop rax
-	shr rax, 6
-	and rax, 1
-	push rax
-
-	;; -- condition --
-	pop rax
-	cmp rax, 1
-
-	;; -- jump if not equal --
-	jne addr_if_129
-
-	;; -- character --
-	mov rax, 0x5C 
-	push rax
-
-	;; -- assignment --
-	mov rax, [basestack + 8 * 1]
-	mov rbx, 32 
-	sub rax, rbx
-	mov rbx, [rsp]
-	mov [rax], rbx
-
-	;; -- pop --
-	add rsp, 8
-
-	;; -- pop --
-	add rsp, 0
-
-	;; -- jump --
-	jmp addr_else_6
-
-addr_if_129:
-	;; -- identifier --
-	mov rax, [basestack + 8 * 1]
-	mov rbx, 48 
-	sub rax, rbx
-	mov rax, [rax]
-	push rax
-
-	;; -- character --
-	mov rax, 0x27 
-	push rax
-
-	;; -- equal --
-	pop rbx
-	pop rax
-	cmp rax, rbx
-	pushf
-	pop rax
-	shr rax, 6
-	and rax, 1
-	push rax
-
-	;; -- condition --
-	pop rax
-	cmp rax, 1
-
-	;; -- jump if not equal --
-	jne addr_if_130
-
-	;; -- character --
-	mov rax, 0x27 
-	push rax
-
-	;; -- assignment --
-	mov rax, [basestack + 8 * 1]
-	mov rbx, 32 
-	sub rax, rbx
-	mov rbx, [rsp]
-	mov [rax], rbx
-
-	;; -- pop --
-	add rsp, 8
-
-	;; -- pop --
-	add rsp, 0
-
-	;; -- jump --
-	jmp addr_else_6
+	jmp addr_else_8
 
 addr_if_130:
 	;; -- identifier --
@@ -44172,7 +44316,7 @@ addr_if_130:
 	push rax
 
 	;; -- character --
-	mov rax, 0x22 
+	mov rax, 0x5C 
 	push rax
 
 	;; -- equal --
@@ -44193,6 +44337,104 @@ addr_if_130:
 	jne addr_if_131
 
 	;; -- character --
+	mov rax, 0x5C 
+	push rax
+
+	;; -- assignment --
+	mov rax, [basestack + 8 * 1]
+	mov rbx, 32 
+	sub rax, rbx
+	mov rbx, [rsp]
+	mov [rax], rbx
+
+	;; -- pop --
+	add rsp, 8
+
+	;; -- pop --
+	add rsp, 0
+
+	;; -- jump --
+	jmp addr_else_8
+
+addr_if_131:
+	;; -- identifier --
+	mov rax, [basestack + 8 * 1]
+	mov rbx, 48 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- character --
+	mov rax, 0x27 
+	push rax
+
+	;; -- equal --
+	pop rbx
+	pop rax
+	cmp rax, rbx
+	pushf
+	pop rax
+	shr rax, 6
+	and rax, 1
+	push rax
+
+	;; -- condition --
+	pop rax
+	cmp rax, 1
+
+	;; -- jump if not equal --
+	jne addr_if_132
+
+	;; -- character --
+	mov rax, 0x27 
+	push rax
+
+	;; -- assignment --
+	mov rax, [basestack + 8 * 1]
+	mov rbx, 32 
+	sub rax, rbx
+	mov rbx, [rsp]
+	mov [rax], rbx
+
+	;; -- pop --
+	add rsp, 8
+
+	;; -- pop --
+	add rsp, 0
+
+	;; -- jump --
+	jmp addr_else_8
+
+addr_if_132:
+	;; -- identifier --
+	mov rax, [basestack + 8 * 1]
+	mov rbx, 48 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- character --
+	mov rax, 0x22 
+	push rax
+
+	;; -- equal --
+	pop rbx
+	pop rax
+	cmp rax, rbx
+	pushf
+	pop rax
+	shr rax, 6
+	and rax, 1
+	push rax
+
+	;; -- condition --
+	pop rax
+	cmp rax, 1
+
+	;; -- jump if not equal --
+	jne addr_if_133
+
+	;; -- character --
 	mov rax, 0x22 
 	push rax
 
@@ -44210,9 +44452,9 @@ addr_if_130:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_6
+	jmp addr_else_8
 
-addr_if_131:
+addr_if_133:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 48 
@@ -44239,7 +44481,7 @@ addr_if_131:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_132
+	jne addr_if_134
 
 	;; -- character --
 	mov rax, 0x3F 
@@ -44259,9 +44501,9 @@ addr_if_131:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_6
+	jmp addr_else_8
 
-addr_if_132:
+addr_if_134:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 48 
@@ -44288,7 +44530,7 @@ addr_if_132:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_133
+	jne addr_if_135
 
 	;; -- character --
 	mov rax, 0x00 
@@ -44308,9 +44550,9 @@ addr_if_132:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_6
+	jmp addr_else_8
 
-addr_if_133:
+addr_if_135:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 48 
@@ -44331,11 +44573,11 @@ addr_if_133:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_6:
+addr_else_8:
 	;; -- pop --
 	add rsp, 8
 
-addr_if_120:
+addr_if_122:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 32 
@@ -44479,7 +44721,7 @@ addr_while_end_48:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_134
+	jne addr_if_136
 
 	;; -- string --
 	mov rax, string_28 
@@ -44575,7 +44817,7 @@ addr_while_end_48:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_134:
+addr_if_136:
 	;; -- number --
 	mov rax, 5 
 	push rax
@@ -44748,7 +44990,7 @@ addr_end_and_21:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_135
+	jne addr_if_137
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -44804,9 +45046,9 @@ addr_end_and_21:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_7
+	jmp addr_else_9
 
-addr_if_135:
+addr_if_137:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 64 
@@ -44870,7 +45112,7 @@ addr_if_135:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_7:
+addr_else_9:
 	;; -- number --
 	mov rax, 0 
 	push rax
@@ -44954,7 +45196,7 @@ addr_end_and_22:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_136
+	jne addr_if_138
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -45010,9 +45252,9 @@ addr_end_and_22:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_8
+	jmp addr_else_10
 
-addr_if_136:
+addr_if_138:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 64 
@@ -45076,7 +45318,7 @@ addr_if_136:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_8:
+addr_else_10:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 64 
@@ -45406,7 +45648,7 @@ addr_func_213:
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 0]
-	mov rbx, 1440 
+	mov rbx, 1456 
 	sub rax, rbx
 	mov rax, [rax]
 	push rax
@@ -56714,7 +56956,7 @@ addr_func_237:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_137
+	jne addr_if_139
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -56873,9 +57115,9 @@ addr_func_237:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_9
+	jmp addr_else_11
 
-addr_if_137:
+addr_if_139:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -56914,7 +57156,7 @@ addr_if_137:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_9:
+addr_else_11:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -57521,7 +57763,7 @@ addr_func_238:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_138
+	jne addr_if_140
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -57680,9 +57922,9 @@ addr_func_238:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_10
+	jmp addr_else_12
 
-addr_if_138:
+addr_if_140:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -57721,7 +57963,7 @@ addr_if_138:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_10:
+addr_else_12:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -58328,7 +58570,7 @@ addr_func_239:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_139
+	jne addr_if_141
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -58487,9 +58729,9 @@ addr_func_239:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_11
+	jmp addr_else_13
 
-addr_if_139:
+addr_if_141:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -58528,7 +58770,7 @@ addr_if_139:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_11:
+addr_else_13:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -58978,7 +59220,7 @@ addr_func_240:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_140
+	jne addr_if_142
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -59137,9 +59379,9 @@ addr_func_240:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_12
+	jmp addr_else_14
 
-addr_if_140:
+addr_if_142:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -59178,7 +59420,7 @@ addr_if_140:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_12:
+addr_else_14:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -61485,7 +61727,7 @@ addr_func_247:
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 0]
-	mov rbx, 1440 
+	mov rbx, 1456 
 	sub rax, rbx
 	mov rax, [rax]
 	push rax
@@ -61628,7 +61870,7 @@ addr_func_247:
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 0]
-	mov rbx, 1440 
+	mov rbx, 1456 
 	sub rax, rbx
 	mov rax, [rax]
 	push rax
@@ -62113,7 +62355,7 @@ addr_while_condition_50:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_141
+	jne addr_if_143
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -62135,7 +62377,7 @@ addr_while_condition_50:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_141:
+addr_if_143:
 	;; -- pop --
 	add rsp, 16
 
@@ -62434,7 +62676,7 @@ addr_func_248:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_142
+	jne addr_if_144
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -62488,9 +62730,9 @@ addr_func_248:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_13
+	jmp addr_else_15
 
-addr_if_142:
+addr_if_144:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 40 
@@ -62545,7 +62787,7 @@ addr_if_142:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_13:
+addr_else_15:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 40 
@@ -62587,7 +62829,7 @@ addr_else_13:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_143
+	jne addr_if_145
 
 	;; -- string --
 	mov rax, string_388 
@@ -62734,7 +62976,7 @@ addr_else_13:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_143:
+addr_if_145:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 40 
@@ -64070,7 +64312,7 @@ addr_func_249:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_144
+	jne addr_if_146
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -64106,7 +64348,7 @@ addr_func_249:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_144:
+addr_if_146:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -64145,7 +64387,7 @@ addr_if_144:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_145
+	jne addr_if_147
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -64181,7 +64423,7 @@ addr_if_144:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_145:
+addr_if_147:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -64395,7 +64637,7 @@ addr_func_250:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_146
+	jne addr_if_148
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -64431,7 +64673,7 @@ addr_func_250:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_146:
+addr_if_148:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -65465,7 +65707,7 @@ addr_func_252:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_147
+	jne addr_if_149
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -65543,7 +65785,7 @@ addr_func_252:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_148
+	jne addr_if_150
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -65580,11 +65822,11 @@ addr_func_252:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_148:
+addr_if_150:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_147:
+addr_if_149:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 40 
@@ -65695,7 +65937,7 @@ addr_func_253:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_149
+	jne addr_if_151
 
 	;; -- number --
 	mov rax, 0 
@@ -65722,7 +65964,7 @@ addr_func_253:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_149:
+addr_if_151:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -65815,7 +66057,7 @@ addr_if_149:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_150
+	jne addr_if_152
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -65852,7 +66094,7 @@ addr_if_149:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_150:
+addr_if_152:
 addr_while_condition_54:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -66132,7 +66374,7 @@ addr_func_255:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_151
+	jne addr_if_153
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -66227,7 +66469,7 @@ addr_func_255:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_152
+	jne addr_if_154
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -66274,7 +66516,7 @@ addr_func_255:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_152:
+addr_if_154:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -66344,9 +66586,9 @@ addr_if_152:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_14
+	jmp addr_else_16
 
-addr_if_151:
+addr_if_153:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -66415,7 +66657,7 @@ addr_if_151:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_14:
+addr_else_16:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -66587,7 +66829,7 @@ addr_func_256:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_153
+	jne addr_if_155
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -66625,9 +66867,9 @@ addr_func_256:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_15
+	jmp addr_else_17
 
-addr_if_153:
+addr_if_155:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -66833,7 +67075,7 @@ addr_end_and_26:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_154
+	jne addr_if_156
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -66880,7 +67122,7 @@ addr_end_and_26:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_154:
+addr_if_156:
 	;; -- number --
 	mov rax, 1 
 	push rax
@@ -67158,7 +67400,7 @@ addr_end_and_27:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_155
+	jne addr_if_157
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -67205,7 +67447,7 @@ addr_end_and_27:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_155:
+addr_if_157:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 40 
@@ -67275,7 +67517,7 @@ addr_while_end_55:
 	;; -- pop --
 	add rsp, 16
 
-addr_else_15:
+addr_else_17:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -67603,7 +67845,7 @@ addr_func_257:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_156
+	jne addr_if_158
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -67652,7 +67894,7 @@ addr_func_257:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_156:
+addr_if_158:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -67747,7 +67989,7 @@ addr_if_156:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_157
+	jne addr_if_159
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -67796,7 +68038,7 @@ addr_if_156:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_157:
+addr_if_159:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -68651,7 +68893,7 @@ addr_func_261:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_158
+	jne addr_if_160
 
 	;; -- return --
 	;; -- pop local variables --
@@ -68672,7 +68914,7 @@ addr_func_261:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_158:
+addr_if_160:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -68745,7 +68987,7 @@ addr_if_158:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_159
+	jne addr_if_161
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -68778,9 +69020,9 @@ addr_if_158:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_16
+	jmp addr_else_18
 
-addr_if_159:
+addr_if_161:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 24 
@@ -68821,7 +69063,7 @@ addr_if_159:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_16:
+addr_else_18:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 32 
@@ -69063,7 +69305,7 @@ addr_func_263:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_160
+	jne addr_if_162
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
@@ -69090,125 +69332,7 @@ addr_func_263:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_17
-
-addr_if_160:
-	;; -- identifier --
-	mov rax, [basestack + 8 * 3]
-	mov rbx, 24 
-	sub rax, rbx
-	mov rax, [rax]
-	push rax
-
-	;; -- identifier --
-	mov rax, [basestack + 8 * 0]
-	mov rbx, 1120 
-	sub rax, rbx
-	mov rax, [rax]
-	push rax
-
-	;; -- equal --
-	pop rbx
-	pop rax
-	cmp rax, rbx
-	pushf
-	pop rax
-	shr rax, 6
-	and rax, 1
-	push rax
-
-	;; -- condition --
-	pop rax
-	cmp rax, 1
-
-	;; -- jump if not equal --
-	jne addr_if_161
-
-	;; -- identifier --
-	mov rax, [basestack + 8 * 3]
-	mov rbx, 8 
-	sub rax, rbx
-	mov rax, [rax]
-	push rax
-
-	;; -- function call -- 
-	;; -- push current address --
-	mov rax, ret_func_258__0 
-	mov rbx, [callrsp]
-	mov [rbx], rax
-	sub rbx, 8
-	mov [callrsp], rbx
-	;; -- jump --
-	jmp addr_func_258 
-	ret_func_258__0: ;; first number is function id, second number id call id
-
-	;; -- pop --
-	add rsp, 8
-
-	;; -- pop --
-	add rsp, 0
-
-	;; -- jump --
-	jmp addr_else_17
-
-addr_if_161:
-	;; -- identifier --
-	mov rax, [basestack + 8 * 3]
-	mov rbx, 24 
-	sub rax, rbx
-	mov rax, [rax]
-	push rax
-
-	;; -- identifier --
-	mov rax, [basestack + 8 * 0]
-	mov rbx, 1296 
-	sub rax, rbx
-	mov rax, [rax]
-	push rax
-
-	;; -- equal --
-	pop rbx
-	pop rax
-	cmp rax, rbx
-	pushf
-	pop rax
-	shr rax, 6
-	and rax, 1
-	push rax
-
-	;; -- condition --
-	pop rax
-	cmp rax, 1
-
-	;; -- jump if not equal --
-	jne addr_if_162
-
-	;; -- identifier --
-	mov rax, [basestack + 8 * 3]
-	mov rbx, 8 
-	sub rax, rbx
-	mov rax, [rax]
-	push rax
-
-	;; -- function call -- 
-	;; -- push current address --
-	mov rax, ret_func_259__0 
-	mov rbx, [callrsp]
-	mov [rbx], rax
-	sub rbx, 8
-	mov [callrsp], rbx
-	;; -- jump --
-	jmp addr_func_259 
-	ret_func_259__0: ;; first number is function id, second number id call id
-
-	;; -- pop --
-	add rsp, 8
-
-	;; -- pop --
-	add rsp, 0
-
-	;; -- jump --
-	jmp addr_else_17
+	jmp addr_else_19
 
 addr_if_162:
 	;; -- identifier --
@@ -69220,7 +69344,7 @@ addr_if_162:
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 0]
-	mov rbx, 1304 
+	mov rbx, 1120 
 	sub rax, rbx
 	mov rax, [rax]
 	push rax
@@ -69251,6 +69375,124 @@ addr_if_162:
 
 	;; -- function call -- 
 	;; -- push current address --
+	mov rax, ret_func_258__0 
+	mov rbx, [callrsp]
+	mov [rbx], rax
+	sub rbx, 8
+	mov [callrsp], rbx
+	;; -- jump --
+	jmp addr_func_258 
+	ret_func_258__0: ;; first number is function id, second number id call id
+
+	;; -- pop --
+	add rsp, 8
+
+	;; -- pop --
+	add rsp, 0
+
+	;; -- jump --
+	jmp addr_else_19
+
+addr_if_163:
+	;; -- identifier --
+	mov rax, [basestack + 8 * 3]
+	mov rbx, 24 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- identifier --
+	mov rax, [basestack + 8 * 0]
+	mov rbx, 1296 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- equal --
+	pop rbx
+	pop rax
+	cmp rax, rbx
+	pushf
+	pop rax
+	shr rax, 6
+	and rax, 1
+	push rax
+
+	;; -- condition --
+	pop rax
+	cmp rax, 1
+
+	;; -- jump if not equal --
+	jne addr_if_164
+
+	;; -- identifier --
+	mov rax, [basestack + 8 * 3]
+	mov rbx, 8 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- function call -- 
+	;; -- push current address --
+	mov rax, ret_func_259__0 
+	mov rbx, [callrsp]
+	mov [rbx], rax
+	sub rbx, 8
+	mov [callrsp], rbx
+	;; -- jump --
+	jmp addr_func_259 
+	ret_func_259__0: ;; first number is function id, second number id call id
+
+	;; -- pop --
+	add rsp, 8
+
+	;; -- pop --
+	add rsp, 0
+
+	;; -- jump --
+	jmp addr_else_19
+
+addr_if_164:
+	;; -- identifier --
+	mov rax, [basestack + 8 * 3]
+	mov rbx, 24 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- identifier --
+	mov rax, [basestack + 8 * 0]
+	mov rbx, 1304 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- equal --
+	pop rbx
+	pop rax
+	cmp rax, rbx
+	pushf
+	pop rax
+	shr rax, 6
+	and rax, 1
+	push rax
+
+	;; -- condition --
+	pop rax
+	cmp rax, 1
+
+	;; -- jump if not equal --
+	jne addr_if_165
+
+	;; -- identifier --
+	mov rax, [basestack + 8 * 3]
+	mov rbx, 8 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- function call -- 
+	;; -- push current address --
 	mov rax, ret_func_260__0 
 	mov rbx, [callrsp]
 	mov [rbx], rax
@@ -69267,9 +69509,9 @@ addr_if_162:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_17
+	jmp addr_else_19
 
-addr_if_163:
+addr_if_165:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
 	mov rbx, 24 
@@ -69299,7 +69541,7 @@ addr_if_163:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_164
+	jne addr_if_166
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
@@ -69378,9 +69620,9 @@ addr_if_163:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_17
+	jmp addr_else_19
 
-addr_if_164:
+addr_if_166:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
 	mov rbx, 24 
@@ -69410,7 +69652,7 @@ addr_if_164:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_165
+	jne addr_if_167
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
@@ -69489,7 +69731,7 @@ addr_if_164:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_166
+	jne addr_if_168
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
@@ -69585,7 +69827,7 @@ addr_if_164:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_167
+	jne addr_if_169
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
@@ -69723,11 +69965,11 @@ addr_if_164:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_167:
+addr_if_169:
 	;; -- pop --
 	add rsp, 8
 
-addr_if_166:
+addr_if_168:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
 	mov rbx, 8 
@@ -69785,9 +70027,9 @@ addr_if_166:
 	add rsp, 8
 
 	;; -- jump --
-	jmp addr_else_17
+	jmp addr_else_19
 
-addr_if_165:
+addr_if_167:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
 	mov rbx, 24 
@@ -69817,7 +70059,7 @@ addr_if_165:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_168
+	jne addr_if_170
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
@@ -69844,9 +70086,9 @@ addr_if_165:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_17
+	jmp addr_else_19
 
-addr_if_168:
+addr_if_170:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
 	mov rbx, 8 
@@ -69892,7 +70134,7 @@ addr_if_168:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_17:
+addr_else_19:
 	;; -- return --
 	;; -- pop local variables --
 	add rsp, 8 
@@ -69991,7 +70233,7 @@ addr_func_264:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_169
+	jne addr_if_171
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
@@ -70054,7 +70296,7 @@ addr_func_264:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_169:
+addr_if_171:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
 	mov rbx, 8 
@@ -70198,7 +70440,7 @@ addr_if_169:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_170
+	jne addr_if_172
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
@@ -70261,7 +70503,7 @@ addr_if_169:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_170:
+addr_if_172:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
 	mov rbx, 8 
@@ -70343,7 +70585,7 @@ addr_if_170:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_171
+	jne addr_if_173
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
@@ -70428,7 +70670,7 @@ addr_if_170:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_172
+	jne addr_if_174
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
@@ -70475,7 +70717,7 @@ addr_if_170:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_172:
+addr_if_174:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
 	mov rbx, 8 
@@ -70528,9 +70770,9 @@ addr_if_172:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_18
+	jmp addr_else_20
 
-addr_if_171:
+addr_if_173:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
 	mov rbx, 8 
@@ -70582,7 +70824,7 @@ addr_if_171:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_18:
+addr_else_20:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
 	mov rbx, 8 
@@ -70738,7 +70980,7 @@ addr_func_265:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_173
+	jne addr_if_175
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
@@ -70791,7 +71033,7 @@ addr_func_265:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_173:
+addr_if_175:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
 	mov rbx, 24 
@@ -70880,7 +71122,7 @@ addr_if_173:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_174
+	jne addr_if_176
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
@@ -70933,7 +71175,7 @@ addr_if_173:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_174:
+addr_if_176:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
 	mov rbx, 24 
@@ -71030,7 +71272,7 @@ addr_if_174:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_175
+	jne addr_if_177
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
@@ -71115,7 +71357,7 @@ addr_if_174:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_176
+	jne addr_if_178
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
@@ -71162,7 +71404,7 @@ addr_if_174:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_176:
+addr_if_178:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
 	mov rbx, 8 
@@ -71232,9 +71474,9 @@ addr_if_176:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_19
+	jmp addr_else_21
 
-addr_if_175:
+addr_if_177:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
 	mov rbx, 8 
@@ -71303,7 +71545,7 @@ addr_if_175:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_19:
+addr_else_21:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 3]
 	mov rbx, 8 
@@ -71514,7 +71756,7 @@ addr_end_or_18:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_177
+	jne addr_if_179
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -71540,7 +71782,7 @@ addr_end_or_18:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_177:
+addr_if_179:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -71590,7 +71832,7 @@ addr_if_177:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_178
+	jne addr_if_180
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -71616,7 +71858,7 @@ addr_if_177:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_178:
+addr_if_180:
 	;; -- pop --
 	add rsp, 0
 
@@ -71956,7 +72198,7 @@ addr_end_or_20:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_179
+	jne addr_if_181
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -72019,7 +72261,7 @@ addr_end_or_20:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_179:
+addr_if_181:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 40 
@@ -72049,7 +72291,7 @@ addr_if_179:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_180
+	jne addr_if_182
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -72085,7 +72327,7 @@ addr_if_179:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_180:
+addr_if_182:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 40 
@@ -72115,7 +72357,7 @@ addr_if_180:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_181
+	jne addr_if_183
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -72151,7 +72393,7 @@ addr_if_180:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_181:
+addr_if_183:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -72741,7 +72983,7 @@ addr_end_or_21:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_182
+	jne addr_if_184
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -72772,7 +73014,7 @@ addr_end_or_21:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_183
+	jne addr_if_185
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -72867,7 +73109,7 @@ addr_end_and_28:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_184
+	jne addr_if_186
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -72914,14 +73156,14 @@ addr_end_and_28:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_184:
+addr_if_186:
 	;; -- pop --
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_20
+	jmp addr_else_22
 
-addr_if_183:
+addr_if_185:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 24 
@@ -72951,7 +73193,7 @@ addr_if_183:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_185
+	jne addr_if_187
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -72992,7 +73234,7 @@ addr_if_183:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_186
+	jne addr_if_188
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -73030,9 +73272,9 @@ addr_if_183:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_21
+	jmp addr_else_23
 
-addr_if_186:
+addr_if_188:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -73072,7 +73314,7 @@ addr_if_186:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_187
+	jne addr_if_189
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -73120,9 +73362,9 @@ addr_if_186:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_21
+	jmp addr_else_23
 
-addr_if_187:
+addr_if_189:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -73168,14 +73410,14 @@ addr_if_187:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_21:
+addr_else_23:
 	;; -- pop --
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_20
+	jmp addr_else_22
 
-addr_if_185:
+addr_if_187:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -73221,7 +73463,7 @@ addr_if_185:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_20:
+addr_else_22:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -73256,7 +73498,7 @@ addr_else_20:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_182:
+addr_if_184:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 48 
@@ -73286,7 +73528,7 @@ addr_if_182:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_188
+	jne addr_if_190
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -73311,92 +73553,6 @@ addr_if_182:
 	shr rax, 6
 	and rax, 1
 	push rax
-
-	;; -- condition --
-	pop rax
-	cmp rax, 1
-
-	;; -- jump if not equal --
-	jne addr_if_189
-
-	;; -- identifier --
-	mov rax, [basestack + 8 * 2]
-	mov rbx, 8 
-	sub rax, rbx
-	mov rax, [rax]
-	push rax
-
-	;; -- read property -- 
-	pop rax ;; pointer
-	add rax, 32 
-	mov rax, [rax]
-	;; create bit mask
-	mov rbx, 0
-	sub rbx, 1
-	and rax, rbx
-	push rax
-
-	;; -- identifier --
-	mov rax, [basestack + 8 * 2]
-	mov rbx, 32 
-	sub rax, rbx
-	mov rax, [rax]
-	push rax
-
-	;; -- not equal --
-	pop rbx
-	pop rax
-	cmp rax, rbx
-	pushf
-	pop rax
-	shr rax, 6
-	and rax, 1
-	mov rbx, 1
-	sub rbx, rax
-	push rbx
-
-	;; -- condition --
-	pop rax
-	cmp rax, 1
-
-	;; -- jump if not equal --
-	jne addr_if_190
-
-	;; -- identifier --
-	mov rax, [basestack + 8 * 2]
-	mov rbx, 8 
-	sub rax, rbx
-	mov rax, [rax]
-	push rax
-
-	;; -- read property -- 
-	pop rax ;; pointer
-	add rax, 32 
-	mov rax, [rax]
-	;; create bit mask
-	mov rbx, 0
-	sub rbx, 1
-	and rax, rbx
-	push rax
-
-	;; -- identifier --
-	mov rax, [basestack + 8 * 2]
-	mov rbx, 40 
-	sub rax, rbx
-	mov rax, [rax]
-	push rax
-
-	;; -- not equal --
-	pop rbx
-	pop rax
-	cmp rax, rbx
-	pushf
-	pop rax
-	shr rax, 6
-	and rax, 1
-	mov rbx, 1
-	sub rbx, rax
-	push rbx
 
 	;; -- condition --
 	pop rax
@@ -73412,16 +73568,9 @@ addr_if_182:
 	mov rax, [rax]
 	push rax
 
-	;; -- identifier --
-	mov rax, [basestack + 8 * 2]
-	mov rbx, 8 
-	sub rax, rbx
-	mov rax, [rax]
-	push rax
-
 	;; -- read property -- 
 	pop rax ;; pointer
-	add rax, 16 
+	add rax, 32 
 	mov rax, [rax]
 	;; create bit mask
 	mov rbx, 0
@@ -73429,103 +73578,14 @@ addr_if_182:
 	and rax, rbx
 	push rax
 
-	;; -- string --
-	mov rax, string_449 
-	push rax
-
-	;; -- function call -- 
-	;; -- push current address --
-	mov rax, ret_func_251__18 
-	mov rbx, [callrsp]
-	mov [rbx], rax
-	sub rbx, 8
-	mov [callrsp], rbx
-	;; -- jump --
-	jmp addr_func_251 
-	ret_func_251__18: ;; first number is function id, second number id call id
-
-	;; -- pop --
-	add rsp, 8
-
-	;; -- pop --
-	add rsp, 0
-
-	;; -- jump --
-	jmp addr_else_22
-
-addr_if_191:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
-	mov rbx, 8 
+	mov rbx, 32 
 	sub rax, rbx
 	mov rax, [rax]
 	push rax
 
-	;; -- identifier --
-	mov rax, [basestack + 8 * 2]
-	mov rbx, 8 
-	sub rax, rbx
-	mov rax, [rax]
-	push rax
-
-	;; -- read property -- 
-	pop rax ;; pointer
-	add rax, 16 
-	mov rax, [rax]
-	;; create bit mask
-	mov rbx, 0
-	sub rbx, 1
-	and rax, rbx
-	push rax
-
-	;; -- string --
-	mov rax, string_450 
-	push rax
-
-	;; -- function call -- 
-	;; -- push current address --
-	mov rax, ret_func_251__19 
-	mov rbx, [callrsp]
-	mov [rbx], rax
-	sub rbx, 8
-	mov [callrsp], rbx
-	;; -- jump --
-	jmp addr_func_251 
-	ret_func_251__19: ;; first number is function id, second number id call id
-
-	;; -- pop --
-	add rsp, 8
-
-	;; -- pop --
-	add rsp, 0
-
-addr_else_22:
-	;; -- pop --
-	add rsp, 0
-
-addr_if_190:
-	;; -- pop --
-	add rsp, 0
-
-	;; -- jump --
-	jmp addr_else_23
-
-addr_if_189:
-	;; -- identifier --
-	mov rax, [basestack + 8 * 2]
-	mov rbx, 24 
-	sub rax, rbx
-	mov rax, [rax]
-	push rax
-
-	;; -- identifier --
-	mov rax, [basestack + 8 * 2]
-	mov rbx, 40 
-	sub rax, rbx
-	mov rax, [rax]
-	push rax
-
-	;; -- equal --
+	;; -- not equal --
 	pop rbx
 	pop rax
 	cmp rax, rbx
@@ -73533,7 +73593,9 @@ addr_if_189:
 	pop rax
 	shr rax, 6
 	and rax, 1
-	push rax
+	mov rbx, 1
+	sub rbx, rax
+	push rbx
 
 	;; -- condition --
 	pop rax
@@ -73592,6 +73654,186 @@ addr_if_189:
 	mov rax, [rax]
 	push rax
 
+	;; -- identifier --
+	mov rax, [basestack + 8 * 2]
+	mov rbx, 8 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- read property -- 
+	pop rax ;; pointer
+	add rax, 16 
+	mov rax, [rax]
+	;; create bit mask
+	mov rbx, 0
+	sub rbx, 1
+	and rax, rbx
+	push rax
+
+	;; -- string --
+	mov rax, string_449 
+	push rax
+
+	;; -- function call -- 
+	;; -- push current address --
+	mov rax, ret_func_251__18 
+	mov rbx, [callrsp]
+	mov [rbx], rax
+	sub rbx, 8
+	mov [callrsp], rbx
+	;; -- jump --
+	jmp addr_func_251 
+	ret_func_251__18: ;; first number is function id, second number id call id
+
+	;; -- pop --
+	add rsp, 8
+
+	;; -- pop --
+	add rsp, 0
+
+	;; -- jump --
+	jmp addr_else_24
+
+addr_if_193:
+	;; -- identifier --
+	mov rax, [basestack + 8 * 2]
+	mov rbx, 8 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- identifier --
+	mov rax, [basestack + 8 * 2]
+	mov rbx, 8 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- read property -- 
+	pop rax ;; pointer
+	add rax, 16 
+	mov rax, [rax]
+	;; create bit mask
+	mov rbx, 0
+	sub rbx, 1
+	and rax, rbx
+	push rax
+
+	;; -- string --
+	mov rax, string_450 
+	push rax
+
+	;; -- function call -- 
+	;; -- push current address --
+	mov rax, ret_func_251__19 
+	mov rbx, [callrsp]
+	mov [rbx], rax
+	sub rbx, 8
+	mov [callrsp], rbx
+	;; -- jump --
+	jmp addr_func_251 
+	ret_func_251__19: ;; first number is function id, second number id call id
+
+	;; -- pop --
+	add rsp, 8
+
+	;; -- pop --
+	add rsp, 0
+
+addr_else_24:
+	;; -- pop --
+	add rsp, 0
+
+addr_if_192:
+	;; -- pop --
+	add rsp, 0
+
+	;; -- jump --
+	jmp addr_else_25
+
+addr_if_191:
+	;; -- identifier --
+	mov rax, [basestack + 8 * 2]
+	mov rbx, 24 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- identifier --
+	mov rax, [basestack + 8 * 2]
+	mov rbx, 40 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- equal --
+	pop rbx
+	pop rax
+	cmp rax, rbx
+	pushf
+	pop rax
+	shr rax, 6
+	and rax, 1
+	push rax
+
+	;; -- condition --
+	pop rax
+	cmp rax, 1
+
+	;; -- jump if not equal --
+	jne addr_if_194
+
+	;; -- identifier --
+	mov rax, [basestack + 8 * 2]
+	mov rbx, 8 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- read property -- 
+	pop rax ;; pointer
+	add rax, 32 
+	mov rax, [rax]
+	;; create bit mask
+	mov rbx, 0
+	sub rbx, 1
+	and rax, rbx
+	push rax
+
+	;; -- identifier --
+	mov rax, [basestack + 8 * 2]
+	mov rbx, 40 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- not equal --
+	pop rbx
+	pop rax
+	cmp rax, rbx
+	pushf
+	pop rax
+	shr rax, 6
+	and rax, 1
+	mov rbx, 1
+	sub rbx, rax
+	push rbx
+
+	;; -- condition --
+	pop rax
+	cmp rax, 1
+
+	;; -- jump if not equal --
+	jne addr_if_195
+
+	;; -- identifier --
+	mov rax, [basestack + 8 * 2]
+	mov rbx, 8 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
 	;; -- read property -- 
 	pop rax ;; pointer
 	add rax, 32 
@@ -73624,7 +73866,7 @@ addr_if_189:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_194
+	jne addr_if_196
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -73662,9 +73904,9 @@ addr_if_189:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_24
+	jmp addr_else_26
 
-addr_if_194:
+addr_if_196:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -73710,18 +73952,18 @@ addr_if_194:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_24:
+addr_else_26:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_193:
+addr_if_195:
 	;; -- pop --
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_23
+	jmp addr_else_25
 
-addr_if_192:
+addr_if_194:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -73767,7 +74009,7 @@ addr_if_192:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_23:
+addr_else_25:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -73802,7 +74044,7 @@ addr_else_23:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_188:
+addr_if_190:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -74171,7 +74413,7 @@ addr_end_or_26:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_195
+	jne addr_if_197
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -74256,7 +74498,7 @@ addr_end_or_26:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_196
+	jne addr_if_198
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -74303,138 +74545,6 @@ addr_end_or_26:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_196:
-	;; -- identifier --
-	mov rax, [basestack + 8 * 2]
-	mov rbx, 32 
-	sub rax, rbx
-	mov rax, [rax]
-	push rax
-
-	;; -- identifier --
-	mov rax, [basestack + 8 * 0]
-	mov rbx, 1216 
-	sub rax, rbx
-	mov rax, [rax]
-	push rax
-
-	;; -- equal --
-	pop rbx
-	pop rax
-	cmp rax, rbx
-	pushf
-	pop rax
-	shr rax, 6
-	and rax, 1
-	push rax
-
-	;; -- condition --
-	pop rax
-	cmp rax, 1
-
-	;; -- jump if not equal --
-	jne addr_if_197
-
-	;; -- identifier --
-	mov rax, [basestack + 8 * 2]
-	mov rbx, 8 
-	sub rax, rbx
-	mov rax, [rax]
-	push rax
-
-	;; -- read property -- 
-	pop rax ;; pointer
-	add rax, 40 
-	mov rax, [rax]
-	;; create bit mask
-	mov rbx, 0
-	sub rbx, 1
-	and rax, rbx
-	push rax
-
-	;; -- function call -- 
-	;; -- push current address --
-	mov rax, ret_func_228__0 
-	mov rbx, [callrsp]
-	mov [rbx], rax
-	sub rbx, 8
-	mov [callrsp], rbx
-	;; -- jump --
-	jmp addr_func_228 
-	ret_func_228__0: ;; first number is function id, second number id call id
-
-	;; -- pop --
-	add rsp, 8
-
-	;; -- pop --
-	add rsp, 0
-
-addr_if_197:
-	;; -- identifier --
-	mov rax, [basestack + 8 * 2]
-	mov rbx, 32 
-	sub rax, rbx
-	mov rax, [rax]
-	push rax
-
-	;; -- identifier --
-	mov rax, [basestack + 8 * 0]
-	mov rbx, 1232 
-	sub rax, rbx
-	mov rax, [rax]
-	push rax
-
-	;; -- equal --
-	pop rbx
-	pop rax
-	cmp rax, rbx
-	pushf
-	pop rax
-	shr rax, 6
-	and rax, 1
-	push rax
-
-	;; -- condition --
-	pop rax
-	cmp rax, 1
-
-	;; -- jump if not equal --
-	jne addr_if_198
-
-	;; -- identifier --
-	mov rax, [basestack + 8 * 2]
-	mov rbx, 8 
-	sub rax, rbx
-	mov rax, [rax]
-	push rax
-
-	;; -- read property -- 
-	pop rax ;; pointer
-	add rax, 40 
-	mov rax, [rax]
-	;; create bit mask
-	mov rbx, 0
-	sub rbx, 1
-	and rax, rbx
-	push rax
-
-	;; -- function call -- 
-	;; -- push current address --
-	mov rax, ret_func_229__0 
-	mov rbx, [callrsp]
-	mov [rbx], rax
-	sub rbx, 8
-	mov [callrsp], rbx
-	;; -- jump --
-	jmp addr_func_229 
-	ret_func_229__0: ;; first number is function id, second number id call id
-
-	;; -- pop --
-	add rsp, 8
-
-	;; -- pop --
-	add rsp, 0
-
 addr_if_198:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -74445,7 +74555,7 @@ addr_if_198:
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 0]
-	mov rbx, 1184 
+	mov rbx, 1216 
 	sub rax, rbx
 	mov rax, [rax]
 	push rax
@@ -74486,14 +74596,14 @@ addr_if_198:
 
 	;; -- function call -- 
 	;; -- push current address --
-	mov rax, ret_func_224__0 
+	mov rax, ret_func_228__0 
 	mov rbx, [callrsp]
 	mov [rbx], rax
 	sub rbx, 8
 	mov [callrsp], rbx
 	;; -- jump --
-	jmp addr_func_224 
-	ret_func_224__0: ;; first number is function id, second number id call id
+	jmp addr_func_228 
+	ret_func_228__0: ;; first number is function id, second number id call id
 
 	;; -- pop --
 	add rsp, 8
@@ -74511,7 +74621,7 @@ addr_if_199:
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 0]
-	mov rbx, 1200 
+	mov rbx, 1232 
 	sub rax, rbx
 	mov rax, [rax]
 	push rax
@@ -74552,14 +74662,14 @@ addr_if_199:
 
 	;; -- function call -- 
 	;; -- push current address --
-	mov rax, ret_func_225__0 
+	mov rax, ret_func_229__0 
 	mov rbx, [callrsp]
 	mov [rbx], rax
 	sub rbx, 8
 	mov [callrsp], rbx
 	;; -- jump --
-	jmp addr_func_225 
-	ret_func_225__0: ;; first number is function id, second number id call id
+	jmp addr_func_229 
+	ret_func_229__0: ;; first number is function id, second number id call id
 
 	;; -- pop --
 	add rsp, 8
@@ -74577,7 +74687,7 @@ addr_if_200:
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 0]
-	mov rbx, 1192 
+	mov rbx, 1184 
 	sub rax, rbx
 	mov rax, [rax]
 	push rax
@@ -74618,14 +74728,14 @@ addr_if_200:
 
 	;; -- function call -- 
 	;; -- push current address --
-	mov rax, ret_func_226__0 
+	mov rax, ret_func_224__0 
 	mov rbx, [callrsp]
 	mov [rbx], rax
 	sub rbx, 8
 	mov [callrsp], rbx
 	;; -- jump --
-	jmp addr_func_226 
-	ret_func_226__0: ;; first number is function id, second number id call id
+	jmp addr_func_224 
+	ret_func_224__0: ;; first number is function id, second number id call id
 
 	;; -- pop --
 	add rsp, 8
@@ -74643,7 +74753,7 @@ addr_if_201:
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 0]
-	mov rbx, 1208 
+	mov rbx, 1200 
 	sub rax, rbx
 	mov rax, [rax]
 	push rax
@@ -74684,6 +74794,138 @@ addr_if_201:
 
 	;; -- function call -- 
 	;; -- push current address --
+	mov rax, ret_func_225__0 
+	mov rbx, [callrsp]
+	mov [rbx], rax
+	sub rbx, 8
+	mov [callrsp], rbx
+	;; -- jump --
+	jmp addr_func_225 
+	ret_func_225__0: ;; first number is function id, second number id call id
+
+	;; -- pop --
+	add rsp, 8
+
+	;; -- pop --
+	add rsp, 0
+
+addr_if_202:
+	;; -- identifier --
+	mov rax, [basestack + 8 * 2]
+	mov rbx, 32 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- identifier --
+	mov rax, [basestack + 8 * 0]
+	mov rbx, 1192 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- equal --
+	pop rbx
+	pop rax
+	cmp rax, rbx
+	pushf
+	pop rax
+	shr rax, 6
+	and rax, 1
+	push rax
+
+	;; -- condition --
+	pop rax
+	cmp rax, 1
+
+	;; -- jump if not equal --
+	jne addr_if_203
+
+	;; -- identifier --
+	mov rax, [basestack + 8 * 2]
+	mov rbx, 8 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- read property -- 
+	pop rax ;; pointer
+	add rax, 40 
+	mov rax, [rax]
+	;; create bit mask
+	mov rbx, 0
+	sub rbx, 1
+	and rax, rbx
+	push rax
+
+	;; -- function call -- 
+	;; -- push current address --
+	mov rax, ret_func_226__0 
+	mov rbx, [callrsp]
+	mov [rbx], rax
+	sub rbx, 8
+	mov [callrsp], rbx
+	;; -- jump --
+	jmp addr_func_226 
+	ret_func_226__0: ;; first number is function id, second number id call id
+
+	;; -- pop --
+	add rsp, 8
+
+	;; -- pop --
+	add rsp, 0
+
+addr_if_203:
+	;; -- identifier --
+	mov rax, [basestack + 8 * 2]
+	mov rbx, 32 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- identifier --
+	mov rax, [basestack + 8 * 0]
+	mov rbx, 1208 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- equal --
+	pop rbx
+	pop rax
+	cmp rax, rbx
+	pushf
+	pop rax
+	shr rax, 6
+	and rax, 1
+	push rax
+
+	;; -- condition --
+	pop rax
+	cmp rax, 1
+
+	;; -- jump if not equal --
+	jne addr_if_204
+
+	;; -- identifier --
+	mov rax, [basestack + 8 * 2]
+	mov rbx, 8 
+	sub rax, rbx
+	mov rax, [rax]
+	push rax
+
+	;; -- read property -- 
+	pop rax ;; pointer
+	add rax, 40 
+	mov rax, [rax]
+	;; create bit mask
+	mov rbx, 0
+	sub rbx, 1
+	and rax, rbx
+	push rax
+
+	;; -- function call -- 
+	;; -- push current address --
 	mov rax, ret_func_227__0 
 	mov rbx, [callrsp]
 	mov [rbx], rax
@@ -74699,7 +74941,7 @@ addr_if_201:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_202:
+addr_if_204:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -74768,7 +75010,7 @@ addr_if_202:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_195:
+addr_if_197:
 	;; -- return --
 	;; -- pop local variables --
 	add rsp, 16 
@@ -75033,7 +75275,7 @@ addr_while_condition_60:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_203
+	jne addr_if_205
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -75096,7 +75338,7 @@ addr_while_condition_60:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_203:
+addr_if_205:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -75265,7 +75507,7 @@ addr_if_203:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_204
+	jne addr_if_206
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -75328,7 +75570,7 @@ addr_if_203:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_204:
+addr_if_206:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -75870,7 +76112,7 @@ addr_while_condition_61:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_205
+	jne addr_if_207
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -75933,7 +76175,7 @@ addr_while_condition_61:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_205:
+addr_if_207:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -76102,7 +76344,7 @@ addr_if_205:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_206
+	jne addr_if_208
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -76165,7 +76407,7 @@ addr_if_205:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_206:
+addr_if_208:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -76590,7 +76832,7 @@ addr_func_272:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_207
+	jne addr_if_209
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -76637,7 +76879,7 @@ addr_func_272:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_207:
+addr_if_209:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 24 
@@ -76877,7 +77119,7 @@ addr_while_condition_62:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_208
+	jne addr_if_210
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -76961,7 +77203,7 @@ addr_while_condition_62:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_208:
+addr_if_210:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 56 
@@ -77300,7 +77542,7 @@ addr_func_273:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_209
+	jne addr_if_211
 
 	;; -- return --
 	;; -- pop local variables --
@@ -77321,7 +77563,7 @@ addr_func_273:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_209:
+addr_if_211:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -77409,7 +77651,7 @@ addr_if_209:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_210
+	jne addr_if_212
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -77462,7 +77704,7 @@ addr_if_209:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_210:
+addr_if_212:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -77550,7 +77792,7 @@ addr_if_210:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_211
+	jne addr_if_213
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -77603,7 +77845,7 @@ addr_if_210:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_211:
+addr_if_213:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -77691,7 +77933,7 @@ addr_if_211:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_212
+	jne addr_if_214
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -77744,7 +77986,7 @@ addr_if_211:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_212:
+addr_if_214:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -77806,7 +78048,7 @@ addr_if_212:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_213
+	jne addr_if_215
 
 	;; -- return --
 	;; -- pop local variables --
@@ -77827,7 +78069,7 @@ addr_if_212:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_213:
+addr_if_215:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -78096,7 +78338,7 @@ addr_func_274:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_214
+	jne addr_if_216
 
 	;; -- return --
 	;; -- pop local variables --
@@ -78117,7 +78359,7 @@ addr_func_274:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_214:
+addr_if_216:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -78205,7 +78447,7 @@ addr_if_214:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_215
+	jne addr_if_217
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -78258,7 +78500,7 @@ addr_if_214:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_215:
+addr_if_217:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -78346,7 +78588,7 @@ addr_if_215:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_216
+	jne addr_if_218
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -78399,7 +78641,7 @@ addr_if_215:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_216:
+addr_if_218:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -78487,7 +78729,7 @@ addr_if_216:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_217
+	jne addr_if_219
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -78540,7 +78782,7 @@ addr_if_216:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_217:
+addr_if_219:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -78664,7 +78906,7 @@ addr_if_217:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_218
+	jne addr_if_220
 
 	;; -- return --
 	;; -- pop local variables --
@@ -78685,7 +78927,7 @@ addr_if_217:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_218:
+addr_if_220:
 	;; -- number --
 	mov rax, 0 
 	push rax
@@ -78955,7 +79197,7 @@ addr_end_or_27:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_219
+	jne addr_if_221
 
 	;; -- return --
 	;; -- pop local variables --
@@ -78976,7 +79218,7 @@ addr_end_or_27:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_219:
+addr_if_221:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 64 
@@ -79436,7 +79678,7 @@ addr_func_276:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_220
+	jne addr_if_222
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -79854,7 +80096,7 @@ addr_while_end_64:
 	;; -- pop --
 	add rsp, 8
 
-addr_if_220:
+addr_if_222:
 addr_while_condition_65:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -80060,7 +80302,7 @@ addr_while_end_65:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_221
+	jne addr_if_223
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -80119,7 +80361,7 @@ addr_while_end_65:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_222
+	jne addr_if_224
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -80158,7 +80400,7 @@ addr_while_end_65:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_223
+	jne addr_if_225
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -80319,9 +80561,9 @@ addr_while_end_65:
 	add rsp, 8
 
 	;; -- jump --
-	jmp addr_else_25
+	jmp addr_else_27
 
-addr_if_223:
+addr_if_225:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -80367,18 +80609,18 @@ addr_if_223:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_25:
+addr_else_27:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_222:
+addr_if_224:
 	;; -- pop --
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_26
+	jmp addr_else_28
 
-addr_if_221:
+addr_if_223:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 32 
@@ -80437,7 +80679,7 @@ addr_if_221:
 	;; -- pop --
 	add rsp, 8
 
-addr_else_26:
+addr_else_28:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -80538,7 +80780,7 @@ addr_end_and_31:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_224
+	jne addr_if_226
 
 	;; -- string --
 	mov rax, string_492 
@@ -80610,7 +80852,7 @@ addr_end_and_31:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_224:
+addr_if_226:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -80934,7 +81176,7 @@ addr_func_277:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_225
+	jne addr_if_227
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -80971,7 +81213,7 @@ addr_func_277:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_225:
+addr_if_227:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -81059,7 +81301,7 @@ addr_if_225:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_226
+	jne addr_if_228
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -81096,7 +81338,7 @@ addr_if_225:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_226:
+addr_if_228:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -81184,7 +81426,7 @@ addr_if_226:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_227
+	jne addr_if_229
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -81221,7 +81463,7 @@ addr_if_226:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_227:
+addr_if_229:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -81357,7 +81599,7 @@ addr_if_227:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_228
+	jne addr_if_230
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -81527,7 +81769,7 @@ addr_if_227:
 	;; -- pop --
 	add rsp, 16
 
-addr_if_228:
+addr_if_230:
 addr_while_condition_66:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -81894,7 +82136,7 @@ addr_while_end_66:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_229
+	jne addr_if_231
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -81952,7 +82194,7 @@ addr_while_end_66:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_229:
+addr_if_231:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -82249,7 +82491,7 @@ addr_func_278:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_230
+	jne addr_if_232
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -82344,7 +82586,7 @@ addr_func_278:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_230:
+addr_if_232:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -82678,7 +82920,7 @@ addr_while_end_67:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_231
+	jne addr_if_233
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -82781,9 +83023,9 @@ addr_while_end_67:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_27
+	jmp addr_else_29
 
-addr_if_231:
+addr_if_233:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -82856,7 +83098,7 @@ addr_if_231:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_232
+	jne addr_if_234
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -82903,7 +83145,7 @@ addr_if_231:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_232:
+addr_if_234:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -83004,7 +83246,7 @@ addr_if_232:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_27:
+addr_else_29:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -83282,7 +83524,7 @@ addr_func_279:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_233
+	jne addr_if_235
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -83329,7 +83571,7 @@ addr_func_279:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_233:
+addr_if_235:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -83716,7 +83958,7 @@ addr_end_and_32:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_234
+	jne addr_if_236
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -83763,7 +84005,7 @@ addr_end_and_32:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_234:
+addr_if_236:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -83834,7 +84076,7 @@ addr_if_234:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_235
+	jne addr_if_237
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -84053,7 +84295,7 @@ addr_if_234:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_236
+	jne addr_if_238
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -84100,7 +84342,7 @@ addr_if_234:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_236:
+addr_if_238:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -84267,9 +84509,9 @@ addr_if_236:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_28
+	jmp addr_else_30
 
-addr_if_235:
+addr_if_237:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -84344,7 +84586,7 @@ addr_if_235:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_28:
+addr_else_30:
 	;; -- number --
 	mov rax, 1 
 	push rax
@@ -84392,7 +84634,7 @@ addr_while_end_68:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_237
+	jne addr_if_239
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -84439,7 +84681,7 @@ addr_while_end_68:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_237:
+addr_if_239:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 32 
@@ -84452,7 +84694,7 @@ addr_if_237:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_238
+	jne addr_if_240
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -84499,7 +84741,7 @@ addr_if_237:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_238:
+addr_if_240:
 	;; -- return --
 	;; -- pop local variables --
 	add rsp, 32 
@@ -84779,7 +85021,7 @@ addr_func_280:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_239
+	jne addr_if_241
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
@@ -84826,7 +85068,7 @@ addr_func_280:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_239:
+addr_if_241:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 2]
 	mov rbx, 8 
@@ -85139,7 +85381,7 @@ addr_func_end_280:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_240
+	jne addr_if_242
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -85166,9 +85408,9 @@ addr_func_end_280:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_29
+	jmp addr_else_31
 
-addr_if_240:
+addr_if_242:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -85218,7 +85460,7 @@ addr_if_240:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_241
+	jne addr_if_243
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -85245,9 +85487,9 @@ addr_if_240:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_29
+	jmp addr_else_31
 
-addr_if_241:
+addr_if_243:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -85297,7 +85539,7 @@ addr_if_241:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_242
+	jne addr_if_244
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -85324,9 +85566,9 @@ addr_if_241:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_29
+	jmp addr_else_31
 
-addr_if_242:
+addr_if_244:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -85376,7 +85618,7 @@ addr_if_242:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_243
+	jne addr_if_245
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -85403,9 +85645,9 @@ addr_if_242:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_29
+	jmp addr_else_31
 
-addr_if_243:
+addr_if_245:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -85455,7 +85697,7 @@ addr_if_243:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_244
+	jne addr_if_246
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -85482,9 +85724,9 @@ addr_if_243:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_29
+	jmp addr_else_31
 
-addr_if_244:
+addr_if_246:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -85534,7 +85776,7 @@ addr_if_244:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_245
+	jne addr_if_247
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -85561,9 +85803,9 @@ addr_if_244:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_29
+	jmp addr_else_31
 
-addr_if_245:
+addr_if_247:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -85613,7 +85855,7 @@ addr_if_245:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_246
+	jne addr_if_248
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -85640,9 +85882,9 @@ addr_if_245:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_29
+	jmp addr_else_31
 
-addr_if_246:
+addr_if_248:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -85734,7 +85976,7 @@ addr_if_246:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_29:
+addr_else_31:
 	;; -- return --
 	;; -- pop local variables --
 	add rsp, 0 
@@ -86118,7 +86360,7 @@ addr_func_283:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_247
+	jne addr_if_249
 
 	;; -- string --
 	mov rax, string_546 
@@ -86198,7 +86440,7 @@ addr_func_283:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_247:
+addr_if_249:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 32 
@@ -86236,7 +86478,7 @@ addr_if_247:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_248
+	jne addr_if_250
 
 	;; -- string --
 	mov rax, string_548 
@@ -86426,9 +86668,9 @@ addr_while_end_70:
 	add rsp, 8
 
 	;; -- jump --
-	jmp addr_else_30
+	jmp addr_else_32
 
-addr_if_248:
+addr_if_250:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 8 
@@ -86571,7 +86813,7 @@ addr_if_248:
 	;; -- pop --
 	add rsp, 8
 
-addr_else_30:
+addr_else_32:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 32 
@@ -86721,7 +86963,7 @@ addr_while_condition_71:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_249
+	jne addr_if_251
 
 	;; -- number --
 	mov rax, 1 
@@ -86741,9 +86983,9 @@ addr_while_condition_71:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_31
+	jmp addr_else_33
 
-addr_if_249:
+addr_if_251:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 72 
@@ -86771,7 +87013,7 @@ addr_if_249:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_250
+	jne addr_if_252
 
 	;; -- number --
 	mov rax, 1 
@@ -86791,9 +87033,9 @@ addr_if_249:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_31
+	jmp addr_else_33
 
-addr_if_250:
+addr_if_252:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 72 
@@ -86821,7 +87063,7 @@ addr_if_250:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_251
+	jne addr_if_253
 
 	;; -- number --
 	mov rax, 1 
@@ -86841,9 +87083,9 @@ addr_if_250:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_31
+	jmp addr_else_33
 
-addr_if_251:
+addr_if_253:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 72 
@@ -86871,7 +87113,7 @@ addr_if_251:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_252
+	jne addr_if_254
 
 	;; -- number --
 	mov rax, 1 
@@ -86891,9 +87133,9 @@ addr_if_251:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_31
+	jmp addr_else_33
 
-addr_if_252:
+addr_if_254:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 0]
 	mov rbx, 16 
@@ -87001,7 +87243,7 @@ addr_if_252:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_31:
+addr_else_33:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 64 
@@ -87099,7 +87341,7 @@ addr_while_end_71:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_253
+	jne addr_if_255
 
 	;; -- string --
 	mov rax, string_558 
@@ -87152,7 +87394,7 @@ addr_while_end_71:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_253:
+addr_if_255:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 16 
@@ -87379,7 +87621,7 @@ addr_if_253:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_254
+	jne addr_if_256
 
 	;; -- number --
 	mov rax, 1 
@@ -87402,7 +87644,7 @@ addr_if_253:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_254:
+addr_if_256:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 96 
@@ -87436,7 +87678,7 @@ addr_if_254:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_255
+	jne addr_if_257
 
 	;; -- string --
 	mov rax, string_562 
@@ -87516,7 +87758,7 @@ addr_if_254:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_255:
+addr_if_257:
 	;; -- number --
 	mov rax, 8 
 	push rax
@@ -88057,7 +88299,7 @@ addr_if_255:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_256
+	jne addr_if_258
 
 	;; -- string --
 	mov rax, string_573 
@@ -88095,9 +88337,9 @@ addr_if_255:
 	add rsp, 0
 
 	;; -- jump --
-	jmp addr_else_32
+	jmp addr_else_34
 
-addr_if_256:
+addr_if_258:
 	;; -- string --
 	mov rax, string_574 
 	push rax
@@ -88133,7 +88375,7 @@ addr_if_256:
 	;; -- pop --
 	add rsp, 0
 
-addr_else_32:
+addr_else_34:
 	;; -- number --
 	mov rax, 8 
 	push rax
@@ -88206,7 +88448,7 @@ addr_else_32:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_257
+	jne addr_if_259
 
 	;; -- string --
 	mov rax, string_575 
@@ -88247,7 +88489,7 @@ addr_else_32:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_257:
+addr_if_259:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 128 
@@ -88288,7 +88530,7 @@ addr_if_257:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_258
+	jne addr_if_260
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -88371,7 +88613,7 @@ addr_if_257:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_259
+	jne addr_if_261
 
 	;; -- string --
 	mov rax, string_576 
@@ -88454,11 +88696,11 @@ addr_if_257:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_259:
+addr_if_261:
 	;; -- pop --
 	add rsp, 8
 
-addr_if_258:
+addr_if_260:
 	;; -- number --
 	mov rax, 2 
 	push rax
@@ -88971,7 +89213,7 @@ addr_if_258:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_260
+	jne addr_if_262
 
 	;; -- string --
 	mov rax, string_581 
@@ -89012,7 +89254,7 @@ addr_if_258:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_260:
+addr_if_262:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 168 
@@ -89053,7 +89295,7 @@ addr_if_260:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_261
+	jne addr_if_263
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -89136,7 +89378,7 @@ addr_if_260:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_262
+	jne addr_if_264
 
 	;; -- string --
 	mov rax, string_582 
@@ -89219,11 +89461,11 @@ addr_if_260:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_262:
+addr_if_264:
 	;; -- pop --
 	add rsp, 8
 
-addr_if_261:
+addr_if_263:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 24 
@@ -89236,7 +89478,7 @@ addr_if_261:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_263
+	jne addr_if_265
 
 	;; -- number --
 	mov rax, 8 
@@ -89335,7 +89577,7 @@ addr_if_261:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_264
+	jne addr_if_266
 
 	;; -- string --
 	mov rax, string_584 
@@ -89376,7 +89618,7 @@ addr_if_261:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_264:
+addr_if_266:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 184 
@@ -89417,7 +89659,7 @@ addr_if_264:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_265
+	jne addr_if_267
 
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
@@ -89500,7 +89742,7 @@ addr_if_264:
 	cmp rax, 1
 
 	;; -- jump if not equal --
-	jne addr_if_266
+	jne addr_if_268
 
 	;; -- string --
 	mov rax, string_585 
@@ -89583,15 +89825,15 @@ addr_if_264:
 	;; -- pop --
 	add rsp, 0
 
-addr_if_266:
+addr_if_268:
 	;; -- pop --
 	add rsp, 8
 
-addr_if_265:
+addr_if_267:
 	;; -- pop --
 	add rsp, 16
 
-addr_if_263:
+addr_if_265:
 	;; -- identifier --
 	mov rax, [basestack + 8 * 1]
 	mov rbx, 88 
