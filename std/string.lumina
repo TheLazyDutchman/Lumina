@@ -141,3 +141,21 @@ func intToString(int number) -> str {
 
 	return buffer;
 }
+
+func strToInt(str string, int len) {
+	var value = 0;
+	var i = 0;
+
+	while (i < len) {
+		if (isnumeric(string[i]) == (bool)0) {
+			return value;
+		}
+
+		value = value * 10;
+
+		value = value + string[i] - "0";
+	}
+
+	return value;
+}
+}
