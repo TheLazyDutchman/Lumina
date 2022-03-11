@@ -573,8 +573,40 @@ func expression(Parser parser) {
 		}
 	}
 
-	func comparison(Parser parser) {
+	func bitShift(Parser parser) {
 		term(parser);
+		
+		var intType = findType(parser.compiler, "int", 3, (bool)0);
+
+		var tokenType = parser.current.tokenType;
+		while (tokenType == TOKEN_LESSLESS ||
+			tokenType == TOKEN_GREATERGREATER) {
+			next(parser);
+
+			if (parser.lastType != intType) {
+				parseError(parser, parser.current, "left hand side of a bitshift operation is expected to be of type `int`");
+				return;
+			}
+
+			term(parser);
+
+			if (parser.lastType != intType) {
+				parseError(parser, parser.current, "left hand side of a bitshift operation is expected to be of type `int`");
+				return;
+			}
+
+			if (tokenType == TOKEN_LESSLESS) {
+				writeShiftLeft(parser.compiler);
+			} else if (tokenType == TOKEN_GREATERGREATER) {
+				writeShiftRight(parser.compiler);
+			}
+
+			tokenType = parser.current.tokenType;
+		}
+	}
+
+	func comparison(Parser parser) {
+		bitShift(parser);
 
 		var firstType = parser.lastType;
 
@@ -587,7 +619,7 @@ func expression(Parser parser) {
 			tokenType == TOKEN_GREATEREQUAL) {
 			next(parser);
 
-			term(parser);
+			bitShift(parser);
 
 			if (firstType != parser.lastType) {
 				parseError(parser, parser.current, "cannot make a comparison between values of different types");
