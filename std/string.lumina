@@ -154,7 +154,49 @@ func strToInt(str string, int len) -> int{
 		value = value * 10;
 
 		value = value + string[i] - '0';
+		
+		i = i + 1;
 	}
 
 	return value;
+}
+
+func unEscapeCharacter(str charPtr) -> char {
+	var chr = charPtr[0];
+
+	if (chr == '\\') {
+
+		var test = charPtr[1];
+
+		if (test == 'a') {
+			chr = '\a';
+		} else if (test == 'b') {
+			chr = '\b';
+		} else if (test == 'e') {
+			chr = '\e';
+		} else if (test == 'f') {
+			chr = '\f';
+		} else if (test == 'n') {
+			chr = '\n';
+		} else if (test == 'r') {
+			chr = '\r';
+		} else if (test == 't') {
+			chr = '\t';
+		} else if (test == 'v') {
+			chr = '\v';
+		} else if (test == '\\') {
+			chr = '\\';
+		} else if (test == '\'') {
+			chr = '\'';
+		} else if (test == '\"') {
+			chr = '\"';
+		} else if (test == '?') {
+			chr = '\?';
+		} else if (test == '0') { // cannot do octal yet, just 0
+			chr = '\0';
+		} else {
+			chr = test;
+		}
+	}
+	return chr;
 }

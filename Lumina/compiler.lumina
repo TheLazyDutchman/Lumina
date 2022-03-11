@@ -95,10 +95,10 @@ func findVariable(Compiler compiler, str name, int nameLen, bool isLocal) -> Var
 	return findVariable(compiler.outer, name, nameLen, (bool)0);
 }
 
-func defineConstant(Compiler compiler, str name, int nameLen, int value, Type varType) -> Constant {
+func defineConstant(Compiler compiler, str name, int nameLen, int value, Type constType) -> Constant {
 	var buffer = strndup(name, nameLen);
 
-	return addConstant(compiler.constantList, buffer, value, varType);
+	return addConstant(compiler.constantList, buffer, value, constType);
 }
 
 func findConstant(Compiler compiler, str name, int nameLen, bool isLocal) -> Constant {
@@ -211,44 +211,12 @@ func findFunction(Compiler compiler, str name, int nameLen, bool isLocal) -> Fun
 }
 
 func printEscapedCharacter(Compiler compiler, str charPtr) -> int {
-	var chr = charPtr[0];
 	var length = 1;
-
-	if (chr == '\\') {
+	if (charPtr[0] == '\\') {
 		length = 2;
-
-		var test = charPtr[1];
-
-		if (test == 'a') {
-			chr = '\a';
-		} else if (test == 'b') {
-			chr = '\b';
-		} else if (test == 'e') {
-			chr = '\e';
-		} else if (test == 'f') {
-			chr = '\f';
-		} else if (test == 'n') {
-			chr = '\n';
-		} else if (test == 'r') {
-			chr = '\r';
-		} else if (test == 't') {
-			chr = '\t';
-		} else if (test == 'v') {
-			chr = '\v';
-		} else if (test == '\\') {
-			chr = '\\';
-		} else if (test == '\'') {
-			chr = '\'';
-		} else if (test == '\"') {
-			chr = '\"';
-		} else if (test == '?') {
-			chr = '\?';
-		} else if (test == '0') { // cannot do octal yet, just 0
-			chr = '\0';
-		} else {
-			chr = test;
-		}
 	}
+
+	var chr = unEscapeCharacter(charPtr);
 
 	//split the higher and lower 4 bits of the character
 	var lower = (int)chr;
@@ -260,10 +228,6 @@ func printEscapedCharacter(Compiler compiler, str charPtr) -> int {
 	}
 
 	if (higher >= 16) {
-		print("[ERROR] could not convert char '");
-		printn(charPtr, length);
-		print("' to hex\n");
-
 		return -1;
 	}
 
