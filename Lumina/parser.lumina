@@ -555,12 +555,12 @@ func expression(Parser parser) {
 						}
 					}
 				} else if (currentType == charType) {
-					if (parser.lastType != charType) {
-						if (parser.lastType == intType) {
-							parser.lastType = charType;
-						} else {
-							parseError(parser, parser.current, "right hand side of subtraction is not of type 'int' or 'char'");
-						}
+					if (parser.lastType == charType) {
+						parser.lastType = intType;
+					} else if (parser.lastType == intType) {
+						parser.lastType = charType;
+					} else {
+						parseError(parser, parser.current, "right hand side of subtraction is not of type 'int' or 'char'");
 					}
 				} else {
 					parseError(parser, parser.current, "left hand side of subtraction is not of type 'int' or 'char'");
@@ -570,6 +570,7 @@ func expression(Parser parser) {
 			}
 
 			tokenType = parser.current.tokenType;
+			currentType = parser.lastType;
 		}
 	}
 

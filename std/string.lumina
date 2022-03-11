@@ -142,7 +142,7 @@ func intToString(int number) -> str {
 	return buffer;
 }
 
-func strToInt(str string, int len) {
+func strToInt(str string, int len) -> int{
 	var value = 0;
 	var i = 0;
 
@@ -153,9 +153,8 @@ func strToInt(str string, int len) {
 
 		value = value * 10;
 
-		value = value + string[i] - "0";
+		value = value + string[i] - '0';
 	}
 
 	return value;
-}
 }
