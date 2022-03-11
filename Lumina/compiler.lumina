@@ -476,6 +476,22 @@ func writeBitNot(Compiler compiler) {
 	fprint(compiler.output, "	push rax\n\n");
 }
 
+func writeShiftLeft(Compiler compiler) {
+	fprint(compiler.output, "	;; -- shift left --\n");
+	fprint(compiler.output, "	pop rcx\n");
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	shl rax, cl\n");
+	fprint(compiler.output, "	push rax\n");
+}
+
+func writeShiftRight(Compiler compiler) {
+	fprint(compiler.output, "	;; -- shift right --\n");
+	fprint(compiler.output, "	pop rcx\n");
+	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	shr rax, cl\n");
+	fprint(compiler.output, "	push rax\n");
+}
+
 func writeLess(Compiler compiler) {
 	fprint(compiler.output, "	;; -- less --\n");
 	fprint(compiler.output, "	pop rbx\n");
