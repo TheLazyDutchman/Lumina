@@ -198,14 +198,14 @@ func consumeType(Parser parser, str message) -> Type {
 	return tokenType;
 }
 
-func expression(Parser parser) {
+func expression(Parser parser, bool isConstant) {
 	func parseVariable(Parser parser, Variable variable) {
 		next(parser);
 
 		if (parser.current.tokenType == TOKEN_EQUAL) {
 			next(parser);
 
-			expression(parser);
+			expression(parser, (bool)0);
 
 			if (parser.lastType != variable.varType) {
 				parseError(parser, parser.current, "cannot assign a value with a different type");
@@ -227,7 +227,7 @@ func expression(Parser parser) {
 		if (function.parameters.size == 0) {
 			consumeToken(parser, TOKEN_RPAREN, "function does not expect parameters");
 		} else {
-			expression(parser);
+			expression(parser, (bool)0);
 
 			var params = function.parameters.variables;
 			if (params[0].varType != parser.lastType && streq(params[0].varType.name, "any") == (bool)0) {
@@ -238,7 +238,7 @@ func expression(Parser parser) {
 			while (i < function.parameters.size) {
 				consumeToken(parser, TOKEN_COMMA, "expected ',' between arguments");
 
-				expression(parser);
+				expression(parser, (bool)0);
 
 				if (params[i].varType != parser.lastType && streq(params[i].varType.name, "any") == (bool)0) {
 					parseError(parser, parser.current, "parameter is not of the right type");
@@ -258,7 +258,7 @@ func expression(Parser parser) {
 		parser.lastType = function.returnType;
 	}
 
-	func identifier(Parser parser) {
+	func identifier(Parser parser, bool isConstant) {
 		var token = parser.current;
 
 		var variable = findVariable(parser.compiler, token.word, token.wordLen, (bool)0);
@@ -278,7 +278,7 @@ func expression(Parser parser) {
 		parseError(parser, token, "can not find a value with this name");
 	}
 
-	func number(Parser parser) {
+	func number(Parser parser, bool isConstant) {
 		var numberString = strndup(parser.current.word, parser.current.wordLen);
 		writeNumber(parser.compiler, numberString);
 
@@ -289,7 +289,7 @@ func expression(Parser parser) {
 		parser.lastType = findType(parser.compiler, "int", 3, (bool)0);
 	}
 
-	func character(Parser parser) {
+	func character(Parser parser, bool isConstant) {
 		writeCharacter(parser.compiler, parser.current.word);
 
 		next(parser);
@@ -334,22 +334,22 @@ func expression(Parser parser) {
 		free((ptr)numString);
 	}
 
-	func property(Parser parser) {
-		func unary(Parser parser) {
+	func property(Parser parser, bool isConstant) {
+		func unary(Parser parser, bool isConstant) {
 			var currentType = parser.current.tokenType;
 
 			if (currentType == TOKEN_IDENTIFIER) {
-				identifier(parser);
+				identifier(parser, isConstant);
 			} else if (currentType == TOKEN_NUMBER) {
-				number(parser);
+				number(parser, isConstant);
 			} else if (currentType == TOKEN_CHAR) {
-				character(parser);
+				character(parser, isConstant);
 			} else if (currentType == TOKEN_STR) {
 				string(parser);
 			} else if (currentType == TOKEN_MINUS) {
 				next(parser);
 
-				unary(parser);
+				unary(parser, isConstant);
 
 				writeNegative(parser.compiler);
 			} else if (currentType == TOKEN_LPAREN) {
@@ -363,14 +363,14 @@ func expression(Parser parser) {
 						
 						consumeToken(parser, TOKEN_RPAREN, "expected ')' after casting type");
 
-						property(parser);
+						property(parser, isConstant);
 
 						parser.lastType = castType;
 						return;
 					}
 				}
 
-				expression(parser);
+				expression(parser, isConstant);
 
 				consumeToken(parser, TOKEN_RPAREN, "expected ')' after group");
 			} else if (currentType == TOKEN_SIZEOF) {
@@ -380,9 +380,9 @@ func expression(Parser parser) {
 			}
 		}
 
-		unary(parser);
+		unary(parser, isConstant);
 
-		func parseIndex(Parser parser) {
+		func parseIndex(Parser parser, bool isConstant) {
 			if (parser.lastType.isArray == (bool)0) {
 				parseError(parser, parser.current, "can not index from a value that is not an array");
 				return;
@@ -392,7 +392,7 @@ func expression(Parser parser) {
 
 			next(parser);
 
-			expression(parser);
+			expression(parser, isConstant);
 
 			if (parser.lastType != findType(parser.compiler, "int", 3, (bool)0)) {
 				parseError(parser, parser.current, "expected array index to be of type 'int'");
@@ -404,7 +404,7 @@ func expression(Parser parser) {
 			if (parser.current.tokenType == TOKEN_EQUAL) {
 				next(parser);
 
-				expression(parser);
+				expression(parser, (bool)0);
 
 				if (arrayType != parser.lastType) {
 					parseError(parser, parser.current, "can not set a value of an array to a value of a different type");
@@ -441,7 +441,7 @@ func expression(Parser parser) {
 			if (parser.current.tokenType == TOKEN_EQUAL) {
 				next(parser);
 
-				expression(parser);
+				expression(parser, (bool)0);
 
 				if (parser.lastType != newType) {
 					parseError(parser, parser.current, "expected different type when writing property");
@@ -458,7 +458,7 @@ func expression(Parser parser) {
 		while (parser.current.tokenType == TOKEN_LBRACKET ||
 			parser.current.tokenType == TOKEN_PERIOD) {
 			if (parser.current.tokenType == TOKEN_LBRACKET) {
-				parseIndex(parser);
+				parseIndex(parser, isConstant);
 			}
 
 			if (parser.current.tokenType == TOKEN_PERIOD) {
@@ -467,8 +467,8 @@ func expression(Parser parser) {
 		}
 	}
 
-	func bitWise(Parser parser) {
-		property(parser);
+	func bitWise(Parser parser, bool isConstant) {
+		property(parser, isConstant);
 
 		var currentType = parser.lastType;
 		var intType = findType(parser.compiler, "int", 3, (bool)0);
@@ -478,7 +478,7 @@ func expression(Parser parser) {
 			tokenType == TOKEN_PIPE) {
 			next(parser);
 
-			property(parser);
+			property(parser, isConstant);
 
 			if (currentType != intType || parser.lastType != intType) {
 				parseError(parser, parser.current, "can not use '&' or '|' on values that are not of type 'int'");
@@ -496,14 +496,14 @@ func expression(Parser parser) {
 		}
 	}
 
-	func factor(Parser parser) {
-		bitWise(parser);
+	func factor(Parser parser, bool isConstant) {
+		bitWise(parser, isConstant);
 
 		var tokenType = parser.current.tokenType;
 		while (tokenType == TOKEN_STAR) {
 			next(parser);
 
-			bitWise(parser);
+			bitWise(parser, isConstant);
 
 			writeMult(parser.compiler);
 
@@ -511,8 +511,8 @@ func expression(Parser parser) {
 		}
 	}
 
-	func term(Parser parser) {
-		factor(parser);
+	func term(Parser parser, bool isConstant) {
+		factor(parser, isConstant);
 
 		var currentType = parser.lastType;
 		var intType = findType(parser.compiler, "int", 3, (bool)0);
@@ -523,7 +523,7 @@ func expression(Parser parser) {
 			tokenType == TOKEN_MINUS) {
 			next(parser);
 
-			factor(parser);
+			factor(parser, isConstant);
 
 			if (tokenType == TOKEN_PLUS) {
 				if (currentType == intType) {
@@ -574,8 +574,8 @@ func expression(Parser parser) {
 		}
 	}
 
-	func bitShift(Parser parser) {
-		term(parser);
+	func bitShift(Parser parser, bool isConstant) {
+		term(parser, isConstant);
 		
 		var intType = findType(parser.compiler, "int", 3, (bool)0);
 
@@ -589,7 +589,7 @@ func expression(Parser parser) {
 				return;
 			}
 
-			term(parser);
+			term(parser, isConstant);
 
 			if (parser.lastType != intType) {
 				parseError(parser, parser.current, "left hand side of a bitshift operation is expected to be of type `int`");
@@ -606,8 +606,8 @@ func expression(Parser parser) {
 		}
 	}
 
-	func comparison(Parser parser) {
-		bitShift(parser);
+	func comparison(Parser parser, bool isConstant) {
+		bitShift(parser, isConstant);
 
 		var firstType = parser.lastType;
 
@@ -620,7 +620,7 @@ func expression(Parser parser) {
 			tokenType == TOKEN_GREATEREQUAL) {
 			next(parser);
 
-			bitShift(parser);
+			bitShift(parser, isConstant);
 
 			if (firstType != parser.lastType) {
 				parseError(parser, parser.current, "cannot make a comparison between values of different types");
@@ -654,8 +654,8 @@ func expression(Parser parser) {
 		}
 	}
 
-	func logicAnd(Parser parser) {
-		comparison(parser);
+	func logicAnd(Parser parser, bool isConstant) {
+		comparison(parser, isConstant);
 
 		var tokenType = parser.current.tokenType;
 		while (tokenType == TOKEN_ANDAND) {
@@ -672,7 +672,7 @@ func expression(Parser parser) {
 			writeCondition(parser.compiler);
 			writeJumpNotEqual(parser.compiler, "addr_and_", andId);
 
-			comparison(parser);
+			comparison(parser, isConstant);
 
 			if (parser.lastType != findType(parser.compiler, "bool", 4, (bool)0)) {
 				parseError(parser, parser.current, "right hand side of '&&' operation is not of type 'bool'");
@@ -692,8 +692,8 @@ func expression(Parser parser) {
 		}
 	}
 
-	func logicOr(Parser parser) {
-		logicAnd(parser);
+	func logicOr(Parser parser, bool isConsant) {
+		logicAnd(parser, isConstant);
 
 		var tokenType = parser.current.tokenType;
 		while (tokenType == TOKEN_PIPEPIPE) {
@@ -710,7 +710,7 @@ func expression(Parser parser) {
 			writeCondition(parser.compiler);
 			writeJumpEqual(parser.compiler, "addr_or_", orId);
 
-			logicAnd(parser);
+			logicAnd(parser, isConstant);
 
 			if (parser.lastType != findType(parser.compiler, "bool", 4, (bool)0)) {
 				parseError(parser, parser.current, "right hand side of '||' operation is not of type 'bool'");
@@ -730,7 +730,7 @@ func expression(Parser parser) {
 		}
 	}
 
-	logicOr(parser);
+	logicOr(parser, isConstant);
 }
 
 func importStatement(Parser parser) {
@@ -791,7 +791,7 @@ func variableDefinition(Parser parser) {
 	
 	if (consumeToken(parser, TOKEN_EQUAL, "expected '=' in variable definition").tokenType == TOKEN_ERROR) { return; }
 
-	expression(parser);
+	expression(parser, (bool)0);
 
 	defineVariable(parser.compiler, varName, varNameLen, parser.lastType);
 
@@ -827,7 +827,7 @@ func constantDefinition(Parser parser) {
 
 	if (consumeToken(parser, TOKEN_EQUAL, "expected '=' in variable definition").tokenType == TOKEN_ERROR) { return; }
 
-	// evaluate constant
+	expression(parser, (bool)1);
 
 	// define constant
 
@@ -1034,7 +1034,7 @@ func statement(Parser parser) {
 			consumeToken(parser, TOKEN_SEMICOLON, "expected an empty return in a 'null' function");
 			writeReturnEmpty(parser.compiler, numVars, function.parameters.size);
 		} else {
-			expression(parser);
+			expression(parser, (bool)0);
 
 			if (parser.lastType != function.returnType) {
 				parseError(parser, parser.current, "incorrect return type");
@@ -1056,7 +1056,7 @@ func statement(Parser parser) {
 
 		consumeToken(parser, TOKEN_LPAREN, "expected '(' before 'if' condition");
 
-		expression(parser);
+		expression(parser, (bool)0);
 
 		if (parser.lastType != findType(parser.compiler, "bool", 4, (bool)0)) {
 			parseError(parser, parser.current, "expected 'if' condition to be of type 'bool'");
@@ -1095,7 +1095,7 @@ func statement(Parser parser) {
 
 				consumeToken(parser, TOKEN_LPAREN, "expected '(' before 'else if' condition");
 
-				expression(parser);
+				expression(parser, (bool)0);
 
 				if (parser.lastType != findType(parser.compiler, "bool", 4, (bool)0)) {
 					parseError(parser, parser.current, "expected 'else if' condition to be of type 'bool'");
@@ -1139,7 +1139,7 @@ func statement(Parser parser) {
 
 		writeAddress(parser.compiler, "addr_while_condition_", whileId);
 
-		expression(parser);
+		expression(parser, (bool)0);
 
 		if (parser.lastType != findType(parser.compiler, "bool", 4, (bool)0)) {
 			parseError(parser, parser.current, "expected 'while' condition to be of type 'bool'");
@@ -1176,7 +1176,7 @@ func statement(Parser parser) {
 	} else if (parser.current.tokenType == TOKEN_WHILE) {
 		whileStatement(parser);
 	} else {
-		expression(parser);
+		expression(parser, (bool)0);
 
 		consumeToken(parser, TOKEN_SEMICOLON, "expected ';' after expression");
 		writePop(parser.compiler, 1);
