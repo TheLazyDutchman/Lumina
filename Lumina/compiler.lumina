@@ -274,7 +274,7 @@ func writeHeader(Compiler compiler) {
 
 	fprint(compiler.output, "	;; -- syscall builtin --\n");
 	fprint(compiler.output, "	jmp addr_func_end_0\n");
-	fprint(compiler.output, "addr_func_0:\n");
+	fprint(compiler.output, "addr_func_syscall_0:\n");
 	fprint(compiler.output, "	pop r9\n");
 	fprint(compiler.output, "	pop r8\n");
 	fprint(compiler.output, "	pop r10\n");
@@ -315,12 +315,15 @@ func writeAddress(Compiler compiler, str address, int id) {
 	fprint(compiler.output, ":\n");
 }
 
-func writeBeginFunction(Compiler compiler, int id, int numParams) {
+func writeBeginFunction(Compiler compiler, str name, int id, int numParams) {
 	fprint(compiler.output, "	;; -- function --\n");
 	fprint(compiler.output, "	jmp addr_func_end_");
 	fprinti(compiler.output, id);
-	fprint(compiler.output, " \n");
+	fprint(compiler.output, "\n");
+
 	fprint(compiler.output, "addr_func_");
+	fprint(compiler.output, name);
+	fprint(compiler.output, "_");
 	fprinti(compiler.output, id);
 	fprint(compiler.output, ":\n");
 	fprint(compiler.output, "	mov rax, rsp\n");
@@ -340,15 +343,18 @@ func writeBeginFunction(Compiler compiler, int id, int numParams) {
 	fprint(compiler.output, "], rax\n\n");
 }
 
-func writeCall(Compiler compiler, int id, int numParameters, int numCalls) {
-	fprint(compiler.output, "	;; -- function call -- \n");
+func writeCall(Compiler compiler, str name, int id, int numParameters, int numCalls) {
+	fprint(compiler.output, "	;; -- function call --\n");
 	fprint(compiler.output, "	;; -- push current address --\n");
 	// get current address
 	fprint(compiler.output, "	mov rax, ret_func_");
+	fprint(compiler.output, name);
+	fprint(compiler.output, "_");
 	fprinti(compiler.output, id);
-	fprint(compiler.output, "__");
+	fprint(compiler.output, "_");
+	
 	fprinti(compiler.output, numCalls);
-	fprint(compiler.output, " \n");
+	fprint(compiler.output, "\n");
 
 	fprint(compiler.output, "	mov rbx, [callrsp]\n");
 	fprint(compiler.output, "	mov [rbx], rax\n");
@@ -358,12 +364,16 @@ func writeCall(Compiler compiler, int id, int numParameters, int numCalls) {
 	
 	fprint(compiler.output, "	;; -- jump --\n");
 	fprint(compiler.output, "	jmp addr_func_");
+	fprint(compiler.output, name);
+	fprint(compiler.output, "_");
 	fprinti(compiler.output, id);
-	fprint(compiler.output, " \n");
+	fprint(compiler.output, "\n");
 
 	fprint(compiler.output, "	ret_func_");
+	fprint(compiler.output, name);
+	fprint(compiler.output, "_");
 	fprinti(compiler.output, id);
-	fprint(compiler.output, "__");
+	fprint(compiler.output, "_");
 	fprinti(compiler.output, numCalls);
 	fprint(compiler.output, ": ;; first number is function id, second number id call id\n\n");
 
@@ -376,9 +386,9 @@ func writeReturnEmpty(Compiler compiler, int numVars, int numParameters) {
 	fprint(compiler.output, "	;; -- pop local variables --\n");
 	fprint(compiler.output, "	add rsp, ");
 	fprinti(compiler.output, 8 * numVars);
-	fprint(compiler.output, " \n");
+	fprint(compiler.output, "\n");
 
-	fprint(compiler.output, "	;; -- restore stackframe -- \n");
+	fprint(compiler.output, "	;; -- restore stackframe --\n");
 	fprint(compiler.output, "	pop rax\n");
 	fprint(compiler.output, " mov [basestack + 8 * ");
 	fprinti(compiler.output, compiler.functionDepth);
@@ -387,7 +397,7 @@ func writeReturnEmpty(Compiler compiler, int numVars, int numParameters) {
 	fprint(compiler.output, "	;; -- pop parameters --\n");
 	fprint(compiler.output, "	add rsp, ");
 	fprinti(compiler.output, 8 * numParameters);
-	fprint(compiler.output, " \n");
+	fprint(compiler.output, "\n");
 
 	fprint(compiler.output, "	;; -- return empty --\n");
 	fprint(compiler.output, "	push 0\n");
@@ -410,9 +420,9 @@ func writeReturnValue(Compiler compiler, int numVars, int numParameters) {
 	fprint(compiler.output, "	;; -- pop local variables --\n");
 	fprint(compiler.output, "	add rsp, ");
 	fprinti(compiler.output, 8 * numVars);
-	fprint(compiler.output, " \n");
+	fprint(compiler.output, "\n");
 
-	fprint(compiler.output, "	;; -- restore stackframe -- \n");
+	fprint(compiler.output, "	;; -- restore stackframe --\n");
 	fprint(compiler.output, "	pop rbx\n");
 	fprint(compiler.output, " mov [basestack + 8 * ");
 	fprinti(compiler.output, compiler.functionDepth);
@@ -421,7 +431,7 @@ func writeReturnValue(Compiler compiler, int numVars, int numParameters) {
 	fprint(compiler.output, "	;; -- pop parameters --\n");
 	fprint(compiler.output, "	add rsp, ");
 	fprinti(compiler.output, 8 * numParameters);
-	fprint(compiler.output, " \n");
+	fprint(compiler.output, "\n");
 
 	fprint(compiler.output, "	;; -- push return value --\n");
 	fprint(compiler.output, "	push rax\n");
@@ -685,7 +695,7 @@ func writeNumber(Compiler compiler, str value) {
 	fprint(compiler.output, "	;; -- number --\n");
 	fprint(compiler.output, "	mov rax, ");
 	fprint(compiler.output, value);
-	fprint(compiler.output, " \n");
+	fprint(compiler.output, "\n");
 	fprint(compiler.output, "	push rax\n\n");
 
 	compiler.currentStackSize = compiler.currentStackSize + 1;
@@ -695,7 +705,7 @@ func writeCharacter(Compiler compiler, str value) {
 	fprint(compiler.output, "	;; -- character --\n");
 	fprint(compiler.output, "	mov rax, ");
 	printEscapedCharacter(compiler, value);
-	fprint(compiler.output, " \n");
+	fprint(compiler.output, "\n");
 	fprint(compiler.output, "	push rax\n\n");
 
 	compiler.currentStackSize = compiler.currentStackSize + 1;
@@ -705,18 +715,18 @@ func writeString(Compiler compiler, int id) {
 	fprint(compiler.output, "	;; -- string --\n");
 	fprint(compiler.output, "	mov rax, string_");
 	fprinti(compiler.output, id);
-	fprint(compiler.output, " \n");
+	fprint(compiler.output, "\n");
 	fprint(compiler.output, "	push rax\n\n");
 
 	compiler.currentStackSize = compiler.currentStackSize + 1;
 }
 
 func writeReadIndex(Compiler compiler, int size) {
-	fprint(compiler.output, "	;; -- read at index -- \n");
+	fprint(compiler.output, "	;; -- read at index --\n");
 	fprint(compiler.output, "	pop rax ;; index\n");
 	fprint(compiler.output, "	mov rbx, ");
 	fprinti(compiler.output, size);
-	fprint(compiler.output, " \n");
+	fprint(compiler.output, "\n");
 	fprint(compiler.output, "	mul rbx\n");
 	fprint(compiler.output, "	pop rbx ;; pointer\n");
 	fprint(compiler.output, "	add rbx, rax\n");
@@ -726,7 +736,7 @@ func writeReadIndex(Compiler compiler, int size) {
 		fprint(compiler.output, "	mov rcx, 1\n");
 		fprint(compiler.output, "	shl rcx, ");
 		fprinti(compiler.output, 8 * size);
-		fprint(compiler.output, " ;; size\n");
+		fprint(compiler.output, ";; size\n");
 	} else {
 		fprint(compiler.output, "	mov rcx, 0\n");
 	}
@@ -738,12 +748,12 @@ func writeReadIndex(Compiler compiler, int size) {
 }
 
 func writeWriteIndex(Compiler compiler, int size) {
-	fprint(compiler.output, "	;; -- write at index -- \n");
+	fprint(compiler.output, "	;; -- write at index --\n");
 	fprint(compiler.output, "	pop rcx ;; value\n");
 	fprint(compiler.output, "	pop rax ;; index\n");
 	fprint(compiler.output, "	mov rbx, ");
 	fprinti(compiler.output, size);
-	fprint(compiler.output, " \n");
+	fprint(compiler.output, "\n");
 	fprint(compiler.output, "	mul rbx\n");
 	fprint(compiler.output, "	pop rbx ;; pointer\n");
 	fprint(compiler.output, "	add rbx, rax\n");
@@ -769,18 +779,18 @@ func writeWriteIndex(Compiler compiler, int size) {
 }
 
 func writeReadProperty(Compiler compiler, int offset, int size) {
-	fprint(compiler.output, "	;; -- read property -- \n");
+	fprint(compiler.output, "	;; -- read property --\n");
 	fprint(compiler.output, "	pop rax ;; pointer\n");
 	fprint(compiler.output, "	add rax, ");
 	fprinti(compiler.output, offset);
-	fprint(compiler.output, " \n");
+	fprint(compiler.output, "\n");
 	fprint(compiler.output, "	mov rax, [rax]\n");
 	fprint(compiler.output, "	;; create bit mask\n");
 	if (size < 8) {
 		fprint(compiler.output, "	mov rbx, 1\n");
 		fprint(compiler.output, "	shl rbx, ");
 		fprinti(compiler.output, 8 * size);
-		fprint(compiler.output, " ;; size\n");
+		fprint(compiler.output, ";; size\n");
 	} else {
 		fprint(compiler.output, "	mov rbx, 0\n");
 	}
@@ -790,19 +800,19 @@ func writeReadProperty(Compiler compiler, int offset, int size) {
 }
 
 func writeWriteProperty(Compiler compiler, int offset, int size) {
-	fprint(compiler.output, "	;; -- write property -- \n");
+	fprint(compiler.output, "	;; -- write property --\n");
 	fprint(compiler.output, "	pop rax ;; value\n");
 	fprint(compiler.output, "	pop rbx ;; pointer\n");
 	fprint(compiler.output, "	add rbx, ");
 	fprinti(compiler.output, offset);
-	fprint(compiler.output, " \n");
+	fprint(compiler.output, "\n");
 	fprint(compiler.output, "	mov rcx, [rbx]\n");
 	fprint(compiler.output, "	;; create bit mask\n");
 	if (size < 8) {
 		fprint(compiler.output, "	mov r9, 1\n");
 		fprint(compiler.output, "	shl r9, ");
 		fprinti(compiler.output, 8 * size);
-		fprint(compiler.output, " ;; size\n");
+		fprint(compiler.output, ";; size\n");
 	} else {
 		fprint(compiler.output, "	mov r9, 0\n");
 	}
@@ -824,7 +834,7 @@ func writeIdentifier(Compiler compiler, int offset, int currentDepth) {
 	fprint(compiler.output, "]\n");
 	fprint(compiler.output, "	mov rbx, ");
 	fprinti(compiler.output, 8 * offset);
-	fprint(compiler.output, " \n");
+	fprint(compiler.output, "\n");
 	fprint(compiler.output, "	sub rax, rbx\n");
 	fprint(compiler.output, "	mov rax, [rax]\n");
 	fprint(compiler.output, "	push rax\n\n");
@@ -839,7 +849,7 @@ func writeAssignment(Compiler compiler, int offset, int currentDepth) {
 	fprint(compiler.output, "]\n");
 	fprint(compiler.output, "	mov rbx, ");
 	fprinti(compiler.output, 8 * offset);
-	fprint(compiler.output, " \n");
+	fprint(compiler.output, "\n");
 	fprint(compiler.output, "	sub rax, rbx\n");
 	fprint(compiler.output, "	mov rbx, [rsp]\n");
 	fprint(compiler.output, "	mov [rax], rbx\n\n");
@@ -890,11 +900,11 @@ func writeFooter(Compiler compiler, StringList strings) {
 	fprint(compiler.output, "section .bss\n");
 	fprint(compiler.output, "	basestack: resq ");
 	fprinti(compiler.output, CALLSTACKSIZE);
-	fprint(compiler.output, " \n");
+	fprint(compiler.output, "\n");
 	fprint(compiler.output, "	callrsp: resq 1\n");
 	fprint(compiler.output, "	callStack: resq ");
 	fprinti(compiler.output, CALLSTACKSIZE);
-	fprint(compiler.output, " \n");
+	fprint(compiler.output, "\n");
 
 	fprint(compiler.output, "section .data\n");
 	var i = 0;

@@ -237,15 +237,20 @@ func expression(Parser parser, bool isConstant) -> int {
 
 			var i = 1;
 			while (i < function.parameters.size) {
-				consumeToken(parser, TOKEN_COMMA, "expected ',' between arguments");
+				if (parser.current.tokenType == TOKEN_RPAREN) {
+					parseError(parser, parser.current, "not enough arguments to function");
+					i = function.parameters.size;
+				} else { // TODO: use break keyword
+					consumeToken(parser, TOKEN_COMMA, "expected ',' between arguments");
 
-				expression(parser, (bool)0);
+					expression(parser, (bool)0);
 
-				if (params[i].varType != parser.lastType && streq(params[i].varType.name, "any") == (bool)0) {
-					parseError(parser, parser.current, "parameter is not of the right type");
+					if (params[i].varType != parser.lastType && streq(params[i].varType.name, "any") == (bool)0) {
+						parseError(parser, parser.current, "parameter is not of the right type");
+					}
+
+					i = i + 1;
 				}
-
-				i = i + 1;
 			}
 
 			// TODO: add type checking to this
@@ -253,7 +258,7 @@ func expression(Parser parser, bool isConstant) -> int {
 			consumeToken(parser, TOKEN_RPAREN, "expected ')' after arguments");
 		}
 		
-		writeCall(parser.compiler, function.id, function.parameters.size, function.numCalls);
+		writeCall(parser.compiler, function.name, function.id, function.parameters.size, function.numCalls);
 		function.numCalls = function.numCalls + 1;
 
 		parser.lastType = function.returnType;
@@ -1155,7 +1160,7 @@ func statement(Parser parser) {
 
 		consumeToken(parser, TOKEN_LBRACE, "expected '{' before function block");
 
-		writeBeginFunction(parser.compiler, funcId, parameters.size);
+		writeBeginFunction(parser.compiler, function.name, funcId, parameters.size);
 
 		block(parser, function);
 
