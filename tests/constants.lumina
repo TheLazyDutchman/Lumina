@@ -1,0 +1,12 @@
+const SYS_write = 1;
+const STDOUT = 1;
+const hello = "Hello, World!\n";
+const helloLen = 14;
+
+syscall(SYS_write, STDOUT, hello, helloLen, 0, 0, 0);
+
+const numbers = "123456789";
+const len = 1 + 3 * 2;
+
+syscall(SYS_write, STDOUT, numbers, len, 0, 0, 0);
+syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
