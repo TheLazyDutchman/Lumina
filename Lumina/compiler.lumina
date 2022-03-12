@@ -501,54 +501,24 @@ func writeLess(Compiler compiler) {
 	fprint(compiler.output, "	;; -- less --\n");
 	fprint(compiler.output, "	pop rbx\n");
 	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	mov rcx, 0\n");
+	fprint(compiler.output, "	mov rdx, 1\n");
 	fprint(compiler.output, "	cmp rax, rbx\n");
-
-	//select sign flag
-	fprint(compiler.output, "	pushf\n");
-	fprint(compiler.output, "	pop rax\n");
-	fprint(compiler.output, "	shr rax, 7\n");
-	fprint(compiler.output, "	and rax, 1\n");
-
-	//select overflow flag
-	fprint(compiler.output, "	pushf\n");
-	fprint(compiler.output, "	pop rbx\n");
-	fprint(compiler.output, "	shr rbx, 11\n");
-	fprint(compiler.output, "	and rbx, 1\n");
-
-	fprint(compiler.output, "	xor rax, rbx\n");
-	fprint(compiler.output, "	push rax\n\n");
+	fprint(compiler.output, "	cmovl rcx, rdx\n");
+	fprint(compiler.output, "	push rcx\n\n");
 
 	compiler.currentStackSize = compiler.currentStackSize - 1;
 }
 
 func writeLessEqual(Compiler compiler) {
-	fprint(compiler.output, "	;; -- less --\n");
+	fprint(compiler.output, "	;; -- less equal --\n");
 	fprint(compiler.output, "	pop rbx\n");
 	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	mov rcx, 0\n");
+	fprint(compiler.output, "	mov rdx, 1\n");
 	fprint(compiler.output, "	cmp rax, rbx\n");
-
-	fprint(compiler.output, "	pushf\n");
-	fprint(compiler.output, "	pushf\n");
-	fprint(compiler.output, "	pushf\n");
-
-	//select sign flag
-	fprint(compiler.output, "	pop rax\n");
-	fprint(compiler.output, "	shr rax, 7\n");
-	fprint(compiler.output, "	and rax, 1\n");
-
-	//select overflow flag
-	fprint(compiler.output, "	pop rbx\n");
-	fprint(compiler.output, "	shr rbx, 11\n");
-	fprint(compiler.output, "	and rbx, 1\n");
-
-	//select zero flag
-	fprint(compiler.output, "	pop rcx\n");
-	fprint(compiler.output, "	shr rcx, 6\n");
-	fprint(compiler.output, "	and rcx, 1\n");
-
-	fprint(compiler.output, "	xor rax, rbx\n");
-	fprint(compiler.output, "	or rax, rcx\n");
-	fprint(compiler.output, "	push rax\n\n");
+	fprint(compiler.output, "	cmovle rcx, rdx\n");
+	fprint(compiler.output, "	push rcx\n\n");
 
 	compiler.currentStackSize = compiler.currentStackSize - 1;
 }
@@ -557,67 +527,24 @@ func writeGreater(Compiler compiler) {
 	fprint(compiler.output, "	;; -- greater --\n");
 	fprint(compiler.output, "	pop rbx\n");
 	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	mov rcx, 0\n");
+	fprint(compiler.output, "	mov rdx, 1\n");
 	fprint(compiler.output, "	cmp rax, rbx\n");
-
-	fprint(compiler.output, "	pushf\n");
-	fprint(compiler.output, "	pop rax\n");
-
-	fprint(compiler.output, "	pushf\n");
-	fprint(compiler.output, "	pop rbx\n");
-
-	fprint(compiler.output, "	pushf\n");
-	fprint(compiler.output, "	pop rcx\n");
-
-	//select sign flag
-	fprint(compiler.output, "	shr rax, 7\n");
-	fprint(compiler.output, "	and rax, 1\n");
-
-	//select overflow flag
-	fprint(compiler.output, "	shr rbx, 11\n");
-	fprint(compiler.output, "	and rbx, 1\n");
-
-	//select zero flag
-	fprint(compiler.output, "	shr rcx, 6\n");
-	fprint(compiler.output, "	and rcx, 1\n");
-
-	fprint(compiler.output, "	xor rax, rbx\n");
-
-	fprint(compiler.output, "	or rax, rcx\n");
-	fprint(compiler.output, "	mov rbx, 1\n");
-	fprint(compiler.output, "	sub rbx, rax\n");
-	fprint(compiler.output, "	push rbx\n");
+	fprint(compiler.output, "	cmovg rcx, rdx\n");
+	fprint(compiler.output, "	push rcx\n\n");
 
 	compiler.currentStackSize = compiler.currentStackSize - 1;
 }
 
 func writeGreaterEqual(Compiler compiler) {
-	fprint(compiler.output, "	;; -- greater --\n");
+	fprint(compiler.output, "	;; -- greater equal --\n");
 	fprint(compiler.output, "	pop rbx\n");
 	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	mov rcx, 0\n");
+	fprint(compiler.output, "	mov rdx, 1\n");
 	fprint(compiler.output, "	cmp rax, rbx\n");
-
-	fprint(compiler.output, "	pushf\n");
-	fprint(compiler.output, "	pop rax\n");
-
-	fprint(compiler.output, "	pushf\n");
-	fprint(compiler.output, "	pop rbx\n");
-
-	fprint(compiler.output, "	pushf\n");
-	fprint(compiler.output, "	pop rcx\n");
-
-	//select sign flag
-	fprint(compiler.output, "	shr rax, 7\n");
-	fprint(compiler.output, "	and rax, 1\n");
-
-	//select overflow flag
-	fprint(compiler.output, "	shr rbx, 11\n");
-	fprint(compiler.output, "	and rbx, 1\n");
-
-	fprint(compiler.output, "	xor rax, rbx\n");
-
-	fprint(compiler.output, "	mov rbx, 1\n");
-	fprint(compiler.output, "	sub rbx, rax\n");
-	fprint(compiler.output, "	push rbx\n");
+	fprint(compiler.output, "	cmovge rcx, rdx\n");
+	fprint(compiler.output, "	push rcx\n\n");
 
 	compiler.currentStackSize = compiler.currentStackSize - 1;
 }
@@ -626,15 +553,11 @@ func writeEqual(Compiler compiler) {
 	fprint(compiler.output, "	;; -- equal --\n");
 	fprint(compiler.output, "	pop rbx\n");
 	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	mov rcx, 0\n");
+	fprint(compiler.output, "	mov rdx, 1\n");
 	fprint(compiler.output, "	cmp rax, rbx\n");
-
-	//select zero flag
-	fprint(compiler.output, "	pushf\n");
-	fprint(compiler.output, "	pop rax\n");
-	fprint(compiler.output, "	shr rax, 6\n");
-	fprint(compiler.output, "	and rax, 1\n");
-
-	fprint(compiler.output, "	push rax\n\n");
+	fprint(compiler.output, "	cmove rcx, rdx\n");
+	fprint(compiler.output, "	push rcx\n\n");
 
 	compiler.currentStackSize = compiler.currentStackSize - 1;
 }
@@ -643,18 +566,11 @@ func writeNotEqual(Compiler compiler) {
 	fprint(compiler.output, "	;; -- not equal --\n");
 	fprint(compiler.output, "	pop rbx\n");
 	fprint(compiler.output, "	pop rax\n");
+	fprint(compiler.output, "	mov rcx, 0\n");
+	fprint(compiler.output, "	mov rdx, 1\n");
 	fprint(compiler.output, "	cmp rax, rbx\n");
-
-	//select zero flag
-	fprint(compiler.output, "	pushf\n");
-	fprint(compiler.output, "	pop rax\n");
-	fprint(compiler.output, "	shr rax, 6\n");
-	fprint(compiler.output, "	and rax, 1\n");
-
-	fprint(compiler.output, "	mov rbx, 1\n");
-	fprint(compiler.output, "	sub rbx, rax\n");
-
-	fprint(compiler.output, "	push rbx\n\n");
+	fprint(compiler.output, "	cmovne rcx, rdx\n");
+	fprint(compiler.output, "	push rcx\n\n");
 
 	compiler.currentStackSize = compiler.currentStackSize - 1;
 }
