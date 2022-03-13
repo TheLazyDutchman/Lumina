@@ -1,8 +1,3 @@
-import "variables.lumina"
-import "constants.lumina"
-import "functions.lumina"
-import "types.lumina"
-
 import "luminaStrings.lumina"
 
 var CALLSTACKSIZE = 2048;
@@ -10,204 +5,17 @@ var CALLSTACKSIZE = 2048;
 type Compiler {
 	int output;
 	int currentStackSize;
-
-	VariableList variableList;
-	ConstantList constantList;
-	FunctionList functionList;
-	TypeList typeList;
-	
-	Function function;
-	bool hasReturned;
 	int functionDepth;
-
-	Compiler outer;
 }
 
-func initCompiler(int output, Compiler outer) -> Compiler {
+func initCompiler(int output) -> Compiler {
 	var compiler = (Compiler)malloc(sizeof(Compiler));
 
 	compiler.output = output;
 	compiler.currentStackSize = 0;
-
-	compiler.variableList = initVariableList();
-	compiler.constantList = initConstantList();
-	compiler.functionList = initFunctionList();
-	compiler.typeList = initTypeList();
-
-	compiler.hasReturned = (bool)0;
-	compiler.outer = outer;
-
-	if (outer != (Compiler)0) {
-		compiler.function = outer.function;
-		compiler.functionDepth = outer.functionDepth;
-	} else {
-		compiler.function = (Function)0;
-		compiler.functionDepth = 0;
-	}
+	compiler.functionDepth = 0;
 
 	return compiler;
-}
-
-func freeCompiler(Compiler compiler) {
-	freeVariableList(compiler.variableList);
-	freeConstantList(compiler.constantList);
-	freeFunctionList(compiler.functionList);
-	freeTypeList(compiler.typeList);
-	free((ptr)compiler);
-}
-
-func defineVariable(Compiler compiler, str name, int nameLen, Type varType) -> Variable {
-	var buffer = strndup(name, nameLen);
-
-	var position = compiler.currentStackSize;
-	var outer = compiler.outer;
-
-	while (outer != (Compiler)0) {
-		if (outer.function != compiler.function) {
-			outer = (Compiler)0;
-		} else {
-			position = position + outer.currentStackSize;
-			outer = outer.outer;
-		}
-	}
-
-	return addVariable(compiler.variableList, buffer, position, compiler.functionDepth, varType);
-}
-
-func findVariable(Compiler compiler, str name, int nameLen, bool isLocal) -> Variable {
-	var list = compiler.variableList;
-
-	var i = 0;
-	while (i < list.size) {
-		var variable = list.variables[i];
-
-		if (strlen(variable.name) == nameLen && strneq(variable.name, name, nameLen)) {
-			return variable;
-		}
-
-		i = i + 1;
-	}
-
-	if (compiler.outer == (Compiler)0 || isLocal) {
-		return (Variable)0;
-	}
-
-	return findVariable(compiler.outer, name, nameLen, (bool)0);
-}
-
-func defineConstant(Compiler compiler, str name, int nameLen, int value, Type constType) -> Constant {
-	var buffer = strndup(name, nameLen);
-
-	return addConstant(compiler.constantList, buffer, value, constType);
-}
-
-func findConstant(Compiler compiler, str name, int nameLen, bool isLocal) -> Constant {
-	var list = compiler.constantList;
-
-	var i = 0;
-	while (i < list.size) {
-		var constant = list.constants[i];
-
-		if (strlen(constant.name) == nameLen && strneq(constant.name, name, nameLen)) {
-			return constant;
-		}
-
-		i = i + 1;
-	}
-
-	if (compiler.outer == (Compiler)0 || isLocal) {
-		return (Constant)0;
-	}
-
-	return findConstant(compiler.outer, name, nameLen, (bool)0);
-}
-
-func defineType(Compiler compiler, str name, int nameLen, int size, PropertyList properties, Type[] propertyTypes, bool isArray, Type arrayType) -> Type {
-	var buffer = strndup(name, nameLen);
-	var typeObj = initType(buffer, size, properties, propertyTypes, isArray, arrayType);
-
-	addType(compiler.typeList, typeObj);
-
-	return typeObj;
-}
-
-func findType(Compiler compiler, str name, int nameLen, bool isLocal) -> Type {
-	var list = compiler.typeList;
-
-	var i = 0;
-	while (i < list.size) {
-		var typeObj = list.types[i];
-
-		if (strlen(typeObj.name) == nameLen && strneq(typeObj.name, name, nameLen)) {
-			return typeObj;
-		}
-
-		i = i + 1;
-	}
-
-	if (compiler.outer == (Compiler)0 || isLocal) {
-		return (Type)0;
-	}
-
-	return findType(compiler.outer, name, nameLen, (bool)0);
-}
-
-func findArrayType(Compiler compiler, Type arrayType) -> Type {
-	var list = compiler.typeList;
-
-	var foundType = (bool)0;
-
-	var i = 0;
-	while (i < list.size) {
-		if (list.types[i].isArray && list.types[i].arrayType == arrayType) {
-			return list.types[i];
-		}
-
-		if (list.types[i] == arrayType) {
-			foundType = (bool)1;
-		}
-		i = i + 1;
-	}
-
-	if (foundType) {
-		var array = initType(strdup("  "), 8, (PropertyList)0, (Type[])0, (bool)1, arrayType);
-		addType(compiler.typeList, array);
-
-		return array;
-	}
-
-	if (compiler.outer == (Compiler)0) {
-		return (Type)0;
-	}
-
-	return findArrayType(compiler.outer, arrayType);
-}
-
-func defineFunction(Compiler compiler, str name, int nameLen, int id, Type returnType, VariableList parameters) -> Function {
-	var buffer = strndup(name, nameLen);
-
-	return addFunction(compiler.functionList, buffer, id, returnType, parameters);
-}
-
-func findFunction(Compiler compiler, str name, int nameLen, bool isLocal) -> Function {
-	var list = compiler.functionList;
-
-	var i = 0;
-	while (i < list.size) {
-		var function = list.functions[i];
-
-		if (strlen(function.name) == nameLen && strneq(function.name, name, nameLen)) {
-			return function;
-		}
-
-		i = i + 1;
-	}
-
-	if (compiler.outer == (Compiler)0 || isLocal) {
-		return (Function)0;
-	}
-
-	return findFunction(compiler.outer, name, nameLen, (bool)0);
 }
 
 func printEscapedCharacter(Compiler compiler, str charPtr) -> int {
@@ -390,7 +198,7 @@ func writeReturnEmpty(Compiler compiler, int numVars, int numParameters) {
 
 	fprint(compiler.output, "	;; -- restore stackframe --\n");
 	fprint(compiler.output, "	pop rax\n");
-	fprint(compiler.output, " mov [basestack + 8 * ");
+	fprint(compiler.output, "	mov [basestack + 8 * ");
 	fprinti(compiler.output, compiler.functionDepth);
 	fprint(compiler.output, "], rax\n");
 
@@ -424,7 +232,7 @@ func writeReturnValue(Compiler compiler, int numVars, int numParameters) {
 
 	fprint(compiler.output, "	;; -- restore stackframe --\n");
 	fprint(compiler.output, "	pop rbx\n");
-	fprint(compiler.output, " mov [basestack + 8 * ");
+	fprint(compiler.output, "	mov [basestack + 8 * ");
 	fprinti(compiler.output, compiler.functionDepth);
 	fprint(compiler.output, "], rbx\n");
 
@@ -443,6 +251,8 @@ func writeReturnValue(Compiler compiler, int numVars, int numParameters) {
 	// jump to address
 	fprint(compiler.output, "	mov rax, [callrsp]\n");
 	fprint(compiler.output, "	jmp [rax]\n");
+
+	compiler.currentStackSize = compiler.currentStackSize - 1;
 }
 
 func writeCompare(Compiler compiler) {
@@ -487,6 +297,8 @@ func writeShiftLeft(Compiler compiler) {
 	fprint(compiler.output, "	pop rax\n");
 	fprint(compiler.output, "	shl rax, cl\n");
 	fprint(compiler.output, "	push rax\n");
+	
+	compiler.currentStackSize = compiler.currentStackSize - 1;
 }
 
 func writeShiftRight(Compiler compiler) {
@@ -495,6 +307,8 @@ func writeShiftRight(Compiler compiler) {
 	fprint(compiler.output, "	pop rax\n");
 	fprint(compiler.output, "	shr rax, cl\n");
 	fprint(compiler.output, "	push rax\n");
+
+	compiler.currentStackSize = compiler.currentStackSize - 1;
 }
 
 func writeLess(Compiler compiler) {
