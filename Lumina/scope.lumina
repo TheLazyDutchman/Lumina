@@ -1,0 +1,189 @@
+import "variables.lumina"
+import "constants.lumina"
+import "functions.lumina"
+import "types.lumina"
+
+type Scope {
+	VariableList variableList;
+	ConstantList constantList;
+	FunctionList functionList;
+	TypeList typeList;
+
+	Function function;
+	bool hasReturned;
+	int functionDepth;
+
+	Scope outer;
+}
+
+func initScope(Scope outer) -> Scope {
+	var scope = (Scope)malloc(sizeof(Scope));
+
+	scope.variableList = initVariableList();
+	scope.constantList = initConstantList();
+	scope.functionList = initFunctionList();
+	scope.typeList = initTypeList();
+
+	scope.hasReturned = (bool)0;
+	scope.outer = outer;
+
+	if (outer != (Scope)0) {
+		scope.function = outer.function;
+		scope.functionDepth = outer.functionDepth;
+	} else {
+		scope.function = (Function)0;
+		scope.functionDepth = 0;
+	}
+
+	return scope;
+}
+
+func freeScope(Scope scope) {
+	freeVariableList(scope.variableList);
+	freeConstantList(scope.constantList);
+	freeFunctionList(scope.functionList);
+	freeTypeList(scope.typeList);
+	free((ptr)scope);
+}
+
+func defineVariable(Scope scope, str name, int nameLen, int position, Type varType) -> Variable {
+	var buffer = strndup(name, nameLen);
+
+	return addVariable(scope.variableList, buffer, position, scope.functionDepth, varType);
+}
+
+func findVariable(Scope scope, str name, int nameLen, bool isLocal) -> Variable {
+	var list = scope.variableList;
+
+	var i = 0;
+	while (i < list.size) {
+		var variable = list.variables[i];
+
+		if (strlen(variable.name) == nameLen && strneq(variable.name, name, nameLen)) {
+			return variable;
+		}
+
+		i = i + 1;
+	}
+
+	if (scope.outer == (Scope)0 || isLocal) {
+		return (Variable)0;
+	}
+
+	return findVariable(scope.outer, name, nameLen, (bool)0);
+}
+
+func defineConstant(Scope scope, str name, int nameLen, int value, Type constType) -> Constant {
+	var buffer = strndup(name, nameLen);
+
+	return addConstant(scope.constantList, buffer, value, constType);
+}
+
+func findConstant(Scope scope, str name, int nameLen, bool isLocal) -> Constant {
+	var list = scope.constantList;
+
+	var i = 0;
+	while (i < list.size) {
+		var constant = list.constants[i];
+
+		if (strlen(constant.name) == nameLen && strneq(constant.name, name, nameLen)) {
+			return constant;
+		}
+
+		i = i + 1;
+	}
+
+	if (scope.outer == (Scope)0 || isLocal) {
+		return (Constant)0;
+	}
+
+	return findConstant(scope.outer, name, nameLen, (bool)0);
+}
+
+func defineType(Scope scope, str name, int nameLen, int size, PropertyList properties, Type[] propertyTypes, bool isArray, Type arrayType) -> Type {
+	var buffer = strndup(name, nameLen);
+	var typeObj = initType(buffer, size, properties, propertyTypes, isArray, arrayType);
+
+	addType(scope.typeList, typeObj);
+
+	return typeObj;
+}
+
+func findType(Scope scope, str name, int nameLen, bool isLocal) -> Type {
+	var list = scope.typeList;
+
+	var i = 0;
+	while (i < list.size) {
+		var typeObj = list.types[i];
+
+		if (strlen(typeObj.name) == nameLen && strneq(typeObj.name, name, nameLen)) {
+			return typeObj;
+		}
+
+		i = i + 1;
+	}
+
+	if (scope.outer == (Scope)0 || isLocal) {
+		return (Type)0;
+	}
+
+	return findType(scope.outer, name, nameLen, (bool)0);
+}
+
+func findArrayType(Scope scope, Type arrayType) -> Type {
+	var list = scope.typeList;
+
+	var foundType = (bool)0;
+
+	var i = 0;
+	while (i < list.size) {
+		if (list.types[i].isArray && list.types[i].arrayType == arrayType) {
+			return list.types[i];
+		}
+
+		if (list.types[i] == arrayType) {
+			foundType = (bool)1;
+		}
+		i = i + 1;
+	}
+
+	if (foundType) {
+		var array = initType(strdup("  "), 8, (PropertyList)0, (Type[])0, (bool)1, arrayType);
+		addType(scope.typeList, array);
+
+		return array;
+	}
+
+	if (scope.outer == (Scope)0) {
+		return (Type)0;
+	}
+
+	return findArrayType(scope.outer, arrayType);
+}
+
+func defineFunction(Scope scope, str name, int nameLen, int id, Type returnType, VariableList parameters) -> Function {
+	var buffer = strndup(name, nameLen);
+
+	return addFunction(scope.functionList, buffer, id, returnType, parameters);
+}
+
+func findFunction(Scope scope, str name, int nameLen, bool isLocal) -> Function {
+	var list = scope.functionList;
+
+	var i = 0;
+	while (i < list.size) {
+		var function = list.functions[i];
+
+		if (strlen(function.name) == nameLen && strneq(function.name, name, nameLen)) {
+			return function;
+		}
+
+		i = i + 1;
+	}
+
+	if (scope.outer == (Scope)0 || isLocal) {
+		return (Function)0;
+	}
+
+	return findFunction(scope.outer, name, nameLen, (bool)0);
+}
