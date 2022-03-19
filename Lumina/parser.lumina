@@ -894,8 +894,6 @@ func expression(Parser parser, bool isConstant) -> int {
 
 			writeNumberInRegister(parser.compiler, "1", value); // false
 
-			parser.compiler.currentStackSize = parser.compiler.currentStackSize - 1; // we add one of two values to the stack, not both
-
 			writeAddress(parser.compiler, "addr_end_or_", orId);
 
 			tokenType = parser.current.tokenType;
@@ -1084,7 +1082,7 @@ func statement(Parser parser) {
 				defineVariable(scope, variable.name, strlen(variable.name), i, variable.varType);
 			}
 
-			parser.compiler.currentStackSize = i + 1;
+			parser.compiler.currentStackSize = i + 9;
 		}
 
 		while (parser.current.tokenType != TOKEN_RBRACE && parser.current.tokenType != TOKEN_END_OF_FILE) {
@@ -1094,7 +1092,7 @@ func statement(Parser parser) {
 		if (scope.function != scope.outer.function) {
 			if (scope.hasReturned == (bool)0) {
 				if (streq(scope.function.returnType.name, "null")) {
-					var numVars = (parser.compiler.currentStackSize - scope.function.parameters.size) - 1;
+					var numVars = (parser.compiler.currentStackSize - scope.function.parameters.size) - 9;
 					writeReturnEmpty(parser.compiler, numVars, scope.function.parameters.size);
 				} else {
 					parseError(parser, parser.current, "not all code paths return a value");
@@ -1202,7 +1200,7 @@ func statement(Parser parser) {
 
 		var function = parser.scope.function;
 
-		var numVars = parser.compiler.currentStackSize - function.parameters.size - 1;
+		var numVars = parser.compiler.currentStackSize - function.parameters.size - 9;
 
 		if (function.returnType == findType(parser.scope, "null", 4, (bool)0)) {
 			consumeToken(parser, TOKEN_SEMICOLON, "expected an empty return in a 'null' function");

@@ -216,6 +216,16 @@ func writeBeginFunction(Compiler compiler, str name, int id, int numParams) {
 	fprint(compiler.output, "	mov [basestack + 8 * ");
 	fprinti(compiler.output, compiler.functionDepth + 1);
 	fprint(compiler.output, "], rax\n\n");
+
+	fprint(compiler.output, "	;; -- store values from registers outside this function --\n");
+	fprint(compiler.output, "	push r8\n");
+	fprint(compiler.output, "	push r9\n");
+	fprint(compiler.output, "	push r10\n");
+	fprint(compiler.output, "	push r11\n");
+	fprint(compiler.output, "	push r12\n");
+	fprint(compiler.output, "	push r13\n");
+	fprint(compiler.output, "	push r14\n");
+	fprint(compiler.output, "	push r15\n");
 }
 
 func writeCall(Compiler compiler, str name, int id, int numParameters, int numCalls) -> int {
@@ -271,6 +281,16 @@ func writeReturnEmpty(Compiler compiler, int numVars, int numParameters) {
 	fprinti(compiler.output, 8 * numVars);
 	fprint(compiler.output, "\n");
 
+	fprint(compiler.output, "	;; -- restore outside register values --\n");
+	fprint(compiler.output, "	pop r15\n");
+	fprint(compiler.output, "	pop r14\n");
+	fprint(compiler.output, "	pop r13\n");
+	fprint(compiler.output, "	pop r12\n");
+	fprint(compiler.output, "	pop r11\n");
+	fprint(compiler.output, "	pop r10\n");
+	fprint(compiler.output, "	pop r9\n");
+	fprint(compiler.output, "	pop r8\n");
+
 	fprint(compiler.output, "	;; -- restore stackframe --\n");
 	fprint(compiler.output, "	pop rax\n");
 	fprint(compiler.output, "	mov [basestack + 8 * ");
@@ -308,6 +328,16 @@ func writeReturnValue(Compiler compiler, int numVars, int numParameters, int reg
 	fprint(compiler.output, "	add rsp, ");
 	fprinti(compiler.output, 8 * numVars);
 	fprint(compiler.output, "\n");
+
+	fprint(compiler.output, "	;; -- restore outside register values --\n");
+	fprint(compiler.output, "	pop r15\n");
+	fprint(compiler.output, "	pop r14\n");
+	fprint(compiler.output, "	pop r13\n");
+	fprint(compiler.output, "	pop r12\n");
+	fprint(compiler.output, "	pop r11\n");
+	fprint(compiler.output, "	pop r10\n");
+	fprint(compiler.output, "	pop r9\n");
+	fprint(compiler.output, "	pop r8\n");
 
 	fprint(compiler.output, "	;; -- restore stackframe --\n");
 	fprint(compiler.output, "	pop rbx\n");

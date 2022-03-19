@@ -15,3 +15,18 @@ string.length = 14;
 var SYS_write = 1;
 var STDOUT = 1;
 syscall(SYS_write, STDOUT, string.value, string.length, 0, 0, 0);
+
+string.value[5] = '.';
+string.length = 2 + 6 * 2;
+syscall(SYS_write, STDOUT, string.value, string.length, 0, 0, 0);
+
+func strlen(str string) -> int {
+	var i = 0;
+	while (string[i] != '\0') {
+		i = i + 1;
+	}
+	return i;
+}
+
+string.length = strlen(string.value);
+syscall(SYS_write, STDOUT, string.value, string.length, 0, 0, 0);
