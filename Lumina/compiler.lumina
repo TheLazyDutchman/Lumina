@@ -129,11 +129,6 @@ func writeHeader(Compiler compiler) {
 	fprint(compiler.output, "section .text\n");
 	fprint(compiler.output, "global _start\n");
 	fprint(compiler.output, "_start:\n");
-	fprint(compiler.output, "	;; -- initializing call stack --\n");
-	fprint(compiler.output, "	lea rax, [callStack + ");
-	fprinti(compiler.output, CALLSTACKSIZE);
-	fprint(compiler.output, "]\n");
-	fprint(compiler.output, "	mov [callrsp], rax\n");
 	fprint(compiler.output, "	mov rax, rsp\n");
 	fprint(compiler.output, "	add rax, 8\n"); // this is where argc and argv are stored
 	fprint(compiler.output, "	push rax\n");
@@ -142,6 +137,7 @@ func writeHeader(Compiler compiler) {
 	fprint(compiler.output, "	;; -- syscall builtin --\n");
 	fprint(compiler.output, "	jmp addr_func_end_0\n");
 	fprint(compiler.output, "addr_func_syscall_0:\n");
+	fprint(compiler.output, "	pop rbx ;; return address\n");
 	fprint(compiler.output, "	pop r9\n");
 	fprint(compiler.output, "	pop r8\n");
 	fprint(compiler.output, "	pop r10\n");
@@ -151,15 +147,8 @@ func writeHeader(Compiler compiler) {
 	fprint(compiler.output, "	pop rax\n");
 	fprint(compiler.output, "	syscall\n");
 
-	fprint(compiler.output, "	;; -- return --\n");
-
-	fprint(compiler.output, "	;; -- pop return address --\n");
-	fprint(compiler.output, "	mov rbx, [callrsp]\n");
-	fprint(compiler.output, "	add rbx, 8\n");
-	fprint(compiler.output, "	mov [callrsp], rbx\n");
-	// jump to address
-	fprint(compiler.output, "	mov rbx, [callrsp]\n");
-	fprint(compiler.output, "	jmp [rbx]\n");
+	fprint(compiler.output, "	push rbx\n");
+	fprint(compiler.output, "	ret\n");
 
 	fprint(compiler.output, "addr_func_end_0:\n");
 }
@@ -203,7 +192,7 @@ func writeBeginFunction(Compiler compiler, str name, int id, int numParams) {
 	fprint(compiler.output, ":\n");
 	fprint(compiler.output, "	mov rax, rsp\n");
 	fprint(compiler.output, "	add rax, 8 * "); 
-	fprinti(compiler.output, numParams);
+	fprinti(compiler.output, numParams + 1);
 	fprint(compiler.output, "\n\n");
 
 	fprint(compiler.output, "	;; -- save current stack frame --\n");
@@ -231,38 +220,11 @@ func writeBeginFunction(Compiler compiler, str name, int id, int numParams) {
 func writeCall(Compiler compiler, str name, int id, int numParameters, int numCalls) -> int {
 	var regId = getRegisterId(compiler);
 
-	fprint(compiler.output, "	;; -- function call --\n");
-	fprint(compiler.output, "	;; -- push current address --\n");
-	// get current address
-	fprint(compiler.output, "	mov rax, ret_func_");
-	fprint(compiler.output, name);
-	fprint(compiler.output, "_");
-	fprinti(compiler.output, id);
-	fprint(compiler.output, "_");
-	
-	fprinti(compiler.output, numCalls);
-	fprint(compiler.output, "\n");
-
-	fprint(compiler.output, "	mov rbx, [callrsp]\n");
-	fprint(compiler.output, "	mov [rbx], rax\n");
-	// decrease callrsp
-	fprint(compiler.output, "	sub rbx, 8\n");
-	fprint(compiler.output, "	mov [callrsp], rbx\n");
-	
-	fprint(compiler.output, "	;; -- jump --\n");
-	fprint(compiler.output, "	jmp addr_func_");
+	fprint(compiler.output, "	call addr_func_");
 	fprint(compiler.output, name);
 	fprint(compiler.output, "_");
 	fprinti(compiler.output, id);
 	fprint(compiler.output, "\n");
-
-	fprint(compiler.output, "	ret_func_");
-	fprint(compiler.output, name);
-	fprint(compiler.output, "_");
-	fprinti(compiler.output, id);
-	fprint(compiler.output, "_");
-	fprinti(compiler.output, numCalls);
-	fprint(compiler.output, ": ;; first number is function id, second number id call id\n\n");
 
 	fprint(compiler.output, "	mov ");
 	fprint(compiler.output, compiler.registers[regId].name);
@@ -297,6 +259,8 @@ func writeReturnEmpty(Compiler compiler, int numVars, int numParameters) {
 	fprinti(compiler.output, compiler.functionDepth);
 	fprint(compiler.output, "], rax\n");
 
+	fprint(compiler.output, "	pop rbx ;; return address\n");
+
 	fprint(compiler.output, "	;; -- pop parameters --\n");
 	fprint(compiler.output, "	add rsp, ");
 	fprinti(compiler.output, 8 * numParameters);
@@ -304,14 +268,10 @@ func writeReturnEmpty(Compiler compiler, int numVars, int numParameters) {
 
 	fprint(compiler.output, "	;; -- return empty --\n");
 	fprint(compiler.output, "	mov rax, 0\n");
+
+	fprint(compiler.output, "	push rbx\n");
 	
-	fprint(compiler.output, "	;; -- jump to return address --\n");
-	fprint(compiler.output, "	mov rbx, [callrsp]\n");
-	fprint(compiler.output, "	add rbx, 8\n");
-	fprint(compiler.output, "	mov [callrsp], rbx\n");
-	// jump to address
-	fprint(compiler.output, "	mov rbx, [callrsp]\n");
-	fprint(compiler.output, "	jmp [rbx]\n");
+	fprint(compiler.output, "	ret\n");
 }
 
 func writeReturnValue(Compiler compiler, int numVars, int numParameters, int regId) {
@@ -345,18 +305,16 @@ func writeReturnValue(Compiler compiler, int numVars, int numParameters, int reg
 	fprinti(compiler.output, compiler.functionDepth);
 	fprint(compiler.output, "], rbx\n");
 
+	fprint(compiler.output, "	pop rbx ;; return address\n");
+
 	fprint(compiler.output, "	;; -- pop parameters --\n");
 	fprint(compiler.output, "	add rsp, ");
 	fprinti(compiler.output, 8 * numParameters);
 	fprint(compiler.output, "\n");
 
-	fprint(compiler.output, "	;; -- pop return address --\n");
-	fprint(compiler.output, "	mov rbx, [callrsp]\n");
-	fprint(compiler.output, "	add rbx, 8\n");
-	fprint(compiler.output, "	mov [callrsp], rbx\n");
-	// jump to address
-	fprint(compiler.output, "	mov rbx, [callrsp]\n");
-	fprint(compiler.output, "	jmp [rbx]\n");
+	fprint(compiler.output, "	push rbx\n");
+
+	fprint(compiler.output, "	ret\n");
 
 	register.free = (bool)1;
 }
@@ -908,10 +866,6 @@ func writeFooter(Compiler compiler, StringList strings) {
 
 	fprint(compiler.output, "section .bss\n");
 	fprint(compiler.output, "	basestack: resq ");
-	fprinti(compiler.output, CALLSTACKSIZE);
-	fprint(compiler.output, "\n");
-	fprint(compiler.output, "	callrsp: resq 1\n");
-	fprint(compiler.output, "	callStack: resq ");
 	fprinti(compiler.output, CALLSTACKSIZE);
 	fprint(compiler.output, "\n");
 
