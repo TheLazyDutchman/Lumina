@@ -12,8 +12,7 @@ jobs:
         
       - name: Set up linker
         run: |
-          sudo apt-get update
-          sudo apt-get install -y binutils
+          sudo apt-get install gcc-arm-none-eabi
 
       - uses: actions/checkout@v2
 
@@ -34,8 +33,7 @@ jobs:
           
       - name: Set up linker
         run: |
-          sudo apt-get update
-          sudo apt-get install -y binutils
+          sudo apt-get install gcc-arm-none-eabi
         
       - uses: actions/checkout@v2
       
