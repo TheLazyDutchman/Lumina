@@ -21,6 +21,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       
+      - name: list files
+        run: ls
       - name: build
         run: lumina Lumina/lumina.lumina
       - name: self-hosted
