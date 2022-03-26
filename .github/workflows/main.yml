@@ -7,14 +7,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up NASM
-        uses: ilammy/setup-nasm@v1.2.1
-        
       - name: Set up linker
         run: |
           sudo apt-get install gcc-arm-none-eabi
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$PATH"
 
+      - name: Set up NASM
+        uses: ilammy/setup-nasm@v1.2.1
+        
       - uses: actions/checkout@v2
 
       - name: list files
@@ -28,14 +29,14 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Set up NASM
-        uses: ilammy/setup-nasm@v1.2.1
-        
-          
       - name: Set up linker
         run: |
           sudo apt-get install gcc-arm-none-eabi
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$PATH"
+
+      - name: Set up NASM
+        uses: ilammy/setup-nasm@v1.2.1
         
       - uses: actions/checkout@v2
       
