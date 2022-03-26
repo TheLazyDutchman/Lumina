@@ -24,10 +24,11 @@ jobs:
       - name: list files
         run: ls
       - name: build
-        run: lumina Lumina/lumina.lumina
-      - name: self-hosted
         run: |
           cd Lumina/
+          ../lumina lumina.lumina
+      - name: self-hosted
+        run: |
           lumina lumina.lumina
           lumina lumina.lumina
           mv lumina ../lumina
