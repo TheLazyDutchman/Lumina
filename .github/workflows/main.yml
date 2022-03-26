@@ -23,6 +23,7 @@ jobs:
         run: |
           cd tests/
           ../lumina test.lumina
+          test
   build:
     runs-on: ubuntu-latest
     
@@ -48,8 +49,9 @@ jobs:
         run: |
           lumina lumina.lumina
           lumina lumina.lumina
-          mv lumina ../lumina
+          mv ./lumina ../lumina
       - name: tests
         run: |
           cd ../tests/
           ../lumina test.lumina
+          test
