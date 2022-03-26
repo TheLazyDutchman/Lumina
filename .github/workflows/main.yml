@@ -3,7 +3,7 @@ name: Tests
 on: [push, workflow_dispatch]
 
 jobs:
-  build:
+  tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -11,3 +11,25 @@ jobs:
 
       - name: list files
         run: ls
+      - name: run tests with original executable
+        run: |
+          cd tests/
+          ../lumina test.lumina
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: build
+        run: lumina Lumina/lumina.lumina
+      - name: self-hosted
+        run: |
+          cd Lumina/
+          lumina lumina.lumina
+          lumina lumina.lumina
+          mv lumina ../lumina
+      - name: tests
+        run: |
+          cd ../tests/
+          ../lumina test.lumina
