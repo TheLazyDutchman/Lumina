@@ -1,0 +1,47 @@
+import "../std/io.lumina"
+
+
+type Position {
+	str file;
+	str buffer;
+	int index;
+	int line;
+	int column;
+}
+
+type Region {
+	str file;
+	Position start;
+	Position end;
+}
+
+func createPosition(str file, str buffer, int index, int line, int column) -> Position {
+	var pos = (Position)malloc(sizeof(Position));
+
+	pos.file = file;
+	pos.buffer = buffer;
+	pos.index = index;
+	pos.line = line;
+	pos.column = column;
+
+	return pos;
+}
+
+func printPosition(Position pos) {
+	print(pos.file);
+	print(":");
+	printi(pos.line);
+	print(":");
+	printi(pos.column);
+	print(":");
+}
+
+func createRegion(Position start, Position end) -> Region {
+	var region = (Region)malloc(sizeof(Region));
+
+	region.file = start.file;
+	region.start = start;
+	region.end = end;
+
+	return region;
+}

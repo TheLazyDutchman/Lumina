@@ -1,0 +1,20 @@
+import "position.lumina"
+
+
+type Name {
+	Region region;
+	str name;
+}
+
+func createName(Position start, Position end) -> Name {
+	var name = (Name)malloc(sizeof(Name));
+
+	name.region = createRegion(start, end);
+
+	var length = end.index - start.index;
+
+	var stringStart = (str)((int)start.buffer + start.index);
+	name.name = strndup(stringStart, length);
+
+	return name;
+}
