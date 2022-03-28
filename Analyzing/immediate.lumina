@@ -1,0 +1,53 @@
+import "position.lumina"
+
+
+type String {
+	Region region;
+	str value;
+}
+
+type Character {
+	Region region;
+	char value;
+}
+
+type Number {
+	Region region;
+	int value;
+}
+
+func createString(Position start, Position end) -> String {
+	var string = (String)malloc(sizeof(String));
+
+	string.region = createRegion(start, end);
+
+	var length = end.index - start.index;
+
+	var stringStart = (str)((int)start.buffer + start.index);
+	string.value = strndup(stringStart, length);
+	
+	return string;
+}
+
+func createCharacter(Position start, Position end) -> Character {
+	var character = (Character)malloc(sizeof(Character));
+
+	character.region = createRegion(start, end);
+
+	character.value = unEscapeCharacter((str)((int)start.buffer + 1));
+	
+	return character;
+}
+
+func createNumber(Position start, Position end) -> Number {
+	var number = (Number)malloc(sizeof(Number));
+
+	number.region = createRegion(start, end);
+	
+	var length = end.index - start.index;
+
+	var numberStart = (str)((int)start.buffer + start.index);
+	number.value = strToInt(numberStart, length);
+
+	return number;
+}

@@ -1,8 +1,13 @@
 import "name.lumina"
+import "immediate.lumina"
 
 // this is a type to hold the different possible tokens
 type Token {
 	Name name;
+	String string;
+	Character character;
+	Number number;
+	bool isEOF;
 }
 
 type Lexer {
@@ -66,9 +71,14 @@ func createLexer(str fileName) -> Lexer {
 }
 
 func createToken() -> Token {
-	var token = (Token)malloc(sizeof(Token));
+	var token = (Token)malloc(sizeof(Token) * 2); // there is a bug with malloc, so we allocate more memory than needed
 
 	token.name = (Name)0;
+	token.string = (String)0;
+	token.character = (Character)0;
+	token.number = (Number)0;
+
+	token.isEOF = (bool)0;
 
 	return token;
 }
@@ -88,11 +98,11 @@ func advance(Lexer lexer) {
 }
 
 func handleComments(Lexer lexer) {
-	if (current(lexer) != '\\') {
+	if (current(lexer) != '/') {
 		return;
 	}
 
-	if (lexer.buffer[lexer.index + 1] != '\\') {
+	if (lexer.buffer[lexer.index + 1] != '/') {
 		return;
 	}
 
@@ -101,16 +111,76 @@ func handleComments(Lexer lexer) {
 	}
 }
 
+func createPositionFromLexer(Lexer lexer) -> Position {
+	return createPosition(lexer.file, lexer.buffer, lexer.index, lexer.line, lexer.column);
+}
+
 func lexName(Lexer lexer, Token token) -> Token {
-	var start = createPosition(lexer.file, lexer.buffer, lexer.index, lexer.line, lexer.column);
+	var start = createPositionFromLexer(lexer);
 
 	while (isalnum(current(lexer)) || current(lexer) == '_') {
 		advance(lexer);
 	}
 
-	var end = createPosition(lexer.file, lexer.buffer, lexer.index, lexer.line, lexer.column);
+	var end = createPositionFromLexer(lexer);
 
 	token.name = createName(start, end);
+
+	return token;
+}
+
+// TODO: add error handling for invalid character and string literals
+func lexString(Lexer lexer, Token token) -> Token {
+	var start = createPositionFromLexer(lexer);
+
+	advance(lexer);
+
+	while (current(lexer) != '"') {
+		if (current(lexer) == '\\') {
+			advance(lexer);
+		}
+		advance(lexer);
+	}
+
+	advance(lexer);
+
+	var end = createPositionFromLexer(lexer);
+
+	token.string = createString(start, end);
+
+	return token;
+}
+
+func lexCharacter(Lexer lexer, Token token) -> Token {
+	var start = createPositionFromLexer(lexer);
+
+	advance(lexer);
+
+	if (current(lexer) == '\\') {
+		advance(lexer);
+	}
+
+	advance(lexer);
+
+	advance(lexer);
+
+	var end = createPositionFromLexer(lexer);
+
+	token.character = createCharacter(start, end);
+
+	return token;
+}
+
+func lexNumber(Lexer lexer, Token token) -> Token {
+	var start = createPositionFromLexer(lexer);
+
+	while (isnumeric(current(lexer))) {
+		advance(lexer);
+	}
+
+	var end = createPositionFromLexer(lexer);
+
+	token.number = createNumber(start, end);
 
 	return token;
 }
@@ -125,8 +195,38 @@ func nextToken(Lexer lexer) -> Token {
 			return lexName(lexer, token);
 		}
 
+		if (current(lexer) == '"') {
+			return lexString(lexer, token);
+		}
+
+		if (current(lexer) == '\'') {
+			return lexCharacter(lexer, token);
+		}
+
+		if (isnumeric(current(lexer))) {
+			return lexNumber(lexer, token);
+		}
+
 		advance(lexer);
 	}
 
+	token.isEOF = (bool)1;
+
 	return token;
+}
+
+func isName(Token token) -> bool {
+	return token.name != (Name)0;
+}
+
+func isString(Token token) -> bool {
+	return token.string != (String)0;
+}
+
+func isCharacter(Token token) -> bool {
+	return token.character != (Character)0;
+}
+
+func isNumber(Token token) -> bool {
+	return token.number != (Number)0;
 }

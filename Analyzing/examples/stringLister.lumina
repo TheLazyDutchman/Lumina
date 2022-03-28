@@ -17,11 +17,11 @@ var lexer = createLexer(fileName);
 var token = nextToken(lexer);
 
 while (token.isEOF == (bool)0) {
-	if (isName(token) && isIdentifier(token.name)) {
-		printPosition(token.name.region.start);
-		print(" '");
-		print(token.name.name);
-		print("'\n");
+	if (isString(token)) {
+		printPosition(token.string.region.start);
+		print(" ");
+		print(token.string.value);
+		print("\n");
 	}
 
 	token = nextToken(lexer);
