@@ -46,6 +46,7 @@ func createName(Position start, Position end) -> Name {
 	while (i < NUMKEYWORDS) {
 		if (streq(name.name, _keyWordList[i])) {
 			name.keyword = i;
+			i = NUMKEYWORDS;
 		}
 		i = i + 1;
 	}

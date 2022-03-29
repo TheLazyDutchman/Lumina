@@ -1,0 +1,63 @@
+import "position.lumina"
+
+
+const NUMOPERATORS = 26;
+
+var _operatorList = (str[])malloc(sizeof(str) * NUMOPERATORS);
+_operatorList[0] = "<<";
+_operatorList[1] = ">>";
+_operatorList[2] = "||";
+_operatorList[3] = "&&";
+_operatorList[4] = "|";
+_operatorList[5] = "&";
+_operatorList[6] = "->";
+_operatorList[7] = "!=";
+_operatorList[8] = "<=";
+_operatorList[9] = ">=";
+_operatorList[10] = "==";
+_operatorList[11] = "<";
+_operatorList[12] = ">";
+_operatorList[13] = "!";
+_operatorList[14] = "=";
+_operatorList[15] = "+";
+_operatorList[16] = "-";
+_operatorList[17] = "*";
+_operatorList[18] = "(";
+_operatorList[19] = ")";
+_operatorList[20] = "{";
+_operatorList[21] = "}";
+_operatorList[22] = ".";
+_operatorList[23] = ";";
+_operatorList[24] = "[";
+_operatorList[25] = "]";
+
+type Operator {
+	Position position;
+	int operatorType;
+	str name;
+}
+
+func createOperator(Position position) -> Operator {
+	var operator = (Operator)malloc(sizeof(Operator));
+
+	operator.position = position;
+
+	var stringStart = (str)((int)position.buffer + position.index);
+	operator.operatorType = -1;
+	operator.name = strndup(stringStart, 1);
+
+	var i = 0;
+	while (i < NUMOPERATORS) {
+		var opString = _operatorList[i];
+		if (strneq(opString, stringStart, strlen(opString))) {
+			operator.operatorType = i;
+
+			operator.name = opString;
+
+			i = NUMOPERATORS;
+		}
+		i = i + 1;
+	}
+
+	return operator;
+}

@@ -1,0 +1,11 @@
+type WhiteSpace {
+	str value;
+}
+
+func createSpace(str start, int len) -> WhiteSpace {
+	var space = (WhiteSpace)malloc(sizeof(WhiteSpace));
+
+	space.value = strndup(start, len);
+
+	return space;
+}

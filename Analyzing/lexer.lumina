@@ -1,5 +1,7 @@
 import "name.lumina"
 import "immediate.lumina"
+import "operator.lumina"
+import "whitespace.lumina"
 
 // this is a type to hold the different possible tokens
 type Token {
@@ -7,7 +9,11 @@ type Token {
 	String string;
 	Character character;
 	Number number;
+	Operator operator;
+	WhiteSpace space;
+
 	bool isEOF;
+	bool isError;
 }
 
 type Lexer {
@@ -115,6 +121,19 @@ func createPositionFromLexer(Lexer lexer) -> Position {
 	return createPosition(lexer.file, lexer.buffer, lexer.index, lexer.line, lexer.column);
 }
 
+func lexWhiteSpace(Lexer lexer, Token token) -> Token {
+	var startString = (str)((int)lexer.buffer + lexer.index);
+	var startIndex = lexer.index;
+
+	while (isspace(current(lexer))) {
+		advance(lexer);
+	}
+
+	token.space = createSpace(startString, lexer.index - startIndex);
+
+	return token;
+}
+
 func lexName(Lexer lexer, Token token) -> Token {
 	var start = createPositionFromLexer(lexer);
 
@@ -185,10 +204,28 @@ func lexNumber(Lexer lexer, Token token) -> Token {
 	return token;
 }
 
+func lexOperator(Lexer lexer, Token token) -> Token {
+	var position = createPositionFromLexer(lexer);
+
+	token.operator = createOperator(position);
+
+	var i = 0;
+	while (i < strlen(token.operator.name)) {
+		advance(lexer);
+		i = i + 1;
+	}
+
+	return token;
+}
+
 func nextToken(Lexer lexer) -> Token {
 	var token = createToken();
 
 	while (current(lexer) != '\0') {
+		if (isspace(current(lexer))) {
+			return lexWhiteSpace(lexer, token);
+		}
+
 		handleComments(lexer);
 
 		if (isalpha(current(lexer)) || current(lexer) == '_') {
@@ -205,6 +242,19 @@ func nextToken(Lexer lexer) -> Token {
 
 		if (isnumeric(current(lexer))) {
 			return lexNumber(lexer, token);
+		}
+
+		var operatorToken = lexOperator(lexer, token);
+
+		if (operatorToken.operator.operatorType == -1) {
+			print("[ERROR] did not expect this character: '");
+			print(operatorToken.operator.name);
+			print("'\n");
+
+			token.isError = (bool)1;
+			return token;
+		} else {
+			return operatorToken;
 		}
 
 		advance(lexer);
@@ -229,4 +279,12 @@ func isCharacter(Token token) -> bool {
 
 func isNumber(Token token) -> bool {
 	return token.number != (Number)0;
+}
+
+func isSpace(Token token) -> bool {
+	return token.space != (WhiteSpace)0;
+}
+
+func isOperator(Token token) -> bool {
+	return token.operator != (Operator)0;
 }
