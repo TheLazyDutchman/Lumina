@@ -40,6 +40,12 @@ type Operator {
 	str name;
 }
 
+type OperatorList {
+	int size;
+	int maxSize;
+	Operator[] list;
+}
+
 func createOperator(Position position, WhiteSpace space) -> Operator {
 	var operator = (Operator)malloc(sizeof(Operator));
 
@@ -64,4 +70,37 @@ func createOperator(Position position, WhiteSpace space) -> Operator {
 	}
 
 	return operator;
+}
+
+func createOperatorList() -> OperatorList {
+	var list = (OperatorList)malloc(sizeof(OperatorList));
+
+	list.size = 0;
+	list.maxSize = 8;
+	list.list = (Operator[])malloc(8 * 8);
+
+	return list;
+}
+
+func addOperator(OperatorList list, Operator operator) {
+	list.list[list.size] = operator;
+	list.size = list.size + 1;
+
+	if (list.size == list.maxSize) {
+		list.maxSize = list.maxSize * 2;
+
+		list.list = (Operator[])realloc((ptr)list.list, list.maxSize);
+	}
+}
+
+func isOperator(Operator operator, str name) -> bool {
+	if (operator == (Operator)0) {
+		return (bool)0;
+	}
+
+	if (streq(operator.name, name) != (bool)1) {
+		return (bool)0;
+	}
+
+	return (bool)1;
 }

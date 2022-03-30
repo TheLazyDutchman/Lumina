@@ -1,0 +1,90 @@
+import "../lexer.lumina"
+import "../type.lumina"
+
+
+if (argc < 2) {
+	print("[ERROR] expected argument <filename>\n");
+	exit(1);
+}
+
+if (argc > 2) {
+	print("[ERROR] expected a single argument\n");
+	exit(1);
+}
+
+var fileName = argv[1];
+
+var lexer = createLexer(fileName);
+
+var token = nextToken(lexer);
+
+func parseType(Lexer lexer) -> Type {
+	var name = token.name;
+
+	token = nextToken(lexer);
+	var brackets = createOperatorList();
+	while (isOperator(token.operator, "[")) {
+		addOperator(brackets, token.operator);
+
+		token = nextToken(lexer);
+		if (isOperator(token.operator, "]") != (bool)1) {
+			print("expected ']' after '[' in list definition\n");
+		}
+		addOperator(brackets, token.operator);
+
+		token = nextToken(lexer);
+	}
+
+	return createType(name, brackets);
+}
+
+func parseProperty(Lexer lexer) -> Property {
+	var propertyType = parseType(lexer);
+
+	var propertyName = token.name;
+
+	token = nextToken(lexer);
+	var semicolon = token.operator;
+	
+	token = nextToken(lexer);
+
+	return createProperty(propertyType, propertyName, semicolon);
+}
+
+func parseTypeDefinition(Lexer lexer) -> TypeDefinition {
+	var keyword = token.name;
+
+	token = nextToken(lexer);
+	var typeName = token.name;
+
+	token = nextToken(lexer);
+	var lbrace = token.operator;
+
+	var properties = createPropertyList();
+	token = nextToken(lexer);
+	while (isOperator(token.operator, "}") != (bool)1) {
+		var property = parseProperty(lexer);
+		addProperty(properties, property);
+	}
+
+	var rbrace = token.operator;
+
+	token = nextToken(lexer);
+
+	return createTypeDefinition(keyword, typeName, lbrace, properties, rbrace);
+}
+
+while (token.isEOF == (bool)0) {
+	if (isKeyword(token.name, KEYWORD_type)) {
+		var typeDef = parseTypeDefinition(lexer);
+
+		printPosition(typeDef.region.start);
+		print(" start\n");
+		printPosition(typeDef.region.end);
+		print(" end\n");
+		print(typeDef.name.name);
+		print("\n");
+	} else {
+		token = nextToken(lexer);
+	}
+}

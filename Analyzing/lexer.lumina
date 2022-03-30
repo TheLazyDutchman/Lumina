@@ -283,7 +283,3 @@ func isCharacter(Token token) -> bool {
 func isNumber(Token token) -> bool {
 	return token.number != (Number)0;
 }
-
-func isOperator(Token token) -> bool {
-	return token.operator != (Operator)0;
-}

@@ -1,0 +1,123 @@
+import "name.lumina"
+
+
+type Type {
+	Region region;
+	Name name;
+	OperatorList brackets;
+}
+
+type Property {
+	Region region;
+	Type typeName;
+	Name name;
+	Operator semicolon;
+}
+
+type PropertyList {
+	int size;
+	int maxSize;
+	Property[] list;
+}
+
+type TypeDefinition {
+	Region region;
+	Name keyword;
+	Name name;
+
+	Operator lbrace;
+
+	PropertyList properties;
+
+	Operator rbrace;
+}
+
+func createType(Name name, OperatorList brackets) -> Type {
+	if (isIdentifier(name) != (bool)1) {
+		print("expected type name to be an identifier\n");
+	}
+
+	var value = (Type)malloc(sizeof(Type));
+	
+	if (brackets.size > 0) {
+		value.region = createRegion(name.region.start, brackets.list[brackets.size - 1].position);
+	} else {
+		value.region = name.region;
+	}
+
+	value.name = name;
+	value.brackets = brackets;
+
+	return value;
+}
+
+func createProperty(Type typeName, Name name, Operator semicolon) -> Property {
+	if (isIdentifier(name) != (bool)1) {
+		print("expected property name to be an identifier\n");
+	}
+
+	if (streq(semicolon.name, ";") == (bool)0) {
+		print("expected ';' in property\n");
+	}
+
+	var property = (Property)malloc(sizeof(Property));
+
+	property.typeName = typeName;
+	property.name = name;
+	property.semicolon = semicolon;
+
+	property.region = createRegion(typeName.region.start, semicolon.position);
+
+	return property;
+}
+
+func createPropertyList() -> PropertyList {
+	var list = (PropertyList)malloc(sizeof(PropertyList));
+
+	list.size = 0;
+	list.maxSize = 8;
+	list.list = (Property[])malloc(8 * 8);
+
+	return list;
+}
+
+func addProperty(PropertyList list, Property property) {
+	list.list[list.size] = property;
+	list.size = list.size + 1;
+
+	if (list.size == list.maxSize) {
+		list.maxSize = list.maxSize * 2;
+
+		list.list = (Property[])realloc((ptr)list.list, list.maxSize);
+	}
+}
+
+func createTypeDefinition(Name keyword, Name name, Operator lbrace, PropertyList properties, Operator rbrace) -> TypeDefinition {
+	var typeDef = (TypeDefinition)malloc(sizeof(TypeDefinition));
+
+	if (isKeyword(keyword, KEYWORD_type) != (bool)1) {
+		print("expected 'type' keyword for type definition\n");
+	}
+
+	if (isIdentifier(name) != (bool)1) {
+		print("expected type name to be an identifier\n");
+	}
+
+	if (isOperator(lbrace, "{") != (bool)1) {
+		print("expected '{' after type name\n");
+	}
+
+	if (isOperator(rbrace, "}") != (bool)1) {
+		print("expected '}' after type definition\n");
+	}
+
+	typeDef.keyword = keyword;
+	typeDef.name = name;
+	typeDef.lbrace = lbrace;
+	typeDef.properties = properties;
+	typeDef.rbrace = rbrace;
+
+	typeDef.region = createRegion(keyword.region.start, rbrace.position);
+
+	return typeDef;
+}

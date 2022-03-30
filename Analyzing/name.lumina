@@ -14,17 +14,17 @@ const KEYWORD_return = 8;
 const KEYWORD_sizeof = 9;
 const NUMKEYWORDS = 10;
 
-var _keyWordList = (str[])malloc(sizeof(str) * NUMKEYWORDS);
-_keyWordList[0] = "var";
-_keyWordList[1] = "const";
-_keyWordList[2] = "func";
-_keyWordList[3] = "if";
-_keyWordList[4] = "else";
-_keyWordList[5] = "while";
-_keyWordList[6] = "type";
-_keyWordList[7] = "import";
-_keyWordList[8] = "return";
-_keyWordList[9] = "sizeof";
+var _keywordList = (str[])malloc(sizeof(str) * NUMKEYWORDS);
+_keywordList[0] = "var";
+_keywordList[1] = "const";
+_keywordList[2] = "func";
+_keywordList[3] = "if";
+_keywordList[4] = "else";
+_keywordList[5] = "while";
+_keywordList[6] = "type";
+_keywordList[7] = "import";
+_keywordList[8] = "return";
+_keywordList[9] = "sizeof";
 
 type Name {
 	WhiteSpace space;
@@ -47,7 +47,7 @@ func createName(Position start, Position end, WhiteSpace space) -> Name {
 
 	var i = 0;
 	while (i < NUMKEYWORDS) {
-		if (streq(name.name, _keyWordList[i])) {
+		if (streq(name.name, _keywordList[i])) {
 			name.keyword = i;
 			i = NUMKEYWORDS;
 		}
@@ -57,10 +57,18 @@ func createName(Position start, Position end, WhiteSpace space) -> Name {
 	return name;
 }
 
-func isKeyWord(Name name, int keyWordId) -> bool {
-	return name.keyword == keyWordId;
+func isKeyword(Name name, int keywordId) -> bool {
+	if (name == (Name)0) {
+		return (bool)0;
+	}
+
+	return name.keyword == keywordId;
 }
 
 func isIdentifier(Name name) -> bool {
+	if (name == (Name)0) {
+		return (bool)0;
+	}
+
 	return name.keyword == -1;
 }
