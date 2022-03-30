@@ -1,4 +1,5 @@
 import "position.lumina"
+import "whitespace.lumina"
 
 
 const KEYWORD_var = 0;
@@ -26,15 +27,17 @@ _keyWordList[8] = "return";
 _keyWordList[9] = "sizeof";
 
 type Name {
+	WhiteSpace space;
 	Region region;
 	str name;
 	int keyword;
 }
 
-func createName(Position start, Position end) -> Name {
+func createName(Position start, Position end, WhiteSpace space) -> Name {
 	var name = (Name)malloc(sizeof(Name));
 
 	name.region = createRegion(start, end);
+	name.space = space;
 	name.keyword = -1;
 
 	var length = end.index - start.index;

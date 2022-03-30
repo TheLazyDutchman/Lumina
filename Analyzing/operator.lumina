@@ -1,7 +1,8 @@
 import "position.lumina"
+import "whitespace.lumina"
 
 
-const NUMOPERATORS = 26;
+const NUMOPERATORS = 27;
 
 var _operatorList = (str[])malloc(sizeof(str) * NUMOPERATORS);
 _operatorList[0] = "<<";
@@ -26,21 +27,24 @@ _operatorList[18] = "(";
 _operatorList[19] = ")";
 _operatorList[20] = "{";
 _operatorList[21] = "}";
-_operatorList[22] = ".";
-_operatorList[23] = ";";
-_operatorList[24] = "[";
-_operatorList[25] = "]";
+_operatorList[22] = "[";
+_operatorList[23] = "]";
+_operatorList[24] = ".";
+_operatorList[25] = ",";
+_operatorList[26] = ";";
 
 type Operator {
+	WhiteSpace space;
 	Position position;
 	int operatorType;
 	str name;
 }
 
-func createOperator(Position position) -> Operator {
+func createOperator(Position position, WhiteSpace space) -> Operator {
 	var operator = (Operator)malloc(sizeof(Operator));
 
 	operator.position = position;
+	operator.space = space;
 
 	var stringStart = (str)((int)position.buffer + position.index);
 	operator.operatorType = -1;

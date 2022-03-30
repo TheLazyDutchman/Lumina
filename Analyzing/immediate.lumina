@@ -1,25 +1,30 @@
 import "position.lumina"
+import "whitespace.lumina"
 
 
 type String {
+	WhiteSpace space;
 	Region region;
 	str value;
 }
 
 type Character {
+	WhiteSpace space;
 	Region region;
 	char value;
 }
 
 type Number {
+	WhiteSpace space;
 	Region region;
 	int value;
 }
 
-func createString(Position start, Position end) -> String {
+func createString(Position start, Position end, WhiteSpace space) -> String {
 	var string = (String)malloc(sizeof(String));
 
 	string.region = createRegion(start, end);
+	string.space = space;
 
 	var length = end.index - start.index;
 
@@ -29,20 +34,22 @@ func createString(Position start, Position end) -> String {
 	return string;
 }
 
-func createCharacter(Position start, Position end) -> Character {
+func createCharacter(Position start, Position end, WhiteSpace space) -> Character {
 	var character = (Character)malloc(sizeof(Character));
 
 	character.region = createRegion(start, end);
+	character.space = space;
 
 	character.value = unEscapeCharacter((str)((int)start.buffer + 1));
 	
 	return character;
 }
 
-func createNumber(Position start, Position end) -> Number {
+func createNumber(Position start, Position end, WhiteSpace space) -> Number {
 	var number = (Number)malloc(sizeof(Number));
 
 	number.region = createRegion(start, end);
+	number.space = space;
 	
 	var length = end.index - start.index;
 

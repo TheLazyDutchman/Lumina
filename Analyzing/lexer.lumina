@@ -2,6 +2,7 @@ import "name.lumina"
 import "immediate.lumina"
 import "operator.lumina"
 import "whitespace.lumina"
+import "comment.lumina"
 
 // this is a type to hold the different possible tokens
 type Token {
@@ -10,7 +11,7 @@ type Token {
 	Character character;
 	Number number;
 	Operator operator;
-	WhiteSpace space;
+	Comment comment;
 
 	bool isEOF;
 	bool isError;
@@ -83,8 +84,11 @@ func createToken() -> Token {
 	token.string = (String)0;
 	token.character = (Character)0;
 	token.number = (Number)0;
+	token.operator = (Operator)0;
+	token.comment = (Comment)0;
 
 	token.isEOF = (bool)0;
+	token.isError = (bool)0;
 
 	return token;
 }
@@ -103,25 +107,24 @@ func advance(Lexer lexer) {
 	}
 }
 
-func handleComments(Lexer lexer) {
-	if (current(lexer) != '/') {
-		return;
-	}
-
-	if (lexer.buffer[lexer.index + 1] != '/') {
-		return;
-	}
-
-	while (current(lexer) != '\n') {
-		advance(lexer);
-	}
-}
-
 func createPositionFromLexer(Lexer lexer) -> Position {
 	return createPosition(lexer.file, lexer.buffer, lexer.index, lexer.line, lexer.column);
 }
 
-func lexWhiteSpace(Lexer lexer, Token token) -> Token {
+func lexComments(Lexer lexer, Token token, WhiteSpace space) -> Token {
+	var start = createPositionFromLexer(lexer);
+
+	while (current(lexer) != '\n') {
+		advance(lexer);
+	}
+
+	var end = createPositionFromLexer(lexer);
+
+	token.comment = createComment(start, end, space);
+	return token;
+}
+
+func lexWhiteSpace(Lexer lexer) -> WhiteSpace {
 	var startString = (str)((int)lexer.buffer + lexer.index);
 	var startIndex = lexer.index;
 
@@ -129,12 +132,10 @@ func lexWhiteSpace(Lexer lexer, Token token) -> Token {
 		advance(lexer);
 	}
 
-	token.space = createSpace(startString, lexer.index - startIndex);
-
-	return token;
+	return createSpace(startString, lexer.index - startIndex);
 }
 
-func lexName(Lexer lexer, Token token) -> Token {
+func lexName(Lexer lexer, Token token, WhiteSpace space) -> Token {
 	var start = createPositionFromLexer(lexer);
 
 	while (isalnum(current(lexer)) || current(lexer) == '_') {
@@ -143,13 +144,13 @@ func lexName(Lexer lexer, Token token) -> Token {
 
 	var end = createPositionFromLexer(lexer);
 
-	token.name = createName(start, end);
+	token.name = createName(start, end, space);
 
 	return token;
 }
 
 // TODO: add error handling for invalid character and string literals
-func lexString(Lexer lexer, Token token) -> Token {
+func lexString(Lexer lexer, Token token, WhiteSpace space) -> Token {
 	var start = createPositionFromLexer(lexer);
 
 	advance(lexer);
@@ -165,12 +166,12 @@ func lexString(Lexer lexer, Token token) -> Token {
 
 	var end = createPositionFromLexer(lexer);
 
-	token.string = createString(start, end);
+	token.string = createString(start, end, space);
 
 	return token;
 }
 
-func lexCharacter(Lexer lexer, Token token) -> Token {
+func lexCharacter(Lexer lexer, Token token, WhiteSpace space) -> Token {
 	var start = createPositionFromLexer(lexer);
 
 	advance(lexer);
@@ -185,12 +186,12 @@ func lexCharacter(Lexer lexer, Token token) -> Token {
 
 	var end = createPositionFromLexer(lexer);
 
-	token.character = createCharacter(start, end);
+	token.character = createCharacter(start, end, space);
 
 	return token;
 }
 
-func lexNumber(Lexer lexer, Token token) -> Token {
+func lexNumber(Lexer lexer, Token token, WhiteSpace space) -> Token {
 	var start = createPositionFromLexer(lexer);
 
 	while (isnumeric(current(lexer))) {
@@ -199,15 +200,15 @@ func lexNumber(Lexer lexer, Token token) -> Token {
 
 	var end = createPositionFromLexer(lexer);
 
-	token.number = createNumber(start, end);
+	token.number = createNumber(start, end, space);
 
 	return token;
 }
 
-func lexOperator(Lexer lexer, Token token) -> Token {
+func lexOperator(Lexer lexer, Token token, WhiteSpace space) -> Token {
 	var position = createPositionFromLexer(lexer);
 
-	token.operator = createOperator(position);
+	token.operator = createOperator(position, space);
 
 	var i = 0;
 	while (i < strlen(token.operator.name)) {
@@ -221,48 +222,50 @@ func lexOperator(Lexer lexer, Token token) -> Token {
 func nextToken(Lexer lexer) -> Token {
 	var token = createToken();
 
-	while (current(lexer) != '\0') {
-		if (isspace(current(lexer))) {
-			return lexWhiteSpace(lexer, token);
-		}
-
-		handleComments(lexer);
-
-		if (isalpha(current(lexer)) || current(lexer) == '_') {
-			return lexName(lexer, token);
-		}
-
-		if (current(lexer) == '"') {
-			return lexString(lexer, token);
-		}
-
-		if (current(lexer) == '\'') {
-			return lexCharacter(lexer, token);
-		}
-
-		if (isnumeric(current(lexer))) {
-			return lexNumber(lexer, token);
-		}
-
-		var operatorToken = lexOperator(lexer, token);
-
-		if (operatorToken.operator.operatorType == -1) {
-			print("[ERROR] did not expect this character: '");
-			print(operatorToken.operator.name);
-			print("'\n");
-
-			token.isError = (bool)1;
-			return token;
-		} else {
-			return operatorToken;
-		}
-
-		advance(lexer);
+	var space = (WhiteSpace)0;
+	if (isspace(current(lexer))) {
+		space = lexWhiteSpace(lexer);
 	}
 
-	token.isEOF = (bool)1;
+	if (current(lexer) == '\0') {
+		token.isEOF = (bool)1;
+		return token;
+	}
 
-	return token;
+	if (current(lexer) == '/' && lexer.buffer[lexer.index + 1] == '/') {
+		return lexComments(lexer, token, space);
+	}
+
+	if (isalpha(current(lexer)) || current(lexer) == '_') {
+		return lexName(lexer, token, space);
+	}
+
+	if (current(lexer) == '"') {
+		return lexString(lexer, token, space);
+	}
+
+	if (current(lexer) == '\'') {
+		return lexCharacter(lexer, token, space);
+	}
+
+	if (isnumeric(current(lexer))) {
+		return lexNumber(lexer, token, space);
+	}
+
+	var operatorToken = lexOperator(lexer, token, space);
+
+	if (operatorToken.operator.operatorType == -1) {
+		print("[ERROR] did not expect this character: '");
+		print(operatorToken.operator.name);
+		print("'\n");
+
+		token.isError = (bool)1;
+		return token;
+	} else {
+		return operatorToken;
+	}
+
+	return token; // will never come here
 }
 
 func isName(Token token) -> bool {
@@ -279,10 +282,6 @@ func isCharacter(Token token) -> bool {
 
 func isNumber(Token token) -> bool {
 	return token.number != (Number)0;
-}
-
-func isSpace(Token token) -> bool {
-	return token.space != (WhiteSpace)0;
 }
 
 func isOperator(Token token) -> bool {

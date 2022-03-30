@@ -1,0 +1,17 @@
+import "position.lumina"
+import "whitespace.lumina"
+
+
+type Comment {
+	WhiteSpace space;
+	Region region;
+}
+
+func createComment(Position start, Position end, WhiteSpace space) -> Comment {
+	var comment = (Comment)malloc(sizeof(Comment));
+
+	comment.space = space;
+	comment.region = createRegion(start, end);
+
+	return comment;
+}
