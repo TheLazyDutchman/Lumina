@@ -88,7 +88,7 @@ func addProperty(PropertyList list, Property property) {
 	if (list.size == list.maxSize) {
 		list.maxSize = list.maxSize * 2;
 
-		list.list = (Property[])realloc((ptr)list.list, list.maxSize);
+		list.list = (Property[])realloc((ptr)list.list, 8 * list.maxSize);
 	}
 }
 

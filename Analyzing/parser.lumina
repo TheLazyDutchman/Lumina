@@ -1,0 +1,106 @@
+import "block.lumina"
+import "type.lumina"
+import "lexer.lumina"
+
+
+type Parser {
+	BlockList blocks;
+	Lexer lexer;
+	Token current;
+}
+
+func createParser(str fileName) -> Parser {
+	var parser = (Parser)malloc(sizeof(Parser));
+
+	parser.blocks = createBlockList();
+	parser.lexer = createLexer(fileName);
+	parser.current = nextToken(parser.lexer);
+
+	return parser;
+}
+
+func next(Parser parser) {
+	parser.current = nextToken(parser.lexer);
+}
+
+func parseType(Parser parser) -> Type {
+	var name = parser.current.name;
+
+	next(parser);
+	var brackets = createOperatorList();
+	while (isOperator(parser.current.operator, "[")) {
+		addOperator(brackets, parser.current.operator);
+
+		next(parser);
+		if (isOperator(parser.current.operator, "]") != (bool)1) {
+			print("expected ']' after '[' in list definition\n");
+		}
+		addOperator(brackets, parser.current.operator);
+
+		next(parser);
+	}
+
+	return createType(name, brackets);
+}
+
+func parseProperty(Parser parser) -> Property {
+	var propertyType = parseType(parser);
+
+	var propertyName = parser.current.name;
+
+	next(parser);
+	var semicolon = parser.current.operator;
+	
+	next(parser);
+
+	return createProperty(propertyType, propertyName, semicolon);
+}
+
+func parseTypeDefinition(Parser parser) -> TypeDefinition {
+	var keyword = parser.current.name;
+
+	next(parser);
+	var typeName = parser.current.name;
+
+	next(parser);
+	var lbrace = parser.current.operator;
+
+	var properties = createPropertyList();
+	next(parser);
+	while (isOperator(parser.current.operator, "}") != (bool)1) {
+		var property = parseProperty(parser);
+		addProperty(properties, property);
+	}
+
+	var rbrace = parser.current.operator;
+
+	next(parser);
+
+	return createTypeDefinition(keyword, typeName, lbrace, properties, rbrace);
+}
+
+func parseBlock(Parser parser) -> Block {
+	var lbrace = parser.current.operator;
+
+	while (isOperator(parser.current.operator, "}") != (bool)1) {
+		next(parser);
+	}
+
+	var rbrace = parser.current.operator;
+	var block = createBlock(lbrace, rbrace);
+	addBlock(parser.blocks, block);
+
+	return block;
+}
+
+func parse(Parser parser) {
+	while (parser.current.isEOF != (bool)1) {
+		if (isKeyword(parser.current.name, KEYWORD_type)) {
+			parseTypeDefinition(parser);
+		} else if (isOperator(parser.current.operator, "{")) {
+			parseBlock(parser);
+		} else {
+			next(parser);
+		}
+	}
+}
