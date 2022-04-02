@@ -1,5 +1,6 @@
 import "position.lumina"
 import "whitespace.lumina"
+import "value.lumina"
 
 
 const NUMOPERATORS = 27;
@@ -40,6 +41,15 @@ type Operator {
 	str name;
 }
 
+type Operation {
+	Region region;
+	Operation left;
+	Operator operator;
+	Operation right;
+	Value value;
+	Operator end;
+}
+
 type OperatorList {
 	int size;
 	int maxSize;
@@ -70,6 +80,49 @@ func createOperator(Position position, WhiteSpace space) -> Operator {
 	}
 
 	return operator;
+}
+
+func createOperation(Operation left, Operator operator, Operation right, Operator end) -> Operation {
+	var operation = (Operation)malloc(sizeof(Operation));
+
+	if (end == (Operator)0) {
+		operation.region = createRegion(left.region.start, right.region.end);
+	} else {
+		operation.region = createRegion(left.region.start, end.position);
+	}
+
+	operation.left = left;
+	operation.operator = operator;
+	operation.right = right;
+	operation.value = (Value)0;
+	operation.end = end;
+
+	return operation;
+}
+
+func createUnaryOperation(Operator operator, Operation right) -> Operation {
+	var operation = (Operation)malloc(sizeof(Operation));
+
+	operation.region = createRegion(operator.position, right.region.end);
+	operation.left = (Operation)0;
+	operation.operator = operator;
+	operation.right = right;
+	operation.value = (Value)0;
+	operation.end = (Operator)0;
+
+	return operation;
+}
+
+func createOperationFromValue(Value value) -> Operation {
+	var operation = (Operation)malloc(sizeof(Operation));
+
+	operation.region = value.region;
+	operation.left = (Operation)0;
+	operation.operator = (Operator)0;
+	operation.right = (Operation)0;
+	operation.value = value;
+
+	return operation;
 }
 
 func createOperatorList() -> OperatorList {

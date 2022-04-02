@@ -79,6 +79,55 @@ func parseTypeDefinition(Parser parser) -> TypeDefinition {
 	return createTypeDefinition(keyword, typeName, lbrace, properties, rbrace);
 }
 
+func parseUnary(Parser parser) -> Operation {
+	func parseNegative(Parser parser) -> Operation {
+		var operator = parser.current.operator;
+		next(parser);
+
+		var operation = parseUnary(parser);
+		return createUnaryOperation(operator, operation);
+	}
+
+	var value = (Value)0;
+
+	if (isNumber(parser.current)) {
+		value = createValueFromNumber(parser.current.number);
+	} else if (isCharacter(parser.current)) {
+		value = createValueFromCharacter(parser.current.character);
+	} else if (isString(parser.current)) {
+		value = createValueFromString(parser.current.string);
+	} else if (isIdentifier(parser.current.name)) {
+		value = createValueFromIdentifier(parser.current.name);
+	}
+
+	if (value != (Value)0) {
+		next(parser);
+		return createOperationFromValue(value);
+	}
+
+	if (isOperator(parser.current.operator, "-")) {
+		return parseNegative(parser);
+	}
+
+	if (isComment(parser.current)) {
+		print("is comment\n");
+	} else {
+		if (parser.current.operator == (Operator)0) {
+			print("operator is null\n");
+		} else {
+			printPosition(parser.current.operator.position);
+			print(" '");
+			print(parser.current.operator.name);
+			print("', ");
+		}
+
+		print("do not recognise as unary\n");
+	}
+
+	next(parser);
+	return (Operation)0;
+}
+
 func parseBlock(Parser parser) -> Block {
 	var lbrace = parser.current.operator;
 
@@ -93,14 +142,49 @@ func parseBlock(Parser parser) -> Block {
 	return block;
 }
 
+func parseExpression(Parser parser) {
+	parseUnary(parser);
+}
+
+func parseStatement(Parser parser) {
+	if (isKeyword(parser.current.name, KEYWORD_var)) {
+		print("do not support var yet\n");
+		next(parser);
+	} else if (isKeyword(parser.current.name, KEYWORD_const)) {
+		print("do not support const yet\n");
+		next(parser);
+	} else if (isKeyword(parser.current.name, KEYWORD_func)) {
+		print("do not support func yet\n");
+		next(parser);
+	} else if (isKeyword(parser.current.name, KEYWORD_if)) {
+		print("do not support if yet\n");
+		next(parser);
+	} else if (isKeyword(parser.current.name, KEYWORD_else)) {
+		print("do not support else yet\n");
+		next(parser);
+	} else if (isKeyword(parser.current.name, KEYWORD_while)) {
+		print("do not support while yet\n");
+		next(parser);
+	} else if (isKeyword(parser.current.name, KEYWORD_type)) {
+		parseTypeDefinition(parser);
+	} else if (isKeyword(parser.current.name, KEYWORD_import)) {
+		print("do not support import yet\n");
+		next(parser);
+	} else if (isKeyword(parser.current.name, KEYWORD_return)) {
+		print("do not support return yet\n");
+		next(parser);
+	} else if (isKeyword(parser.current.name, KEYWORD_sizeof)) {
+		print("do not support sizeof yet\n");
+		next(parser);
+	} else if (isOperator(parser.current.operator, "{")) {
+		parseBlock(parser);
+	} else {
+		parseExpression(parser);
+	}
+}
+
 func parse(Parser parser) {
 	while (parser.current.isEOF != (bool)1) {
-		if (isKeyword(parser.current.name, KEYWORD_type)) {
-			parseTypeDefinition(parser);
-		} else if (isOperator(parser.current.operator, "{")) {
-			parseBlock(parser);
-		} else {
-			next(parser);
-		}
+		parseStatement(parser);
 	}
 }

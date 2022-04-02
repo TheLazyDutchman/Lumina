@@ -283,3 +283,7 @@ func isCharacter(Token token) -> bool {
 func isNumber(Token token) -> bool {
 	return token.number != (Number)0;
 }
+
+func isComment(Token token) -> bool {
+	return token.comment != (Comment)0;
+}
