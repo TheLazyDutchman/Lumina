@@ -1,0 +1,97 @@
+import "position.lumina"
+import "expression.lumina"
+import "if.lumina"
+import "while.lumina"
+import "import.lumina"
+import "variable.lumina"
+import "function.lumina"
+
+
+type Statement {
+	Region region;
+	Expression expression;
+	If ifStatement;
+	While whileStatement;
+	Import importStatement;
+	VariableDefinition variable;
+	FunctionDefinition function;
+	Return returnStatement;
+}
+
+func createStatement() -> Statement {
+	var statement = (Statement)malloc(sizeof(Statement));
+
+	statement.region = (Region)0;
+	statement.expression = (Expression)0;
+	statement.ifStatement = (If)0;
+	statement.whileStatement = (While)0;
+	statement.importStatement = (Import)0;
+	statement.variable = (VariableDefinition)0;
+	statement.function = (FunctionDefinition)0;
+	statement.returnStatement = (Return)0;
+
+	return statement;
+}
+
+func createExpressionStatement(Expression expression) -> Statement {
+	var statement = createStatement();
+
+	statement.region = expression.region;
+	statement.expression = expression;
+
+	return statement;
+}
+
+func createIfStatement(If ifStatement) -> Statement {
+	var statement = createStatement();
+
+	statement.region = ifStatement.region;
+	statement.ifStatement = ifStatement;
+
+	return statement;
+}
+
+func createWhileStatement(While whileStatement) -> Statement {
+	var statement = createStatement();
+
+	statement.region = whileStatement.region;
+	statement.whileStatement = whileStatement;
+
+	return statement;
+}
+
+func createImportStatement(Import importStatement) -> Statement {
+	var statement = createStatement();
+
+	statement.region = importStatement.region;
+	statement.importStatement = importStatement;
+
+	return statement;
+}
+
+func createVariableStatement(VariableDefinition variable) -> Statement {
+	var statement = createStatement();
+
+	statement.region = variable.region;
+	statement.variable = variable;
+
+	return statement;
+}
+
+func createFunctionStatement(FunctionDefinition function) -> Statement {
+	var statement = createStatement();
+
+	statement.region = function.region;
+	statement.function = function;
+
+	return statement;
+}
+
+func createReturnStatement(Return returnStatement) -> Statement {
+	var statement = createStatement();
+
+	statement.region = returnStatement.region;
+	statement.returnStatement = returnStatement;
+
+	return statement;
+}

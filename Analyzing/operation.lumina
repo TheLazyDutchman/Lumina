@@ -1,0 +1,105 @@
+import "operator.lumina"
+import "type.lumina"
+
+
+type SizeOf {
+	Region region;
+
+	Name keyword;
+	Operator lparen;
+	Type typeObj;
+	Operator rparen;
+}
+
+type Operation {
+	Region region;
+	Operation left;
+	Operator operator;
+	Operation right;
+	Operator end;
+	Value value;
+	SizeOf sizeOf;
+}
+
+func createSizeOf(Name keyword, Operator lparen, Type typeObj, Operator rparen) -> SizeOf {
+	var sizeOf = (SizeOf)malloc(sizeof(SizeOf));
+
+	sizeOf.region = createRegion(keyword.region.start, rparen.position);
+
+	sizeOf.keyword = keyword;
+	sizeOf.lparen = lparen;
+	sizeOf.typeObj = typeObj;
+	sizeOf.rparen = rparen;
+
+	return sizeOf;
+}
+
+func createOperation(Operation left, Operator operator, Operation right, Operator end) -> Operation {
+	var operation = (Operation)malloc(sizeof(Operation));
+
+	if (end == (Operator)0) {
+		operation.region = createRegion(left.region.start, right.region.end);
+	} else {
+		operation.region = createRegion(left.region.start, end.position);
+	}
+
+	operation.left = left;
+	operation.operator = operator;
+	operation.right = right;
+	operation.value = (Value)0;
+	operation.end = end;
+	operation.sizeOf = (SizeOf)0;
+
+	return operation;
+}
+
+func createUnaryOperation(Operator operator, Operation right, Operator end) -> Operation {
+	var operation = (Operation)malloc(sizeof(Operation));
+
+	if (end == (Operator)0) {
+		operation.region = createRegion(operator.position, right.region.end);
+	} else {
+		operation.region = createRegion(operator.position, end.position);
+	}
+
+	operation.left = (Operation)0;
+	operation.operator = operator;
+	operation.right = right;
+	operation.value = (Value)0;
+	operation.end = end;
+	operation.sizeOf = (SizeOf)0;
+
+	return operation;
+}
+
+func createOperationFromValue(Value value) -> Operation {
+	var operation = (Operation)malloc(sizeof(Operation));
+
+	operation.region = value.region;
+	operation.left = (Operation)0;
+	operation.operator = (Operator)0;
+	operation.right = (Operation)0;
+	operation.value = value;
+	operation.end = (Operator)0;
+	operation.sizeOf = (SizeOf)0;
+
+	return operation;
+}
+
+func createTypeCast(Operation typeGroup, Operation operation) -> Operation {
+	return createOperation(typeGroup, (Operator)0, operation, (Operator)0);
+}
+
+func createOperationFromSizeOf(SizeOf sizeOf) -> Operation {
+	var operation = (Operation)malloc(sizeof(Operation));
+
+	operation.region = sizeOf.region;
+	operation.left = (Operation)0;
+	operation.operator = (Operator)0;
+	operation.right = (Operation)0;
+	operation.value = (Value)0;
+	operation.end = (Operator)0;
+	operation.sizeOf = sizeOf;
+
+	return operation;
+}

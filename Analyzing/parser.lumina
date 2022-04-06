@@ -1,6 +1,8 @@
 import "block.lumina"
 import "type.lumina"
 import "lexer.lumina"
+import "statement.lumina"
+import "operation.lumina"
 
 
 type Parser {
@@ -21,6 +23,66 @@ func createParser(str fileName) -> Parser {
 
 func next(Parser parser) {
 	parser.current = nextToken(parser.lexer);
+
+	if (isComment(parser.current)) {
+		next(parser);
+	}
+}
+
+func consumeOperator(Parser parser, str operator) -> Operator {
+	if (isOperator(parser.current.operator, operator)) {
+		var value = parser.current.operator;
+		next(parser);
+		return value;
+	}
+
+	printPosition(createPositionFromLexer(parser.lexer));
+	print("did not find operator: '");
+	print(operator);
+	print("'\n");
+
+	return (Operator)0;
+}
+
+func consumeKeyword(Parser parser, int keyword) -> Name {
+	if (isKeyword(parser.current.name, keyword)) {
+		var value = parser.current.name;
+		next(parser);
+		return value;
+	}
+
+	printPosition(createPositionFromLexer(parser.lexer));
+	print("did not find keyword: '");
+	printi(keyword);
+	print("'\n");
+
+	return (Name)0;
+}
+
+func consumeIdentifier(Parser parser) -> Name {
+	if (isIdentifier(parser.current.name)) {
+		var value = parser.current.name;
+		next(parser);
+		return value;
+	}
+
+	printPosition(createPositionFromLexer(parser.lexer));
+	print("did not find identifier\n");
+
+	return (Name)0;
+}
+
+func consumeString(Parser parser) -> String {
+	if (isString(parser.current)) {
+		var value = parser.current.string;
+		next(parser);
+		return value;
+	}
+
+	printPosition(createPositionFromLexer(parser.lexer));
+	print("did not find string\n");
+	
+	return (String)0;
 }
 
 func parseType(Parser parser) -> Type {
@@ -79,40 +141,71 @@ func parseTypeDefinition(Parser parser) -> TypeDefinition {
 	return createTypeDefinition(keyword, typeName, lbrace, properties, rbrace);
 }
 
-func parseUnary(Parser parser) -> Operation {
-	func parseNegative(Parser parser) -> Operation {
-		var operator = parser.current.operator;
-		next(parser);
+func parseExpression(Parser parser, int precedence) -> Operation {
+	func parseUnary(Parser parser) -> Operation {
+		func parseGroup(Parser parser) -> Operation {
+			var lparen = consumeOperator(parser, "(");
+			var operation = parseExpression(parser, PREC_expression);
+			var rparen = consumeOperator(parser, ")");
 
-		var operation = parseUnary(parser);
-		return createUnaryOperation(operator, operation);
-	}
+			var group = createUnaryOperation(lparen, operation, rparen);
 
-	var value = (Value)0;
+			if (isOperator(parser.current.operator, "(") || parser.current.operator == (Operator)0) {
+				var operation = parseExpression(parser, PREC_index);
+				return createTypeCast(group, operation);
+			}
 
-	if (isNumber(parser.current)) {
-		value = createValueFromNumber(parser.current.number);
-	} else if (isCharacter(parser.current)) {
-		value = createValueFromCharacter(parser.current.character);
-	} else if (isString(parser.current)) {
-		value = createValueFromString(parser.current.string);
-	} else if (isIdentifier(parser.current.name)) {
-		value = createValueFromIdentifier(parser.current.name);
-	}
+			return group;
+		}
 
-	if (value != (Value)0) {
-		next(parser);
-		return createOperationFromValue(value);
-	}
+		func parseNegative(Parser parser) -> Operation {
+			var operator = consumeOperator(parser, "-");
 
-	if (isOperator(parser.current.operator, "-")) {
-		return parseNegative(parser);
-	}
+			var operation = parseUnary(parser);
+			return createUnaryOperation(operator, operation, (Operator)0);
+		}
 
-	if (isComment(parser.current)) {
-		print("is comment\n");
-	} else {
+		func parseSizeof(Parser parser) -> Operation {
+			var keyword = consumeKeyword(parser, KEYWORD_sizeof);
+			var lparen = consumeOperator(parser, "(");
+			var typeObj = parseType(parser);
+			var rparen = consumeOperator(parser, ")");
+
+			var sizeOf = createSizeOf(keyword, lparen, typeObj, rparen);
+			return createOperationFromSizeOf(sizeOf);
+		}
+
+		var value = (Value)0;
+
+		if (isNumber(parser.current)) {
+			value = createValueFromNumber(parser.current.number);
+		} else if (isCharacter(parser.current)) {
+			value = createValueFromCharacter(parser.current.character);
+		} else if (isString(parser.current)) {
+			value = createValueFromString(parser.current.string);
+		} else if (isIdentifier(parser.current.name)) {
+			value = createValueFromIdentifier(parser.current.name);
+		}
+
+		if (value != (Value)0) {
+			next(parser);
+			return createOperationFromValue(value);
+		}
+
+		if (isKeyword(parser.current.name, KEYWORD_sizeof)) {
+			return parseSizeof(parser);
+		}
+
+		if (isOperator(parser.current.operator, "-")) {
+			return parseNegative(parser);
+		}
+
+		if (isOperator(parser.current.operator, "(")) {
+			return parseGroup(parser);
+		}
+
 		if (parser.current.operator == (Operator)0) {
+			printPosition(createPositionFromLexer(parser.lexer));
 			print("operator is null\n");
 		} else {
 			printPosition(parser.current.operator.position);
@@ -122,65 +215,280 @@ func parseUnary(Parser parser) -> Operation {
 		}
 
 		print("do not recognise as unary\n");
+
+		next(parser);
+		return (Operation)0;
 	}
 
+	func parseIndex(Parser parser, Operation left) -> Operation {
+		var lbracket = consumeOperator(parser, "[");
+		var index = parseExpression(parser, PREC_expression);
+		var rbracket = consumeOperator(parser, "]");
+
+		return createOperation(left, lbracket, index, rbracket);
+	}
+
+	func parseCall(Parser parser, Operation left) -> Operation {
+		var lparen = consumeOperator(parser, "(");
+
+		if (isOperator(parser.current.operator, ")")) {
+			var rparen = consumeOperator(parser, ")");
+			return createOperation(left, lparen, (Operation)0, rparen);
+		}
+		
+		var args = parseExpression(parser, PREC_expression);
+
+		while (isOperator(parser.current.operator, ",")) {
+			var comma = consumeOperator(parser, ",");
+
+			var right = parseExpression(parser, PREC_expression);
+
+			args = createOperation(args, comma, right, (Operator)0);
+		}
+
+		var rparen = consumeOperator(parser, ")");
+
+		return createOperation(left, lparen, args, rparen);
+	}
+
+	var operation = parseUnary(parser);
+
+	if (operation == (Operation)0) {
+		print("left hand side is null\n");
+		return (Operation)0;
+	}
+
+	var operator = parser.current.operator;
+
+	while (operator != (Operator)0 && operator.precedence >= precedence) {
+		if (isOperator(operator, "[")) {
+			operation = parseIndex(parser, operation);
+		} else if (isOperator(operator, "(")) {
+			operation = parseCall(parser, operation);
+		} else {
+			next(parser);
+
+			var right = parseExpression(parser, precedence + 1);
+
+			if (right == (Operation)0) {
+				print("right hand side is null\n");
+				return (Operation)0;
+			}
+
+			operation = createOperation(operation, operator, right, (Operator)0);
+		}
+
+		operator = parser.current.operator;
+	}
+
+	return operation;
+}
+
+func parseImport(Parser parser) -> Import {
+	var keyword = consumeKeyword(parser, KEYWORD_import);
+
+	var fileName = consumeString(parser);
+
+	return createImport(keyword, fileName);
+}
+
+func parseVariableDefinition(Parser parser) -> VariableDefinition {
+	var keyword = parser.current.name;
 	next(parser);
-	return (Operation)0;
+
+	var name = consumeIdentifier(parser);
+	var equalSign = consumeOperator(parser, "=");
+	var value = parseExpression(parser, PREC_expression);
+	var semicolon = consumeOperator(parser, ";");
+
+	return createVariableDefinition(keyword, name, equalSign, value, semicolon);
 }
 
-func parseBlock(Parser parser) -> Block {
-	var lbrace = parser.current.operator;
+func parseParameterList(Parser parser) -> ParameterList {
+	var list = createParameterList();
 
-	while (isOperator(parser.current.operator, "}") != (bool)1) {
-		next(parser);
+	if (isOperator(parser.current.operator, ")")) {
+		return list;
 	}
 
-	var rbrace = parser.current.operator;
-	var block = createBlock(lbrace, rbrace);
-	addBlock(parser.blocks, block);
+	var parameterType = parseType(parser);
+	var name = consumeIdentifier(parser);
 
-	return block;
+	while (isOperator(parser.current.operator, ",")) {
+		var comma = consumeOperator(parser, ",");
+
+		var parameter = createParameter(parameterType, name, comma);
+		addParameter(list, parameter);
+
+		parameterType = parseType(parser);
+		name = consumeIdentifier(parser);
+	}
+
+	var parameter = createParameter(parameterType, name, (Operator)0);
+	addParameter(list, parameter);
+
+	return list;
 }
 
-func parseExpression(Parser parser) {
-	parseUnary(parser);
+func parseReturnType(Parser parser) -> ReturnType {
+	var rarrow = consumeOperator(parser, "->");
+	var typeObj = parseType(parser);
+
+	return createReturnType(rarrow, typeObj);
 }
 
-func parseStatement(Parser parser) {
-	if (isKeyword(parser.current.name, KEYWORD_var)) {
-		print("do not support var yet\n");
-		next(parser);
-	} else if (isKeyword(parser.current.name, KEYWORD_const)) {
-		print("do not support const yet\n");
-		next(parser);
+func parseStatement(Parser parser) -> Statement {
+	func parseBlock(Parser parser) -> Block {
+		var lbrace = consumeOperator(parser, "{");
+
+		while (isOperator(parser.current.operator, "}") != (bool)1 || parser.current.isEOF) {
+			parseStatement(parser);
+		}
+
+		var rbrace = consumeOperator(parser, "}");
+		var block = createBlock(lbrace, rbrace);
+		addBlock(parser.blocks, block);
+
+		return block;
+	}
+
+	func parseElseIf(Parser parser, ElseIfList list, Name elseKeyword) {
+		var ifKeyword = consumeKeyword(parser, KEYWORD_if);
+		var lparen = consumeOperator(parser, "(");
+		var condition = parseExpression(parser, PREC_expression);
+		var rparen = consumeOperator(parser, ")");
+		var block = parseBlock(parser);
+
+		var elseIf = createElseIf(elseKeyword, ifKeyword, lparen, condition, rparen, block);
+		addElseIf(list, elseIf);
+	}
+
+	func parseElse(Parser parser, Name keyword) -> Else {
+		var block = parseBlock(parser);
+
+		return createElse(keyword, block);
+	}
+
+	func parseIf(Parser parser) -> If {
+		var ifKeyword = consumeKeyword(parser, KEYWORD_if);
+
+		var lparen = consumeOperator(parser, "(");
+		var condition = parseExpression(parser, PREC_expression);
+		var rparen = consumeOperator(parser, ")");
+		
+		var block = (Block)0;
+
+		if (isOperator(parser.current.operator, "{")) {
+			block = parseBlock(parser);
+		} else {
+			print("expected block after 'if'\n");
+		}
+
+		var elseIfs = createElseIfList();
+
+		while (isKeyword(parser.current.name, KEYWORD_else)) {
+			var elseKeyword = consumeKeyword(parser, KEYWORD_else);
+
+			if (isKeyword(parser.current.name, KEYWORD_if)) {
+				parseElseIf(parser, elseIfs, elseKeyword);
+			} else {
+				var elseObj = parseElse(parser, elseKeyword);
+				return createIf(ifKeyword, lparen, condition, rparen, block, elseIfs, elseObj);
+			}
+		}
+
+		return createIf(ifKeyword, lparen, condition, rparen, block, elseIfs, (Else)0);
+	}
+
+	func parseWhile(Parser parser) -> While {
+		var keyword = consumeKeyword(parser, KEYWORD_while);
+
+		var lparen = consumeOperator(parser, "(");
+		var condition = parseExpression(parser, PREC_expression);
+		var rparen = consumeOperator(parser, ")");
+
+		var block = (Block)0;
+
+		if (isOperator(parser.current.operator, "{")) {
+			block = parseBlock(parser);
+		} else  {
+			print("expected block after while\n");
+		}
+
+		return createWhile(keyword, lparen, condition, rparen, block);
+	}
+
+	func parseFunctionDefinition(Parser parser) -> FunctionDefinition {
+		var keyword = consumeKeyword(parser, KEYWORD_func);
+		var name = consumeIdentifier(parser);
+
+		var lparen = consumeOperator(parser, "(");
+		var parameters = parseParameterList(parser);
+		var rparen = consumeOperator(parser, ")");
+
+		var returnType = (ReturnType)0;
+		if (isOperator(parser.current.operator, "->")) {
+			returnType = parseReturnType(parser);
+		}
+
+		var block = parseBlock(parser);
+
+		return createFunctionDefinition(keyword, name, lparen, parameters, rparen, returnType, block);
+	}
+
+	func parseReturn(Parser parser) -> Return {
+		var keyword = consumeKeyword(parser, KEYWORD_return);
+
+		if (isOperator(parser.current.operator, ";")) {
+			var semicolon = consumeOperator(parser, ";");
+
+			return createReturn(keyword, (Operation)0, semicolon);
+		}
+
+		var expression = parseExpression(parser, PREC_expression);
+		var semicolon = consumeOperator(parser, ";");
+
+		return createReturn(keyword, expression, semicolon);
+	}
+
+	if (isKeyword(parser.current.name, KEYWORD_var) ||
+		isKeyword(parser.current.name, KEYWORD_const)) {
+		var variable = parseVariableDefinition(parser);
+
+		return createVariableStatement(variable);
 	} else if (isKeyword(parser.current.name, KEYWORD_func)) {
-		print("do not support func yet\n");
-		next(parser);
+		var function = parseFunctionDefinition(parser);
+
+		return createFunctionStatement(function);
 	} else if (isKeyword(parser.current.name, KEYWORD_if)) {
-		print("do not support if yet\n");
-		next(parser);
-	} else if (isKeyword(parser.current.name, KEYWORD_else)) {
-		print("do not support else yet\n");
-		next(parser);
+		var ifStatement = parseIf(parser);
+
+		return createIfStatement(ifStatement);
 	} else if (isKeyword(parser.current.name, KEYWORD_while)) {
-		print("do not support while yet\n");
-		next(parser);
+		var whileStatement = parseWhile(parser);
+
+		return createWhileStatement(whileStatement);
 	} else if (isKeyword(parser.current.name, KEYWORD_type)) {
 		parseTypeDefinition(parser);
+		return (Statement)0;
 	} else if (isKeyword(parser.current.name, KEYWORD_import)) {
-		print("do not support import yet\n");
-		next(parser);
+		var importStatement = parseImport(parser);
+
+		return createImportStatement(importStatement);
 	} else if (isKeyword(parser.current.name, KEYWORD_return)) {
-		print("do not support return yet\n");
-		next(parser);
-	} else if (isKeyword(parser.current.name, KEYWORD_sizeof)) {
-		print("do not support sizeof yet\n");
-		next(parser);
+		var returnStatement = parseReturn(parser);
+
+		return createReturnStatement(returnStatement);
 	} else if (isOperator(parser.current.operator, "{")) {
 		parseBlock(parser);
-	} else {
-		parseExpression(parser);
+		return (Statement)0;
 	}
+
+	var operation = parseExpression(parser, PREC_assignment);
+	var semicolon = consumeOperator(parser, ";");
+	var expression = createExpression(operation, semicolon);
+
+	return createExpressionStatement(expression);
 }
 
 func parse(Parser parser) {

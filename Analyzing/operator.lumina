@@ -3,51 +3,83 @@ import "whitespace.lumina"
 import "value.lumina"
 
 
+const PREC_statement = 0;
+const PREC_assignment = 1;
+const PREC_expression = 2;
+const PREC_or = 3;
+const PREC_and = 4;
+const PREC_comparison = 5;
+const PREC_term = 6;
+const PREC_factor = 7;
+const PREC_index = 8;
+const PREC_call = 9;
+
 const NUMOPERATORS = 27;
 
 var _operatorList = (str[])malloc(sizeof(str) * NUMOPERATORS);
+var _precedenceList = (int[])malloc(sizeof(int) * NUMOPERATORS);
+
 _operatorList[0] = "<<";
+_precedenceList[0] = PREC_statement;
 _operatorList[1] = ">>";
+_precedenceList[1] = PREC_statement;
 _operatorList[2] = "||";
+_precedenceList[2] = PREC_or;
 _operatorList[3] = "&&";
+_precedenceList[3] = PREC_and;
 _operatorList[4] = "|";
+_precedenceList[4] = PREC_statement;
 _operatorList[5] = "&";
+_precedenceList[5] = PREC_statement;
 _operatorList[6] = "->";
+_precedenceList[6] = PREC_statement;
 _operatorList[7] = "!=";
+_precedenceList[7] = PREC_comparison;
 _operatorList[8] = "<=";
+_precedenceList[8] = PREC_comparison;
 _operatorList[9] = ">=";
+_precedenceList[9] = PREC_comparison;
 _operatorList[10] = "==";
+_precedenceList[10] = PREC_comparison;
 _operatorList[11] = "<";
+_precedenceList[11] = PREC_comparison;
 _operatorList[12] = ">";
+_precedenceList[12] = PREC_comparison;
 _operatorList[13] = "!";
+_precedenceList[13] = PREC_statement;
 _operatorList[14] = "=";
+_precedenceList[14] = PREC_assignment;
 _operatorList[15] = "+";
+_precedenceList[15] = PREC_term;
 _operatorList[16] = "-";
+_precedenceList[16] = PREC_term;
 _operatorList[17] = "*";
+_precedenceList[17] = PREC_factor;
 _operatorList[18] = "(";
+_precedenceList[18] = PREC_call;
 _operatorList[19] = ")";
+_precedenceList[19] = PREC_statement;
 _operatorList[20] = "{";
+_precedenceList[20] = PREC_statement;
 _operatorList[21] = "}";
+_precedenceList[21] = PREC_statement;
 _operatorList[22] = "[";
+_precedenceList[22] = PREC_index;
 _operatorList[23] = "]";
+_precedenceList[23] = PREC_statement;
 _operatorList[24] = ".";
+_precedenceList[24] = PREC_index;
 _operatorList[25] = ",";
+_precedenceList[25] = PREC_statement;
 _operatorList[26] = ";";
+_precedenceList[26] = PREC_statement;
 
 type Operator {
 	WhiteSpace space;
 	Position position;
 	int operatorType;
 	str name;
-}
-
-type Operation {
-	Region region;
-	Operation left;
-	Operator operator;
-	Operation right;
-	Value value;
-	Operator end;
+	int precedence;
 }
 
 type OperatorList {
@@ -65,6 +97,7 @@ func createOperator(Position position, WhiteSpace space) -> Operator {
 	var stringStart = (str)((int)position.buffer + position.index);
 	operator.operatorType = -1;
 	operator.name = strndup(stringStart, 1);
+	operator.precedence = 0;
 
 	var i = 0;
 	while (i < NUMOPERATORS) {
@@ -74,55 +107,14 @@ func createOperator(Position position, WhiteSpace space) -> Operator {
 
 			operator.name = opString;
 
+			operator.precedence = _precedenceList[i];
+
 			i = NUMOPERATORS;
 		}
 		i = i + 1;
 	}
 
 	return operator;
-}
-
-func createOperation(Operation left, Operator operator, Operation right, Operator end) -> Operation {
-	var operation = (Operation)malloc(sizeof(Operation));
-
-	if (end == (Operator)0) {
-		operation.region = createRegion(left.region.start, right.region.end);
-	} else {
-		operation.region = createRegion(left.region.start, end.position);
-	}
-
-	operation.left = left;
-	operation.operator = operator;
-	operation.right = right;
-	operation.value = (Value)0;
-	operation.end = end;
-
-	return operation;
-}
-
-func createUnaryOperation(Operator operator, Operation right) -> Operation {
-	var operation = (Operation)malloc(sizeof(Operation));
-
-	operation.region = createRegion(operator.position, right.region.end);
-	operation.left = (Operation)0;
-	operation.operator = operator;
-	operation.right = right;
-	operation.value = (Value)0;
-	operation.end = (Operator)0;
-
-	return operation;
-}
-
-func createOperationFromValue(Value value) -> Operation {
-	var operation = (Operation)malloc(sizeof(Operation));
-
-	operation.region = value.region;
-	operation.left = (Operation)0;
-	operation.operator = (Operator)0;
-	operation.right = (Operation)0;
-	operation.value = value;
-
-	return operation;
 }
 
 func createOperatorList() -> OperatorList {

@@ -1,0 +1,124 @@
+import "position.lumina"
+import "name.lumina"
+import "operator.lumina"
+import "type.lumina"
+import "block.lumina"
+
+
+type Parameter {
+	Region region;
+	
+	Type parameterType;
+	Name name;
+	Operator comma;
+}
+
+type ParameterList {
+	int size;
+	int maxSize;
+	Parameter[] list;
+}
+
+type ReturnType {
+	Region region;
+
+	Operator rarrow;
+	Type returnType;
+}
+
+type FunctionDefinition {
+	Region region;
+
+	Name keyword;
+	Name name;
+
+	Operator lparen;
+	ParameterList parameters;
+	Operator rparen;
+
+	ReturnType returnType;
+
+	Block block;
+}
+
+type Return {
+	Region region;
+
+	Name keyword;
+	Operation expression;
+	Operator semicolon;
+}
+
+func createParameter(Type parameterType, Name name, Operator comma) -> Parameter {
+	var parameter = (Parameter)malloc(sizeof(Parameter));
+
+	if (comma != (Operator)0) {
+		parameter.region = createRegion(parameterType.region.start, comma.position);
+	} else {
+		parameter.region = createRegion(parameterType.region.start, name.region.end);
+	}
+
+	parameter.parameterType = parameterType;
+	parameter.name = name;
+
+	return parameter;
+}
+
+func createParameterList() -> ParameterList {
+	var list = (ParameterList)malloc(sizeof(ParameterList));
+
+	list.size = 0;
+	list.maxSize = 8;
+	list.list = (Parameter[])malloc(8 * 8);
+
+	return list;
+}
+
+func addParameter(ParameterList list, Parameter parameter) {
+	list.list[list.size] = parameter;
+	list.size = list.size + 1;
+
+	if (list.size == list.maxSize) {
+		list.maxSize = list.maxSize * 2;
+		list.list = (Parameter[])realloc((ptr)list.list, 8 * list.maxSize);
+	}
+}
+
+func createReturnType(Operator rarrow, Type typeObj) -> ReturnType {
+	var returnType = (ReturnType)malloc(sizeof(ReturnType));
+
+	returnType.region = createRegion(rarrow.position, typeObj.region.end);
+	
+	returnType.rarrow = rarrow;
+	returnType.returnType = typeObj;
+
+	return returnType;
+}
+
+func createFunctionDefinition(Name keyword, Name name, Operator lparen, ParameterList parameters, Operator rparen, ReturnType returnType, Block block) -> FunctionDefinition {
+	var function = (FunctionDefinition)malloc(sizeof(FunctionDefinition));
+
+	function.region = createRegion(keyword.region.start, block.region.end);
+
+	function.keyword = keyword;
+	function.name = name;
+	function.lparen = lparen;
+	function.parameters = parameters;
+	function.rparen = rparen;
+	function.returnType = returnType;
+	function.block = block;
+
+	return function;
+}
+
+func createReturn(Name keyword, Operation expression, Operator semicolon) -> Return {
+	var returnObj = (Return)malloc(sizeof(Return));
+
+	returnObj.region = createRegion(keyword.region.start, semicolon.position);
+
+	returnObj.keyword = keyword;
+	returnObj.expression = expression;
+	returnObj.semicolon = semicolon;
+
+	return returnObj;
+}

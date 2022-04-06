@@ -1,0 +1,18 @@
+import "position.lumina"
+
+
+type Import {
+	Region region;
+	Name keyword;
+	String fileName;
+}
+
+func createImport(Name keyword, String fileName) -> Import {
+	var importStatement = (Import)malloc(sizeof(Import));
+
+	importStatement.region = createRegion(keyword.region.start, fileName.region.end);
+	importStatement.keyword = keyword;
+	importStatement.fileName = fileName;
+
+	return importStatement;
+}

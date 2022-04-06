@@ -1,0 +1,28 @@
+import "position.lumina"
+import "name.lumina"
+import "operator.lumina"
+
+
+type VariableDefinition {
+	Region region;
+
+	Name keyword;
+	Name name;
+	Operator equalSign;
+	Operation value;
+	Operator semicolon;
+}
+
+func createVariableDefinition(Name keyword, Name name, Operator equalSign, Operation value, Operator semicolon) -> VariableDefinition {
+	var variable = (VariableDefinition)malloc(sizeof(VariableDefinition));
+
+	variable.region = createRegion(keyword.region.start, semicolon.position);
+
+	variable.keyword = keyword;
+	variable.name = name;
+	variable.equalSign = equalSign;
+	variable.value = value;
+	variable.semicolon = semicolon;
+
+	return variable;
+}

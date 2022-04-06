@@ -1,0 +1,26 @@
+import "position.lumina"
+
+
+type While {
+	Region region;
+	
+	Name keyword;
+	Operator lparen;
+	Operation condition;
+	Operator rparen;
+	Block block;
+}
+
+func createWhile (Name keyword, Operator lparen, Operation condition, Operator rparen, Block block) -> While {
+	var whileStatement = (While)malloc(sizeof(While));
+
+	whileStatement.region = createRegion(keyword.region.start, block.region.end);
+
+	whileStatement.keyword = keyword;
+	whileStatement.lparen = lparen;
+	whileStatement.condition = condition;
+	whileStatement.rparen = rparen;
+	whileStatement.block = block;
+
+	return whileStatement;
+}
