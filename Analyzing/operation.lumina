@@ -19,6 +19,7 @@ type Operation {
 	Operator end;
 	Value value;
 	SizeOf sizeOf;
+	Type castType;
 }
 
 func createSizeOf(Name keyword, Operator lparen, Type typeObj, Operator rparen) -> SizeOf {
@@ -49,6 +50,7 @@ func createOperation(Operation left, Operator operator, Operation right, Operato
 	operation.value = (Value)0;
 	operation.end = end;
 	operation.sizeOf = (SizeOf)0;
+	operation.castType = (Type)0;
 
 	return operation;
 }
@@ -68,6 +70,7 @@ func createUnaryOperation(Operator operator, Operation right, Operator end) -> O
 	operation.value = (Value)0;
 	operation.end = end;
 	operation.sizeOf = (SizeOf)0;
+	operation.castType = (Type)0;
 
 	return operation;
 }
@@ -82,12 +85,25 @@ func createOperationFromValue(Value value) -> Operation {
 	operation.value = value;
 	operation.end = (Operator)0;
 	operation.sizeOf = (SizeOf)0;
+	operation.castType = (Type)0;
 
 	return operation;
 }
 
-func createTypeCast(Operation typeGroup, Operation operation) -> Operation {
-	return createOperation(typeGroup, (Operator)0, operation, (Operator)0);
+func createTypeCast(Operator lparen, Type castType, Operator rparen, Operation castOperation) -> Operation {
+	var operation = (Operation)malloc(sizeof(Operation));
+
+	operation.region = createRegion(lparen.position, castOperation.region.end);
+
+	operation.left = (Operation)0;
+	operation.operator = lparen;
+	operation.right = castOperation;
+	operation.value = (Value)0;
+	operation.end = rparen;
+	operation.sizeOf = (SizeOf)0;
+	operation.castType = castType;
+
+	return operation;
 }
 
 func createOperationFromSizeOf(SizeOf sizeOf) -> Operation {
