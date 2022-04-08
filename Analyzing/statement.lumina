@@ -18,6 +18,12 @@ type Statement {
 	Return returnStatement;
 }
 
+type StatementList {
+	int size;
+	int maxSize;
+	Statement[] list;
+}
+
 func createStatement() -> Statement {
 	var statement = (Statement)malloc(sizeof(Statement));
 
@@ -94,4 +100,24 @@ func createReturnStatement(Return returnStatement) -> Statement {
 	statement.returnStatement = returnStatement;
 
 	return statement;
+}
+
+func createStatementList() -> StatementList {
+	var list = (StatementList)malloc(sizeof(StatementList));
+
+	list.size = 0;
+	list.maxSize = 8;
+	list.list = (Statement[])malloc(8 * 8);
+
+	return list;
+}
+
+func addStatement(StatementList list, Statement statement) {
+	list.list[list.size] = statement;
+	list.size = list.size + 1;
+
+	if (list.size == list.maxSize) {
+		list.maxSize = list.maxSize * 2;
+		list.list = (Statement[])realloc((ptr)list.list, 8 * list.maxSize);
+	}
 }

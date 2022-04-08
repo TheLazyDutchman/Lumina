@@ -1,10 +1,12 @@
 import "position.lumina"
 import "operator.lumina"
+import "statement.lumina"
 
 
 type Block {
 	Region region;
 	Operator lbrace;
+	StatementList statements;
 	Operator rbrace;
 }
 
@@ -14,11 +16,12 @@ type BlockList {
 	Block[] list;
 }
 
-func createBlock(Operator lbrace, Operator rbrace) -> Block {
+func createBlock(Operator lbrace, StatementList statements, Operator rbrace) -> Block {
 	var block = (Block)malloc(sizeof(Block));
 
 	block.region = createRegion(lbrace.position, rbrace.position);
 	block.lbrace = lbrace;
+	block.statements = statements;
 	block.rbrace = rbrace;
 
 	return block;

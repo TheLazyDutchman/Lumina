@@ -341,18 +341,21 @@ func parseReturnType(Parser parser) -> ReturnType {
 }
 
 func parseStatement(Parser parser) -> Statement {
-	func parseBlock(Parser parser) -> Block {
+	func parseBlock(Parser parser) -> int {
 		var lbrace = consumeOperator(parser, "{", (bool)0);
 
+		var list = createStatementList();
+
 		while (isOperator(parser.current.operator, "}") != (bool)1 || parser.current.isEOF) {
-			parseStatement(parser);
+			var statement = parseStatement(parser);
+			addStatement(list, statement);
 		}
 
 		var rbrace = consumeOperator(parser, "}", (bool)0);
-		var block = createBlock(lbrace, rbrace);
+		var block = createBlock(lbrace, list, rbrace);
 		addBlock(parser.blocks, block);
 
-		return block;
+		return parser.blocks.size - 1;
 	}
 
 	func parseElseIf(Parser parser, ElseIfList list, Name elseKeyword) {
@@ -361,15 +364,17 @@ func parseStatement(Parser parser) -> Statement {
 		var condition = parseExpression(parser, PREC_expression);
 		var rparen = consumeOperator(parser, ")", (bool)0);
 		var block = parseBlock(parser);
+		var endPosition = parser.blocks.list[block].region.end;
 
-		var elseIf = createElseIf(elseKeyword, ifKeyword, lparen, condition, rparen, block);
+		var elseIf = createElseIf(elseKeyword, ifKeyword, lparen, condition, rparen, block, endPosition);
 		addElseIf(list, elseIf);
 	}
 
 	func parseElse(Parser parser, Name keyword) -> Else {
 		var block = parseBlock(parser);
+		var endPosition = parser.blocks.list[block].region.end;
 
-		return createElse(keyword, block);
+		return createElse(keyword, block, endPosition);
 	}
 
 	func parseIf(Parser parser) -> If {
@@ -379,10 +384,12 @@ func parseStatement(Parser parser) -> Statement {
 		var condition = parseExpression(parser, PREC_expression);
 		var rparen = consumeOperator(parser, ")", (bool)0);
 		
-		var block = (Block)0;
+		var block = -1;
+		var endPosition = (Position)0;
 
 		if (isOperator(parser.current.operator, "{")) {
 			block = parseBlock(parser);
+			endPosition = parser.blocks.list[block].region.end;
 		} else {
 			print("expected block after 'if'\n");
 		}
@@ -396,11 +403,11 @@ func parseStatement(Parser parser) -> Statement {
 				parseElseIf(parser, elseIfs, elseKeyword);
 			} else {
 				var elseObj = parseElse(parser, elseKeyword);
-				return createIf(ifKeyword, lparen, condition, rparen, block, elseIfs, elseObj);
+				return createIf(ifKeyword, lparen, condition, rparen, block, elseIfs, elseObj, endPosition);
 			}
 		}
 
-		return createIf(ifKeyword, lparen, condition, rparen, block, elseIfs, (Else)0);
+		return createIf(ifKeyword, lparen, condition, rparen, block, elseIfs, (Else)0, endPosition);
 	}
 
 	func parseWhile(Parser parser) -> While {
@@ -410,15 +417,17 @@ func parseStatement(Parser parser) -> Statement {
 		var condition = parseExpression(parser, PREC_expression);
 		var rparen = consumeOperator(parser, ")", (bool)0);
 
-		var block = (Block)0;
+		var block = -1;
+		var endPosition = (Position)0;
 
 		if (isOperator(parser.current.operator, "{")) {
 			block = parseBlock(parser);
+			endPosition = parser.blocks.list[block].region.end;
 		} else  {
 			print("expected block after while\n");
 		}
 
-		return createWhile(keyword, lparen, condition, rparen, block);
+		return createWhile(keyword, lparen, condition, rparen, block, endPosition);
 	}
 
 	func parseFunctionDefinition(Parser parser) -> FunctionDefinition {
@@ -435,8 +444,9 @@ func parseStatement(Parser parser) -> Statement {
 		}
 
 		var block = parseBlock(parser);
+		var endPosition = parser.blocks.list[block].region.end;
 
-		return createFunctionDefinition(keyword, name, lparen, parameters, rparen, returnType, block);
+		return createFunctionDefinition(keyword, name, lparen, parameters, rparen, returnType, block, endPosition);
 	}
 
 	func parseReturn(Parser parser) -> Return {

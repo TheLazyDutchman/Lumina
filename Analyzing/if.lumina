@@ -4,7 +4,7 @@ type Else {
 	Region region;
 
 	Name keyword;
-	Block block;
+	int blockId;
 }
 
 type ElseIf {
@@ -15,7 +15,7 @@ type ElseIf {
 	Operator lparen;
 	Operation condition;
 	Operator rparen;
-	Block block;
+	int blockId;
 }
 
 type ElseIfList {
@@ -30,33 +30,33 @@ type If {
 	Operator lparen;
 	Operation condition;
 	Operator rparen;
-	Block block;
+	int blockId;
 	ElseIfList elseIfs;
 	Else elseObj;
 }
 
-func createElse(Name keyword, Block block) -> Else {
+func createElse(Name keyword, int blockId, Position end) -> Else {
 	var elseStatement = (Else)malloc(sizeof(Else));
 
-	elseStatement.region = createRegion(keyword.region.start, block.region.end);
+	elseStatement.region = createRegion(keyword.region.start, end);
 
 	elseStatement.keyword = keyword;
-	elseStatement.block = block;
+	elseStatement.blockId = blockId;
 
 	return elseStatement;
 }
 
-func createElseIf(Name elseKeyword, Name ifKeyword, Operator lparen, Operation condition, Operator rparen, Block block) -> ElseIf {
+func createElseIf(Name elseKeyword, Name ifKeyword, Operator lparen, Operation condition, Operator rparen, int blockId, Position end) -> ElseIf {
 	var elseIf = (ElseIf)malloc(sizeof(ElseIf));
 
-	elseIf.region = createRegion(elseKeyword.region.start, block.region.end);
+	elseIf.region = createRegion(elseKeyword.region.start, end);
 
 	elseIf.elseKeyword = elseKeyword;
 	elseIf.ifKeyword = ifKeyword;
 	elseIf.lparen = lparen;
 	elseIf.condition = condition;
 	elseIf.rparen = rparen;
-	elseIf.block = block;
+	elseIf.blockId = blockId;
 
 	return elseIf;
 }
@@ -81,22 +81,22 @@ func addElseIf(ElseIfList list, ElseIf elseIf) {
 	}
 }
 
-func createIf(Name keyword, Operator lparen, Operation condition, Operator rparen, Block block, ElseIfList elseIfs, Else elseObj) -> If {
+func createIf(Name keyword, Operator lparen, Operation condition, Operator rparen, int blockId, ElseIfList elseIfs, Else elseObj, Position end) -> If {
 	var ifStatement = (If)malloc(sizeof(If));
 
 	if (elseObj != (Else)0) {
-		ifStatement.region = createRegion(keyword.region.start, elseObj.region.end);
+		ifStatement.region = createRegion(keyword.region.start, end);
 	} else if (elseIfs.size > 0) {
 		ifStatement.region = createRegion(keyword.region.start, elseIfs.list[elseIfs.size - 1].region.end);
 	} else {
-		ifStatement.region = createRegion(keyword.region.start, block.region.end);
+		ifStatement.region = createRegion(keyword.region.start, end);
 	}
 
 	ifStatement.keyword = keyword;
 	ifStatement.lparen = lparen;
 	ifStatement.condition = condition;
 	ifStatement.rparen = rparen;
-	ifStatement.block = block;
+	ifStatement.blockId = blockId;
 	ifStatement.elseIfs = elseIfs;
 	ifStatement.elseObj = elseObj;
 

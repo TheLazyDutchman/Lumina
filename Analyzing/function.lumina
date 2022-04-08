@@ -2,7 +2,6 @@ import "position.lumina"
 import "name.lumina"
 import "operator.lumina"
 import "type.lumina"
-import "block.lumina"
 
 
 type Parameter {
@@ -38,7 +37,7 @@ type FunctionDefinition {
 
 	ReturnType returnType;
 
-	Block block;
+	int blockId;
 }
 
 type Return {
@@ -95,10 +94,10 @@ func createReturnType(Operator rarrow, Type typeObj) -> ReturnType {
 	return returnType;
 }
 
-func createFunctionDefinition(Name keyword, Name name, Operator lparen, ParameterList parameters, Operator rparen, ReturnType returnType, Block block) -> FunctionDefinition {
+func createFunctionDefinition(Name keyword, Name name, Operator lparen, ParameterList parameters, Operator rparen, ReturnType returnType, int blockId, Position end) -> FunctionDefinition {
 	var function = (FunctionDefinition)malloc(sizeof(FunctionDefinition));
 
-	function.region = createRegion(keyword.region.start, block.region.end);
+	function.region = createRegion(keyword.region.start, end);
 
 	function.keyword = keyword;
 	function.name = name;
@@ -106,7 +105,7 @@ func createFunctionDefinition(Name keyword, Name name, Operator lparen, Paramete
 	function.parameters = parameters;
 	function.rparen = rparen;
 	function.returnType = returnType;
-	function.block = block;
+	function.blockId = blockId;
 
 	return function;
 }
