@@ -3,12 +3,12 @@ Lumina is a hobby programming language.
 
 It is self-hosted and compiled, as well as statically typed.
 
-[Quick Start](#quick-start)
-[Variables](#variables)
-[Types](#types)
-[Importing](#importing)
-[Functions](#functions)
-[Syntax Highlighting](#syntax-highlighting)
+- [Quick Start](#quick-start)
+- [Variables](#variables)
+- [Types](#types)
+- [Importing](#importing)
+- [Functions](#functions)
+- [Syntax Highlighting](#syntax-highlighting)
 
 ## Support
 Lumina can currently be compiled to:
@@ -98,7 +98,7 @@ func max(int a, int b) -> int {
 }
 ```
 ## Syntax HighLighting
-files for syntax highlighting can be found in the [Editor Folder](/editor).
+files for syntax highlighting can be found in the [Editor Folder](/editors).
 currently supported are:
 - [x] vim
 - [ ] emacs
