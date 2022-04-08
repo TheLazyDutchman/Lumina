@@ -3,6 +3,13 @@ Lumina is a hobby programming language.
 
 It is self-hosted and compiled, as well as statically typed.
 
+- [Quick Start](#quick-start)
+- [Variables](#variables)
+- [Types](#types)
+- [Importing](#importing)
+- [Functions](#functions)
+- [Syntax Highlighting](#syntax-highlighting)
+
 ## Support
 Lumina can currently be compiled to:
 * `linux x84_64`
@@ -89,6 +96,18 @@ func max(int a, int b) -> int {
 	}
 	return b;
 }
+```
+## Syntax HighLighting
+files for syntax highlighting can be found in the [Editor Folder](/editors).
+currently supported are:
+- [x] vim
+- [ ] emacs
+- [ ] vscode
+
+### Vim Setup
+to setup syntax highlighting, copy the `lumina.vim` file to the location `~/.vim/syntax/lumina.vim`, and then add the following line to your `vimrc` file:
+```vimrc
+au BufRead,BufNewFile *.lumina set filetype=lumina
 ```
 ## Standard Library
 The standard library is currently very prone to changes, therefore, it may take a while to create good documentation for it, if you want to see the functions that are defined currently, you can see them in the `std` directory. To use those functions, you will need to use `import` with a local path to the corresponding file in `std`.
