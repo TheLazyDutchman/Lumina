@@ -24,6 +24,8 @@ type Lexer {
 	int index;
 	int line;
 	int column;
+
+	Token current;
 }
 
 func readFile(str fileName) -> str {
@@ -286,4 +288,12 @@ func isNumber(Token token) -> bool {
 
 func isComment(Token token) -> bool {
 	return token.comment != (Comment)0;
+}
+
+func next(Lexer lexer) {
+	lexer.current = nextToken(lexer);
+
+	if (isComment(lexer.current)) {
+		next(lexer);
+	}
 }

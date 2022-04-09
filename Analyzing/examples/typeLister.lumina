@@ -13,8 +13,8 @@ if (argc > 2) {
 
 var fileName = argv[1];
 
-var parser = createParser(fileName);
+var parser = createParser();
 
-parse(parser);
+var syntaxTree = parse(parser, fileName);
 
 //get the list of types from the parser
