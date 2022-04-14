@@ -13,6 +13,12 @@ type VariableDefinition {
 	Operator semicolon;
 }
 
+type VariableList {
+	int size;
+	int maxSize;
+	VariableDefinition[] list;
+}
+
 func createVariableDefinition(Name keyword, Name name, Operator equalSign, Operation value, Operator semicolon) -> VariableDefinition {
 	var variable = (VariableDefinition)malloc(sizeof(VariableDefinition));
 
@@ -25,4 +31,24 @@ func createVariableDefinition(Name keyword, Name name, Operator equalSign, Opera
 	variable.semicolon = semicolon;
 
 	return variable;
+}
+
+func createVariableList() -> VariableList {
+	var list = (VariableList)malloc(sizeof(VariableList));
+
+	list.size = 0;
+	list.maxSize = 8;
+	list.list = (VariableDefinition[])malloc(8 * 8);
+
+	return list;
+}
+
+func addVariable(VariableList list, VariableDefinition variable) {
+	list.list[list.size] = variable;
+	list.size = list.size + 1;
+
+	if (list.size == list.maxSize) {
+		list.maxSize = list.maxSize * 2;
+		list.list = (VariableDefinition[])realloc((ptr)list.list, list.maxSize * 8);
+	}
 }

@@ -17,4 +17,19 @@ var parser = createParser();
 
 var syntaxTree = parse(parser, fileName);
 
-//get the list of types from the parser
+var i = 0;
+
+while (i < syntaxTree.types.size) {
+	var typeDef = syntaxTree.types.list[i];
+
+	if (typeDef == (TypeDefinition)0) {
+		print("type is null\n");
+	}
+
+	if (typeDef.name == (Name)0) {
+		print("name is null\n");
+	}
+
+	print(typeDef.name.name);
+	i = i + 1;
+}

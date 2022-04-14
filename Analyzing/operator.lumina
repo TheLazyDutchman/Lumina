@@ -134,7 +134,7 @@ func addOperator(OperatorList list, Operator operator) {
 	if (list.size == list.maxSize) {
 		list.maxSize = list.maxSize * 2;
 
-		list.list = (Operator[])realloc((ptr)list.list, list.maxSize);
+		list.list = (Operator[])realloc((ptr)list.list, list.maxSize * 8);
 	}
 }
 

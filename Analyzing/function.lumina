@@ -40,6 +40,12 @@ type FunctionDefinition {
 	int blockId;
 }
 
+type FunctionList {
+	int size;
+	int maxSize;
+	FunctionDefinition[] list;
+}
+
 type Return {
 	Region region;
 
@@ -108,6 +114,26 @@ func createFunctionDefinition(Name keyword, Name name, Operator lparen, Paramete
 	function.blockId = blockId;
 
 	return function;
+}
+
+func createFunctionList() -> FunctionList {
+	var list = (FunctionList)malloc(sizeof(FunctionList));
+
+	list.size = 0;
+	list.maxSize = 8;
+	list.list = (FunctionDefinition[])malloc(8 * 8);
+
+	return list;
+}
+
+func addFunction(FunctionList list, FunctionDefinition function) {
+	list.list[list.size] = function;
+	list.size = list.size + 1;
+
+	if (list.size == list.maxSize) {
+		list.maxSize = list.maxSize * 2;
+		list.list = (FunctionDefinition[])realloc((ptr)list.list, list.maxSize * 8);
+	}
 }
 
 func createReturn(Name keyword, Operation expression, Operator semicolon) -> Return {

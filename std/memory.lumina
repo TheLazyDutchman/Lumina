@@ -83,9 +83,11 @@ func malloc(int size) -> ptr {
 		return (ptr)0;
 	}
 
+	size = size * 2; // malloc sometimes does not allocate enough, there must be some math wrong
+
 	var block = _heap_start;
 
-	while (block != (_heap_block)0 && (ptr)block < (ptr)((int)curEnd - sizeof(_heap_block))) {
+	while (block >= _heap_start && (ptr)block < (ptr)((int)curEnd - sizeof(_heap_block))) {
 		if (block.free) {
 			if (block.size >= size) {
 				var newBlock = _split_block(block, size);
@@ -97,14 +99,38 @@ func malloc(int size) -> ptr {
 		block = block.next;
 	}
 
+	if (_last_block > (_heap_block)((int)curEnd - sizeof(_heap_block))) {
+		syscall(1, 1, "2\n", 2, 0, 0, 0);
+	}
+
 	var expandedSize = _expand_heap(size);
 
+	if (_last_block < _heap_start) {
+		syscall(1, 1, "3\n", 2, 0, 0, 0);
+	}
+
 	var newBlock = (_heap_block)((int)_last_block + sizeof(_heap_block) + _last_block.size);
+
+	if (newBlock < _heap_start) {
+		syscall(1, 1, "0\n", 2, 0, 0, 0);
+	}
+
+	if ((ptr)newBlock > (ptr)((int)curEnd - sizeof(_heap_block))) {
+		syscall(1, 1, "1\n", 2, 0, 0, 0);
+	}
 
 	newBlock.free = 0 == 0;
 	newBlock.size = expandedSize - sizeof(_heap_block);
 	newBlock.prev = _last_block;
 	_last_block.next = newBlock;
+
+	if (newBlock.prev < _heap_start) {
+		syscall(1, 1, "4\n", 2, 0, 0, 0);
+	}
+
+	if ((ptr)newBlock.prev > curEnd) {
+		syscall(1, 1, "5\n", 2, 0, 0, 0);
+	}
 	
 	newBlock.next = (_heap_block)0;
 

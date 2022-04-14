@@ -1,5 +1,4 @@
-import "name.lumina"
-
+import "name.lumina" 
 
 type Type {
 	Region region;
@@ -30,6 +29,12 @@ type TypeDefinition {
 	PropertyList properties;
 
 	Operator rbrace;
+}
+
+type TypeList {
+	int size;
+	int maxSize;
+	TypeDefinition[] list;
 }
 
 func createType(Name name, OperatorList brackets) -> Type {
@@ -120,4 +125,24 @@ func createTypeDefinition(Name keyword, Name name, Operator lbrace, PropertyList
 	typeDef.region = createRegion(keyword.region.start, rbrace.position);
 
 	return typeDef;
+}
+
+func createTypeList() -> TypeList {
+	var list = (TypeList)malloc(sizeof(TypeList));
+
+	list.size = 0;
+	list.maxSize = 8;
+	list.list = (TypeDefinition[])malloc(8 * 8);
+
+	return list;
+}
+
+func addType(TypeList list, TypeDefinition typeDefinition) {
+	list.list[list.size] = typeDefinition;
+	list.size = list.size + 1;
+
+	if (list.size == list.maxSize) {
+		list.maxSize = list.maxSize * 2;
+		list.list = (TypeDefinition[])realloc((ptr)list.list, 8 * list.maxSize);
+	}
 }
