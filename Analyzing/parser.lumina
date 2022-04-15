@@ -380,19 +380,22 @@ func parseReturnType(SyntaxTree tree) -> ReturnType {
 	return createReturnType(rarrow, typeObj);
 }
 
-func parseStatement(SyntaxTree tree) -> Statement {
+func parseStatement(SyntaxTree tree, TypeList typeList, FunctionList functionList, VariableList variableList) -> Statement {
 	func parseBlock(SyntaxTree tree) -> int {
 		var lbrace = consumeOperator(tree, "{", (bool)0);
 
-		var list = createStatementList();
+		var statementList = createStatementList();
+		var typeList = createTypeList();
+		var functionList = createFunctionList();
+		var variableList = createVariableList();
 
 		while (isOperator(tree.lexer.current.operator, "}") != (bool)1 || tree.lexer.current.isEOF) {
-			var statement = parseStatement(tree);
-			addStatement(list, statement);
+			var statement = parseStatement(tree, typeList, functionList, variableList);
+			addStatement(statementList, statement);
 		}
 
 		var rbrace = consumeOperator(tree, "}", (bool)0);
-		var block = createBlock(lbrace, list, rbrace);
+		var block = createBlock(lbrace, statementList, typeList, functionList, variableList, rbrace);
 		addBlock(tree.blocks, block);
 
 		return tree.blocks.size - 1;
@@ -508,13 +511,13 @@ func parseStatement(SyntaxTree tree) -> Statement {
 		isKeyword(tree.lexer.current.name, KEYWORD_const)) {
 		var variable = parseVariableDefinition(tree);
 
-		addVariable(tree.variables, variable);
+		addVariable(variableList, variable);
 
 		return createVariableStatement(variable);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_func)) {
 		var function = parseFunctionDefinition(tree);
 
-		addFunction(tree.functions, function);
+		addFunction(functionList, function);
 
 		return createFunctionStatement(function);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_if)) {
@@ -528,7 +531,7 @@ func parseStatement(SyntaxTree tree) -> Statement {
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_type)) {
 		var typeDefinition = parseTypeDefinition(tree);
 
-		addType(tree.types, typeDefinition);
+		addType(typeList, typeDefinition);
 
 		return createTypeStatement(typeDefinition);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_import)) {
@@ -556,7 +559,7 @@ func parse(Parser parser, str fileName) -> SyntaxTree {
 	var tree = createSyntaxTree(fileName);
 
 	while (tree.lexer.current.isEOF != (bool)1) {
-		var statement = parseStatement(tree);
+		var statement = parseStatement(tree, tree.types, tree.functions, tree.variables);
 		addStatement(tree.statements, statement);
 	}
 
