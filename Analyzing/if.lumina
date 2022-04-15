@@ -76,8 +76,8 @@ func addElseIf(ElseIfList list, ElseIf elseIf) {
 	list.size = list.size + 1;
 	
 	if (list.size == list.maxSize) {
+		list.list = (ElseIf[])realloc((ptr)list.list, list.maxSize * 8, 8 * list.maxSize * 2);
 		list.maxSize = list.maxSize * 2;
-		list.list = (ElseIf[])realloc((ptr)list.list, 8 * list.maxSize);
 	}
 }
 

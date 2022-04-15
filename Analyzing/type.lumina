@@ -91,9 +91,8 @@ func addProperty(PropertyList list, Property property) {
 	list.size = list.size + 1;
 
 	if (list.size == list.maxSize) {
+		list.list = (Property[])realloc((ptr)list.list, list.maxSize * 8, 8 * list.maxSize * 2);
 		list.maxSize = list.maxSize * 2;
-
-		list.list = (Property[])realloc((ptr)list.list, 8 * list.maxSize);
 	}
 }
 
@@ -142,7 +141,7 @@ func addType(TypeList list, TypeDefinition typeDefinition) {
 	list.size = list.size + 1;
 
 	if (list.size == list.maxSize) {
+		list.list = (TypeDefinition[])realloc((ptr)list.list, list.maxSize * 8, 8 * list.maxSize * 2);
 		list.maxSize = list.maxSize * 2;
-		list.list = (TypeDefinition[])realloc((ptr)list.list, 8 * list.maxSize);
 	}
 }

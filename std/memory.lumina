@@ -1,196 +1,51 @@
 import "syscalls.lumina"
 
+// DISCLAIMER this is not an actual malloc implementation
+// the previous one just had a lot of bugs, so this is a quick (hopefully) in between "solution", before I create an actual garbage collector
+
 var PAGESIZE = 4096;
 
-type _heap_block {
-	int size;
-	bool free;
-	_heap_block prev;
-	_heap_block next;
-}
+var _heapHead = brk((ptr)0);
 
-var _heap_start = (_heap_block)brk((ptr)0);
-var _last_block = _heap_start;
+var curEnd = brk((ptr)((int)_heapHead + PAGESIZE * 4));
 
-var curEnd = brk((ptr)((int)_heap_start + PAGESIZE)); // allocate memory for the heap
+func expandHeap(int size) -> int {
+    var totalSize = PAGESIZE;
 
-_heap_start.size = PAGESIZE - sizeof(_heap_block); // initialize the first block
-_heap_start.free = 0 == 0; // true keyword is not implemented yet
-_heap_start.prev = (_heap_block)0;
-_heap_start.next = (_heap_block)0;
+    while (totalSize < size) {
+	totalSize = totalSize + PAGESIZE;
+    }
 
-
-func _expand_heap(int size) -> int {
-	var val = PAGESIZE;
-
-	while (size > val) {
-		val = val + PAGESIZE;
-	}
-
-	curEnd = brk((ptr)((int)curEnd + val));
-
-	return val;
-}
-
-func _split_block(_heap_block block, int size) -> _heap_block {
-	if (size + sizeof(_heap_block) >= block.size) {
-		return block;
-	}
-
-	var newBlock = (_heap_block)((int)block + size + sizeof(_heap_block));
-
-	newBlock.free = 0 == 0;
-	newBlock.size = (block.size - size) - sizeof(_heap_block);
-	block.size = size;
-
-	newBlock.prev = block;
-	newBlock.next = block.next;
-
-	if (newBlock.next > (_heap_block)0) {
-		newBlock.next.prev = newBlock;
-	}
-
-	block.next = newBlock;
-	
-	if (_last_block == block) {
-		_last_block = newBlock;
-	}
-
-	return block;
-}
-
-
-func _combine(_heap_block block) {
-	block.size = block.size + sizeof(_heap_block) + block.next.size;
-
-	if (block.next == _last_block) {
-		_last_block = block;
-	}
-
-	block.next = block.next.next;
-
-	if (block.next > (_heap_block)0) {
-		block.next.prev = block;
-	}
-}
-
-func _block_to_ptr(_heap_block block) -> ptr {
-	return (ptr)((int)block + sizeof(_heap_block));
+    curEnd = brk((ptr)((int)curEnd + totalSize));
+    return totalSize;
 }
 
 func malloc(int size) -> ptr {
-	if (size <= 0) {
-		return (ptr)0;
-	}
+    if ((int)curEnd - (int)_heapHead < size) {
+	expandHeap(size);
+    }
 
-	size = size * 2; // malloc sometimes does not allocate enough, there must be some math wrong
+    var oldPtr = _heapHead;
+    _heapHead = (ptr)((int)_heapHead + size);
+    return oldPtr;
+}
 
-	var block = _heap_start;
+func realloc(ptr addr, int oldSize, int newSize) -> ptr {
+    if (oldSize >= newSize) {
+	return addr;
+    }
 
-	while (block >= _heap_start && (ptr)block < (ptr)((int)curEnd - sizeof(_heap_block))) {
-		if (block.free) {
-			if (block.size >= size) {
-				var newBlock = _split_block(block, size);
-				newBlock.free = 1 == 0; // false keyword is not implemented yet
+    var newAddr = malloc(newSize);
 
-				return _block_to_ptr(newBlock);
-			}
-		}
-		block = block.next;
-	}
+    var i = 0;
+    while (i < oldSize) {
+	((char[])newAddr)[i] = ((char[])addr)[i];
+	i = i + 1;
+    }
 
-	if (_last_block > (_heap_block)((int)curEnd - sizeof(_heap_block))) {
-		syscall(1, 1, "2\n", 2, 0, 0, 0);
-	}
-
-	var expandedSize = _expand_heap(size);
-
-	if (_last_block < _heap_start) {
-		syscall(1, 1, "3\n", 2, 0, 0, 0);
-	}
-
-	var newBlock = (_heap_block)((int)_last_block + sizeof(_heap_block) + _last_block.size);
-
-	if (newBlock < _heap_start) {
-		syscall(1, 1, "0\n", 2, 0, 0, 0);
-	}
-
-	if ((ptr)newBlock > (ptr)((int)curEnd - sizeof(_heap_block))) {
-		syscall(1, 1, "1\n", 2, 0, 0, 0);
-	}
-
-	newBlock.free = 0 == 0;
-	newBlock.size = expandedSize - sizeof(_heap_block);
-	newBlock.prev = _last_block;
-	_last_block.next = newBlock;
-
-	if (newBlock.prev < _heap_start) {
-		syscall(1, 1, "4\n", 2, 0, 0, 0);
-	}
-
-	if ((ptr)newBlock.prev > curEnd) {
-		syscall(1, 1, "5\n", 2, 0, 0, 0);
-	}
-	
-	newBlock.next = (_heap_block)0;
-
-	_last_block = newBlock;
-
-	if (newBlock.prev.free) {
-		_combine(newBlock.prev);
-	}
-
-	return malloc(size);
+    return newAddr;
 }
 
 func free(ptr addr) {
-	var block = (_heap_block)((int)addr - sizeof(_heap_block));
-	block.free = 0 == 0; // true keyword not implemented
-
-	if (block.next > (_heap_block)0) {
-		if (block.next.free) {
-			_combine(block);
-		}
-	}
-
-	if (block.prev > (_heap_block)0) {
-		if (block.prev.free) {
-			_combine(block.prev);
-		}
-	}
-}
-
-func realloc(ptr addr, int newSize) -> ptr {
-	var block = (_heap_block)((int)addr - sizeof(_heap_block));
-	var oldSize = block.size;
-
-	if (newSize < oldSize - sizeof(_heap_block)) {
-		_split_block(block, newSize);
-		return _block_to_ptr(block);
-	}
-
-	if (newSize > oldSize) {
-		if (block.next > (_heap_block)0) {
-			if (block.next.free) {
-				_combine(block);
-				return realloc(addr, newSize);
-			}
-		}
-
-		var target = malloc(newSize);
-
-		var src = (char[])addr;
-		var dst = (char[])target;
-
-		var i = 0;
-		while (i < oldSize) {
-			dst[i] = src[i];
-			i = i + 1;
-		}
-
-		free(addr);
-		return target;
-	}
-
-	return addr;
+    // this hack of a heap can not free memory
 }
