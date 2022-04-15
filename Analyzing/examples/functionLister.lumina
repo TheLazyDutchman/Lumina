@@ -1,0 +1,36 @@
+import "../parser.lumina"
+
+
+if (argc < 2) {
+	print("[ERROR] expected argument <filename>\n");
+	exit(1);
+}
+
+if (argc > 2) {
+	print("[ERROR] expected a single argument\n");
+	exit(1);
+}
+
+var fileName = argv[1];
+
+var parser = createParser();
+
+var syntaxTree = parse(parser, fileName);
+
+var i = 0;
+
+while (i < syntaxTree.functions.size) {
+	var functionDef = syntaxTree.functions.list[i];
+
+	if (functionDef == (FunctionDefinition)0) {
+		print("function is null\n");
+	}
+
+	if (functionDef.name == (Name)0) {
+		print("name is null\n");
+	}
+
+	print(functionDef.name.name);
+	print("\n");
+	i = i + 1;
+}
