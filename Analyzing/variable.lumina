@@ -52,3 +52,14 @@ func addVariable(VariableList list, VariableDefinition variable) {
 		list.maxSize = list.maxSize * 2;
 	}
 }
+
+func findVariable(VariableList list, str name) -> VariableDefinition {
+    var i = 0;
+    while (i < list.size) {
+	if (streq(list.list[i].name.name, name)) {
+	    return list.list[i];
+	}
+	i = i + 1;
+    }
+    return (VariableDefinition)0;
+}

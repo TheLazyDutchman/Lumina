@@ -17,6 +17,8 @@ var parser = createParser();
 
 var syntaxTree = parse(parser, fileName);
 
+bindNames(parser, fileName);
+
 var i = 0;
 
 while (i < syntaxTree.functions.size) {

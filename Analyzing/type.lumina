@@ -145,3 +145,14 @@ func addType(TypeList list, TypeDefinition typeDefinition) {
 		list.maxSize = list.maxSize * 2;
 	}
 }
+
+func findType(TypeList list, str name) -> TypeDefinition {
+    var i = 0;
+    while (i < list.size) {
+	if (streq(list.list[i].name.name, name)) {
+	    return list.list[i];
+	}
+	i = i + 1;
+    }
+    return (TypeDefinition)0;
+}

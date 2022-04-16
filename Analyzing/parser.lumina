@@ -567,3 +567,129 @@ func parse(Parser parser, str fileName) -> SyntaxTree {
 
 	return tree;
 }
+
+func bindName(SyntaxTree tree, Name name) {
+    var function = findFunction(tree.functions, name.name);
+    if (function != (FunctionDefinition)0) {
+	name.definitionRegion = function.region;
+	return;
+    }
+
+    var typeDef = findType(tree.types, name.name);
+    if (typeDef != (TypeDefinition)0) {
+	name.definitionRegion = typeDef.region;
+	return;
+    }
+
+    var variable = findVariable(tree.variables, name.name);
+    if (variable != (VariableDefinition)0) {
+	name.definitionRegion = variable.region;
+	return;
+    }
+
+    print("could not find name: '");
+    print(name.name);
+    print("'\n");
+}
+
+func bindNamesInType(SyntaxTree tree, Type typeObj) {
+    bindName(tree, typeObj.name);
+}
+
+func bindNamesInOperation(SyntaxTree tree, Operation operation) {
+    if (operation.left != (Operation)0) {
+	bindNamesInOperation(tree, operation.left);
+    }
+
+    if (operation.right != (Operation)0) {
+	bindNamesInOperation(tree, operation.right);
+    }
+
+    if (operation.sizeOf != (SizeOf)0) {
+	bindNamesInType(tree, operation.sizeOf.typeObj);
+    }
+
+    if (operation.castType != (Type)0) {
+	bindNamesInType(tree, operation.castType);
+    }
+
+    if (operation.value != (Value)0 && operation.value.name != (Name)0) {
+	bindName(tree, operation.value.name);
+    }
+}
+
+func bindNamesInExpression(SyntaxTree tree, Expression expression) {
+    bindNamesInOperation(tree, expression.operation);
+}
+
+func bindNamesInIf(SyntaxTree tree, If ifStatement) {
+    print("can not bind names in if yet\n");
+}
+
+func bindNamesInWhile(SyntaxTree tree, While whileStatement) {
+    print("can not bind names in while yet\n");
+}
+
+func bindNamesInFunctionDefinition(SyntaxTree tree, FunctionDefinition function) {
+    print("can not bind names in function definitions yet\n");
+}
+
+func bindNamesInTypeDefinition(SyntaxTree tree, TypeDefinition typeDef) {
+    print("can not bind names in type definitions yet\n");
+}
+
+func bindNamesInReturn(SyntaxTree tree, Return returnStatement) {
+    if (returnStatement.expression != (Operation)0) {
+	bindNamesInOperation(tree, returnStatement.expression);
+    }
+}
+
+func bindNamesInStatementList(SyntaxTree tree, StatementList list) {
+    var i = 0;
+    while (i < list.size) {
+	var statement = list.list[i];
+	if (statement.expression != (Expression)0) {
+	    bindNamesInExpression(tree, statement.expression);
+	} else if (statement.ifStatement != (If)0) {
+	    bindNamesInIf(tree, statement.ifStatement);
+	} else if (statement.whileStatement != (While)0) {
+	    bindNamesInWhile(tree, statement.whileStatement);
+	} else if (statement.variable != (VariableDefinition)0) {
+	    bindNamesInOperation(tree, statement.variable.value);
+	} else if (statement.function != (FunctionDefinition)0) {
+	    bindNamesInFunctionDefinition(tree, statement.function);
+	} else if (statement.typeStatement != (TypeDefinition)0) {
+	    bindNamesInTypeDefinition(tree, statement.typeStatement);
+	} else if (statement.returnStatement != (Return)0) {
+	    bindNamesInReturn(tree, statement.returnStatement);
+	}
+
+	i = i + 1;
+    }
+}
+
+func bindNames(Parser parser, str fileName) {
+    var tree = (SyntaxTree)0;
+
+    var i = 0;
+    while (i < parser.files.size) {
+	if (streq(parser.files.list[i].fileName, fileName)) {
+	    tree = parser.files.list[i];
+	}
+	i = i + 1;
+    }
+
+    if (tree == (SyntaxTree)0) {
+	print("no tree has been created for the file '");
+	print(fileName);
+	print("'\n");
+    }
+
+    bindNamesInStatementList(tree, tree.statements);
+
+    i = 0;
+    while (i < tree.blocks.size) {
+	bindNamesInStatementList(tree, tree.blocks.list[i].statements);
+	i = i + 1;
+    }
+}

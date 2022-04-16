@@ -136,6 +136,17 @@ func addFunction(FunctionList list, FunctionDefinition function) {
 	}
 }
 
+func findFunction(FunctionList list, str name) -> FunctionDefinition {
+    var i = 0;
+    while (i < list.size) {
+	if (streq(list.list[i].name.name, name)) {
+	    return list.list[i];
+	}
+	i = i + 1;
+    }
+    return (FunctionDefinition)0;
+}
+
 func createReturn(Name keyword, Operation expression, Operator semicolon) -> Return {
 	var returnObj = (Return)malloc(sizeof(Return));
 

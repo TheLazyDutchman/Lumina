@@ -29,6 +29,7 @@ _keywordList[9] = "sizeof";
 type Name {
 	WhiteSpace space;
 	Region region;
+	Region definitionRegion;
 	str name;
 	int keyword;
 }
@@ -37,6 +38,7 @@ func createName(Position start, Position end, WhiteSpace space) -> Name {
 	var name = (Name)malloc(sizeof(Name));
 
 	name.region = createRegion(start, end);
+	name.definitionRegion = (Region)0;
 	name.space = space;
 	name.keyword = -1;
 
