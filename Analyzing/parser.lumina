@@ -13,6 +13,9 @@ type SyntaxTree {
 	TypeList types;
 	FunctionList functions;
 	VariableList variables;
+	ImportList imports;
+
+	SyntaxTree[] importTrees;
 }
 
 type SyntaxTreeList {
@@ -37,6 +40,9 @@ func createSyntaxTree(str fileName) -> SyntaxTree {
 	tree.types = createTypeList();
 	tree.functions = createFunctionList();
 	tree.variables = createVariableList();
+	tree.imports = createImportList();
+
+	tree.importTrees = (SyntaxTree[])0;
 	
 	return tree;
 }
@@ -59,6 +65,17 @@ func addSyntaxTree(SyntaxTreeList list, SyntaxTree tree) {
 		list.list = (SyntaxTree[])realloc((ptr)list.list, 8 * list.maxSize, list.maxSize * 8 * 2);
 		list.maxSize = list.maxSize * 2;
 	}
+}
+
+func findSyntaxTree(SyntaxTreeList list, str fileName) -> SyntaxTree {
+    var i = 0;
+    while (i < list.size) {
+	if (streq(list.list[i].fileName, fileName)) {
+	    return list.list[i];
+	}
+	i = i + 1;
+    }
+    return (SyntaxTree)0;
 }
 
 func createParser() -> Parser {
@@ -380,7 +397,7 @@ func parseReturnType(SyntaxTree tree) -> ReturnType {
 	return createReturnType(rarrow, typeObj);
 }
 
-func parseStatement(SyntaxTree tree, TypeList typeList, FunctionList functionList, VariableList variableList, Block outer) -> Statement {
+func parseStatement(SyntaxTree tree, TypeList typeList, FunctionList functionList, VariableList variableList, ImportList importList, Block outer) -> Statement {
 	func parseBlock(SyntaxTree tree, Block outer) -> int {
 		var lbrace = consumeOperator(tree, "{", (bool)0);
 
@@ -392,7 +409,7 @@ func parseStatement(SyntaxTree tree, TypeList typeList, FunctionList functionLis
 		var block = createBlock(lbrace, statementList, typeList, functionList, variableList, outer);
 
 		while (isOperator(tree.lexer.current.operator, "}") != (bool)1 || tree.lexer.current.isEOF) {
-			var statement = parseStatement(tree, typeList, functionList, variableList, block);
+			var statement = parseStatement(tree, typeList, functionList, variableList, importList, block);
 			addStatement(statementList, statement);
 		}
 
@@ -540,6 +557,8 @@ func parseStatement(SyntaxTree tree, TypeList typeList, FunctionList functionLis
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_import)) {
 		var importStatement = parseImport(tree);
 
+		addImport(importList, importStatement);
+
 		return createImportStatement(importStatement);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_return)) {
 		var returnStatement = parseReturn(tree);
@@ -559,16 +578,39 @@ func parseStatement(SyntaxTree tree, TypeList typeList, FunctionList functionLis
 }
 
 func parse(Parser parser, str fileName) -> SyntaxTree {
-	var tree = createSyntaxTree(fileName);
+	var tree = findSyntaxTree(parser.files, fileName);
+	if (tree != (SyntaxTree)0) {
+	    return tree;
+	}
+
+	tree = createSyntaxTree(fileName);
 
 	while (tree.lexer.current.isEOF != (bool)1) {
-		var statement = parseStatement(tree, tree.types, tree.functions, tree.variables, (Block)0);
+		var statement = parseStatement(tree, tree.types, tree.functions, tree.variables, tree.imports, (Block)0);
 		addStatement(tree.statements, statement);
 	}
 
 	addSyntaxTree(parser.files, tree);
 
 	return tree;
+}
+
+func parseImports(Parser parser, SyntaxTree tree) {
+    if (tree.importTrees != (SyntaxTree[])0) {
+	return;
+    }
+
+    tree.importTrees = (SyntaxTree[])malloc(8 * tree.imports.size);
+
+    var i = 0;
+    while (i < tree.imports.size) {
+	var importObj = tree.imports.list[i];
+	var name = strndup((str)((int)importObj.fileName.value + 1), strlen(importObj.fileName.value) - 2);
+
+	var importTree = parse(parser, name);
+	tree.importTrees[i] = importTree;
+	i = i + 1;
+    }
 }
 
 func bindName(SyntaxTree tree, Name name, Block block) {
@@ -586,6 +628,12 @@ func bindName(SyntaxTree tree, Name name, Block block) {
 	function = findFunction(tree.functions, name.name);
     }
 
+    var i = 0;
+    while (i < tree.imports.size && function == (FunctionDefinition)0) {
+	function = findFunction(tree.importTrees[i].functions, name.name);
+	i = i + 1;
+    }
+
     if (function != (FunctionDefinition)0) {
 	name.definitionRegion = function.region;
 	return;
@@ -595,6 +643,12 @@ func bindName(SyntaxTree tree, Name name, Block block) {
 	typeDef = findType(tree.types, name.name);
     }
 
+    i = 0;
+    while (i < tree.imports.size && typeDef == (TypeDefinition)0) {
+	typeDef = findType(tree.importTrees[i].types, name.name);
+	i = i + 1;
+    }
+
     if (typeDef != (TypeDefinition)0) {
 	name.definitionRegion = typeDef.region;
 	return;
@@ -602,6 +656,12 @@ func bindName(SyntaxTree tree, Name name, Block block) {
 
     if (variable == (VariableDefinition)0) {
 	variable = findVariable(tree.variables, name.name);
+    }
+
+    i = 0;
+    while (i < tree.imports.size && variable == (VariableDefinition)0) {
+	variable = findVariable(tree.importTrees[i].variables, name.name);
+	i = i + 1;
     }
 
     if (variable != (VariableDefinition)0) {
@@ -623,8 +683,10 @@ func bindNamesInOperation(SyntaxTree tree, Operation operation, Block block) {
 	bindNamesInOperation(tree, operation.left, block);
     }
 
-    if (operation.right != (Operation)0 && (operation.operator == (Operator)0 || isOperator(operation.operator, "."))) {
-	bindNamesInOperation(tree, operation.right, block);
+    if (operation.right != (Operation)0) {
+	if (operation.operator == (Operator)0 || isOperator(operation.operator, ".")) {
+	    bindNamesInOperation(tree, operation.right, block);
+	}
     }
 
     if (operation.sizeOf != (SizeOf)0) {
@@ -706,6 +768,8 @@ func bindNames(Parser parser, str fileName) {
 	print(fileName);
 	print("'\n");
     }
+
+    parseImports(parser, tree);
 
     bindNamesInStatementList(tree, tree.statements, (Block)0);
 
