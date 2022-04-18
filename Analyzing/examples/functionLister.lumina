@@ -16,7 +16,7 @@ var fileName = argv[1];
 
 var parser = createParser();
 
-var syntaxTree = parse(parser, fileName);
+var syntaxTree = parse(parser, fileName, (str)0);
 
 bindNames(parser, fileName);
 

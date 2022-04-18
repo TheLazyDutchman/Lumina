@@ -18,7 +18,7 @@ func getPathFromString(str file) -> Path {
 	var path = (Path)malloc(sizeof(Path));
 
 	var depth = countchr(file, '/');
-	path.folders = (str[])malloc((depth + 1) * sizeof(str));
+	path.folders = (str[])malloc(depth * sizeof(str) + sizeof(str));
 
 	var name = file;
 
@@ -70,7 +70,7 @@ func getLocalFilePath(str outerFile, str file) -> Path {
 
 	var outerDepth = countchr(outerFile, '/');
 	var depth = outerDepth + countchr(file, '/');
-	path.folders = (str[])malloc((depth + 1) * sizeof(str));
+	path.folders = (str[])malloc(depth * sizeof(str) + sizeof(str));
 
 	var name = outerFile;
 
@@ -86,8 +86,8 @@ func getLocalFilePath(str outerFile, str file) -> Path {
 
 	while (currentDepth < outerDepth) {
 		if (_is_outer(name) && 
-			_is_outer(path.folders[currentDepth - 1]) == (bool)0 &&
-			currentDepth > 0) {
+			currentDepth > 0 &&
+			_is_outer(path.folders[currentDepth - 1]) == (bool)0) {
 			currentDepth = currentDepth - 1;
 			outerDepth = outerDepth - 2;
 			depth = depth - 2;
@@ -115,8 +115,8 @@ func getLocalFilePath(str outerFile, str file) -> Path {
 
 	while (currentDepth < depth) {
 		if (_is_outer(name) &&
-			_is_outer(path.folders[currentDepth - 1]) == (bool)0 &&
-			currentDepth > 0) {
+			currentDepth > 0 &&
+			_is_outer(path.folders[currentDepth - 1]) == (bool)0) {
 			currentDepth = currentDepth - 1;
 			depth = depth - 2;
 

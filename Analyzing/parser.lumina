@@ -1,8 +1,14 @@
+import "../std/path.lumina"
+import "../std/io.lumina"
+
 import "block.lumina"
 import "type.lumina"
 import "lexer.lumina"
 import "statement.lumina"
 import "operation.lumina"
+import "operator.lumina"
+import "value.lumina"
+import "immediate.lumina"
 
 
 type SyntaxTree {
@@ -577,7 +583,12 @@ func parseStatement(SyntaxTree tree, TypeList typeList, FunctionList functionLis
 	return createExpressionStatement(expression);
 }
 
-func parse(Parser parser, str fileName) -> SyntaxTree {
+func parse(Parser parser, str fileName, str outerName) -> SyntaxTree {
+    if (outerName != (str)0) {
+	var filePath = getLocalFilePath(outerName, fileName);
+	fileName = getFullPathString(filePath);
+    }
+
 	var tree = findSyntaxTree(parser.files, fileName);
 	if (tree != (SyntaxTree)0) {
 	    return tree;
@@ -607,7 +618,7 @@ func parseImports(Parser parser, SyntaxTree tree) {
 	var importObj = tree.imports.list[i];
 	var name = strndup((str)((int)importObj.fileName.value + 1), strlen(importObj.fileName.value) - 2);
 
-	var importTree = parse(parser, name);
+	var importTree = parse(parser, name, tree.fileName);
 	tree.importTrees[i] = importTree;
 	i = i + 1;
     }
