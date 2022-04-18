@@ -5,12 +5,15 @@ import "statement.lumina"
 
 type Block {
 	Region region;
+
 	Operator lbrace;
 	StatementList statements;
 	TypeList types;
 	FunctionList functions;
 	VariableList variables;
 	Operator rbrace;
+
+	Block outer;
 }
 
 type BlockList {
@@ -19,18 +22,27 @@ type BlockList {
 	Block[] list;
 }
 
-func createBlock(Operator lbrace, StatementList statements, TypeList types, FunctionList functions, VariableList variables, Operator rbrace) -> Block {
+func createBlock(Operator lbrace, StatementList statements, TypeList types, FunctionList functions, VariableList variables, Block outer) -> Block {
 	var block = (Block)malloc(sizeof(Block));
 
-	block.region = createRegion(lbrace.position, rbrace.position);
+	block.region = (Region)0;
+
 	block.lbrace = lbrace;
 	block.statements = statements;
 	block.types = types;
 	block.functions = functions;
 	block.variables = variables;
-	block.rbrace = rbrace;
+	block.rbrace = (Operator)0;
+
+	block.outer = outer;
 
 	return block;
+}
+
+func setEnd(Block block, Operator rbrace) {
+    block.region = createRegion(block.lbrace.position, rbrace.position);
+
+    block.rbrace = rbrace;
 }
 
 func createBlockList() -> BlockList {
@@ -51,4 +63,34 @@ func addBlock(BlockList list, Block block) {
 		list.list = (Block[])realloc((ptr)list.list, 8 * list.maxSize, list.maxSize * 8 * 2);
 		list.maxSize = list.maxSize * 2;
 	}
+}
+
+func findTypeInBlock(Block block, str name) -> TypeDefinition {
+    var typeObj = findType(block.types, name);
+
+    if (typeObj == (TypeDefinition)0 && block.outer != (Block)0) {
+	return findTypeInBlock(block.outer, name);
+    }
+
+    return typeObj;
+}
+
+func findFunctionInBlock(Block block, str name) -> FunctionDefinition {
+    var function = findFunction(block.functions, name);
+
+    if (function == (FunctionDefinition)0 && block.outer != (Block)0) {
+	return findFunctionInBlock(block.outer, name);
+    }
+
+    return function;
+}
+
+func findVariableInBlock(Block block, str name) -> VariableDefinition {
+    var variable = findVariable(block.variables, name);
+
+    if (variable == (VariableDefinition)0 && block.outer != (Block)0) {
+	return findVariableInBlock(block.outer, name);
+    }
+
+    return variable;
 }
