@@ -706,12 +706,28 @@ func bindNamesInExpression(SyntaxTree tree, Expression expression, Block block) 
     bindNamesInOperation(tree, expression.operation, block);
 }
 
+func bindNamesInElseIf(SyntaxTree tree, ElseIf elseIf, Block block) {
+    if (elseIf.condition != (Operation)0) {
+	bindNamesInOperation(tree, elseIf.condition, block);
+    }
+}
+
 func bindNamesInIf(SyntaxTree tree, If ifStatement, Block block) {
-    print("can not bind names in if yet\n");
+    if (ifStatement.condition != (Operation)0) {
+	bindNamesInOperation(tree, ifStatement.condition, block);
+    }
+
+    var i = 0;
+    while (i < ifStatement.elseIfs.size) {
+	bindNamesInElseIf(tree, ifStatement.elseIfs.list[i], block);
+	i = i + 1;
+    }
 }
 
 func bindNamesInWhile(SyntaxTree tree, While whileStatement, Block block) {
-    print("can not bind names in while yet\n");
+    if (whileStatement.condition != (Operation)0) {
+	bindNamesInOperation(tree, whileStatement.condition, block);
+    }
 }
 
 func bindNamesInFunctionDefinition(SyntaxTree tree, FunctionDefinition function, Block block) {
