@@ -11,8 +11,9 @@ const PREC_and = 4;
 const PREC_comparison = 5;
 const PREC_term = 6;
 const PREC_factor = 7;
-const PREC_index = 8;
-const PREC_call = 9;
+const PREC_bitwise = 8;
+const PREC_index = 9;
+const PREC_call = 10;
 
 const NUMOPERATORS = 27;
 
@@ -28,9 +29,9 @@ _precedenceList[2] = PREC_or;
 _operatorList[3] = "&&";
 _precedenceList[3] = PREC_and;
 _operatorList[4] = "|";
-_precedenceList[4] = PREC_statement;
+_precedenceList[4] = PREC_bitwise;
 _operatorList[5] = "&";
-_precedenceList[5] = PREC_statement;
+_precedenceList[5] = PREC_bitwise;
 _operatorList[6] = "->";
 _precedenceList[6] = PREC_statement;
 _operatorList[7] = "!=";
