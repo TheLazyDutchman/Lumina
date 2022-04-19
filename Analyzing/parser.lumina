@@ -816,7 +816,11 @@ func bindNamesInFunctionDefinition(Parser parser, SyntaxTree tree, FunctionDefin
 }
 
 func bindNamesInTypeDefinition(Parser parser, SyntaxTree tree, TypeDefinition typeDef, Block block) {
-    print("can not bind names in type definitions yet\n");
+    var i = 0;
+    while (i < typeDef.properties.size) {
+	bindNamesInType(parser, tree, typeDef.properties.list[i].typeName, block);
+	i = i + 1;
+    }
 }
 
 func bindNamesInReturn(Parser parser, SyntaxTree tree, Return returnStatement, Block block) {
