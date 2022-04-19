@@ -1,4 +1,10 @@
+import "../std/memory.lumina"
+
 import "position.lumina"
+import "name.lumina"
+import "operation.lumina"
+import "operator.lumina"
+
 
 type Else {
 	Region region;

@@ -1,6 +1,11 @@
+import "../std/memory.lumina"
+
 import "position.lumina"
 import "operator.lumina"
 import "statement.lumina"
+import "type.lumina"
+import "function.lumina"
+import "variable.lumina"
 
 
 type Block {

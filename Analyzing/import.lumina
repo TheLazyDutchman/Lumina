@@ -1,4 +1,8 @@
+import "../std/memory.lumina"
+
 import "position.lumina"
+import "name.lumina"
+import "immediate.lumina"
 
 
 type Import {

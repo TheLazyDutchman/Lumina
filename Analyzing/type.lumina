@@ -1,4 +1,11 @@
+import "../std/string.lumina"
+import "../std/memory.lumina"
+import "../std/io.lumina"
+
 import "name.lumina" 
+import "operator.lumina"
+import "position.lumina"
+
 
 type Type {
 	Region region;

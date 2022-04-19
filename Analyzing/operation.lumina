@@ -1,5 +1,10 @@
+import "../std/memory.lumina"
+
+import "position.lumina"
 import "operator.lumina"
+import "value.lumina"
 import "type.lumina"
+import "name.lumina"
 
 
 type SizeOf {

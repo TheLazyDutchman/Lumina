@@ -1,4 +1,9 @@
+import "../std/memory.lumina"
+
 import "position.lumina"
+import "operator.lumina"
+import "operation.lumina"
+import "name.lumina"
 
 
 type While {

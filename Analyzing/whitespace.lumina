@@ -1,3 +1,7 @@
+import "../std/memory.lumina"
+import "../std/string.lumina"
+
+
 type WhiteSpace {
 	str value;
 }

@@ -1,3 +1,6 @@
+import "../std/memory.lumina"
+import "../std/string.lumina"
+
 import "position.lumina"
 import "whitespace.lumina"
 

@@ -1,5 +1,9 @@
+import "../std/memory.lumina"
+import "../std/string.lumina"
+
 import "position.lumina"
 import "name.lumina"
+import "operation.lumina"
 import "operator.lumina"
 
 
