@@ -806,7 +806,11 @@ func bindNamesInWhile(Parser parser, SyntaxTree tree, While whileStatement, Bloc
 }
 
 func bindNamesInFunctionDefinition(Parser parser, SyntaxTree tree, FunctionDefinition function, Block block) {
-    print("can not bind names in function definitions yet\n");
+    var i = 0;
+    while (i < function.parameters.size) {
+	bindNamesInType(parser, tree, function.parameters.list[i].parameterType, block);
+	i = i + 1;
+    }
 }
 
 func bindNamesInTypeDefinition(Parser parser, SyntaxTree tree, TypeDefinition typeDef, Block block) {
