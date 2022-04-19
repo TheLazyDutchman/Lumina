@@ -126,6 +126,19 @@ func createTypeDefinition(Name keyword, Name name, Operator lbrace, PropertyList
 	return typeDef;
 }
 
+func createTypeFromString(str value) -> TypeDefinition {
+    var typeDef = (TypeDefinition)malloc(sizeof(TypeDefinition));
+
+    typeDef.region = (Region)0;
+    typeDef.keyword = (Name)0;
+    typeDef.name = createNameFromString(value);
+    typeDef.lbrace = (Operator)0;
+    typeDef.properties = createPropertyList();
+    typeDef.rbrace = (Operator)0;
+
+    return typeDef;
+}
+
 func createTypeList() -> TypeList {
 	var list = (TypeList)malloc(sizeof(TypeList));
 

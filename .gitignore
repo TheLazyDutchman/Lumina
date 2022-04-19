@@ -64,3 +64,6 @@ Lumina/*
 
 cLumina/test
 lumina
+
+Analyzing/*
+!Analyzing/*.lumina

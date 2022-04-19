@@ -116,6 +116,21 @@ func createFunctionDefinition(Name keyword, Name name, Operator lparen, Paramete
 	return function;
 }
 
+func createFunctionFromString(str value) -> FunctionDefinition {
+    var function = (FunctionDefinition)malloc(sizeof(FunctionDefinition));
+
+    function.region = (Region)0;
+    function.keyword = (Name)0;
+    function.name = createNameFromString(value);
+    function.lparen = (Operator)0;
+    function.parameters = createParameterList();
+    function.rparen = (Operator)0;
+    function.returnType = (ReturnType)0;
+    function.blockId = -1;
+
+    return function;
+}
+
 func createFunctionList() -> FunctionList {
 	var list = (FunctionList)malloc(sizeof(FunctionList));
 

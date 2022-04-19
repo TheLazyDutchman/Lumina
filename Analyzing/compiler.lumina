@@ -1,0 +1,23 @@
+import "parser.lumina"
+
+
+func CompileLinuxx86_nasm(str fileName) {
+    var parser = createParser();
+
+    parse(parser, fileName, (str)0);
+    bindNames(parser, fileName);
+}
+
+if (argc < 2) {
+	print("[ERROR] expected argument <filename>\n");
+	exit(1);
+}
+
+if (argc > 2) {
+	print("[ERROR] expected a single argument\n");
+	exit(1);
+}
+
+var fileName = argv[1];
+
+CompileLinuxx86_nasm(fileName);
