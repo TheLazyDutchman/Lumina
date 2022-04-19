@@ -561,9 +561,13 @@ func parseStatement(SyntaxTree tree, TypeList typeList, FunctionList functionLis
 		}
 
 		var block = parseBlock(tree, outer);
-		var endPosition = tree.blocks.list[block].region.end;
+		var blockObj = tree.blocks.list[block];
+		var endPosition = blockObj.region.end;
 
-		return createFunctionDefinition(keyword, name, lparen, parameters, rparen, returnType, block, endPosition);
+		var function = createFunctionDefinition(keyword, name, lparen, parameters, rparen, returnType, block, endPosition);
+		blockObj.function = function;
+
+		return function;
 	}
 
 	func parseReturn(SyntaxTree tree) -> Return {

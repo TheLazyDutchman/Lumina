@@ -14,6 +14,7 @@ type Block {
 	Operator rbrace;
 
 	Block outer;
+	FunctionDefinition function;
 }
 
 type BlockList {
@@ -35,6 +36,7 @@ func createBlock(Operator lbrace, StatementList statements, TypeList types, Func
 	block.rbrace = (Operator)0;
 
 	block.outer = outer;
+	block.function = (FunctionDefinition)0;
 
 	return block;
 }
@@ -87,6 +89,10 @@ func findFunctionInBlock(Block block, str name) -> FunctionDefinition {
 
 func findVariableInBlock(Block block, str name) -> VariableDefinition {
     var variable = findVariable(block.variables, name);
+
+    if (variable == (VariableDefinition)0 && block.function != (FunctionDefinition)0) {
+	variable = findVariableInParameters(block.function, name);
+    }
 
     if (variable == (VariableDefinition)0 && block.outer != (Block)0) {
 	return findVariableInBlock(block.outer, name);
