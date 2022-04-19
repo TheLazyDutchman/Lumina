@@ -1,6 +1,7 @@
 import "../std/path.lumina"
 import "../std/io.lumina"
 import "../std/string.lumina"
+import "../std/memory.lumina"
 
 import "block.lumina"
 import "type.lumina"
@@ -382,7 +383,7 @@ func parseExpression(SyntaxTree tree, int precedence) -> Operation {
 		} else {
 			next(tree.lexer);
 
-			var right = parseExpression(tree, precedence + 1);
+			var right = parseExpression(tree, operator.precedence + 1);
 
 			if (right == (Operation)0) {
 				print("right hand side is null\n");
@@ -744,6 +745,7 @@ func bindName(Parser parser, SyntaxTree tree, Name name, Block block) {
 	return;
     }
 
+    printPosition(name.region.start);
     print("could not find name: '");
     print(name.name);
     print("'\n");
@@ -759,7 +761,7 @@ func bindNamesInOperation(Parser parser, SyntaxTree tree, Operation operation, B
     }
 
     if (operation.right != (Operation)0) {
-	if (operation.operator == (Operator)0 || isOperator(operation.operator, ".")) {
+	if (operation.operator == (Operator)0 || isOperator(operation.operator, ".") != (bool)1) {
 	    bindNamesInOperation(parser, tree, operation.right, block);
 	}
     }
