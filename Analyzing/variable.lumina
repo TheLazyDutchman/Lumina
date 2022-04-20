@@ -5,6 +5,7 @@ import "position.lumina"
 import "name.lumina"
 import "operation.lumina"
 import "operator.lumina"
+import "type.lumina"
 
 
 type VariableDefinition {
@@ -15,6 +16,8 @@ type VariableDefinition {
 	Operator equalSign;
 	Operation value;
 	Operator semicolon;
+
+	TypeDefinition variableType;
 }
 
 type VariableList {
@@ -33,11 +36,12 @@ func createVariableDefinition(Name keyword, Name name, Operator equalSign, Opera
 	variable.equalSign = equalSign;
 	variable.value = value;
 	variable.semicolon = semicolon;
+	variable.variableType = (TypeDefinition)0;
 
 	return variable;
 }
 
-func createVariableFromString(str value) -> VariableDefinition {
+func createVariableFromString(str value, TypeDefinition variableType) -> VariableDefinition {
     var variable = (VariableDefinition)malloc(sizeof(VariableDefinition));
 
     variable.region = (Region)0;
@@ -46,6 +50,7 @@ func createVariableFromString(str value) -> VariableDefinition {
     variable.equalSign = (Operator)0;
     variable.value = (Operation)0;
     variable.semicolon = (Operator)0;
+    variable.variableType = variableType;
 
     return variable;
 }

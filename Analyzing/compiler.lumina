@@ -15,6 +15,15 @@ func CompileLinuxx86_nasm(str fileName) {
 	bindNames(parser, fileName);
 	numFilesNamesBound = numFilesNamesBound + 1;
     }
+
+    var numFilesTypeChecked = 0;
+    while (numFilesTypeChecked < parser.files.size) {
+	var tree = parser.files.list[numFilesTypeChecked];
+	checkTypes(parser, tree);
+	numFilesTypeChecked = numFilesTypeChecked + 1;
+
+	return;
+    }
 }
 
 if (argc < 2) {

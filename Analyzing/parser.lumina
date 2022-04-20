@@ -133,8 +133,8 @@ func createParser() -> Parser {
 	addFunction(parser.functions, parser.syscall);
 
 	parser.variables = createVariableList();
-	parser.argc = createVariableFromString("argc");
-	parser.argv = createVariableFromString("argv");
+	parser.argc = createVariableFromString("argc", parser.int);
+	parser.argv = createVariableFromString("argv", parser.str);
 	addVariable(parser.variables, parser.argc);
 	addVariable(parser.variables, parser.argv);
 
@@ -868,6 +868,7 @@ func bindNames(Parser parser, str fileName) {
 	print("no tree has been created for the file '");
 	print(fileName);
 	print("'\n");
+	return;
     }
 
     parseImports(parser, tree);
@@ -879,4 +880,103 @@ func bindNames(Parser parser, str fileName) {
 	bindNamesInStatementList(parser, tree, tree.blocks.list[i].statements, tree.blocks.list[i]);
 	i = i + 1;
     }
+}
+
+func checkTypesInName(Parser parser, SyntaxTree tree, Name name) {
+    printPosition(name.region.start);
+    print("can not check types in name yet\n");
+}
+
+func checkTypesInValue(Parser parser, SyntaxTree tree, Value value) -> TypeDefinition {
+    if (value.name != (Name)0) {
+	checkTypesInName(parser, tree, value.name);
+	return (TypeDefinition)0;
+    }
+
+    if (value.number != (Number)0) {
+	return parser.int;
+    }
+
+    if (value.character != (Character)0) {
+	return parser.char;
+    }
+
+    if (value.string != (String)0) {
+	return parser.str;
+    }
+
+    print("value object is in an invalid state\n");
+    return (TypeDefinition)0;
+}
+
+func checkTypesInOperation(Parser parser, SyntaxTree tree, Operation operation) {
+    if (operation.value != (Value)0) {
+	checkTypesInValue(parser, tree, operation.value);
+	return;
+    }
+
+    if (operation.left != (Operation)0) {
+	checkTypesInOperation(parser, tree, operation.left);
+    }
+
+    if (operation.right != (Operation)0) {
+	checkTypesInOperation(parser, tree, operation.right);
+    }
+
+    //TODO: handle castType, and check other types
+}
+
+func checkTypesInExpression(Parser parser, SyntaxTree tree, Expression expression) {
+    checkTypesInOperation(parser, tree, expression.operation);
+}
+
+func checkTypesInIf(Parser parser, SyntaxTree tree, If ifStatement) {
+    checkTypesInOperation(parser, tree, ifStatement.condition);
+
+    //TODO: must still check condition type
+}
+
+func checkTypesInWhile(Parser parser, SyntaxTree tree, While whileStatement) {
+    checkTypesInOperation(parser, tree, whileStatement.condition);
+
+    //TODO: must still check condition type
+}
+
+func checkTypesInVariable(Parser parser, SyntaxTree tree, VariableDefinition variable) {
+    checkTypesInOperation(parser, tree, variable.value);
+}
+
+func checkTypesInReturn(Parser parser, SyntaxTree tree, Return returnStatement) {
+    checkTypesInOperation(parser, tree, returnStatement.expression);
+    
+    //TODO: must still check return type
+}
+
+func checkTypesInStatementList(Parser parser, SyntaxTree tree, StatementList list) {
+    var i = 0;
+    while (i < list.size) {
+	var statement = list.list[i];
+	if (statement.expression != (Expression)0) {
+	    checkTypesInExpression(parser, tree, statement.expression);
+	} else if (statement.ifStatement != (If)0) {
+	    checkTypesInIf(parser, tree, statement.ifStatement);
+	} else if (statement.whileStatement != (While)0) {
+	    checkTypesInWhile(parser, tree, statement.whileStatement);
+	} else if (statement.variable != (VariableDefinition)0) {
+	    checkTypesInVariable(parser, tree, statement.variable);
+	} else if (statement.returnStatement != (Return)0) {
+	    checkTypesInReturn(parser, tree, statement.returnStatement);
+	}
+
+	i = i + 1;
+    }
+}
+
+func checkTypes(Parser parser, SyntaxTree tree) {
+    if (tree == (SyntaxTree)0) {
+	print("syntax tree is null\n");
+	return;
+    }
+
+    checkTypesInStatementList(parser, tree, tree.statements);
 }
