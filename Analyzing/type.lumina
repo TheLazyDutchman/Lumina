@@ -36,6 +36,9 @@ type TypeDefinition {
 	PropertyList properties;
 
 	Operator rbrace;
+
+	TypeDefinition listOf;
+	TypeDefinition arrayType;
 }
 
 type TypeList {
@@ -127,6 +130,8 @@ func createTypeDefinition(Name keyword, Name name, Operator lbrace, PropertyList
 	typeDef.lbrace = lbrace;
 	typeDef.properties = properties;
 	typeDef.rbrace = rbrace;
+	typeDef.listOf = (TypeDefinition)0;
+	typeDef.arrayType = (TypeDefinition)0;
 
 	typeDef.region = createRegion(keyword.region.start, rbrace.position);
 
@@ -142,6 +147,34 @@ func createTypeFromString(str value) -> TypeDefinition {
     typeDef.lbrace = (Operator)0;
     typeDef.properties = createPropertyList();
     typeDef.rbrace = (Operator)0;
+    typeDef.listOf = (TypeDefinition)0;
+    typeDef.arrayType = (TypeDefinition)0;
+
+    return typeDef;
+}
+
+func createArrayFrom(str name, TypeDefinition arrayType) -> TypeDefinition {
+    if (arrayType.listOf != (TypeDefinition)0) {
+	return arrayType.listOf;
+    }
+
+    var typeDef = (TypeDefinition)malloc(sizeof(TypeDefinition));
+
+    typeDef.region = (Region)0;
+    typeDef.keyword = (Name)0;
+    if (name == (str)0) {
+	typeDef.name = (Name)0;
+    } else {
+	typeDef.name = createNameFromString(name);
+    }
+    typeDef.lbrace = (Operator)0;
+    typeDef.properties = createPropertyList();
+    typeDef.rbrace = (Operator)0;
+
+    typeDef.arrayType = arrayType;
+    typeDef.listOf = (TypeDefinition)0;
+
+    arrayType.listOf = typeDef;
 
     return typeDef;
 }
@@ -175,4 +208,17 @@ func findType(TypeList list, str name) -> TypeDefinition {
 	i = i + 1;
     }
     return (TypeDefinition)0;
+}
+
+func printType(TypeDefinition typeObj) {
+    if (typeObj == (TypeDefinition)0) {
+	print("type is null");
+	return;
+    }
+
+    if (typeObj.name == (Name)0) {
+	print("type name is null");
+    }
+
+    print(typeObj.name.name);
 }

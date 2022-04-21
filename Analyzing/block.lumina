@@ -62,7 +62,7 @@ func createBlockList() -> BlockList {
 	return list;
 }
 
-func addBlock(BlockList list, Block block) {
+func addBlock(BlockList list, Block block) -> int {
 	list.list[list.size] = block;
 	list.size = list.size + 1;
 
@@ -70,6 +70,8 @@ func addBlock(BlockList list, Block block) {
 		list.list = (Block[])realloc((ptr)list.list, 8 * list.maxSize, list.maxSize * 8 * 2);
 		list.maxSize = list.maxSize * 2;
 	}
+
+	return list.size - 1;
 }
 
 func findTypeInBlock(Block block, str name) -> TypeDefinition {
