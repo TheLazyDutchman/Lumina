@@ -106,6 +106,17 @@ func addProperty(PropertyList list, Property property) {
 	}
 }
 
+func findProperty(PropertyList list, str name) -> Property {
+    var i = 0;
+    while (i < list.size) {
+	if (streq(list.list[i].name.name, name)) {
+	    return list.list[i];
+	}
+	i = i + 1;
+    }
+    return (Property)0;
+}
+
 func createTypeDefinition(Name keyword, Name name, Operator lbrace, PropertyList properties, Operator rbrace) -> TypeDefinition {
 	var typeDef = (TypeDefinition)malloc(sizeof(TypeDefinition));
 

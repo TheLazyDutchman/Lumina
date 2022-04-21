@@ -50,6 +50,7 @@ type Parser {
 	TypeDefinition bool;
 	TypeDefinition any;
 	TypeDefinition ptr;
+	TypeDefinition null;
 
 	FunctionList functions;
 	FunctionDefinition syscall;
@@ -121,12 +122,14 @@ func createParser() -> Parser {
 	parser.bool = createTypeFromString("bool");
 	parser.any = createTypeFromString("any");
 	parser.ptr = createTypeFromString("ptr");
+	parser.null = createTypeFromString("null");
 	addType(parser.types, parser.int);
 	addType(parser.types, parser.char);
 	addType(parser.types, parser.str);
 	addType(parser.types, parser.bool);
 	addType(parser.types, parser.any);
 	addType(parser.types, parser.ptr);
+	addType(parser.types, parser.null);
 
 	parser.functions = createFunctionList();
 	parser.syscall = createFunctionFromString("syscall");
@@ -725,6 +728,18 @@ func findTypeInParser(Parser parser, SyntaxTree tree, Block block, str name) -> 
     return typeDef;
 }
 
+func getTypeDefinitionFromType(Parser parser, SyntaxTree tree, Block block, Type typeObj) -> TypeDefinition {
+    var typeDef = findTypeInParser(parser, tree, block, typeObj.name.name);
+
+    var i = 0;
+    while (i < typeObj.brackets.size) {
+	typeDef = createArrayFrom((str)0, typeDef);
+	i = i + 2;
+    }
+
+    return typeDef;
+}
+
 func findVariableInParser(Parser parser, SyntaxTree tree, Block block, str name) -> VariableDefinition {
     var variable = (VariableDefinition)0;
 
@@ -917,7 +932,7 @@ func checkTypesInName(Parser parser, SyntaxTree tree, Block block, Name name) ->
     }
 
     if (variable.variableType == (TypeDefinition)0) {
-	printPosition(variable.region.start);
+	printPosition(name.region.start);
 	print(" the type of variable '");
 	print(variable.name.name);
 	print("' is not defined\n");
@@ -949,10 +964,53 @@ func checkTypesInValue(Parser parser, SyntaxTree tree, Block block, Value value)
 
 func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operation operation) -> TypeDefinition {
     func checkTypesInFunctionCall(Parser parser, SyntaxTree tree, Block block, Operation call) -> TypeDefinition {
-	print("can not check types in function call yet\n");
-	return (TypeDefinition)0;
+	var functionName = call.left.value.name;
+	var function = findFunctionInParser(parser, tree, block, functionName.name);
+
+	if (function == (FunctionDefinition)0) {
+	    printPosition(functionName.region.start);
+	    print(" can not find function with name '");
+	    print(functionName.name);
+	    print("'\n");
+	    return (TypeDefinition)0;
+	}
+
+	print("can not check types in function arguments yet\n");
+
+	if (function.returnType == (ReturnType)0) {
+	    return parser.null;
+	}
+
+	return getTypeDefinitionFromType(parser, tree, block, function.returnType.returnType);
     }
 
+    func checkTypesInProperty(Parser parser, SyntaxTree tree, Block block, Operation operation) -> TypeDefinition {
+	var typeObj = checkTypesInOperation(parser, tree, block, operation.left);
+
+	if (typeObj == (TypeDefinition)0) {
+	    printPosition(operation.left.region.start);
+	    print(" type of struct is undefined\n");
+	    return (TypeDefinition)0;
+	}
+	
+	var rightValue = operation.right.value;
+	if (rightValue == (Value)0 || rightValue.name == (Name)0) {
+	    printPosition(operation.right.region.start);
+	    print(" expected an identifier after '.' operator\n");
+	    return (TypeDefinition)0;
+	}
+
+	var property = findProperty(typeObj.properties, rightValue.name.name);
+	if (property == (Property)0) {
+	    printPosition(operation.right.region.start);
+	    print(" could not find property with name '");
+	    print(rightValue.name.name);
+	    print("'\n");
+	    return (TypeDefinition)0;
+	}
+
+	return getTypeDefinitionFromType(parser, tree, block, property.typeName);
+    }
 
     if (operation.value != (Value)0) {
 	return checkTypesInValue(parser, tree, block, operation.value);
@@ -960,6 +1018,21 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 
     if (isOperator(operation.operator, "(") && operation.left != (Operation)0) {
 	return checkTypesInFunctionCall(parser, tree, block, operation);
+    }
+
+    if (isOperator(operation.operator, ".")) {
+	return checkTypesInProperty(parser, tree, block, operation);
+    }
+
+    if (isOperator(operation.operator, "-") && operation.left == (Operation)0) {
+	var rightType = checkTypesInOperation(parser, tree, block, operation.right);
+
+	if (rightType != parser.int) {
+	    printPosition(operation.right.region.start);
+	    print(" expected type 'int' for the unary '-' operation\n");
+        }
+	
+	return parser.int;
     }
 
     var leftType = (TypeDefinition)0;
@@ -1005,6 +1078,68 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 	}
 
 	return leftType.arrayType;
+    } else if (isOperator(operation.operator, "+")) {
+	if (leftType == parser.int) {
+	    if (rightType == parser.int) {
+		return parser.int;
+	    } else if (rightType == parser.char) {
+		return parser.char;
+	    } else {
+		printPosition(operation.operator.position);
+		print(" can not add values of type 'int' and '");
+		printType(rightType);
+		print("'\n");
+	    }
+	} else if (leftType == parser.char) {
+	    if (rightType == parser.int) {
+		return parser.char;
+	    } else {
+		printPosition(operation.operator.position);
+		print(" can not add values of type 'char' and '");
+		printType(rightType);
+		print("'\n");
+	    }
+	} else {
+	    printPosition(operation.operator.position);
+	    print(" can not add values of type '");
+	    printType(leftType);
+	    print("' and '");
+	    printType(rightType);
+	    print("'\n");
+	}
+
+	return (TypeDefinition)0;
+    } else if (isOperator(operation.operator, "-")) {
+	if (leftType == parser.int) {
+	    if (rightType == parser.int) {
+		return parser.int;
+	    } else {
+		printPosition(operation.operator.position);
+		print(" can not subtract value of type '");
+		printType(rightType);
+		print("' from 'int'\n");
+	    }
+	} else if (leftType == parser.char) {
+	    if (rightType == parser.int) {
+		return parser.char;
+	    } else if (rightType == parser.char) {
+		return parser.int;
+	    } else {
+		printPosition(operation.operator.position);
+		print(" can not subtract value of type '");
+		printType(rightType);
+		print("' from 'char'\n");
+	    }
+	} else {
+	    printPosition(operation.operator.position);
+	    print(" can not subtract value of type '");
+	    printType(rightType);
+	    print("' from '");
+	    printType(leftType);
+	    print("'\n");
+	}
+
+	return (TypeDefinition)0;
     } else {
 	print("do not support type checking for '");
 	print(operation.operator.name);
@@ -1028,9 +1163,12 @@ func checkTypesInIf(Parser parser, SyntaxTree tree, Block block, If ifStatement)
 }
 
 func checkTypesInWhile(Parser parser, SyntaxTree tree, Block block, While whileStatement) {
-    checkTypesInOperation(parser, tree, block, whileStatement.condition);
+    var conditionType = checkTypesInOperation(parser, tree, block, whileStatement.condition);
 
-    //TODO: must still check condition type
+    if (conditionType != parser.bool) {
+	printPosition(whileStatement.region.start);
+	print(" expected while condition to be of type boolean\n");
+    }
 }
 
 func checkTypesInVariable(Parser parser, SyntaxTree tree, Block block, VariableDefinition variable) {
@@ -1040,6 +1178,8 @@ func checkTypesInVariable(Parser parser, SyntaxTree tree, Block block, VariableD
 	printPosition(variable.value.region.start);
 	print(" type is undefined\n");
     }
+
+    variable.variableType = variableType;
 }
 
 func checkTypesInReturn(Parser parser, SyntaxTree tree, Block block, Return returnStatement) {
