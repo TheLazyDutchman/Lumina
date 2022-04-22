@@ -1012,6 +1012,11 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 	return getTypeDefinitionFromType(parser, tree, block, property.typeName);
     }
 
+    if (operation == (Operation)0) {
+	print("operation is null\n");
+	return (TypeDefinition)0;
+    }
+
     if (operation.value != (Value)0) {
 	return checkTypesInValue(parser, tree, block, operation.value);
     }
@@ -1048,12 +1053,12 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 
     //TODO: handle castType, and check other types
 
-    if (isOperator(operation.operator, "=") ||
-	isOperator(operation.operator, "<") ||
+    if (isOperator(operation.operator, "<") ||
 	isOperator(operation.operator, ">") ||
-	isOperator(operation.operator, "!=") ||
 	isOperator(operation.operator, "<=") ||
-	isOperator(operation.operator, ">=")) {
+	isOperator(operation.operator, ">=") ||
+	isOperator(operation.operator, "==") ||
+	isOperator(operation.operator, "!=")) {
 	if (leftType != rightType) {
 	    printPosition(operation.operator.position);
 	    print(" can not compare values of different types\n");
@@ -1183,9 +1188,37 @@ func checkTypesInVariable(Parser parser, SyntaxTree tree, Block block, VariableD
 }
 
 func checkTypesInReturn(Parser parser, SyntaxTree tree, Block block, Return returnStatement) {
-    checkTypesInOperation(parser, tree, block, returnStatement.expression);
+    var returnType = parser.null;
+    if (returnStatement.expression != (Operation)0) {
+	checkTypesInOperation(parser, tree, block, returnStatement.expression);
+    }
     
-    //TODO: must still check return type
+    var function = getBlockFunction(block);
+    if (function == (FunctionDefinition)0) {
+	printPosition(returnStatement.region.start);
+	print(" can not return from outside a function\n");
+	return;
+    }
+
+    if (function.returnType == (ReturnType)0) {
+	if (returnType != parser.null) {
+	    printPosition(returnStatement.expression.region.start);
+	    print(" can not return a value from a null function\n");
+	}
+	return;
+    }
+
+    var expectedType = getTypeDefinitionFromType(parser, tree, block, function.returnType.returnType);
+
+    if (returnType != expectedType) {
+	printPosition(returnStatement.expression.region.start);
+	print(" expected type '");
+	printType(expectedType);
+	print("', got '");
+	printType(returnType);
+	print("'\n");
+	return;
+    }
 }
 
 func checkTypesInStatementList(Parser parser, SyntaxTree tree, Block block, StatementList list) {

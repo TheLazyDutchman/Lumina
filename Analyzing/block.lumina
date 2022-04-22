@@ -107,3 +107,11 @@ func findVariableInBlock(Block block, str name) -> VariableDefinition {
 
     return variable;
 }
+
+func getBlockFunction(Block block) -> FunctionDefinition {
+    if (block.function != (FunctionDefinition)0) {
+	return block.function;
+    }
+
+    return getBlockFunction(block.outer);
+}
