@@ -963,6 +963,18 @@ func checkTypesInValue(Parser parser, SyntaxTree tree, Block block, Value value)
 }
 
 func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operation operation) -> TypeDefinition {
+    func getArgumentTypes(Parser parser, SyntaxTree tree, Block block, TypeList list, Operation operation) {
+	if (isOperator(operation.operator, ",")) {
+	    getArgumentTypes(parser, tree, block, list, operation.left);
+	    var argumentType = checkTypesInOperation(parser, tree, block, operation.right);
+	    addType(list, argumentType);
+	    return;
+	}
+
+	var argumentType = checkTypesInOperation(parser, tree, block, operation);
+	addType(list, argumentType);
+    }
+
     func checkTypesInFunctionCall(Parser parser, SyntaxTree tree, Block block, Operation call) -> TypeDefinition {
 	var functionName = call.left.value.name;
 	var function = findFunctionInParser(parser, tree, block, functionName.name);
@@ -975,7 +987,19 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 	    return (TypeDefinition)0;
 	}
 
-	print("can not check types in function arguments yet\n");
+	var argumentList = createTypeList();
+	if (operation.right != (Operation)0) {
+	    getArgumentTypes(parser, tree, block, argumentList, operation.right);
+	}
+
+	var i = 0;
+	while (i < argumentList.size) {
+	    printType(argumentList.list[i]);
+	    print(", ");
+	    i = i + 1;
+	}
+
+	print("\n");
 
 	if (function.returnType == (ReturnType)0) {
 	    return parser.null;
@@ -1145,6 +1169,14 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 	}
 
 	return (TypeDefinition)0;
+    } else if (isOperator(operation.operator, "(")) {
+	var typeObj = checkTypesInOperation(parser, tree, block, operation.right);
+
+	if (operation.castType != (Type)0) {
+	    return getTypeDefinitionFromType(parser, tree, block, operation.castType);
+	}
+
+	return typeObj;
     } else {
 	print("do not support type checking for '");
 	print(operation.operator.name);
