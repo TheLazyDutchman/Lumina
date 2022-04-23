@@ -66,6 +66,15 @@ func createType(Name name, OperatorList brackets) -> Type {
 	return value;
 }
 
+func createTypeObjFromString(str typeName) -> Type {
+    var typeObj = (Type)malloc(sizeof(Type));
+
+    typeObj.name = createNameFromString(typeName);
+    typeObj.brackets = createOperatorList();
+
+    return typeObj;
+}
+
 func createProperty(Type typeName, Name name, Operator semicolon) -> Property {
 	if (isIdentifier(name) != (bool)1) {
 		print("expected property name to be an identifier\n");

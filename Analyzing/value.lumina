@@ -73,3 +73,11 @@ func createValueFromString(String string) -> Value {
 	value.string = string;
 	return value;
 }
+
+func isName(Value value) -> bool {
+    if (value == (Value)0) {
+	return (bool)0;
+    }
+
+    return value.name != (Name)0;
+}

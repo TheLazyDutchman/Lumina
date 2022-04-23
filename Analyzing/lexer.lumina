@@ -276,10 +276,6 @@ func nextToken(Lexer lexer) -> Token {
 	return token; // will never come here
 }
 
-func isName(Token token) -> bool {
-	return token.name != (Name)0;
-}
-
 func isString(Token token) -> bool {
 	return token.string != (String)0;
 }

@@ -21,8 +21,6 @@ func CompileLinuxx86_nasm(str fileName) {
 	var tree = parser.files.list[numFilesTypeChecked];
 	checkTypes(parser, tree);
 	numFilesTypeChecked = numFilesTypeChecked + 1;
-
-	return;
     }
 }
 

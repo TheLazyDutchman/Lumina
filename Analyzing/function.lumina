@@ -74,6 +74,21 @@ func createParameter(Type parameterType, Name name, Operator comma) -> Parameter
 	return parameter;
 }
 
+func createParameterFromString(str typeName, str name) -> Parameter {
+    var parameter = (Parameter)malloc(sizeof(Parameter));
+
+    parameter.region = (Region)0;
+    parameter.parameterType = createTypeObjFromString(typeName);
+    if (name != (str)0) {
+	parameter.name = createNameFromString(name);
+    } else {
+	parameter.name = (Name)0;
+    }
+    parameter.comma = (Operator)0;
+
+    return parameter;
+}
+
 func createParameterList() -> ParameterList {
 	var list = (ParameterList)malloc(sizeof(ParameterList));
 
@@ -105,6 +120,17 @@ func createReturnType(Operator rarrow, Type typeObj) -> ReturnType {
 	return returnType;
 }
 
+func createReturnTypeFromString(str typeName) -> ReturnType {
+    var returnType = (ReturnType)malloc(sizeof(ReturnType));
+
+    returnType.region = (Region)0;
+
+    returnType.rarrow = (Operator)0;
+    returnType.returnType = createTypeObjFromString(typeName);
+
+    return returnType;
+}
+
 func createFunctionDefinition(Name keyword, Name name, Operator lparen, ParameterList parameters, Operator rparen, ReturnType returnType, int blockId, Position end) -> FunctionDefinition {
 	var function = (FunctionDefinition)malloc(sizeof(FunctionDefinition));
 
@@ -121,16 +147,16 @@ func createFunctionDefinition(Name keyword, Name name, Operator lparen, Paramete
 	return function;
 }
 
-func createFunctionFromString(str value) -> FunctionDefinition {
+func createFunctionFromString(str value, ParameterList parameters, ReturnType returnType) -> FunctionDefinition {
     var function = (FunctionDefinition)malloc(sizeof(FunctionDefinition));
 
     function.region = (Region)0;
     function.keyword = (Name)0;
     function.name = createNameFromString(value);
     function.lparen = (Operator)0;
-    function.parameters = createParameterList();
+    function.parameters = parameters;
     function.rparen = (Operator)0;
-    function.returnType = (ReturnType)0;
+    function.returnType = returnType;
     function.blockId = -1;
 
     return function;

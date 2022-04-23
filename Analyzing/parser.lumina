@@ -132,7 +132,17 @@ func createParser() -> Parser {
 	addType(parser.types, parser.null);
 
 	parser.functions = createFunctionList();
-	parser.syscall = createFunctionFromString("syscall");
+	var syscallParameters = createParameterList();
+
+	var i = 0;
+	while (i < 7) {
+	    addParameter(syscallParameters, createParameterFromString("any", (str)0));
+	    i = i + 1;
+	}
+
+	var syscallReturnType = createReturnTypeFromString("any");
+
+	parser.syscall = createFunctionFromString("syscall", syscallParameters, syscallReturnType);
 	addFunction(parser.functions, parser.syscall);
 
 	parser.variables = createVariableList();
@@ -961,6 +971,10 @@ func bindNames(Parser parser, str fileName) {
     }
 }
 
+func compareTypes(Parser parser, TypeDefinition a, TypeDefinition b) -> bool {
+    return a == b || b == parser.any;
+}
+
 func checkTypesInName(Parser parser, SyntaxTree tree, Block block, Name name) -> TypeDefinition {
     var variable = findVariableInParser(parser, tree, block, name.name);
 
@@ -1053,7 +1067,7 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 		argumentType = argumentList.list[j];
 	    }
 
-	    if (expectedType == argumentType) {
+	    if (compareTypes(parser, argumentType, expectedType)) {
 		j = j + 1;
 	    } else {
 		typesMatching = (bool)0;
@@ -1062,7 +1076,7 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 	}
 
 	if (typesMatching != (bool)1) {
-	    printPosition(function.lparen.position);
+	    printPosition(call.operator.position);
 	    print(" arguments do not match\n");
 	    print("[NOTE] expected: ");
 	    printTypeList(expectedList);
@@ -1079,6 +1093,12 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
     }
 
     func checkTypesInProperty(Parser parser, SyntaxTree tree, Block block, Operation operation) -> TypeDefinition {
+	if (isVariable(operation.left) != (bool)1) {
+	    printPosition(operation.operator.position);
+	    print(" can not read a property from a value that is not a variable\n");
+	    return (TypeDefinition)0;
+	}
+
 	var typeObj = checkTypesInOperation(parser, tree, block, operation.left);
 
 	if (typeObj == (TypeDefinition)0) {
@@ -1164,9 +1184,15 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 	}
 	return parser.bool;
     } else if (isOperator(operation.operator, "[")) {
+	if (isVariable(operation.left) != (bool)1) {
+	    printPosition(operation.operator.position);
+	    print(" can not index from a value that is not a variable\n");
+	    return (TypeDefinition)0;
+	}
+
 	if (leftType == (TypeDefinition)0) {
 	    printPosition(operation.operator.position);
-	    print("type of list is null\n");
+	    print(" type of list is null\n");
 	    return (TypeDefinition)0;
 	}
 
@@ -1239,6 +1265,17 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 	}
 
 	return (TypeDefinition)0;
+    } else if (isOperator(operation.operator, "*")) {
+	if (leftType != parser.int || rightType != parser.int) {
+	    printPosition(operation.operator.position);
+	    print(" can not multiply values of type '");
+	    printType(leftType);
+	    print("', and '");
+	    printType(rightType);
+	    print("'\n");
+	}
+
+	return parser.int;
     } else if (isOperator(operation.operator, "(")) {
 	var typeObj = checkTypesInOperation(parser, tree, block, operation.right);
 
@@ -1247,6 +1284,24 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 	}
 
 	return typeObj;
+    } else if (isOperator(operation.operator, "=")) {
+	if (isVariable(operation.left) != (bool)1) {
+	    printPosition(operation.operator.position);
+	    print(" can not assign a value to a constant\n");
+	    return (TypeDefinition)0;
+	}
+
+	if (leftType != rightType) {
+	    printPosition(operation.operator.position);
+	    print(" can not assign a value with a different type\n");
+	    print("[NOTE] expected: '");
+	    printType(leftType);
+	    print("', got: '");
+	    printType(rightType);
+	    print("'\n");
+	}
+
+	return (TypeDefinition)0;
     } else {
 	print("do not support type checking for '");
 	print(operation.operator.name);

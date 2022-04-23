@@ -124,3 +124,19 @@ func createOperationFromSizeOf(SizeOf sizeOf) -> Operation {
 
 	return operation;
 }
+
+func isVariable(Operation operation) -> bool {
+    if (isName(operation.value)) {
+	return (bool)1;
+    }
+
+    if (isOperator(operation.operator, ".")) {
+	return isVariable(operation.left) && isName(operation.right.value);
+    }
+
+    if (isOperator(operation.operator, "[")) {
+	return isVariable(operation.left);
+    }
+
+    return (bool)0;
+}
