@@ -233,3 +233,16 @@ func printType(TypeDefinition typeObj) {
 
     print(typeObj.name.name);
 }
+
+func printTypeList(TypeList list) {
+    var i = 0;
+    print("[");
+    while (i < list.size) {
+	printType(list.list[i]);
+	if (i != list.size) {
+	    print(",");
+	}
+	i = i + 1;
+    }
+    print("]");
+}

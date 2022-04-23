@@ -740,11 +740,52 @@ func getTypeDefinitionFromType(Parser parser, SyntaxTree tree, Block block, Type
     return typeDef;
 }
 
+func createVariableFromParameter(Parser parser, SyntaxTree tree, Block block, Parameter parameter) -> VariableDefinition {
+    var variable = (VariableDefinition)malloc(sizeof(VariableDefinition));
+
+    variable.region = parameter.region;
+    variable.keyword = (Name)0;
+    variable.name = parameter.name;
+    variable.equalSign = (Operator)0;
+    variable.value = (Operation)0;
+    variable.semicolon = (Operator)0;
+    
+    variable.variableType = getTypeDefinitionFromType(parser, tree, block, parameter.parameterType);
+
+    return variable;
+}
+
+func findVariableInParameters(Parser parser, SyntaxTree tree, Block block, FunctionDefinition function, str name) -> VariableDefinition {
+    var i = 0;
+    while (i < function.parameters.size) {
+	if (streq(function.parameters.list[i].name.name, name)) {
+	    return createVariableFromParameter(parser, tree, block, function.parameters.list[i]);
+	}
+	i = i + 1;
+    }
+
+    return (VariableDefinition)0;
+}
+
+func findVariableInBlock(Parser parser, SyntaxTree tree, Block block, str name) -> VariableDefinition {
+    var variable = findVariable(block.variables, name);
+
+    if (variable == (VariableDefinition)0 && block.function != (FunctionDefinition)0) {
+	variable = findVariableInParameters(parser, tree, block, block.function, name);
+    }
+
+    if (variable == (VariableDefinition)0 && block.outer != (Block)0) {
+	return findVariableInBlock(parser, tree, block.outer, name);
+    }
+
+    return variable;
+}
+
 func findVariableInParser(Parser parser, SyntaxTree tree, Block block, str name) -> VariableDefinition {
     var variable = (VariableDefinition)0;
 
     if (block != (Block)0) {
-	variable = findVariableInBlock(block, name);
+	variable = findVariableInBlock(parser, tree, block, name);
     }
 
     if (variable == (VariableDefinition)0) {
@@ -992,14 +1033,43 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 	    getArgumentTypes(parser, tree, block, argumentList, operation.right);
 	}
 
+	var expectedList = createTypeList();
 	var i = 0;
-	while (i < argumentList.size) {
-	    printType(argumentList.list[i]);
-	    print(", ");
+	while (i < function.parameters.size) {
+	    var expectedType = getTypeDefinitionFromType(parser, tree, block, function.parameters.list[i].parameterType);
+	    addType(expectedList, expectedType);
 	    i = i + 1;
 	}
 
-	print("\n");
+	i = 0;
+	var j = 0;
+	var typesMatching = (bool)1;
+	while (i < expectedList.size) {
+	    var expectedType = expectedList.list[i];
+	    var argumentType = (TypeDefinition)0;
+	    if (j > argumentList.size) {
+		i = expectedList.size;
+	    } else {
+		argumentType = argumentList.list[j];
+	    }
+
+	    if (expectedType == argumentType) {
+		j = j + 1;
+	    } else {
+		typesMatching = (bool)0;
+	    }
+	    i = i + 1;
+	}
+
+	if (typesMatching != (bool)1) {
+	    printPosition(function.lparen.position);
+	    print(" arguments do not match\n");
+	    print("[NOTE] expected: ");
+	    printTypeList(expectedList);
+	    print(", got: ");
+	    printTypeList(argumentList);
+	    print("\n");
+	}
 
 	if (function.returnType == (ReturnType)0) {
 	    return parser.null;
