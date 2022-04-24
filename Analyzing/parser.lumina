@@ -1017,6 +1017,15 @@ func checkTypesInValue(Parser parser, SyntaxTree tree, Block block, Value value)
     return (TypeDefinition)0;
 }
 
+func checkTypesInSizeOf(Parser parser, SyntaxTree tree, Block block, SizeOf sizeOf) -> TypeDefinition {
+    if (getTypeDefinitionFromType(parser, tree, block, sizeOf.typeObj) == (TypeDefinition)0) {
+	printPosition(sizeOf.typeObj.region.start);
+	print(" can not find type with this name\n");
+    }
+
+    return parser.int;
+}
+
 func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operation operation) -> TypeDefinition {
     func getArgumentTypes(Parser parser, SyntaxTree tree, Block block, TypeList list, Operation operation) {
 	if (isOperator(operation.operator, ",")) {
@@ -1133,6 +1142,10 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 
     if (operation.value != (Value)0) {
 	return checkTypesInValue(parser, tree, block, operation.value);
+    }
+
+    if (operation.sizeOf != (SizeOf)0) {
+	return checkTypesInSizeOf(parser, tree, block, operation.sizeOf);
     }
 
     if (isOperator(operation.operator, "(") && operation.left != (Operation)0) {
@@ -1265,10 +1278,16 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 	}
 
 	return (TypeDefinition)0;
-    } else if (isOperator(operation.operator, "*")) {
+    } else if (isOperator(operation.operator, "*") ||
+		isOperator(operation.operator, "&") ||
+		isOperator(operation.operator, "|") ||
+		isOperator(operation.operator, "<<") ||
+		isOperator(operation.operator, ">>")) {
 	if (leftType != parser.int || rightType != parser.int) {
 	    printPosition(operation.operator.position);
-	    print(" can not multiply values of type '");
+	    print(" can not perform operation: '");
+	    print(operation.operator.name);
+	    print("' on values of type: '");
 	    printType(leftType);
 	    print("', and '");
 	    printType(rightType);
@@ -1302,8 +1321,20 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 	}
 
 	return (TypeDefinition)0;
+    } else if (isOperator(operation.operator, "&&") ||
+		isOperator(operation.operator, "||")) {
+	if (leftType != parser.bool || rightType != parser.bool) {
+	    printPosition(operation.operator.position);
+	    print(" can not perform an 'and' or 'or' operation on values of type '");
+	    printType(leftType);
+	    print("' and '");
+	    printType(rightType);
+	    print("'\n");
+	}
+	return parser.bool;
     } else {
-	print("do not support type checking for '");
+	printPosition(operation.region.start);
+	print(" do not support type checking for '");
 	print(operation.operator.name);
 	print("' operator yet\n");
     }
@@ -1347,7 +1378,7 @@ func checkTypesInVariable(Parser parser, SyntaxTree tree, Block block, VariableD
 func checkTypesInReturn(Parser parser, SyntaxTree tree, Block block, Return returnStatement) {
     var returnType = parser.null;
     if (returnStatement.expression != (Operation)0) {
-	checkTypesInOperation(parser, tree, block, returnStatement.expression);
+	returnType = checkTypesInOperation(parser, tree, block, returnStatement.expression);
     }
     
     var function = getBlockFunction(block);
