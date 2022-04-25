@@ -1,10 +1,120 @@
 import "../std/io.lumina"
 import "../std/syscalls.lumina"
+import "../std/memory.lumina"
 
 import "parser.lumina"
+import "operation.lumina"
+import "operator.lumina"
+import "statement.lumina"
+import "expression.lumina"
 
 
-func CompileLinuxx86_nasm(str fileName) {
+type Register {
+    str name;
+    bool used;
+}
+
+type RegisterList {
+    int size;
+    int maxSize;
+    Register[] list;
+}
+
+func createRegister(str name) -> Register {
+    var reg = (Register)malloc(sizeof(Register));
+
+    reg.name = name;
+    reg.used = (bool)0;
+
+    return reg;
+}
+
+func createRegisterList() -> RegisterList {
+    var list = (RegisterList)malloc(sizeof(RegisterList));
+
+    list.size = 0;
+    list.maxSize = 8;
+    list.list = (Register[])malloc(8 * 8);
+
+    return list;
+}
+
+func addRegister(RegisterList list, Register reg) {
+    list.list[list.size] = reg;
+    list.size = list.size + 1;
+
+    if (list.size == list.maxSize) {
+	list.list = (Register[])realloc((ptr)list.list, list.maxSize * 8, list.maxSize * 8 * 2);
+	list.maxSize = list.maxSize * 2;
+    }
+}
+
+func initRegisters() -> RegisterList {
+    var registers = createRegisterList();
+    addRegister(registers, createRegister("r8"));
+    addRegister(registers, createRegister("r9"));
+    addRegister(registers, createRegister("r10"));
+    addRegister(registers, createRegister("r11"));
+    addRegister(registers, createRegister("r12"));
+    addRegister(registers, createRegister("r13"));
+    addRegister(registers, createRegister("r14"));
+    addRegister(registers, createRegister("r15"));
+    addRegister(registers, createRegister("rax"));
+    addRegister(registers, createRegister("rbx"));
+    addRegister(registers, createRegister("rcx"));
+    addRegister(registers, createRegister("rdx"));
+
+    return registers;
+}
+
+func writeBinaryOperation(int output, str operation, str registerA, str registerB) {
+    fprint(output, "	");
+    fprint(output, operation);
+    fprint(output, " ");
+    fprint(output, registerA);
+    fprint(output, ", ");
+    fprint(output, registerB);
+    fprint(output, "\n");
+}
+
+func writeOperation(int output, Operation operation, RegisterList registers) {
+    //TODO: handle operations other than binary ones
+    //TODO: handle registers
+
+    if (operation.operator == (Operator)0) {
+	print("operator is null\n");
+	return;
+    }
+
+    var operationString = (str)0;
+    if (isOperator(operation.operator, "+")) {
+	operationString = "add";
+    } else if (isOperator(operation.operator, "-")) {
+	operationString = "sub";
+    } else if (isOperator(operation.operator, "&")) {
+	operationString = "and";
+    } else if (isOperator(operation.operator, "|")) {
+	operationString = "or";
+    } else {
+	print("do not support operator '");
+	print(operation.operator.name);
+	print("' yet\n");
+	return;
+    }
+
+    writeBinaryOperation(output, operationString, "regA", "regB");
+}
+
+func writeStatement(int output, Statement statement) {
+    if (statement.expression != (Expression)0) {
+	var registers = initRegisters();
+	writeOperation(output, statement.expression.operation, registers);
+    } else {
+	print("do not support statements that are not expressions yet\n");
+    }
+}
+
+func checkFiles(str fileName) -> Parser {
     var parser = createParser();
 
     parse(parser, fileName, (str)0);
@@ -21,6 +131,26 @@ func CompileLinuxx86_nasm(str fileName) {
 	var tree = parser.files.list[numFilesTypeChecked];
 	checkTypes(parser, tree);
 	numFilesTypeChecked = numFilesTypeChecked - 1;
+    }
+
+    return parser;
+}
+
+func CompileLinuxx86_nasm(str fileName) {
+    var parser = checkFiles(fileName);
+    var tree = findSyntaxTree(parser.files, fileName);
+
+    const O_WRONLY = 1;
+    const O_CREAT = 64;
+    const O_TRUNC = 512;
+
+    const ALLOW_ALL = 511;
+    var output = open("output.asm", O_WRONLY | O_CREAT | O_TRUNC, ALLOW_ALL);
+
+    var i = 0;
+    while (i < tree.statements.size) {
+	writeStatement(output, tree.statements.list[i]);
+	i = i + 1;
     }
 }
 
