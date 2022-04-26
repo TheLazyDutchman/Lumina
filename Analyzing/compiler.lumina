@@ -17,7 +17,10 @@ import "immediate.lumina"
 import "lexer.lumina"
 import "name.lumina"
 import "block.lumina"
+import "type.lumina"
 
+
+const CALLSTACKSIZE = 4096;
 
 type Register {
     str name;
@@ -127,6 +130,20 @@ func writeStart(int output) {
     fprint(output, "	mov [basestack], rax\n\n");
 }
 
+func writeFooter(int output) {
+    fprint(output, "	mov rax, 60\n");
+    fprint(output, "	xor, rdi, rdi\n");
+    fprint(output, "	syscall\n\n");
+
+    fprint(output, "section .bss\n");
+    fprint(output, "	basestack: resq ");
+    fprinti(output, CALLSTACKSIZE);
+    fprint(output, "\n");
+    
+    fprint(output, "section .data\n");
+    //TODO: write strings
+}
+
 func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Name name, str register, bool getValue) -> str {
     var variable = (VariableDefinition)0;
     if (block != (Block)0) {
@@ -169,6 +186,28 @@ func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Na
     return register;
 }
 
+func writeIndex(int output, int size, str registerA, str registerB, bool getValue) -> str {
+    fprint(output, "	lea ");
+    fprint(output, registerA);
+    fprint(output, ", [");
+    fprint(output, registerA);
+    fprint(output, " + ");
+    fprinti(output, size);
+    fprint(output, " * ");
+    fprint(output, registerB);
+    fprint(output, "]\n");
+
+    if (getValue) {
+	fprint(output, "	mov ");
+	fprint(output, registerA);
+	fprint(output, ", [");
+	fprint(output, registerA);
+	fprint(output, "] ;; index \n");
+    }
+
+    return registerA;
+}
+
 func writeValue(Parser parser, SyntaxTree tree, Block block, int output, Value value, str register, bool getValue) -> str {
     if (value.number != (Number)0) {
 	fprint(output, "	mov ");
@@ -197,33 +236,41 @@ func writeBinaryOperation(int output, str operation, str registerA, str register
     fprint(output, "\n");
 }
 
-func writeComparison(int output, str cmov, str registerA, str registerB) -> str {
+func writeComparison(int output, str cmov, Register registerA, Register registerB) -> str {
     fprint(output, "	cmp ");
-    fprint(output, registerA);
+    fprint(output, registerA.name);
     fprint(output, ", ");
-    fprint(output, registerB);
+    fprint(output, registerB.name);
     fprint(output, "\n");
     
     fprint(output, "	mov ");
-    fprint(output, registerA);
+    fprint(output, registerA.name);
     fprint(output, ", 0\n");
 
     fprint(output, "	mov ");
-    fprint(output, registerB);
+    fprint(output, registerB.name);
     fprint(output, ", 1\n");
 
     fprint(output, "	");
     fprint(output, cmov);
     fprint(output, " ");
-    fprint(output, registerA);
+    fprint(output, registerA.name);
     fprint(output, ", ");
-    fprint(output, registerB);
+    fprint(output, registerB.name);
     fprint(output, " ;; comparison\n");
 
-    return registerA;
+    registerB.used = (bool)0;
+
+    return registerA.name;
 }
 
 func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, RegisterList registers, Register registerA, bool getValue) -> str {
+    func writeCall(Parser parser, SyntaxTree tree, Block block, int output, Operation call, RegisterList registers, Register register) -> str {
+	print("do not support function calls yet\n");
+	return (str)0;
+    }
+
+
     //TODO: handle operations other than binary ones
     if (operation.value != (Value)0) {
 	return writeValue(parser, tree, block, output, operation.value, registerA.name, getValue);
@@ -234,6 +281,10 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	return (str)0;
     }
 
+    if (isOperator(operation.operator, "(") && operation.left != (Operation)0) {
+	return writeCall(parser, tree, block, output, operation, registers, registerA);
+    }
+
     var registerB = getRegister(registers);
 
     writeOperation(parser, tree, block, output, operation.left, registers, registerA, getValue);
@@ -241,17 +292,21 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 
     var operationString = (str)0;
     if (isOperator(operation.operator, "==")) {
-	return writeComparison(output, "move", registerA.name, registerB.name);
+	return writeComparison(output, "move", registerA, registerB);
     } else if (isOperator(operation.operator, "!=")) {
-	return writeComparison(output, "movne", registerA.name, registerB.name);
+	return writeComparison(output, "movne", registerA, registerB);
     } else if (isOperator(operation.operator, "<")) {
-	return writeComparison(output, "movl", registerA.name, registerB.name);
+	return writeComparison(output, "movl", registerA, registerB);
     } else if (isOperator(operation.operator, ">")) {
-	return writeComparison(output, "movg", registerA.name, registerB.name);
+	return writeComparison(output, "movg", registerA, registerB);
     } else if (isOperator(operation.operator, "<=")) {
-	return writeComparison(output, "movle", registerA.name, registerB.name);
+	return writeComparison(output, "movle", registerA, registerB);
     } else if (isOperator(operation.operator, ">=")) {
-	return writeComparison(output, "movge", registerA.name, registerB.name);
+	return writeComparison(output, "movge", registerA, registerB);
+    } else if (isOperator(operation.operator, "[")) {
+	var typeObj = checkTypesInOperation(parser, tree, block, operation);
+	var size = getSizeFromType(parser, tree, block, typeObj);
+	return writeIndex(output, size, registerA.name, registerB.name, getValue);
     } else if (isOperator(operation.operator, "+")) {
 	operationString = "add";
     } else if (isOperator(operation.operator, "-")) {
@@ -298,6 +353,7 @@ func writeVariable(Parser parser, SyntaxTree tree, Block block, int output, Vari
     writeOperation(parser, tree, block, output, variable.value, registers, register, (bool)1);
     fprint(output, "	push ");
     fprint(output, register.name);
+    fprint(output, "\n\n");
     register.used = (bool)0;
 }
 
@@ -305,6 +361,7 @@ func writeStatement(Parser parser, SyntaxTree tree, Block block, int output, Sta
     if (statement.expression != (Expression)0) {
 	var register = getRegister(registers);
 	writeOperation(parser, tree, block, output, statement.expression.operation, registers, register, (bool)1);
+	fprint(output, "\n");
     } else if (statement.ifStatement != (If)0) {
 	writeIf(parser, tree, block, output, statement.ifStatement, registers);
     } else if (statement.whileStatement != (While)0) {
@@ -363,6 +420,8 @@ func CompileLinuxx86_nasm(str fileName) {
 
     writeStart(output);
     writeStatementList(parser, tree, (Block)0, output, tree.statements, registers);
+
+    writeFooter(output);
 }
 
 if (argc < 2) {

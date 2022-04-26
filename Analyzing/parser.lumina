@@ -116,13 +116,13 @@ func createParser() -> Parser {
 	parser.files = createSyntaxTreeList();
 
 	parser.types = createTypeList();
-	parser.int = createTypeFromString("int");
-	parser.char = createTypeFromString("char");
+	parser.int = createTypeFromString("int", 8);
+	parser.char = createTypeFromString("char", 1);
 	parser.str = createArrayFrom("str", parser.char);
-	parser.bool = createTypeFromString("bool");
-	parser.any = createTypeFromString("any");
-	parser.ptr = createTypeFromString("ptr");
-	parser.null = createTypeFromString("null");
+	parser.bool = createTypeFromString("bool", 1);
+	parser.any = createTypeFromString("any", 8);
+	parser.ptr = createTypeFromString("ptr", 8);
+	parser.null = createTypeFromString("null", 8);
 	addType(parser.types, parser.int);
 	addType(parser.types, parser.char);
 	addType(parser.types, parser.str);
@@ -753,6 +753,26 @@ func getTypeDefinitionFromType(Parser parser, SyntaxTree tree, Block block, Type
     }
 
     return typeDef;
+}
+
+func getSizeFromType(Parser parser, SyntaxTree tree, Block block, TypeDefinition typeObj) -> int {
+    if (typeObj.arrayType != (TypeDefinition)0) {
+	return 8;
+    }
+
+    if (typeObj.properties.size == 0) {
+	return typeObj.size;
+    }
+
+    var sum = 0;
+    var i = 0;
+    while (i < typeObj.properties.size) {
+	var propertyType = getTypeDefinitionFromType(parser, tree, block, typeObj.properties.list[i].typeName);
+	sum = sum + getSizeFromType(parser, tree, block, propertyType);
+	i = i + 1;
+    }
+
+    return sum;
 }
 
 func createVariableFromParameter(Parser parser, SyntaxTree tree, Block block, Parameter parameter) -> VariableDefinition {

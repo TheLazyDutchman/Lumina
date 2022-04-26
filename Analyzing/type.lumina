@@ -30,6 +30,7 @@ type TypeDefinition {
 	Region region;
 	Name keyword;
 	Name name;
+	int size;
 
 	Operator lbrace;
 
@@ -147,6 +148,7 @@ func createTypeDefinition(Name keyword, Name name, Operator lbrace, PropertyList
 
 	typeDef.keyword = keyword;
 	typeDef.name = name;
+	typeDef.size = 0;
 	typeDef.lbrace = lbrace;
 	typeDef.properties = properties;
 	typeDef.rbrace = rbrace;
@@ -158,12 +160,13 @@ func createTypeDefinition(Name keyword, Name name, Operator lbrace, PropertyList
 	return typeDef;
 }
 
-func createTypeFromString(str value) -> TypeDefinition {
+func createTypeFromString(str value, int size) -> TypeDefinition {
     var typeDef = (TypeDefinition)malloc(sizeof(TypeDefinition));
 
     typeDef.region = (Region)0;
     typeDef.keyword = (Name)0;
     typeDef.name = createNameFromString(value);
+    typeDef.size = size;
     typeDef.lbrace = (Operator)0;
     typeDef.properties = createPropertyList();
     typeDef.rbrace = (Operator)0;
