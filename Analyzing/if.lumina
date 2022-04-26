@@ -22,6 +22,8 @@ type ElseIf {
 	Operation condition;
 	Operator rparen;
 	int blockId;
+
+	int id;
 }
 
 type ElseIfList {
@@ -39,6 +41,8 @@ type If {
 	int blockId;
 	ElseIfList elseIfs;
 	Else elseObj;
+
+	int id;
 }
 
 func createElse(Name keyword, int blockId, Position end) -> Else {
@@ -52,7 +56,7 @@ func createElse(Name keyword, int blockId, Position end) -> Else {
 	return elseStatement;
 }
 
-func createElseIf(Name elseKeyword, Name ifKeyword, Operator lparen, Operation condition, Operator rparen, int blockId, Position end) -> ElseIf {
+func createElseIf(Name elseKeyword, Name ifKeyword, Operator lparen, Operation condition, Operator rparen, int blockId, Position end, int id) -> ElseIf {
 	var elseIf = (ElseIf)malloc(sizeof(ElseIf));
 
 	elseIf.region = createRegion(elseKeyword.region.start, end);
@@ -63,6 +67,8 @@ func createElseIf(Name elseKeyword, Name ifKeyword, Operator lparen, Operation c
 	elseIf.condition = condition;
 	elseIf.rparen = rparen;
 	elseIf.blockId = blockId;
+
+	elseIf.id = id;
 
 	return elseIf;
 }
@@ -87,7 +93,7 @@ func addElseIf(ElseIfList list, ElseIf elseIf) {
 	}
 }
 
-func createIf(Name keyword, Operator lparen, Operation condition, Operator rparen, int blockId, ElseIfList elseIfs, Else elseObj, Position end) -> If {
+func createIf(Name keyword, Operator lparen, Operation condition, Operator rparen, int blockId, ElseIfList elseIfs, Else elseObj, Position end, int id) -> If {
 	var ifStatement = (If)malloc(sizeof(If));
 
 	if (elseObj != (Else)0) {
@@ -105,6 +111,8 @@ func createIf(Name keyword, Operator lparen, Operation condition, Operator rpare
 	ifStatement.blockId = blockId;
 	ifStatement.elseIfs = elseIfs;
 	ifStatement.elseObj = elseObj;
+
+	ifStatement.id = id;
 
 	return ifStatement;
 }

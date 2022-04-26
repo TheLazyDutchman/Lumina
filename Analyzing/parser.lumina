@@ -58,6 +58,9 @@ type Parser {
 	VariableList variables;
 	VariableDefinition argc;
 	VariableDefinition argv;
+
+	int numIfs;
+	int numWhiles;
 }
 
 func createSyntaxTree(str fileName) -> SyntaxTree {
@@ -150,6 +153,9 @@ func createParser() -> Parser {
 	parser.argv = createVariableFromString("argv", 0, 1, createArrayFrom((str)0, parser.str));
 	addVariable(parser.variables, parser.argc);
 	addVariable(parser.variables, parser.argv);
+
+	parser.numIfs = 0;
+	parser.numWhiles = 0;
 
 	return parser;
 }
@@ -465,7 +471,7 @@ func parseReturnType(SyntaxTree tree) -> ReturnType {
 	return createReturnType(rarrow, typeObj);
 }
 
-func parseStatement(SyntaxTree tree, TypeList typeList, FunctionList functionList, VariableList variableList, ImportList importList, Block outer) -> Statement {
+func parseStatement(Parser parser, SyntaxTree tree, TypeList typeList, FunctionList functionList, VariableList variableList, ImportList importList, Block outer) -> Statement {
 	func parseBlock(SyntaxTree tree, Block outer) -> int {
 		var lbrace = consumeOperator(tree, "{", (bool)0);
 
@@ -478,7 +484,7 @@ func parseStatement(SyntaxTree tree, TypeList typeList, FunctionList functionLis
 		var blockIndex = addBlock(tree.blocks, block);
 
 		while (isOperator(tree.lexer.current.operator, "}") != (bool)1 || tree.lexer.current.isEOF) {
-			var statement = parseStatement(tree, typeList, functionList, variableList, importList, block);
+			var statement = parseStatement(parser, tree, typeList, functionList, variableList, importList, block);
 			addStatement(statementList, statement);
 		}
 
@@ -489,7 +495,7 @@ func parseStatement(SyntaxTree tree, TypeList typeList, FunctionList functionLis
 		return blockIndex;
 	}
 
-	func parseElseIf(SyntaxTree tree, ElseIfList list, Name elseKeyword, Block outer) {
+	func parseElseIf(Parser parser, SyntaxTree tree, ElseIfList list, Name elseKeyword, Block outer) {
 		var ifKeyword = consumeKeyword(tree, KEYWORD_if);
 		var lparen = consumeOperator(tree, "(", (bool)0);
 		var condition = parseExpression(tree, PREC_expression);
@@ -497,7 +503,8 @@ func parseStatement(SyntaxTree tree, TypeList typeList, FunctionList functionLis
 		var block = parseBlock(tree, outer);
 		var endPosition = tree.blocks.list[block].region.end;
 
-		var elseIf = createElseIf(elseKeyword, ifKeyword, lparen, condition, rparen, block, endPosition);
+		var elseIf = createElseIf(elseKeyword, ifKeyword, lparen, condition, rparen, block, endPosition, parser.numIfs);
+		parser.numIfs = parser.numIfs + 1;
 		addElseIf(list, elseIf);
 	}
 
@@ -508,7 +515,7 @@ func parseStatement(SyntaxTree tree, TypeList typeList, FunctionList functionLis
 		return createElse(keyword, block, endPosition);
 	}
 
-	func parseIf(SyntaxTree tree, Block outer) -> If {
+	func parseIf(Parser parser, SyntaxTree tree, Block outer) -> If {
 		var ifKeyword = consumeKeyword(tree, KEYWORD_if);
 
 		var lparen = consumeOperator(tree, "(", (bool)0);
@@ -531,14 +538,18 @@ func parseStatement(SyntaxTree tree, TypeList typeList, FunctionList functionLis
 			var elseKeyword = consumeKeyword(tree, KEYWORD_else);
 
 			if (isKeyword(tree.lexer.current.name, KEYWORD_if)) {
-				parseElseIf(tree, elseIfs, elseKeyword, outer);
+				parseElseIf(parser, tree, elseIfs, elseKeyword, outer);
 			} else {
 				var elseObj = parseElse(tree, elseKeyword, outer);
-				return createIf(ifKeyword, lparen, condition, rparen, block, elseIfs, elseObj, endPosition);
+				var ifObj = createIf(ifKeyword, lparen, condition, rparen, block, elseIfs, elseObj, endPosition, parser.numIfs);
+				parser.numIfs = parser.numIfs + 1;
+				return ifObj;
 			}
 		}
 
-		return createIf(ifKeyword, lparen, condition, rparen, block, elseIfs, (Else)0, endPosition);
+		var ifObj = createIf(ifKeyword, lparen, condition, rparen, block, elseIfs, (Else)0, endPosition, parser.numIfs);
+		parser.numIfs = parser.numIfs + 1;
+		return ifObj;
 	}
 
 	func parseWhile(SyntaxTree tree, Block outer) -> While {
@@ -558,7 +569,9 @@ func parseStatement(SyntaxTree tree, TypeList typeList, FunctionList functionLis
 			print("expected block after while\n");
 		}
 
-		return createWhile(keyword, lparen, condition, rparen, block, endPosition);
+		var whileObj = createWhile(keyword, lparen, condition, rparen, block, endPosition, parser.numWhiles);
+		parser.numWhiles = parser.numWhiles + 1;
+		return whileObj;
 	}
 
 	func parseFunctionDefinition(SyntaxTree tree, Block outer) -> FunctionDefinition {
@@ -618,7 +631,7 @@ func parseStatement(SyntaxTree tree, TypeList typeList, FunctionList functionLis
 
 		return createFunctionStatement(function);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_if)) {
-		var ifStatement = parseIf(tree, outer);
+		var ifStatement = parseIf(parser, tree, outer);
 
 		return createIfStatement(ifStatement);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_while)) {
@@ -668,7 +681,7 @@ func parse(Parser parser, str fileName, str outerName) -> SyntaxTree {
 	tree = createSyntaxTree(fileName);
 
 	while (tree.lexer.current.isEOF != (bool)1) {
-		var statement = parseStatement(tree, tree.types, tree.functions, tree.variables, tree.imports, (Block)0);
+		var statement = parseStatement(parser, tree, tree.types, tree.functions, tree.variables, tree.imports, (Block)0);
 		addStatement(tree.statements, statement);
 	}
 

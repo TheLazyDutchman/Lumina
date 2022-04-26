@@ -14,9 +14,11 @@ type While {
 	Operation condition;
 	Operator rparen;
 	int blockId;
+
+	int id;
 }
 
-func createWhile (Name keyword, Operator lparen, Operation condition, Operator rparen, int blockId, Position end) -> While {
+func createWhile (Name keyword, Operator lparen, Operation condition, Operator rparen, int blockId, Position end, int id) -> While {
 	var whileStatement = (While)malloc(sizeof(While));
 
 	whileStatement.region = createRegion(keyword.region.start, end);
@@ -26,6 +28,8 @@ func createWhile (Name keyword, Operator lparen, Operation condition, Operator r
 	whileStatement.condition = condition;
 	whileStatement.rparen = rparen;
 	whileStatement.blockId = blockId;
+
+	whileStatement.id = id;
 
 	return whileStatement;
 }
