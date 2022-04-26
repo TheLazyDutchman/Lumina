@@ -17,6 +17,7 @@ type Block {
 	FunctionList functions;
 	VariableList variables;
 	Operator rbrace;
+	int depth;
 
 	Block outer;
 	FunctionDefinition function;
@@ -41,6 +42,13 @@ func createBlock(Operator lbrace, StatementList statements, TypeList types, Func
 	block.rbrace = (Operator)0;
 
 	block.outer = outer;
+
+	if (outer != (Block)0) {
+	    block.depth = outer.depth + 1;
+	} else {
+	    block.depth = 0;
+	}
+
 	block.function = (FunctionDefinition)0;
 
 	return block;

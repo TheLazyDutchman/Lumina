@@ -129,9 +129,9 @@ func findProperty(PropertyList list, str name) -> Property {
 func createTypeDefinition(Name keyword, Name name, Operator lbrace, PropertyList properties, Operator rbrace) -> TypeDefinition {
 	var typeDef = (TypeDefinition)malloc(sizeof(TypeDefinition));
 
-	if (isKeyword(keyword, KEYWORD_type) != (bool)1) {
-		print("expected 'type' keyword for type definition\n");
-	}
+//	if (isKeyword(keyword, KEYWORD_type) != (bool)1) {
+//		print("expected 'type' keyword for type definition\n");
+//	}
 
 	if (isIdentifier(name) != (bool)1) {
 		print("expected type name to be an identifier\n");

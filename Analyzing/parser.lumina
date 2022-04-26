@@ -146,8 +146,8 @@ func createParser() -> Parser {
 	addFunction(parser.functions, parser.syscall);
 
 	parser.variables = createVariableList();
-	parser.argc = createVariableFromString("argc", parser.int);
-	parser.argv = createVariableFromString("argv", createArrayFrom((str)0, parser.str));
+	parser.argc = createVariableFromString("argc", 0, 0, parser.int);
+	parser.argv = createVariableFromString("argv", 0, 1, createArrayFrom((str)0, parser.str));
 	addVariable(parser.variables, parser.argc);
 	addVariable(parser.variables, parser.argv);
 
@@ -420,7 +420,7 @@ func parseImport(SyntaxTree tree) -> Import {
 	return createImport(keyword, fileName);
 }
 
-func parseVariableDefinition(SyntaxTree tree) -> VariableDefinition {
+func parseVariableDefinition(SyntaxTree tree, int depth, int position) -> VariableDefinition {
 	var keyword = tree.lexer.current.name;
 	next(tree.lexer);
 
@@ -429,7 +429,7 @@ func parseVariableDefinition(SyntaxTree tree) -> VariableDefinition {
 	var value = parseExpression(tree, PREC_expression);
 	var semicolon = consumeOperator(tree, ";", (bool)0);
 
-	return createVariableDefinition(keyword, name, equalSign, value, semicolon);
+	return createVariableDefinition(keyword, name, equalSign, value, depth, position, semicolon);
 }
 
 func parseParameterList(SyntaxTree tree) -> ParameterList {
@@ -601,7 +601,12 @@ func parseStatement(SyntaxTree tree, TypeList typeList, FunctionList functionLis
 
 	if (isKeyword(tree.lexer.current.name, KEYWORD_var) ||
 		isKeyword(tree.lexer.current.name, KEYWORD_const)) {
-		var variable = parseVariableDefinition(tree);
+		var depth = 0;
+		if (outer != (Block)0) {
+		    depth = outer.depth;
+		}
+
+		var variable = parseVariableDefinition(tree, depth, variableList.size);
 
 		addVariable(variableList, variable);
 
