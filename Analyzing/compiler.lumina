@@ -124,19 +124,33 @@ func writeHeader(int output) {
 
 func writeStart(int output) {
     fprint(output, "_start:\n");
-    fprint(output, "	mov rax, rsp\n");
-    fprint(output, "	add rax, 8 ;; argc and argv\n");
+    fprint(output, "	lea rax, [datastack + ");
+    fprinti(output, CALLSTACKSIZE);
+    fprint(output, "]\n");
+    fprint(output, "	mov [basestack], rax\n");
+    fprint(output, "	xchg rsp, rax\n");
+    fprint(output, "	add rax, 8\n");
     fprint(output, "	push rax\n");
-    fprint(output, "	mov [basestack], rax\n\n");
+    fprint(output, "	sub rax, 8\n");
+    fprint(output, "	mov rbx, [rax]\n");
+    fprint(output, "	push rbx\n");
+    fprint(output, "	xchg rsp, rax\n");
+    fprint(output, "	mov [datarsp], rax\n\n");
 }
 
 func writeFooter(int output) {
     fprint(output, "	mov rax, 60\n");
-    fprint(output, "	xor, rdi, rdi\n");
+    fprint(output, "	xor rdi, rdi\n");
     fprint(output, "	syscall\n\n");
 
     fprint(output, "section .bss\n");
+
     fprint(output, "	basestack: resq ");
+    fprinti(output, CALLSTACKSIZE);
+    fprint(output, "\n");
+
+    fprint(output, "	datarsp: resq 1\n");
+    fprint(output, "	datastack: resq ");
     fprinti(output, CALLSTACKSIZE);
     fprint(output, "\n");
     
@@ -292,17 +306,17 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 
     var operationString = (str)0;
     if (isOperator(operation.operator, "==")) {
-	return writeComparison(output, "move", registerA, registerB);
+	return writeComparison(output, "cmove", registerA, registerB);
     } else if (isOperator(operation.operator, "!=")) {
-	return writeComparison(output, "movne", registerA, registerB);
+	return writeComparison(output, "cmovne", registerA, registerB);
     } else if (isOperator(operation.operator, "<")) {
-	return writeComparison(output, "movl", registerA, registerB);
+	return writeComparison(output, "cmovl", registerA, registerB);
     } else if (isOperator(operation.operator, ">")) {
-	return writeComparison(output, "movg", registerA, registerB);
+	return writeComparison(output, "cmovg", registerA, registerB);
     } else if (isOperator(operation.operator, "<=")) {
-	return writeComparison(output, "movle", registerA, registerB);
+	return writeComparison(output, "cmovle", registerA, registerB);
     } else if (isOperator(operation.operator, ">=")) {
-	return writeComparison(output, "movge", registerA, registerB);
+	return writeComparison(output, "cmovge", registerA, registerB);
     } else if (isOperator(operation.operator, "[")) {
 	var typeObj = checkTypesInOperation(parser, tree, block, operation);
 	var size = getSizeFromType(parser, tree, block, typeObj);
@@ -332,7 +346,7 @@ func writeJumpNotEqual(int output, Register register, str addr, int id) {
     fprint(output, "	cmp ");
     fprint(output, register.name);
     fprint(output, ", 0\n");
-    fprint(output, "	jne ");
+    fprint(output, "	je ");
     fprint(output, addr);
     fprinti(output, id);
     fprint(output, "\n\n");
@@ -353,13 +367,22 @@ func writeAddress(int output, str addr, int id) {
     fprint(output, ":\n\n");
 }
 
+func writePushData(int output, Register register) {
+    fprint(output, "	xchg rsp, [datarsp]\n");
+
+    fprint(output, "	push ");
+    fprint(output, register.name);
+    fprint(output, "\n");
+
+    fprint(output, "	xchg rsp, [datarsp]\n\n");
+
+    register.used = (bool)0;
+}
+
 func writeVariable(Parser parser, SyntaxTree tree, Block block, int output, VariableDefinition variable, RegisterList registers) {
     var register = getRegister(registers);
     writeOperation(parser, tree, block, output, variable.value, registers, register, (bool)1);
-    fprint(output, "	push ");
-    fprint(output, register.name);
-    fprint(output, "\n\n");
-    register.used = (bool)0;
+    writePushData(output, register);
 }
 
 func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output, StatementList statements, RegisterList registers) {

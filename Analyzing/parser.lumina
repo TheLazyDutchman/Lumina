@@ -149,10 +149,10 @@ func createParser() -> Parser {
 	addFunction(parser.functions, parser.syscall);
 
 	parser.variables = createVariableList();
-	parser.argc = createVariableFromString("argc", 0, 0, parser.int);
 	parser.argv = createVariableFromString("argv", 0, 1, createArrayFrom((str)0, parser.str));
-	addVariable(parser.variables, parser.argc);
+	parser.argc = createVariableFromString("argc", 0, 2, parser.int);
 	addVariable(parser.variables, parser.argv);
+	addVariable(parser.variables, parser.argc);
 
 	parser.numIfs = 0;
 	parser.numWhiles = 0;
@@ -1390,6 +1390,17 @@ func checkTypesInIf(Parser parser, SyntaxTree tree, Block block, If ifStatement)
     if (conditionType != parser.bool) {
 	printPosition(ifStatement.region.start);
 	print(" expected if condition to be of type boolean\n");
+    }
+
+    var i = 0;
+    while (i < ifStatement.elseIfs.size) {
+	var conditionType = checkTypesInOperation(parser, tree, block, ifStatement.elseIfs.list[i].condition);
+
+	if (conditionType != parser.bool) {
+	    printPosition(ifStatement.elseIfs.list[i].region.start);
+	    print(" expected else if condition to be of type boolean\n");
+	}
+	i = i + 1;
     }
 }
 
