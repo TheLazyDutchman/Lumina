@@ -1498,3 +1498,25 @@ func checkTypes(Parser parser, SyntaxTree tree) {
 	i = i + 1;
     }
 }
+
+func listFunctions(Parser parser) -> FunctionList {
+    var list = createFunctionList();
+
+    extendFunctionList(list, parser.functions);
+
+    var i = 0;
+    while (i < parser.files.size) {
+	var tree = parser.files.list[i];
+	extendFunctionList(list, tree.functions);
+
+	var j = 0;
+	while (j < tree.blocks.size) {
+	    var block = tree.blocks.list[i];
+	    extendFunctionList(list, block.functions);
+	    j = j + 1;
+	}
+	i = i + 1;
+    }
+
+    return list;
+}

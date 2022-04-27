@@ -153,8 +153,10 @@ func writeStringLiteral(int output, str string, int id) {
     fprinti(output, id);
     fprint(output, ": db ");
     
+    string = (str)((int)string + 1);
+    var len = strlen(string) - 1; // remove '"' from string literal
+
     var i = 0;
-    var len = strlen(string);
     while (i < len) {
 	var chr = (str)((int)string + i);
 
@@ -177,7 +179,7 @@ func writeHeader(int output) {
     fprint(output, "global _start\n");
     fprint(output, "	;; -- syscall builtin --\n");
     fprint(output, "addr_func_syscall_0:\n");
-    fprint(output, "	pop rbx ;; return address\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
 	fprint(output, "	pop r9\n");
 	fprint(output, "	pop r8\n");
 	fprint(output, "	pop r10\n");
@@ -185,10 +187,9 @@ func writeHeader(int output) {
 	fprint(output, "	pop rsi\n");
 	fprint(output, "	pop rdi\n");
 	fprint(output, "	pop rax\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
 	fprint(output, "	syscall\n");
-
-	fprint(output, "	push rbx\n");
-	fprint(output, "	ret\n");
+	fprint(output, "	ret\n\n");
 }
 
 func writeStart(int output) {
@@ -357,10 +358,58 @@ func writeComparison(int output, str cmov, Register registerA, Register register
     return registerA.name;
 }
 
-func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, RegisterList registers, Register registerA, bool getValue) -> str {
-    func writeCall(Parser parser, SyntaxTree tree, Block block, int output, Operation call, RegisterList registers, Register register) -> str {
-	print("do not support function calls yet\n");
-	return (str)0;
+func writePushData(int output, Register register) {
+    fprint(output, "	xchg rsp, [datarsp]\n");
+
+    fprint(output, "	push ");
+    fprint(output, register.name);
+    fprint(output, "\n");
+
+    fprint(output, "	xchg rsp, [datarsp]\n\n");
+
+    register.used = (bool)0;
+}
+
+func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, RegisterList registers, Register registerA, bool getValue, FunctionList functions) -> str {
+    func writeCall(Parser parser, SyntaxTree tree, Block block, int output, Operation call, RegisterList registers, Register register, FunctionList functions) -> str {
+	var name = operation.left.value.name.name;
+	var id = 0;
+	var i = 0;
+	while (i < functions.size) {
+	    if (streq(functions.list[i].name.name, name)) {
+		id = i;
+		i = functions.size;
+	    }
+	    i = i + 1;
+	}
+
+	var arguments = createOperationList();
+
+	if (operation.right != (Operation)0) {
+	    getArguments(arguments, operation.right);
+	}
+
+	i = 0;
+	while (i < arguments.size) {
+	    var argumentRegister = getRegister(registers);
+	    writeOperation(parser, tree, block, output, arguments.list[i], registers, argumentRegister, (bool)1, functions);
+	    writePushData(output, argumentRegister);
+	    i = i + 1;
+	}
+
+	fprint(output, "	call addr_func_");
+	fprint(output, functions.list[id].name.name);
+	fprint(output, "_");
+	fprinti(output, id);
+	fprint(output, "\n");
+
+	if (streq(register.name, "rax") != (bool)1) {
+	    fprint(output, "	mov ");
+	    fprint(output, register.name);
+	    fprint(output, ", rax ;; return value\n");
+	}
+
+	return register.name;
     }
 
     if (operation == (Operation)0) {
@@ -379,13 +428,13 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
     }
 
     if (isOperator(operation.operator, "(") && operation.left != (Operation)0) {
-	return writeCall(parser, tree, block, output, operation, registers, registerA);
+	return writeCall(parser, tree, block, output, operation, registers, registerA, functions);
     }
 
     var registerB = getRegister(registers);
 
-    writeOperation(parser, tree, block, output, operation.left, registers, registerA, getValue);
-    writeOperation(parser, tree, block, output, operation.right, registers, registerB, getValue);
+    writeOperation(parser, tree, block, output, operation.left, registers, registerA, getValue, functions);
+    writeOperation(parser, tree, block, output, operation.right, registers, registerB, getValue, functions);
 
     var operationString = (str)0;
     if (isOperator(operation.operator, "==")) {
@@ -450,37 +499,25 @@ func writeAddress(int output, str addr, int id) {
     fprint(output, ":\n\n");
 }
 
-func writePushData(int output, Register register) {
-    fprint(output, "	xchg rsp, [datarsp]\n");
-
-    fprint(output, "	push ");
-    fprint(output, register.name);
-    fprint(output, "\n");
-
-    fprint(output, "	xchg rsp, [datarsp]\n\n");
-
-    register.used = (bool)0;
-}
-
-func writeVariable(Parser parser, SyntaxTree tree, Block block, int output, VariableDefinition variable, RegisterList registers) {
+func writeVariable(Parser parser, SyntaxTree tree, Block block, int output, VariableDefinition variable, RegisterList registers, FunctionList functions) {
     var register = getRegister(registers);
-    writeOperation(parser, tree, block, output, variable.value, registers, register, (bool)1);
+    writeOperation(parser, tree, block, output, variable.value, registers, register, (bool)1, functions);
     writePushData(output, register);
 }
 
-func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output, StatementList statements, RegisterList registers) {
-    func writeBlock(Parser parser, SyntaxTree tree, Block outer, int output, Block block, RegisterList registers) {
+func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output, StatementList statements, RegisterList registers, FunctionList functions) {
+    func writeBlock(Parser parser, SyntaxTree tree, Block outer, int output, Block block, RegisterList registers, FunctionList functions) {
 	//TODO write block start
-	writeStatementList(parser, tree, outer, output, block.statements, registers);
+	writeStatementList(parser, tree, outer, output, block.statements, registers, functions);
 	//TODO write block end
     }
 
-    func writeIf(Parser parser, SyntaxTree tree, Block block, int output, If ifStatement, RegisterList registers) {
+    func writeIf(Parser parser, SyntaxTree tree, Block block, int output, If ifStatement, RegisterList registers, FunctionList functions) {
 	var conditionRegister = getRegister(registers);
-	writeOperation(parser, tree, block, output, ifStatement.condition, registers, conditionRegister, (bool)1);
+	writeOperation(parser, tree, block, output, ifStatement.condition, registers, conditionRegister, (bool)1, functions);
 	writeJumpNotEqual(output, conditionRegister, "addr_if_", ifStatement.id);
 
-	writeBlock(parser, tree, block, output, tree.blocks.list[ifStatement.blockId], registers);
+	writeBlock(parser, tree, block, output, tree.blocks.list[ifStatement.blockId], registers, functions);
 
 	if (ifStatement.elseIfs.size != 0 || ifStatement.elseObj != (Else)0) {
 	    writeJump(output, "addr_end_if_", ifStatement.id);
@@ -491,10 +528,10 @@ func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output,
 	while (i < ifStatement.elseIfs.size) {
 	    var elseIf = ifStatement.elseIfs.list[i];
 	    var conditionRegister = getRegister(registers);
-	    writeOperation(parser, tree, block, output, elseIf.condition, registers, conditionRegister, (bool)1);
+	    writeOperation(parser, tree, block, output, elseIf.condition, registers, conditionRegister, (bool)1, functions);
 	    writeJumpNotEqual(output, conditionRegister, "addr_if_", elseIf.id);
 
-	    writeBlock(parser, tree, block, output, tree.blocks.list[elseIf.blockId], registers);
+	    writeBlock(parser, tree, block, output, tree.blocks.list[elseIf.blockId], registers, functions);
 
 	    writeJump(output, "addr_if_end_", ifStatement.id);
 	    writeAddress(output, "addr_if_", elseIf.id);
@@ -502,7 +539,7 @@ func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output,
 	}
 
 	if (ifStatement.elseObj != (Else)0) {
-	    writeBlock(parser, tree, block, output, tree.blocks.list[ifStatement.elseObj.blockId], registers);
+	    writeBlock(parser, tree, block, output, tree.blocks.list[ifStatement.elseObj.blockId], registers, functions);
 	}
 
 	if (ifStatement.elseIfs.size != 0 || ifStatement.elseObj != (Else)0) {
@@ -510,31 +547,31 @@ func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output,
 	}
     }
 
-    func writeWhile(Parser parser, SyntaxTree tree, Block block, int output, While whileStatement, RegisterList registers) {
+    func writeWhile(Parser parser, SyntaxTree tree, Block block, int output, While whileStatement, RegisterList registers, FunctionList functions) {
 	var conditionRegister = getRegister(registers);
 
 	writeAddress(output, "addr_while_condition_", whileStatement.id);
 
-	writeOperation(parser, tree, block, output, whileStatement.condition, registers, conditionRegister, (bool)1);
+	writeOperation(parser, tree, block, output, whileStatement.condition, registers, conditionRegister, (bool)1, functions);
 	writeJumpNotEqual(output, conditionRegister, "addr_while_end_", whileStatement.id);
 
-	writeBlock(parser, tree, block, output, tree.blocks.list[whileStatement.blockId], registers);
+	writeBlock(parser, tree, block, output, tree.blocks.list[whileStatement.blockId], registers, functions);
 
 	writeJump(output, "addr_while_condition_", whileStatement.id);
 	writeAddress(output, "addr_while_end_", whileStatement.id);
     }
 
-    func writeStatement(Parser parser, SyntaxTree tree, Block block, int output, Statement statement, RegisterList registers) {
+    func writeStatement(Parser parser, SyntaxTree tree, Block block, int output, Statement statement, RegisterList registers, FunctionList functions) {
 	if (statement.expression != (Expression)0) {
 	    var register = getRegister(registers);
-	    writeOperation(parser, tree, block, output, statement.expression.operation, registers, register, (bool)1);
+	    writeOperation(parser, tree, block, output, statement.expression.operation, registers, register, (bool)1, functions);
 	    fprint(output, "\n");
 	} else if (statement.ifStatement != (If)0) {
-	    writeIf(parser, tree, block, output, statement.ifStatement, registers);
+	    writeIf(parser, tree, block, output, statement.ifStatement, registers, functions);
 	} else if (statement.whileStatement != (While)0) {
 	    print("do not handle compiling while yet\n");
 	} else if (statement.variable != (VariableDefinition)0) {
-	    writeVariable(parser, tree, block, output, statement.variable, registers);
+	    writeVariable(parser, tree, block, output, statement.variable, registers, functions);
 	} else if (statement.returnStatement != (Return)0) {
 	    print("do not handle return yet\n");
 	}
@@ -542,7 +579,7 @@ func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output,
 
     var i = 0;
     while (i < statements.size) {
-	writeStatement(parser, tree, block, output, statements.list[i], registers);
+	writeStatement(parser, tree, block, output, statements.list[i], registers, functions);
 	i = i + 1;
     }
 }
@@ -612,11 +649,13 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
     var output = open("output.asm", O_WRONLY | O_CREAT | O_TRUNC, ALLOW_ALL);
 
     var registers = initRegisters();
+
+    var functions = listFunctions(parser);
     writeHeader(output);
     //TODO: write functions
 
     writeStart(output);
-    writeStatementList(parser, tree, (Block)0, output, tree.statements, registers);
+    writeStatementList(parser, tree, (Block)0, output, tree.statements, registers, functions);
 
     writeFooter(output, parser.strings);
 
