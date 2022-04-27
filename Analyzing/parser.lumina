@@ -61,6 +61,8 @@ type Parser {
 
 	int numIfs;
 	int numWhiles;
+
+	StringList strings;
 }
 
 func createSyntaxTree(str fileName) -> SyntaxTree {
@@ -156,6 +158,8 @@ func createParser() -> Parser {
 
 	parser.numIfs = 0;
 	parser.numWhiles = 0;
+
+	parser.strings = createStringList();
 
 	return parser;
 }
@@ -1048,6 +1052,7 @@ func checkTypesInValue(Parser parser, SyntaxTree tree, Block block, Value value)
     }
 
     if (value.string != (String)0) {
+	value.string.id = addUniqueString(parser.strings, value.string.value);
 	return parser.str;
     }
 

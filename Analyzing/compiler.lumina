@@ -103,6 +103,75 @@ func initRegisters() -> RegisterList {
     return registers;
 }
 
+func printEscapedCharacter(int output, str charPtr) -> int {
+	var length = 1;
+	if (charPtr[0] == '\\') {
+		length = 2;
+	}
+
+	var chr = unEscapeCharacter(charPtr);
+
+	//split the higher and lower 4 bits of the character
+	var lower = (int)chr;
+
+	var higher = 0;
+	while (lower >= 16) {
+		higher = higher + 1;
+		lower = lower - 16;
+	}
+
+	if (higher >= 16) {
+		return -1;
+	}
+
+	var charString = (str)malloc(5);
+
+	charString[0] = '0';
+	charString[1] = 'x';
+
+	if (0 <= higher && higher <= 9) {
+		charString[2] = '0' + higher;
+	} else {
+		charString[2] = 'A' + (higher - 10);
+	}
+
+	if (0 <= lower && lower <= 9) {
+		charString[3] = '0' + lower;
+	} else {
+		charString[3] = 'A' + (lower - 10);
+	}
+
+	charString[4] = '\0';
+
+	fprint(output, charString);
+
+	return length;
+}
+
+func writeStringLiteral(int output, str string, int id) {
+    fprint(output, "	string_");
+    fprinti(output, id);
+    fprint(output, ": db ");
+    
+    var i = 0;
+    var len = strlen(string);
+    while (i < len) {
+	var chr = (str)((int)string + i);
+
+	var length = printEscapedCharacter(output, chr);
+
+	i = i + length;
+
+	fprint(output, ", ");
+
+	if (length == -1) {
+	    i = len;
+	}
+    }
+
+    fprint(output, "0x00\n");
+}
+
 func writeHeader(int output) {
     fprint(output, "section .text\n");
     fprint(output, "global _start\n");
@@ -138,7 +207,7 @@ func writeStart(int output) {
     fprint(output, "	mov [datarsp], rax\n\n");
 }
 
-func writeFooter(int output) {
+func writeFooter(int output, StringList strings) {
     fprint(output, "	mov rax, 60\n");
     fprint(output, "	xor rdi, rdi\n");
     fprint(output, "	syscall\n\n");
@@ -155,7 +224,11 @@ func writeFooter(int output) {
     fprint(output, "\n");
     
     fprint(output, "section .data\n");
-    //TODO: write strings
+    var i = 0;
+    while (i < strings.size) {
+	writeStringLiteral(output, strings.list[i], i);
+	i = i + 1;
+    }
 }
 
 func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Name name, str register, bool getValue) -> str {
@@ -232,7 +305,13 @@ func writeValue(Parser parser, SyntaxTree tree, Block block, int output, Value v
     } else if (value.character != (Character)0) {
 	print("do not support characters yet\n");
     } else if (value.string != (String)0) {
-	print("do not support strings yet\n");
+	var id = findString(parser.strings, value.string.value);
+
+	fprint(output, "	mov ");
+	fprint(output, register);
+	fprint(output, ", string_");
+	fprinti(output, id);
+	fprint(output, " ;; string\n");
     } else if (value.name != (Name)0) {
 	writeIdentifier(parser, tree, block, output, value.name, register, getValue);
     }
@@ -284,6 +363,10 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	return (str)0;
     }
 
+    if (operation == (Operation)0) {
+	print("operation is null\n");
+	return (str)0;
+    }
 
     //TODO: handle operations other than binary ones
     if (operation.value != (Value)0) {
@@ -486,7 +569,38 @@ func checkFiles(str fileName) -> Parser {
     return parser;
 }
 
-func CompileLinuxx86_nasm(str fileName) {
+func createChild(str name, str[] args) -> int {
+	var child_pid = fork();
+	if (child_pid < 0) {
+		print("[ERROR] could not generate child process to call '");
+		print(name);
+		print("'\n");
+		exit(1);
+	}
+
+	if (child_pid > 0) {
+		print("[CMD]");
+		var i = 0;
+		while (args[i] != (str)0) {
+			print("  ");
+			print(args[i]);
+			i = i + 1;
+		}
+		print(" \n");
+	} else {
+		var returnCode = execvp(name, args);
+		print("[ERROR] problem occurred when trying to call ");
+		print(name);
+		print(": error code: ");
+		printi(returnCode);
+		print(" \n");
+		exit(1);
+	}
+
+	return child_pid;
+}
+
+func CompileLinuxx86_nasm(str fileName, bool debug) {
     var parser = checkFiles(fileName);
     var tree = findSyntaxTree(parser.files, fileName);
 
@@ -504,7 +618,72 @@ func CompileLinuxx86_nasm(str fileName) {
     writeStart(output);
     writeStatementList(parser, tree, (Block)0, output, tree.statements, registers);
 
-    writeFooter(output);
+    writeFooter(output, parser.strings);
+
+	var nasmDebugArgs = (str[])malloc(8 * 8); // ptr size is 8
+	nasmDebugArgs[0] = "nasm";
+	nasmDebugArgs[1] = "-f";
+	nasmDebugArgs[2] = "elf64";
+	nasmDebugArgs[3] = "-F";
+	nasmDebugArgs[4] = "dwarf";
+	nasmDebugArgs[5] = "-g";
+	nasmDebugArgs[6] = "output.asm";
+	nasmDebugArgs[7] = (str)0;
+
+	var nasmArgs = (str[])malloc(8 * 5); // ptr size is 8
+	nasmArgs[0] = "nasm";
+	nasmArgs[1] = "-f";
+	nasmArgs[2] = "elf64";
+	nasmArgs[3] = "output.asm";
+	nasmArgs[4] = (str)0;
+
+	var nasm_pid = 0;
+	if (debug) {
+		nasm_pid = createChild("nasm", nasmDebugArgs);
+	} else {
+		nasm_pid = createChild("nasm", nasmArgs);
+	}
+
+	var nasmStatus = (int[])malloc(8); // pointer to int
+	if (wait4(nasm_pid, nasmStatus, 0, (ptr)0) < 0) {
+		print("[ERROR] wait4 failed\n");
+		exit(1);
+	}
+	
+	if (WIFEXITED(nasmStatus[0])) {
+		var code = WIFEXITSTATUS(nasmStatus[0] & 127);  
+		if (code > 0) {
+			print("[ERROR] in nasm, error code: ");
+			printi(code);
+			print(" \n");
+			exit(code);
+		}
+	}
+
+	var linkerArgs = (str[])malloc(8 * 5);
+	linkerArgs[0] = "ld";
+	linkerArgs[1] = "-o";
+	linkerArgs[2] = "output";
+	linkerArgs[3] = "output.o";
+	linkerArgs[4] = (str)0;
+
+	var linkerStatus = (int[])malloc(8); // pointer to int
+	var linker_pid = createChild("ld", linkerArgs);
+
+	if (wait4(linker_pid, linkerStatus, 0, (ptr)0) < 0) {
+		print("[ERROR] wait4 failed\n");
+		exit(1);
+	}
+
+	if (WIFEXITED(linkerStatus[0])) {
+		var code = WIFEXITSTATUS(linkerStatus[0] & 127);
+		if (code > 0) {
+			print("[ERROR] in linker, error code: ");
+			printi(code);
+			print(" \n");
+			exit(code);
+		}
+	}
 }
 
 if (argc < 2) {
@@ -512,11 +691,20 @@ if (argc < 2) {
 	exit(1);
 }
 
-if (argc > 2) {
-	print("[ERROR] expected a single argument\n");
+var debug = (bool)0;
+
+if (streq(argv[1], "-debug")) {
+    debug = (bool)1;
+}
+
+if (argc > 3) {
+	print("[ERROR] expected at max 3 arguments\n");
 	exit(1);
 }
 
 var fileName = argv[1];
+if (debug) {
+    fileName = argv[2];
+}
 
-CompileLinuxx86_nasm(fileName);
+CompileLinuxx86_nasm(fileName, debug);

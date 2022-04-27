@@ -9,6 +9,8 @@ type String {
 	WhiteSpace space;
 	Region region;
 	str value;
+
+	int id;
 }
 
 type Character {
@@ -23,6 +25,12 @@ type Number {
 	int value;
 }
 
+type StringList {
+    int size;
+    int maxSize;
+    str[] list;
+}
+
 func createString(Position start, Position end, WhiteSpace space) -> String {
 	var string = (String)malloc(sizeof(String));
 
@@ -33,6 +41,8 @@ func createString(Position start, Position end, WhiteSpace space) -> String {
 
 	var stringStart = (str)((int)start.buffer + start.index);
 	string.value = strndup(stringStart, length);
+
+	string.id = -1;
 	
 	return string;
 }
@@ -60,4 +70,43 @@ func createNumber(Position start, Position end, WhiteSpace space) -> Number {
 	number.value = strToInt(numberStart, length);
 
 	return number;
+}
+
+func createStringList() -> StringList {
+    var list = (StringList)malloc(sizeof(StringList));
+
+    list.size = 0;
+    list.maxSize = 8;
+    list.list = (str[])malloc(8 * 8);
+
+    return list;
+}
+
+func findString(StringList list, str string) -> int {
+    var i = 0;
+    while (i < list.size) {
+	if (streq(list.list[i], string)) {
+	    return i;
+	}
+	i = i + 1;
+    }
+
+    return -1;
+}
+
+func addUniqueString(StringList list, str string) -> int {
+    var index = findString(list, string);
+    if (index != -1) {
+	return index;
+    }
+
+    list.list[list.size] = string;
+    list.size = list.size + 1;
+
+    if (list.size == list.maxSize) {
+	list.list = (str[])realloc((ptr)list.list, list.maxSize * 8, list.maxSize * 8 * 2);
+	list.maxSize = list.maxSize * 2;
+    }
+
+    return list.size - 1;
 }
