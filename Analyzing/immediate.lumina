@@ -53,7 +53,7 @@ func createCharacter(Position start, Position end, WhiteSpace space) -> Characte
 	character.region = createRegion(start, end);
 	character.space = space;
 
-	character.value = unEscapeCharacter((str)((int)start.buffer + 1));
+	character.value = unEscapeCharacter((str)((int)start.buffer + start.index + 1));
 	
 	return character;
 }

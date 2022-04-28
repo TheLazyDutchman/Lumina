@@ -103,14 +103,7 @@ func initRegisters() -> RegisterList {
     return registers;
 }
 
-func printEscapedCharacter(int output, str charPtr) -> int {
-	var length = 1;
-	if (charPtr[0] == '\\') {
-		length = 2;
-	}
-
-	var chr = unEscapeCharacter(charPtr);
-
+func printEscapedCharacter(int output, char chr) {
 	//split the higher and lower 4 bits of the character
 	var lower = (int)chr;
 
@@ -121,7 +114,7 @@ func printEscapedCharacter(int output, str charPtr) -> int {
 	}
 
 	if (higher >= 16) {
-		return -1;
+		return;
 	}
 
 	var charString = (str)malloc(5);
@@ -144,8 +137,6 @@ func printEscapedCharacter(int output, str charPtr) -> int {
 	charString[4] = '\0';
 
 	fprint(output, charString);
-
-	return length;
 }
 
 func writeStringLiteral(int output, str string, int id) {
@@ -159,8 +150,12 @@ func writeStringLiteral(int output, str string, int id) {
     var i = 0;
     while (i < len) {
 	var chr = (str)((int)string + i);
+	var length = 1;
+	if (chr[0] == '\\') {
+	    length = 2;
+	}
 
-	var length = printEscapedCharacter(output, chr);
+	printEscapedCharacter(output, unEscapeCharacter(chr));
 
 	i = i + length;
 
@@ -274,26 +269,35 @@ func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Na
     return register;
 }
 
-func writeIndex(int output, int size, str registerA, str registerB, bool getValue) -> str {
+func writeIndex(int output, int size, Register registerA, Register registerB, bool getValue) -> str {
     fprint(output, "	lea ");
-    fprint(output, registerA);
+    fprint(output, registerA.name);
     fprint(output, ", [");
-    fprint(output, registerA);
+    fprint(output, registerA.name);
     fprint(output, " + ");
     fprinti(output, size);
     fprint(output, " * ");
-    fprint(output, registerB);
+    fprint(output, registerB.name);
     fprint(output, "]\n");
 
     if (getValue) {
 	fprint(output, "	mov ");
-	fprint(output, registerA);
+	fprint(output, registerA.name);
 	fprint(output, ", [");
-	fprint(output, registerA);
+	fprint(output, registerA.name);
 	fprint(output, "] ;; index \n");
+
+	if (size != 8) {
+	    fprint(output, "	and ");
+	    fprint(output, registerA.name);
+	    fprint(output, ", ");
+	    fprinti(output, (1 << (size * 8)) - 1);
+	    fprint(output, " ;; mask\n");
+	}
     }
 
-    return registerA;
+    registerB.used = (bool)0;
+    return registerA.name;
 }
 
 func writeValue(Parser parser, SyntaxTree tree, Block block, int output, Value value, str register, bool getValue) -> str {
@@ -302,9 +306,13 @@ func writeValue(Parser parser, SyntaxTree tree, Block block, int output, Value v
 	fprint(output, register);
 	fprint(output, ", ");
 	fprinti(output, value.number.value);
-	fprint(output, " ;; number \n");
+	fprint(output, " ;; number\n");
     } else if (value.character != (Character)0) {
-	print("do not support characters yet\n");
+	fprint(output, "	mov ");
+	fprint(output, register);
+	fprint(output, ", ");
+	printEscapedCharacter(output, value.character.value);
+	fprint(output, " ;; character\n");
     } else if (value.string != (String)0) {
 	var id = findString(parser.strings, value.string.value);
 
@@ -492,6 +500,41 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	return register.name;
     }
 
+    func writeAssignment(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, RegisterList registers, Register register, FunctionList functions) -> str {
+	writeOperation(parser, tree, block, output, operation.left, registers, register, (bool)0, functions);
+
+	var valueRegister = getRegister(registers);
+	writeOperation(parser, tree, block, output, operation.right, registers, valueRegister, (bool)1, functions);
+
+	if (isOperator(operation.left.operator, "[")) {
+	    var arrayType = checkTypesInOperation(parser, tree, block, operation.left);
+	    var size = getSizeFromType(parser, tree, block, arrayType);
+
+	    if (size != 8) {
+		var mask = (1 << (8 * size)) - 1;
+		var inverseMask = -mask - 1; //We do not have a bitwise not operation yet
+
+		fprint(output, "	and qword [");
+		fprint(output, register.name);
+		fprint(output, "], ");
+		fprinti(output, inverseMask);
+		fprint(output, " ;; mask\n");
+	    }
+
+	    fprint(output, "	add [");
+	    fprint(output, register.name);
+	    fprint(output, "], ");
+	    fprint(output, valueRegister.name);
+	    fprint(output, " ;; assign to list\n");
+	} else {
+	    printPosition(operation.operator.position);
+	    print(" assignment of this kind is not yet supported\n");
+	}
+
+	valueRegister.used = (bool)0;
+	return register.name;
+    }
+
     if (operation == (Operation)0) {
 	print("operation is null\n");
 	return (str)0;
@@ -519,10 +562,14 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	return writeMultiplication(parser, tree, block, output, operation, registers, registerA, functions);
     }
 
+    if (isOperator(operation.operator, "=")) {
+	return writeAssignment(parser, tree, block, output, operation, registers, registerA, functions);
+    }
+
     var registerB = getRegister(registers);
 
-    writeOperation(parser, tree, block, output, operation.left, registers, registerA, getValue, functions);
-    writeOperation(parser, tree, block, output, operation.right, registers, registerB, getValue, functions);
+    writeOperation(parser, tree, block, output, operation.left, registers, registerA, (bool)1, functions);
+    writeOperation(parser, tree, block, output, operation.right, registers, registerB, (bool)1, functions);
 
     var operationString = (str)0;
     if (isOperator(operation.operator, "==")) {
@@ -540,7 +587,7 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
     } else if (isOperator(operation.operator, "[")) {
 	var typeObj = checkTypesInOperation(parser, tree, block, operation);
 	var size = getSizeFromType(parser, tree, block, typeObj);
-	return writeIndex(output, size, registerA.name, registerB.name, getValue);
+	return writeIndex(output, size, registerA, registerB, getValue);
     } else if (isOperator(operation.operator, "+")) {
 	operationString = "add";
     } else if (isOperator(operation.operator, "-")) {
