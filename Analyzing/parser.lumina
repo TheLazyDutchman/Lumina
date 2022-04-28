@@ -623,7 +623,12 @@ func parseStatement(Parser parser, SyntaxTree tree, TypeList typeList, FunctionL
 		    depth = outer.depth;
 		}
 
-		var variable = parseVariableDefinition(tree, depth, variableList.size);
+		var size = variableList.size;
+		if (depth == 0) {
+		    size = size + 3;
+		}
+
+		var variable = parseVariableDefinition(tree, depth, size);
 
 		addVariable(variableList, variable);
 

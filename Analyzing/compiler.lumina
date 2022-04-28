@@ -370,6 +370,16 @@ func writePushData(int output, Register register) {
     register.used = (bool)0;
 }
 
+func writePopData(int output, Register register) {
+    fprint(output, "	xchg rsp, [datarsp]\n");
+
+    fprint(output, "	pop ");
+    fprint(output, register.name);
+    fprint(output, "\n");
+
+    fprint(output, "	xchg rsp, [datarsp]\n");
+}
+
 func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, RegisterList registers, Register registerA, bool getValue, FunctionList functions) -> str {
     func writeCall(Parser parser, SyntaxTree tree, Block block, int output, Operation call, RegisterList registers, Register register, FunctionList functions) -> str {
 	var name = operation.left.value.name.name;
@@ -387,6 +397,16 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 
 	if (operation.right != (Operation)0) {
 	    getArguments(arguments, operation.right);
+	}
+
+	i = 0;
+	while (i < registers.size) {
+	    var reg = registers.list[i];
+	    if (reg.used && reg != register) {
+		writePushData(output, reg);
+		reg.used = (bool)1; // writePush frees register, but in this case we just do that temporarily, because the function we are calling might use the same ones
+	    }
+	    i = i + 1;
 	}
 
 	i = 0;
@@ -409,6 +429,66 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	    fprint(output, ", rax ;; return value\n");
 	}
 
+	i = 0;
+	while (i < registers.size) {
+	    var reg = registers.list[i];
+	    if (reg.used && reg != register) {
+		writePopData(output, register);
+	    }
+	    i = i + 1;
+	}
+
+	return register.name;
+    }
+
+    func writeNegative(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, RegisterList registers, Register register, FunctionList functions) -> str {
+	writeOperation(parser, tree, block, output, operation.right, registers, register, (bool)1, functions);
+
+	fprint(output, "	neg ");
+	fprint(output, register.name);
+	fprint(output, " ;; negative\n");
+
+	return register.name;
+    }
+
+    func writeMultiplication(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, RegisterList registers, Register register, FunctionList functions) -> str {
+	var rax = findRegister(registers, "rax");
+
+	var registerB = register;
+
+	if (rax.used) {
+	    writeOperation(parser, tree, block, output, operation.left, registers, register, (bool)1, functions);
+	    registerB = getRegister(registers);
+	} else {
+	    rax.used = (bool)1;
+	    writeOperation(parser, tree, block, output, operation.left, registers, rax, (bool)1, functions);
+	}
+
+	writeOperation(parser, tree, block, output, operation.right, registers, registerB, (bool)1, functions);
+
+	if (register != registerB && register != rax) {
+	    writePushData(output, rax);
+	    rax.used = (bool)1;
+	}
+
+	fprint(output, "	mul ");
+	fprint(output, registerB.name);
+	fprint(output, " ;; multiplication\n");
+
+	if (register != registerB && register != rax) {
+	    writePopData(output, rax);
+	}
+
+	if (register == registerB) {
+	    fprint(output, "	mov ");
+	    fprint(output, register.name);
+	    fprint(output, ", rax\n");
+
+	    rax.used = (bool)0;
+	} else {
+	    registerB.used = (bool)1;
+	}
+
 	return register.name;
     }
 
@@ -429,6 +509,14 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 
     if (isOperator(operation.operator, "(") && operation.left != (Operation)0) {
 	return writeCall(parser, tree, block, output, operation, registers, registerA, functions);
+    }
+
+    if (isOperator(operation.operator, "-") && operation.left == (Operation)0) {
+	return writeNegative(parser, tree, block, output, operation, registers, registerA, functions);
+    }
+
+    if (isOperator(operation.operator, "*")) {
+	return writeMultiplication(parser, tree, block, output, operation, registers, registerA, functions);
     }
 
     var registerB = getRegister(registers);
@@ -566,6 +654,8 @@ func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output,
 	    var register = getRegister(registers);
 	    writeOperation(parser, tree, block, output, statement.expression.operation, registers, register, (bool)1, functions);
 	    fprint(output, "\n");
+
+	    register.used = (bool)0;
 	} else if (statement.ifStatement != (If)0) {
 	    writeIf(parser, tree, block, output, statement.ifStatement, registers, functions);
 	} else if (statement.whileStatement != (While)0) {
