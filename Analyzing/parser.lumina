@@ -797,6 +797,23 @@ func getSizeFromType(Parser parser, SyntaxTree tree, Block block, TypeDefinition
     return sum;
 }
 
+func getPropertyOffset(Parser parser, SyntaxTree tree, Block block, TypeDefinition typeObj, str propertyName) -> int {
+    var sum = 0;
+    var i = 0;
+    while (i < typeObj.properties.size) {
+	var property = typeObj.properties.list[i];
+	if (streq(property.name.name, propertyName)) {
+	    return sum;
+	}
+
+	var propertyType = getTypeDefinitionFromType(parser, tree, block, property.typeName);
+	sum = sum + getSizeFromType(parser, tree, block, propertyType);
+	i = i + 1;
+    }
+
+    return -1;
+}
+
 func createVariableFromParameter(Parser parser, SyntaxTree tree, Block block, Parameter parameter) -> VariableDefinition {
     var variable = (VariableDefinition)malloc(sizeof(VariableDefinition));
 

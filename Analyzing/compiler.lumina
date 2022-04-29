@@ -125,13 +125,13 @@ func printEscapedCharacter(int output, char chr) {
 	if (0 <= higher && higher <= 9) {
 		charString[2] = '0' + higher;
 	} else {
-		charString[2] = 'A' + (higher - 10);
+		charString[2] = 'A' + higher - 10;
 	}
 
 	if (0 <= lower && lower <= 9) {
 		charString[3] = '0' + lower;
 	} else {
-		charString[3] = 'A' + (lower - 10);
+		charString[3] = 'A' + lower - 10;
 	}
 
 	charString[4] = '\0';
@@ -291,7 +291,7 @@ func writeIndex(int output, int size, Register registerA, Register registerB, bo
 	    fprint(output, "	and ");
 	    fprint(output, registerA.name);
 	    fprint(output, ", ");
-	    fprinti(output, (1 << (size * 8)) - 1);
+	    fprinti(output, (1 << (8 * size)) - 1);
 	    fprint(output, " ;; mask\n");
 	}
     }
@@ -500,6 +500,48 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	return register.name;
     }
 
+    func writeProperty(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, RegisterList registers, Register register, bool getValue, FunctionList functions) -> str {
+	writeOperation(parser, tree, block, output, operation.left, registers, register, (bool)1, functions);
+
+	var typeObj = checkTypesInOperation(parser, tree, block, operation.left);
+	var propertyName = operation.right.value.name;
+	var propertyType = checkTypesInOperation(parser, tree, block, operation);
+
+	var offset = getPropertyOffset(parser, tree, block, typeObj, propertyName.name);
+	
+	if (getValue) {
+	    fprint(output, "	mov ");
+	    fprint(output, register.name);
+	    fprint(output, ", [");
+	    fprint(output, register.name);
+
+	    if (offset != 0) {
+		fprint(output, " + ");
+		fprinti(output, offset);
+	    }
+
+	    fprint(output, "] ;; read offset\n");
+
+	    var propertySize = getSizeFromType(parser, tree, block, propertyType);
+
+	    if (propertySize != 8) {
+		fprint(output, "	and ");
+		fprint(output, register.name);
+		fprint(output, ", ");
+		fprinti(output, (1 << (8 * propertySize)) - 1);
+		fprint(output, " ;; mask\n");
+	    }
+	} else if (offset != 0) {
+	    fprint(output, "	add ");
+	    fprint(output, register.name);
+	    fprint(output, ", ");
+	    fprinti(output, offset);
+	    fprint(output, " ;; property offset\n");
+	}
+
+	return register.name;
+    }
+
     func writeAssignment(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, RegisterList registers, Register register, FunctionList functions) -> str {
 	writeOperation(parser, tree, block, output, operation.left, registers, register, (bool)0, functions);
 
@@ -531,6 +573,31 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	    fprint(output, "], ");
 	    fprint(output, valueRegister.name);
 	    fprint(output, " ;; assign to list\n");
+	} else if (isOperator(operation.left.operator, ".")) {
+	    var propertyType = checkTypesInOperation(parser, tree, block, operation.left);
+	    var size = getSizeFromType(parser, tree, block, propertyType);
+
+	    var movWord = "mov";
+	    if (size != 8) {
+		var mask = (1 << (8 * size)) - 1;
+		var inverseMask = -mask - 1; //We do not have a bitwise not operation yet
+
+		fprint(output, "	and qword [");
+		fprint(output, register.name);
+		fprint(output, "], ");
+		fprinti(output, inverseMask);
+		fprint(output, " ;; mask\n");
+
+		movWord = "add";
+	    }
+
+	    fprint(output, "	");
+	    fprint(output, movWord);
+	    fprint(output, " [");
+	    fprint(output, register.name);
+	    fprint(output, "], ");
+	    fprint(output, valueRegister.name);
+	    fprint(output, " ;; assign to property\n");
 	} else if (operation.left.value != (Value)0) {
 	    fprint(output, "	mov [");
 	    fprint(output, register.name);
@@ -575,6 +642,14 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 
     if (isOperator(operation.operator, "=")) {
 	return writeAssignment(parser, tree, block, output, operation, registers, registerA, functions);
+    }
+
+    if (isOperator(operation.operator, "(")) {
+	return writeOperation(parser, tree, block, output, operation.right, registers, registerA, getValue, functions);
+    }
+
+    if (isOperator(operation.operator, ".")) {
+	return writeProperty(parser, tree, block, output, operation, registers, registerA, getValue, functions);
     }
 
     var registerB = getRegister(registers);
