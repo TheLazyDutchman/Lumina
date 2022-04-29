@@ -754,7 +754,7 @@ func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output,
 
 	    writeBlock(parser, tree, block, output, tree.blocks.list[elseIf.blockId], registers, functions);
 
-	    writeJump(output, "addr_if_end_", ifStatement.id);
+	    writeJump(output, "addr_end_if_", ifStatement.id);
 	    writeAddress(output, "addr_if_", elseIf.id);
 	    i = i + 1;
 	}
