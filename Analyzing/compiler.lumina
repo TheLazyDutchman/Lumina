@@ -510,6 +510,7 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	    var arrayType = checkTypesInOperation(parser, tree, block, operation.left);
 	    var size = getSizeFromType(parser, tree, block, arrayType);
 
+	    var movWord = "mov";
 	    if (size != 8) {
 		var mask = (1 << (8 * size)) - 1;
 		var inverseMask = -mask - 1; //We do not have a bitwise not operation yet
@@ -519,13 +520,23 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 		fprint(output, "], ");
 		fprinti(output, inverseMask);
 		fprint(output, " ;; mask\n");
+
+		movWord = "add";
 	    }
 
-	    fprint(output, "	add [");
+	    fprint(output, "	");
+	    fprint(output, movWord);
+	    fprint(output, " [");
 	    fprint(output, register.name);
 	    fprint(output, "], ");
 	    fprint(output, valueRegister.name);
 	    fprint(output, " ;; assign to list\n");
+	} else if (operation.left.value != (Value)0) {
+	    fprint(output, "	mov [");
+	    fprint(output, register.name);
+	    fprint(output, "], ");
+	    fprint(output, valueRegister.name);
+	    fprint(output, " ;; assign to variable\n");
 	} else {
 	    printPosition(operation.operator.position);
 	    print(" assignment of this kind is not yet supported\n");
