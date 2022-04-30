@@ -653,12 +653,16 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
     func writeAnd(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, RegisterList registers, Register register, FunctionList functions) -> str {
 	writeOperation(parser, tree, block, output, operation.left, registers, register, (bool)1, functions);
 
-	writeJumpNotEqual(output, register, "addr_and_", operation.operator.andId);
+	var andId = parser.numAnds;
+
+	writeJumpNotEqual(output, register, "addr_and_", andId);
 	register.used = (bool)1;
+
+	parser.numAnds = parser.numAnds + 1;
 
 	writeOperation(parser, tree, block, output, operation.right, registers, register, (bool)1, functions);
 
-	writeAddress(output, "addr_and_", operation.operator.andId);
+	writeAddress(output, "addr_and_", andId);
 
 	return register.name;
     }
@@ -666,12 +670,16 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
     func writeOr(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, RegisterList registers, Register register, FunctionList functions) -> str {
 	writeOperation(parser, tree, block, output, operation.left, registers, register, (bool)1, functions);
 
-	writeJumpEqual(output, register, "addr_or_", operation.operator.orId);
+	var orId = parser.numOrs;
+
+	writeJumpEqual(output, register, "addr_or_", orId);
 	register.used = (bool)1;
+
+	parser.numOrs = parser.numOrs + 1;
 
 	writeOperation(parser, tree, block, output, operation.right, registers, register, (bool)1, functions);
 
-	writeAddress(output, "addr_or_", operation.operator.orId);
+	writeAddress(output, "addr_or_", orId);
 
 	return register.name;
     }
@@ -838,7 +846,7 @@ func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output,
 	} else if (statement.ifStatement != (If)0) {
 	    writeIf(parser, tree, block, output, statement.ifStatement, registers, functions);
 	} else if (statement.whileStatement != (While)0) {
-	    print("do not handle compiling while yet\n");
+	    writeWhile(parser, tree, block, output, statement.whileStatement, registers, functions);
 	} else if (statement.variable != (VariableDefinition)0) {
 	    writeVariable(parser, tree, block, output, statement.variable, registers, functions);
 	} else if (statement.returnStatement != (Return)0) {
