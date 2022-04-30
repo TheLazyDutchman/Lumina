@@ -21,12 +21,12 @@ func expandHeap(int size) -> int {
 }
 
 func malloc(int size) -> ptr {
-    if ((int)curEnd - (int)_heapHead < size * 2) {
+    if ((int)curEnd - (int)_heapHead < size * 3) {
 	expandHeap(size);
     }
 
     var oldPtr = _heapHead;
-    _heapHead = (ptr)((int)_heapHead + size);
+    _heapHead = (ptr)((int)_heapHead + size * 2);
     return oldPtr;
 }
 

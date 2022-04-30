@@ -388,6 +388,43 @@ func writePopData(int output, Register register) {
     fprint(output, "	xchg rsp, [datarsp]\n");
 }
 
+func writeJumpNotEqual(int output, Register register, str addr, int id) {
+    fprint(output, "	cmp ");
+    fprint(output, register.name);
+    fprint(output, ", 0\n");
+    fprint(output, "	je ");
+    fprint(output, addr);
+    fprinti(output, id);
+    fprint(output, "\n\n");
+
+    register.used = (bool)0;
+}
+
+func writeJumpEqual(int output, Register register, str addr, int id) {
+    fprint(output, "	cmp ");
+    fprint(output, register.name);
+    fprint(output, ", 0\n");
+    fprint(output, "	jne ");
+    fprint(output, addr);
+    fprinti(output, id);
+    fprint(output, "\n\n");
+
+    register.used = (bool)0;
+}
+
+func writeJump(int output, str addr, int id) {
+    fprint(output, "	jmp ");
+    fprint(output, addr);
+    fprinti(output, id);
+    fprint(output, "\n\n");
+}
+
+func writeAddress(int output, str addr, int id) {
+    fprint(output, addr);
+    fprinti(output, id);
+    fprint(output, ":\n\n");
+}
+
 func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, RegisterList registers, Register registerA, bool getValue, FunctionList functions) -> str {
     func writeCall(Parser parser, SyntaxTree tree, Block block, int output, Operation call, RegisterList registers, Register register, FunctionList functions) -> str {
 	var name = operation.left.value.name.name;
@@ -613,6 +650,32 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	return register.name;
     }
 
+    func writeAnd(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, RegisterList registers, Register register, FunctionList functions) -> str {
+	writeOperation(parser, tree, block, output, operation.left, registers, register, (bool)1, functions);
+
+	writeJumpNotEqual(output, register, "addr_and_", operation.operator.andId);
+	register.used = (bool)1;
+
+	writeOperation(parser, tree, block, output, operation.right, registers, register, (bool)1, functions);
+
+	writeAddress(output, "addr_and_", operation.operator.andId);
+
+	return register.name;
+    }
+
+    func writeOr(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, RegisterList registers, Register register, FunctionList functions) -> str {
+	writeOperation(parser, tree, block, output, operation.left, registers, register, (bool)1, functions);
+
+	writeJumpEqual(output, register, "addr_or_", operation.operator.orId);
+	register.used = (bool)1;
+
+	writeOperation(parser, tree, block, output, operation.right, registers, register, (bool)1, functions);
+
+	writeAddress(output, "addr_or_", operation.operator.orId);
+
+	return register.name;
+    }
+
     if (operation == (Operation)0) {
 	print("operation is null\n");
 	return (str)0;
@@ -650,6 +713,14 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 
     if (isOperator(operation.operator, ".")) {
 	return writeProperty(parser, tree, block, output, operation, registers, registerA, getValue, functions);
+    }
+
+    if (isOperator(operation.operator, "&&")) {
+	return writeAnd(parser, tree, block, output, operation, registers, registerA, functions);
+    }
+
+    if (isOperator(operation.operator, "||")) {
+	return writeOr(parser, tree, block, output, operation, registers, registerA, functions);
     }
 
     var registerB = getRegister(registers);
@@ -693,31 +764,6 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
     registerB.used = (bool)0;
 
     return registerA.name;
-}
-
-func writeJumpNotEqual(int output, Register register, str addr, int id) {
-    fprint(output, "	cmp ");
-    fprint(output, register.name);
-    fprint(output, ", 0\n");
-    fprint(output, "	je ");
-    fprint(output, addr);
-    fprinti(output, id);
-    fprint(output, "\n\n");
-
-    register.used = (bool)0;
-}
-
-func writeJump(int output, str addr, int id) {
-    fprint(output, "	jmp ");
-    fprint(output, addr);
-    fprinti(output, id);
-    fprint(output, "\n\n");
-}
-
-func writeAddress(int output, str addr, int id) {
-    fprint(output, addr);
-    fprinti(output, id);
-    fprint(output, ":\n\n");
 }
 
 func writeVariable(Parser parser, SyntaxTree tree, Block block, int output, VariableDefinition variable, RegisterList registers, FunctionList functions) {

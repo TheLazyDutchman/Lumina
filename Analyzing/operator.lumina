@@ -84,6 +84,9 @@ type Operator {
 	int operatorType;
 	str name;
 	int precedence;
+
+	int andId;
+	int orId;
 }
 
 type OperatorList {
@@ -92,7 +95,7 @@ type OperatorList {
 	Operator[] list;
 }
 
-func createOperator(Position position, WhiteSpace space) -> Operator {
+func createOperator(Position position, WhiteSpace space, int andId, int orId) -> Operator {
 	var operator = (Operator)malloc(sizeof(Operator));
 
 	operator.position = position;
@@ -117,6 +120,9 @@ func createOperator(Position position, WhiteSpace space) -> Operator {
 		}
 		i = i + 1;
 	}
+	
+	operator.andId = andId;
+	operator.orId = orId;
 
 	return operator;
 }
