@@ -514,24 +514,82 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	if (register != registerB && register != rax) {
 	    writePushData(output, rax);
 	    rax.used = (bool)1;
+
+	    fprint(output, "	mov rax, ");
+	    fprint(output, register.name);
+	    fprint(output, "\n");
 	}
 
 	fprint(output, "	mul ");
 	fprint(output, registerB.name);
 	fprint(output, " ;; multiplication\n");
 
-	if (register != registerB && register != rax) {
-	    writePopData(output, rax);
-	}
-
-	if (register == registerB) {
+	if (register != rax) {
 	    fprint(output, "	mov ");
 	    fprint(output, register.name);
 	    fprint(output, ", rax\n");
 
 	    rax.used = (bool)0;
+	}
+
+	if (register != registerB) {
+	    registerB.used = (bool)0;
+	}
+
+	if (register != registerB && register != rax) {
+	    writePopData(output, rax);
+	    rax.used = (bool)1;
+	}
+
+	return register.name;
+    }
+
+    func writeShift(Parser parser, SyntaxTree tree, Block block, int output, str shiftWord, Operation operation, RegisterList registers, Register register, FunctionList functions) -> str {
+	var rcx = findRegister(registers, "rcx");
+
+	var leftReg = register;
+
+	if (rcx.used) {
+	    leftReg = getRegister(registers);
+	    writeOperation(parser, tree, block, output, operation.left, registers, leftReg, (bool)1, functions);
+
+	    writeOperation(parser, tree, block, output, operation.right, registers, register, (bool)1, functions);
 	} else {
-	    registerB.used = (bool)1;
+	    writeOperation(parser, tree, block, output, operation.left, registers, leftReg, (bool)1, functions);
+
+	    rcx.used = (bool)1;
+	    writeOperation(parser, tree, block, output, operation.right, registers, rcx, (bool)1, functions);
+	}
+
+	if (register != leftReg && register != rcx) {
+	    writePushData(output, rcx);
+	    rcx.used = (bool)1;
+
+	    fprint(output, "	mov rcx, ");
+	    fprint(output, register.name);
+	    fprint(output, "\n");
+	}
+
+	fprint(output, "	");
+	fprint(output, shiftWord);
+	fprint(output, " ");
+	fprint(output, leftReg.name);
+	fprint(output, ", cl ;; shift\n");
+
+	if (register != leftReg && register != rcx) {
+	    writePopData(output, rcx);
+	}
+
+	if (leftReg != register) {
+	    fprint(output, "	mov ");
+	    fprint(output, register.name);
+	    fprint(output, ", ");
+	    fprint(output, leftReg.name);
+	    fprint(output, "\n");
+
+	    leftReg.used = (bool)0;
+	} else {
+	    rcx.used = (bool)0;
 	}
 
 	return register.name;
@@ -729,6 +787,14 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 
     if (isOperator(operation.operator, "||")) {
 	return writeOr(parser, tree, block, output, operation, registers, registerA, functions);
+    }
+
+    if (isOperator(operation.operator, "<<")) {
+	return writeShift(parser, tree, block, output, "shl", operation, registers, registerA, functions);
+    }
+
+    if (isOperator(operation.operator, ">>")) {
+	return writeShift(parser, tree, block, output, "shr", operation, registers, registerA, functions);
     }
 
     var registerB = getRegister(registers);

@@ -24,9 +24,9 @@ var _operatorList = (str[])malloc(sizeof(str) * NUMOPERATORS);
 var _precedenceList = (int[])malloc(sizeof(int) * NUMOPERATORS);
 
 _operatorList[0] = "<<";
-_precedenceList[0] = PREC_statement;
+_precedenceList[0] = PREC_bitwise;
 _operatorList[1] = ">>";
-_precedenceList[1] = PREC_statement;
+_precedenceList[1] = PREC_bitwise;
 _operatorList[2] = "||";
 _precedenceList[2] = PREC_or;
 _operatorList[3] = "&&";
