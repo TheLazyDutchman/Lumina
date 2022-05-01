@@ -819,7 +819,7 @@ func getPropertyOffset(Parser parser, SyntaxTree tree, Block block, TypeDefiniti
     return -1;
 }
 
-func createVariableFromParameter(Parser parser, SyntaxTree tree, Block block, Parameter parameter) -> VariableDefinition {
+func createVariableFromParameter(Parser parser, SyntaxTree tree, Block block, Parameter parameter, int position) -> VariableDefinition {
     var variable = (VariableDefinition)malloc(sizeof(VariableDefinition));
 
     variable.region = parameter.region;
@@ -828,6 +828,9 @@ func createVariableFromParameter(Parser parser, SyntaxTree tree, Block block, Pa
     variable.equalSign = (Operator)0;
     variable.value = (Operation)0;
     variable.semicolon = (Operator)0;
+
+    variable.depth = block.depth;
+    variable.position = position;
     
     variable.variableType = getTypeDefinitionFromType(parser, tree, block, parameter.parameterType);
 
@@ -838,7 +841,7 @@ func findVariableInParameters(Parser parser, SyntaxTree tree, Block block, Funct
     var i = 0;
     while (i < function.parameters.size) {
 	if (streq(function.parameters.list[i].name.name, name)) {
-	    return createVariableFromParameter(parser, tree, block, function.parameters.list[i]);
+	    return createVariableFromParameter(parser, tree, block, function.parameters.list[i], i);
 	}
 	i = i + 1;
     }

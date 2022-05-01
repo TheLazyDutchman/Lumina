@@ -478,7 +478,7 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	while (i < registers.size) {
 	    var reg = registers.list[i];
 	    if (reg.used && reg != register) {
-		writePopData(output, register);
+		writePopData(output, reg);
 	    }
 	    i = i + 1;
 	}
@@ -846,6 +846,32 @@ func writeVariable(Parser parser, SyntaxTree tree, Block block, int output, Vari
     writePushData(output, register);
 }
 
+func writeReturn(Parser parser, SyntaxTree tree, Block block, int output, Return returnStatement, RegisterList registers, FunctionList functions) {
+    if (returnStatement.expression != (Operation)0) {
+	var rax = findRegister(registers, "rax");
+	rax.used = (bool)1;
+
+	writeOperation(parser, tree, block, output, returnStatement.expression, registers, rax, (bool)1, functions);
+	rax.used = (bool)0;
+    }
+
+    var numVariables = 0;
+    while (block.function != (FunctionDefinition)0 && block.outer != (Block)0) {
+	numVariables = numVariables + block.variables.size;
+	block = block.outer;
+    }
+
+    numVariables = numVariables + block.function.parameters.size;
+
+    if (numVariables != 0) {
+	fprint(output, "	add qword [datarsp], ");
+	fprinti(output, numVariables * 8);
+	fprint(output, " ;; pop local variables and parameters\n");
+    }
+
+    fprint(output, "	ret\n\n");
+}
+
 func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output, StatementList statements, RegisterList registers, FunctionList functions) {
     func writeBlock(Parser parser, SyntaxTree tree, Block outer, int output, Block block, RegisterList registers, FunctionList functions) {
 	//TODO write block start
@@ -916,7 +942,7 @@ func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output,
 	} else if (statement.variable != (VariableDefinition)0) {
 	    writeVariable(parser, tree, block, output, statement.variable, registers, functions);
 	} else if (statement.returnStatement != (Return)0) {
-	    print("do not handle return yet\n");
+	    writeReturn(parser, tree, block, output, statement.returnStatement, registers, functions);
 	}
     }
 
@@ -924,6 +950,64 @@ func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output,
     while (i < statements.size) {
 	writeStatement(parser, tree, block, output, statements.list[i], registers, functions);
 	i = i + 1;
+    }
+}
+
+func writeFunctionDefinition(Parser parser, SyntaxTree tree, int output, FunctionDefinition function, RegisterList registers, FunctionList functions, int id) {
+    fprint(output, "addr_func_");
+    fprint(output, function.name.name);
+    fprint(output, "_");
+    fprinti(output, id);
+    fprint(output, ":\n");
+
+    var block = tree.blocks.list[function.blockId];
+
+    var basePointer = getRegister(registers);
+    var stackPointer = getRegister(registers);
+
+    fprint(output, "	lea ");
+    fprint(output, basePointer.name);
+    fprint(output, ", [basestack + ");
+    fprinti(output, block.depth * 8);
+    fprint(output, "]\n");
+
+    fprint(output, "	mov ");
+    fprint(output, stackPointer.name);
+    fprint(output, ", [datarsp]\n");
+
+    if (function.parameters.size == 0) {
+	fprint(output, "	sub ");
+	fprint(output, stackPointer.name);
+	fprint(output, ", 8\n");
+    } else if (function.parameters.size > 1) {
+	fprint(output, "	add ");
+	fprint(output, stackPointer.name);
+	fprint(output, ", ");
+	fprinti(output, function.parameters.size * 8 - 8);
+	fprint(output, "\n");
+    }
+
+    fprint(output, "	mov [");
+    fprint(output, basePointer.name);
+    fprint(output, "], ");
+    fprint(output, stackPointer.name);
+    fprint(output, "\n\n");
+
+    basePointer.used = (bool)0;
+    stackPointer.used = (bool)0;
+
+    writeStatementList(parser, tree, block, output, block.statements, registers, functions);
+
+    if (function.returnType == (ReturnType)0) {
+	var numVariables = block.variables.size + function.parameters.size;
+
+	if (numVariables != 0) {
+	    fprint(output, "	add qword [datarsp], ");
+	    fprinti(output, numVariables * 8);
+	    fprint(output, " ;; pop local variables and parameters\n");
+	}
+
+	fprint(output, "	ret\n\n");
     }
 }
 
@@ -995,7 +1079,14 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 
     var functions = listFunctions(parser);
     writeHeader(output);
-    //TODO: write functions
+
+    var i = parser.functions.size;
+    while (i < functions.size) {
+	var function = functions.list[i];
+	var tree = findSyntaxTree(parser.files, function.region.file);
+	writeFunctionDefinition(parser, tree, output, function, registers, functions, i);
+	i = i + 1;
+    }
 
     writeStart(output);
     writeStatementList(parser, tree, (Block)0, output, tree.statements, registers, functions);
