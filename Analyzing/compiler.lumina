@@ -231,12 +231,20 @@ func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Na
     var variable = (VariableDefinition)0;
     if (block != (Block)0) {
 	variable = findVariableInBlock(parser, tree, block, name.name);
-    } else {
+    }
+
+    if (variable == (VariableDefinition)0) {
 	variable = findVariable(tree.variables, name.name);
     }
 
     if (variable == (VariableDefinition)0) {
 	variable = findVariable(parser.variables, name.name);
+    }
+
+    if (variable == (VariableDefinition)0) {
+	printPosition(name.region.start);
+	print(" can not find variable\n");
+	return (str)0;
     }
 
     fprint(output, "	mov ");
@@ -423,6 +431,19 @@ func writeAddress(int output, str addr, int id) {
     fprint(output, addr);
     fprinti(output, id);
     fprint(output, ":\n\n");
+}
+
+func writeSizeOf(Parser parser, SyntaxTree tree, Block block, int output, SizeOf sizeOf, str register) -> str {
+    var typeDef = getTypeDefinitionFromType(parser, tree, block, sizeOf.typeObj);
+    var size = getSizeFromType(parser, tree, block, typeDef);
+
+    fprint(output, "	mov ");
+    fprint(output, register);
+    fprint(output, ", ");
+    fprinti(output, size);
+    fprint(output, " ;; type size\n");
+
+    return register;
 }
 
 func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, RegisterList registers, Register registerA, bool getValue, FunctionList functions) -> str {
@@ -752,6 +773,10 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	return writeValue(parser, tree, block, output, operation.value, registerA.name, getValue);
     }
 
+    if (operation.sizeOf != (SizeOf)0) {
+	return writeSizeOf(parser, tree, block, output, operation.sizeOf, registerA.name);
+    }
+
     if (operation.operator == (Operator)0) {
 	print("operator is null\n");
 	return (str)0;
@@ -874,8 +899,34 @@ func writeReturn(Parser parser, SyntaxTree tree, Block block, int output, Return
 
 func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output, StatementList statements, RegisterList registers, FunctionList functions) {
     func writeBlock(Parser parser, SyntaxTree tree, Block outer, int output, Block block, RegisterList registers, FunctionList functions) {
-	//TODO write block start
-	writeStatementList(parser, tree, outer, output, block.statements, registers, functions);
+	
+	var basePointer = getRegister(registers);
+	var stackPointer = getRegister(registers);
+
+	fprint(output, "	lea ");
+	fprint(output, basePointer.name);
+	fprint(output, ", [basestack + ");
+	fprinti(output, block.depth * 8);
+	fprint(output, "]\n");
+
+	fprint(output, "	mov ");
+	fprint(output, stackPointer.name);
+	fprint(output, ", [datarsp]\n");
+	
+	fprint(output, "	sub ");
+	fprint(output, stackPointer.name);
+	fprint(output, ", 8\n");
+	
+	fprint(output, "	mov [");
+	fprint(output, basePointer.name);
+	fprint(output, "], ");
+	fprint(output, stackPointer.name);
+	fprint(output, "\n\n");
+
+	basePointer.used = (bool)0;
+	stackPointer.used = (bool)0;
+
+	writeStatementList(parser, tree, block, output, block.statements, registers, functions);
 	//TODO write block end
     }
 
