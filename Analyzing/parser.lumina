@@ -480,7 +480,7 @@ func parseReturnType(Parser parser, SyntaxTree tree) -> ReturnType {
 	return createReturnType(rarrow, typeObj);
 }
 
-func parseStatement(Parser parser, SyntaxTree tree, TypeList typeList, FunctionList functionList, VariableList variableList, ImportList importList, Block outer) -> Statement {
+func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeList, FunctionList functionList, VariableList variableList, ImportList importList, Block outer) -> Statement {
 	func parseBlock(SyntaxTree tree, Block outer) -> int {
 		var lbrace = consumeOperator(parser, tree, "{", (bool)0);
 
@@ -493,7 +493,7 @@ func parseStatement(Parser parser, SyntaxTree tree, TypeList typeList, FunctionL
 		var blockIndex = addBlock(tree.blocks, block);
 
 		while (isOperator(tree.lexer.current.operator, "}") != (bool)1 || tree.lexer.current.isEOF) {
-			var statement = parseStatement(parser, tree, typeList, functionList, variableList, importList, block);
+			var statement = parseStatement(parser, tree, block, typeList, functionList, variableList, importList, block);
 			addStatement(statementList, statement);
 		}
 
@@ -630,7 +630,11 @@ func parseStatement(Parser parser, SyntaxTree tree, TypeList typeList, FunctionL
 
 		var size = variableList.size;
 		if (depth == 0) {
-		    size = size + 3;
+		    size = size + parser.variables.size + 1;
+		}
+
+		if (block != (Block)0 && block.function != (FunctionDefinition)0) {
+		    size = size + 1;
 		}
 
 		var variable = parseVariableDefinition(parser, tree, depth, size);
@@ -695,7 +699,7 @@ func parse(Parser parser, str fileName, str outerName) -> SyntaxTree {
 	tree = createSyntaxTree(fileName, parser.numAnds, parser.numOrs);
 
 	while (tree.lexer.current.isEOF != (bool)1) {
-		var statement = parseStatement(parser, tree, tree.types, tree.functions, tree.variables, tree.imports, (Block)0);
+		var statement = parseStatement(parser, tree, (Block)0, tree.types, tree.functions, tree.variables, tree.imports, (Block)0);
 		addStatement(tree.statements, statement);
 	}
 
