@@ -17,10 +17,8 @@ import "immediate.lumina"
 import "lexer.lumina"
 import "name.lumina"
 import "block.lumina"
-import "type.lumina"
+import "position.lumina"
 
-
-const CALLSTACKSIZE = 4096;
 
 type Register {
     str name;
@@ -32,6 +30,8 @@ type RegisterList {
     int maxSize;
     Register[] list;
 }
+
+const CALLSTACKSIZE =  2048;
 
 func createRegister(str name) -> Register {
     var reg = (Register)malloc(sizeof(Register));
@@ -346,32 +346,30 @@ func writeBinaryOperation(int output, str operation, str registerA, str register
     fprint(output, "\n");
 }
 
-func writeComparison(int output, str cmov, Register registerA, Register registerB) -> str {
+func writeComparison(int output, str cmov, str registerA, str registerB) -> str {
     fprint(output, "	cmp ");
-    fprint(output, registerA.name);
+    fprint(output, registerA);
     fprint(output, ", ");
-    fprint(output, registerB.name);
+    fprint(output, registerB);
     fprint(output, "\n");
     
     fprint(output, "	mov ");
-    fprint(output, registerA.name);
+    fprint(output, registerA);
     fprint(output, ", 0\n");
 
     fprint(output, "	mov ");
-    fprint(output, registerB.name);
+    fprint(output, registerB);
     fprint(output, ", 1\n");
 
     fprint(output, "	");
     fprint(output, cmov);
     fprint(output, " ");
-    fprint(output, registerA.name);
+    fprint(output, registerA);
     fprint(output, ", ");
-    fprint(output, registerB.name);
+    fprint(output, registerB);
     fprint(output, " ;; comparison\n");
 
-    registerB.used = (bool)0;
-
-    return registerA.name;
+    return registerA;
 }
 
 func writePushData(int output, Register register) {
@@ -768,6 +766,12 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	return (str)0;
     }
 
+    if (registerA == (Register)0) {
+	printPosition(operation.region.start);
+	print(" register is null\n");
+	return (str)0;
+    }
+
     //TODO: handle operations other than binary ones
     if (operation.value != (Value)0) {
 	return writeValue(parser, tree, block, output, operation.value, registerA.name, getValue);
@@ -829,17 +833,23 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 
     var operationString = (str)0;
     if (isOperator(operation.operator, "==")) {
-	return writeComparison(output, "cmove", registerA, registerB);
+	registerB.used = (bool)0;
+	return writeComparison(output, "move", registerA.name, registerB.name);
     } else if (isOperator(operation.operator, "!=")) {
-	return writeComparison(output, "cmovne", registerA, registerB);
+	registerB.used = (bool)0;
+	return writeComparison(output, "movne", registerA.name, registerB.name);
     } else if (isOperator(operation.operator, "<")) {
-	return writeComparison(output, "cmovl", registerA, registerB);
+	registerB.used = (bool)0;
+	return writeComparison(output, "movl", registerA.name, registerB.name);
     } else if (isOperator(operation.operator, ">")) {
-	return writeComparison(output, "cmovg", registerA, registerB);
+	registerB.used = (bool)0;
+	return writeComparison(output, "movg", registerA.name, registerB.name);
     } else if (isOperator(operation.operator, "<=")) {
-	return writeComparison(output, "cmovle", registerA, registerB);
+	registerB.used = (bool)0;
+	return writeComparison(output, "movle", registerA.name, registerB.name);
     } else if (isOperator(operation.operator, ">=")) {
-	return writeComparison(output, "cmovge", registerA, registerB);
+	registerB.used = (bool)0;
+	return writeComparison(output, "movge", registerA.name, registerB.name);
     } else if (isOperator(operation.operator, "[")) {
 	var typeObj = checkTypesInOperation(parser, tree, block, operation);
 	var size = getSizeFromType(parser, tree, block, typeObj);
@@ -856,6 +866,8 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	print("do not support operator '");
 	print(operation.operator.name);
 	print("' yet\n");
+
+	registerB.used = (bool)0;
 	return (str)0;
     }
 
