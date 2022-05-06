@@ -1507,11 +1507,23 @@ func listFunctions(Parser parser) -> FunctionList {
     var i = 0;
     while (i < parser.files.size) {
 	var tree = parser.files.list[i];
+
+	if (tree == (SyntaxTree)0) {
+	    print("tree is null in 'listFunctions'\n");
+	    return list;
+	}
+
 	extendFunctionList(list, tree.functions);
 
 	var j = 0;
 	while (j < tree.blocks.size) {
 	    var block = tree.blocks.list[i];
+
+	    if (block == (Block)0) {
+		print("block is null in 'listFunctions'\n");
+		return list;
+	    }
+
 	    extendFunctionList(list, block.functions);
 	    j = j + 1;
 	}
