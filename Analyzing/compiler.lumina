@@ -387,6 +387,8 @@ func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output,
 	writeOperation(parser, tree, block, output, ifStatement.condition, registers, conditionRegister, (bool)1);
 	writeJumpNotEqual(output, conditionRegister, "addr_if_", ifStatement.id);
 
+	conditionRegister.used = (bool)0;
+
 	writeBlock(parser, tree, block, output, tree.blocks.list[ifStatement.blockId], registers);
 
 	if (ifStatement.elseIfs.size != 0 || ifStatement.elseObj != (Else)0) {
@@ -424,6 +426,8 @@ func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output,
 
 	writeOperation(parser, tree, block, output, whileStatement.condition, registers, conditionRegister, (bool)1);
 	writeJumpNotEqual(output, conditionRegister, "addr_while_end_", whileStatement.id);
+
+	conditionRegister.used = (bool)0;
 
 	writeBlock(parser, tree, block, output, tree.blocks.list[whileStatement.blockId], registers);
 
