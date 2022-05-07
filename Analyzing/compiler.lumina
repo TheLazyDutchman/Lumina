@@ -132,13 +132,13 @@ func printEscapedCharacter(int output, str charPtr) -> int {
 	if (0 <= higher && higher <= 9) {
 		charString[2] = '0' + higher;
 	} else {
-		charString[2] = 'A' + (higher - 10);
+		charString[2] = 'A' + higher - 10;
 	}
 
 	if (0 <= lower && lower <= 9) {
 		charString[3] = '0' + lower;
 	} else {
-		charString[3] = 'A' + (lower - 10);
+		charString[3] = 'A' + lower - 10;
 	}
 
 	charString[4] = '\0';

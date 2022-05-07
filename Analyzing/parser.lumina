@@ -1517,7 +1517,7 @@ func listFunctions(Parser parser) -> FunctionList {
 
 	var j = 0;
 	while (j < tree.blocks.size) {
-	    var block = tree.blocks.list[i];
+	    var block = tree.blocks.list[j];
 
 	    if (block == (Block)0) {
 		print("block is null in 'listFunctions'\n");
