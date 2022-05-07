@@ -1,5 +1,6 @@
 import "../std/memory.lumina"
 import "../std/string.lumina"
+import "../std/io.lumina"
 
 import "position.lumina"
 import "name.lumina"
@@ -195,6 +196,12 @@ func findFunction(FunctionList list, str name) -> FunctionDefinition {
 
 func extendFunctionList(FunctionList destination, FunctionList source) {
     var i = 0;
+
+    if (source == (FunctionList)0) {
+	print("source was zero in 'extendFunctionList'\n");
+	return;
+    }
+
     while (i < source.size) {
 	addFunction(destination, source.list[i]);
 	i = i + 1;
