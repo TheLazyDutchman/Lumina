@@ -16,17 +16,41 @@ func expandHeap(int size) -> int {
 	totalSize = totalSize + PAGESIZE;
     }
 
+    var oldEnd = curEnd;
     curEnd = brk((ptr)((int)curEnd + totalSize));
+
+    if (oldEnd >= curEnd) {
+	syscall(1, 1, "could not expand heap\n", 22, 0, 0, 0);
+    }
+
     return totalSize;
 }
 
 func malloc(int size) -> ptr {
-    if ((int)curEnd - (int)_heapHead < size * 3) {
-	expandHeap(size);
+    var oldEnd = curEnd;
+    if ((int)_heapHead + size >= (int)curEnd) {
+	expandHeap(size * 2);
+
+	if (oldEnd >= curEnd) {
+	    syscall(1, 1, "did not expand heap\n", 20, 0, 0, 0);
+	}
+
+	if ((int)curEnd - (int)oldEnd < size) {
+	    syscall(1, 1, "expansion of heap is not enough\n", 28, 0, 0, 0);
+	}
     }
 
     var oldPtr = _heapHead;
     _heapHead = (ptr)((int)_heapHead + size * 2);
+
+    if ((int)oldPtr + size > (int)curEnd) {
+	syscall(1, 1, "went over end of heap\n", 22, 0, 0, 0);
+    }
+
+    if (brk((ptr)0) != curEnd) {
+	syscall(1, 1, "heap end is not correct\n", 24, 0, 0, 0);
+    }
+
     return oldPtr;
 }
 
