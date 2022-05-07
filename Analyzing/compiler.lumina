@@ -346,30 +346,31 @@ func writeBinaryOperation(int output, str operation, str registerA, str register
     fprint(output, "\n");
 }
 
-func writeComparison(int output, str cmov, str registerA, str registerB) -> str {
+func writeComparison(int output, str cmov, Register registerA, Register registerB) -> str {
     fprint(output, "	cmp ");
-    fprint(output, registerA);
+    fprint(output, registerA.name);
     fprint(output, ", ");
-    fprint(output, registerB);
+    fprint(output, registerB.name);
     fprint(output, "\n");
     
     fprint(output, "	mov ");
-    fprint(output, registerA);
+    fprint(output, registerA.name);
     fprint(output, ", 0\n");
 
     fprint(output, "	mov ");
-    fprint(output, registerB);
+    fprint(output, registerB.name);
     fprint(output, ", 1\n");
 
     fprint(output, "	");
     fprint(output, cmov);
     fprint(output, " ");
-    fprint(output, registerA);
+    fprint(output, registerA.name);
     fprint(output, ", ");
-    fprint(output, registerB);
+    fprint(output, registerB.name);
     fprint(output, " ;; comparison\n");
 
-    return registerA;
+    registerB.used = (bool)0;
+    return registerA.name;
 }
 
 func writePushData(int output, Register register) {
@@ -833,23 +834,17 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 
     var operationString = (str)0;
     if (isOperator(operation.operator, "==")) {
-	registerB.used = (bool)0;
-	return writeComparison(output, "move", registerA.name, registerB.name);
+	return writeComparison(output, "cmove", registerA, registerB);
     } else if (isOperator(operation.operator, "!=")) {
-	registerB.used = (bool)0;
-	return writeComparison(output, "movne", registerA.name, registerB.name);
+	return writeComparison(output, "cmovne", registerA, registerB);
     } else if (isOperator(operation.operator, "<")) {
-	registerB.used = (bool)0;
-	return writeComparison(output, "movl", registerA.name, registerB.name);
+	return writeComparison(output, "cmovl", registerA, registerB);
     } else if (isOperator(operation.operator, ">")) {
-	registerB.used = (bool)0;
-	return writeComparison(output, "movg", registerA.name, registerB.name);
+	return writeComparison(output, "cmovg", registerA, registerB);
     } else if (isOperator(operation.operator, "<=")) {
-	registerB.used = (bool)0;
-	return writeComparison(output, "movle", registerA.name, registerB.name);
+	return writeComparison(output, "cmovle", registerA, registerB);
     } else if (isOperator(operation.operator, ">=")) {
-	registerB.used = (bool)0;
-	return writeComparison(output, "movge", registerA.name, registerB.name);
+	return writeComparison(output, "cmovge", registerA, registerB);
     } else if (isOperator(operation.operator, "[")) {
 	var typeObj = checkTypesInOperation(parser, tree, block, operation);
 	var size = getSizeFromType(parser, tree, block, typeObj);
