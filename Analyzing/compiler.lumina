@@ -2,6 +2,7 @@ import "../std/io.lumina"
 import "../std/syscalls.lumina"
 import "../std/memory.lumina"
 import "../std/string.lumina"
+import "../std/path.lumina"
 
 import "parser.lumina"
 import "operation.lumina"
@@ -18,6 +19,7 @@ import "lexer.lumina"
 import "name.lumina"
 import "block.lumina"
 import "position.lumina"
+import "import.lumina"
 
 
 type Register {
@@ -1049,7 +1051,28 @@ func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output,
 	} else if (statement.whileStatement != (While)0) {
 	    writeWhile(parser, tree, block, output, statement.whileStatement, registers, functions);
 	} else if (statement.importStatement != (Import)0) {
-	    var tree = findSyntaxTree(parser.files, statement.importStatement.fileName.value);
+	    var fileName = statement.importStatement.fileName.value;
+	    fileName = strndup((str)((int)fileName + 1), strlen(fileName) - 2);
+
+	    var filePath = getLocalFilePath(tree.fileName, fileName);
+	    fileName = getFullPathString(filePath);
+
+	    var tree = findSyntaxTree(parser.files, fileName);
+
+	    if (tree == (SyntaxTree)0) {
+		print("could not find syntaxtree of file: '");
+		print(fileName);
+		print("'\n");
+
+		var i = 0;
+		while (i < parser.files.size) {
+		    print("file: '");
+		    print(parser.files.list[i].fileName);
+		    print("'\n");
+		    i = i + 1;
+		}
+		return;
+	    }
 
 	    writeStatementList(parser, tree, (Block)0, output, tree.statements, registers, functions);
 	} else if (statement.variable != (VariableDefinition)0) {
