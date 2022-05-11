@@ -91,12 +91,7 @@ func initRegisters() -> RegisterList {
     addRegister(registers, createRegister("r9"));
     addRegister(registers, createRegister("r10"));
     addRegister(registers, createRegister("r11"));
-    addRegister(registers, createRegister("r12"));
-    addRegister(registers, createRegister("r13"));
-    addRegister(registers, createRegister("r14"));
-    addRegister(registers, createRegister("r15"));
     addRegister(registers, createRegister("rax"));
-    addRegister(registers, createRegister("rbx"));
     addRegister(registers, createRegister("rcx"));
     addRegister(registers, createRegister("rdx"));
 
