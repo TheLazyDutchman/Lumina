@@ -44,9 +44,9 @@ func createBlock(Operator lbrace, StatementList statements, TypeList types, Func
 	block.outer = outer;
 
 	if (outer != (Block)0) {
-	    block.depth = outer.depth + 1;
+	    block.depth = outer.depth;
 	} else {
-	    block.depth = 1;
+	    block.depth = 0;
 	}
 
 	block.function = (FunctionDefinition)0;

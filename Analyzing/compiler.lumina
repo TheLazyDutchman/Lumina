@@ -890,67 +890,55 @@ func writeReturn(Parser parser, SyntaxTree tree, Block block, int output, Return
 	block = block.outer;
     }
 
+    numVariables = numVariables;
+
+    fprint(output, "	xchg rsp, [datarsp]\n");
+
+    if (numVariables != 0) {
+	fprint(output, "	add rsp, ");
+	fprinti(output, numVariables * 8);
+	fprint(output, " ;; pop local variables\n");
+    }
+
+    var basePointer = getRegister(registers);
+    var baseValue = getRegister(registers);
+
+    fprint(output, "	lea ");
+    fprint(output, basePointer.name);
+    fprint(output, ", [basestack + ");
+    fprinti(output, block.depth * 8);
+    fprint(output, "]\n");
+
+    fprint(output, "	pop ");
+    fprint(output, baseValue.name);
+    fprint(output, "\n");
+
+    fprint(output, "	mov [");
+    fprint(output, basePointer.name);
+    fprint(output, "], ");
+    fprint(output, baseValue.name);
+    fprint(output, " ;; restore base pointer\n");
+
+    basePointer.used = (bool)0;
+    baseValue.used = (bool)0;
+
     if (block.function.parameters == (ParameterList)0) {
 	print("parameter list is null\n");
 	return;
     }
 
-    numVariables = numVariables + block.function.parameters.size + 1;
-
-    if (numVariables != 0) {
-	fprint(output, "	add qword [datarsp], ");
-	fprinti(output, numVariables * 8);
-	fprint(output, " ;; pop local variables and parameters\n");
+    if (block.function.parameters.size != 0) {
+	fprint(output, "	add rsp, ");
+	fprinti(output, block.function.parameters.size * 8);
+	fprint(output, " ;; pop parameters\n");
     }
 
+    fprint(output, "	xchg rsp, [datarsp]\n");
     fprint(output, "	ret\n\n");
 }
 
 func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output, StatementList statements, RegisterList registers, FunctionList functions) {
     func writeBlock(Parser parser, SyntaxTree tree, Block outer, int output, Block block, RegisterList registers, FunctionList functions) {
-	
-	var basePointer = getRegister(registers);
-	var baseValue = getRegister(registers);
-	var stackPointer = getRegister(registers);
-
-	fprint(output, "	lea ");
-	fprint(output, basePointer.name);
-	fprint(output, ", [basestack + ");
-	fprinti(output, block.depth * 8);
-	fprint(output, "]\n");
-
-	fprint(output, "	xchg rsp, [datarsp]\n");
-
-	fprint(output, "	mov ");
-	fprint(output, baseValue.name);
-	fprint(output, ", [");
-	fprint(output, basePointer.name);
-	fprint(output, "]\n");
-
-	fprint(output, "	push ");
-	fprint(output, baseValue.name);
-	fprint(output, "\n");
-
-	fprint(output, "	mov ");
-	fprint(output, stackPointer.name);
-	fprint(output, ", rsp\n");
-
-	fprint(output, "	xchg rsp, [datarsp]\n");
-	
-	fprint(output, "	sub ");
-	fprint(output, stackPointer.name);
-	fprint(output, ", 8\n");
-	
-	fprint(output, "	mov [");
-	fprint(output, basePointer.name);
-	fprint(output, "], ");
-	fprint(output, stackPointer.name);
-	fprint(output, "\n\n");
-
-	basePointer.used = (bool)0;
-	baseValue.used = (bool)0;
-	stackPointer.used = (bool)0;
-
 	writeStatementList(parser, tree, block, output, block.statements, registers, functions);
 
 	if (block.variables.size > 0) {
@@ -958,32 +946,6 @@ func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output,
 	    fprinti(output, block.variables.size * 8);
 	    fprint(output, " ;; pop local variables in block\n");
 	}
-
-	var baseRegister = getRegister(registers);
-	baseValue = getRegister(registers);
-
-	fprint(output, "	xchg rsp, [datarsp]\n");
-
-	fprint(output, "	lea ");
-	fprint(output, baseRegister.name);
-	fprint(output, ", [basestack + ");
-	fprinti(output, block.depth * 8);
-	fprint(output, "]\n");
-
-	fprint(output, "	pop ");
-	fprint(output, baseValue.name);
-	fprint(output, "\n");
-	
-	fprint(output, "	mov [");
-	fprint(output, baseRegister.name);
-	fprint(output, "], ");
-	fprint(output, baseValue.name);
-	fprint(output, " ;; restore base pointer\n");
-
-	fprint(output, "	xchg rsp, [datarsp]\n\n");
-
-	baseRegister.used = (bool)0;
-	baseValue.used = (bool)0;
     }
 
     func writeIf(Parser parser, SyntaxTree tree, Block block, int output, If ifStatement, RegisterList registers, FunctionList functions) {
@@ -1180,7 +1142,7 @@ func writeFunctionDefinition(Parser parser, SyntaxTree tree, int output, Functio
 	if (function.parameters.size != 0) {
 	    fprint(output, "	add rsp, ");
 	    fprinti(output, function.parameters.size * 8);
-	    fprint(output, " ;; pop local variables\n");
+	    fprint(output, " ;; pop parameters\n");
 	}
 
 	fprint(output, "	xchg rsp, [datarsp]\n");

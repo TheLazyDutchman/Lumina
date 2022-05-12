@@ -602,6 +602,7 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 
 		var function = createFunctionDefinition(keyword, name, lparen, parameters, rparen, returnType, block, endPosition);
 		blockObj.function = function;
+		blockObj.depth = blockObj.depth + 1;
 
 		return function;
 	}
