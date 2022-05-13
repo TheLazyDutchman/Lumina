@@ -654,10 +654,12 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 			}
 		}
 
-		var outerBlock = block;
-		while (outerBlock.outer != (Block)0 && outerBlock.outer.depth == depth) {
-			outerBlock = outerBlock.outer;
-			size = size + outerBlock.variables.size;
+		if (block != (Block)0) {
+			var outerBlock = block;
+			while (outerBlock.outer != (Block)0 && outerBlock.outer.depth == depth) {
+				outerBlock = outerBlock.outer;
+				size = size + outerBlock.variables.size;
+			}
 		}
 
 		if (block != (Block)0 && block.function != (FunctionDefinition)0) {
