@@ -63,15 +63,15 @@ func createName(Position start, Position end, WhiteSpace space) -> Name {
 }
 
 func createNameFromString(str value) -> Name {
-    var name = (Name)malloc(sizeof(Name));
+	var name = (Name)malloc(sizeof(Name));
 
-    name.region = (Region)0;
-    name.definitionRegion = (Region)0;
-    name.space = (WhiteSpace)0;
-    name.keyword = -1;
-    name.name = value;
+	name.region = (Region)0;
+	name.definitionRegion = (Region)0;
+	name.space = (WhiteSpace)0;
+	name.keyword = -1;
+	name.name = value;
 
-    return name;
+	return name;
 }
 
 func isKeyword(Name name, int keywordId) -> bool {

@@ -76,18 +76,18 @@ func createParameter(Type parameterType, Name name, Operator comma) -> Parameter
 }
 
 func createParameterFromString(str typeName, str name) -> Parameter {
-    var parameter = (Parameter)malloc(sizeof(Parameter));
+	var parameter = (Parameter)malloc(sizeof(Parameter));
 
-    parameter.region = (Region)0;
-    parameter.parameterType = createTypeObjFromString(typeName);
-    if (name != (str)0) {
-	parameter.name = createNameFromString(name);
-    } else {
-	parameter.name = (Name)0;
-    }
-    parameter.comma = (Operator)0;
+	parameter.region = (Region)0;
+	parameter.parameterType = createTypeObjFromString(typeName);
+	if (name != (str)0) {
+		parameter.name = createNameFromString(name);
+	} else {
+		parameter.name = (Name)0;
+	}
+	parameter.comma = (Operator)0;
 
-    return parameter;
+	return parameter;
 }
 
 func createParameterList() -> ParameterList {
@@ -122,14 +122,14 @@ func createReturnType(Operator rarrow, Type typeObj) -> ReturnType {
 }
 
 func createReturnTypeFromString(str typeName) -> ReturnType {
-    var returnType = (ReturnType)malloc(sizeof(ReturnType));
+	var returnType = (ReturnType)malloc(sizeof(ReturnType));
 
-    returnType.region = (Region)0;
+	returnType.region = (Region)0;
 
-    returnType.rarrow = (Operator)0;
-    returnType.returnType = createTypeObjFromString(typeName);
+	returnType.rarrow = (Operator)0;
+	returnType.returnType = createTypeObjFromString(typeName);
 
-    return returnType;
+	return returnType;
 }
 
 func createFunctionDefinition(Name keyword, Name name, Operator lparen, ParameterList parameters, Operator rparen, ReturnType returnType, int blockId, Position end) -> FunctionDefinition {
@@ -149,18 +149,18 @@ func createFunctionDefinition(Name keyword, Name name, Operator lparen, Paramete
 }
 
 func createFunctionFromString(str value, ParameterList parameters, ReturnType returnType) -> FunctionDefinition {
-    var function = (FunctionDefinition)malloc(sizeof(FunctionDefinition));
+	var function = (FunctionDefinition)malloc(sizeof(FunctionDefinition));
 
-    function.region = (Region)0;
-    function.keyword = (Name)0;
-    function.name = createNameFromString(value);
-    function.lparen = (Operator)0;
-    function.parameters = parameters;
-    function.rparen = (Operator)0;
-    function.returnType = returnType;
-    function.blockId = -1;
+	function.region = (Region)0;
+	function.keyword = (Name)0;
+	function.name = createNameFromString(value);
+	function.lparen = (Operator)0;
+	function.parameters = parameters;
+	function.rparen = (Operator)0;
+	function.returnType = returnType;
+	function.blockId = -1;
 
-    return function;
+	return function;
 }
 
 func createFunctionList() -> FunctionList {
@@ -184,28 +184,28 @@ func addFunction(FunctionList list, FunctionDefinition function) {
 }
 
 func findFunction(FunctionList list, str name) -> FunctionDefinition {
-    var i = 0;
-    while (i < list.size) {
-	if (streq(list.list[i].name.name, name)) {
-	    return list.list[i];
+	var i = 0;
+	while (i < list.size) {
+		if (streq(list.list[i].name.name, name)) {
+			return list.list[i];
+		}
+		i = i + 1;
 	}
-	i = i + 1;
-    }
-    return (FunctionDefinition)0;
+	return (FunctionDefinition)0;
 }
 
 func extendFunctionList(FunctionList destination, FunctionList source) {
-    var i = 0;
+	var i = 0;
 
-    if (source == (FunctionList)0) {
-	print("source was zero in 'extendFunctionList'\n");
-	return;
-    }
+	if (source == (FunctionList)0) {
+		print("source was zero in 'extendFunctionList'\n");
+		return;
+	}
 
-    while (i < source.size) {
-	addFunction(destination, source.list[i]);
-	i = i + 1;
-    }
+	while (i < source.size) {
+		addFunction(destination, source.list[i]);
+		i = i + 1;
+	}
 }
 
 func createReturn(Name keyword, Operation expression, Operator semicolon) -> Return {

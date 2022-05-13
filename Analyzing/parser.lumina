@@ -82,7 +82,7 @@ func createSyntaxTree(str fileName, int numAnds, int numOrs) -> SyntaxTree {
 	tree.imports = createImportList();
 
 	tree.importTrees = (SyntaxTree[])0;
-	
+
 	return tree;
 }
 
@@ -107,14 +107,14 @@ func addSyntaxTree(SyntaxTreeList list, SyntaxTree tree) {
 }
 
 func findSyntaxTree(SyntaxTreeList list, str fileName) -> SyntaxTree {
-    var i = 0;
-    while (i < list.size) {
-	if (streq(list.list[i].fileName, fileName)) {
-	    return list.list[i];
+	var i = 0;
+	while (i < list.size) {
+		if (streq(list.list[i].fileName, fileName)) {
+			return list.list[i];
+		}
+		i = i + 1;
 	}
-	i = i + 1;
-    }
-    return (SyntaxTree)0;
+	return (SyntaxTree)0;
 }
 
 func createParser() -> Parser {
@@ -143,8 +143,8 @@ func createParser() -> Parser {
 
 	var i = 0;
 	while (i < 7) {
-	    addParameter(syscallParameters, createParameterFromString("any", (str)0));
-	    i = i + 1;
+		addParameter(syscallParameters, createParameterFromString("any", (str)0));
+		i = i + 1;
 	}
 
 	var syscallReturnType = createReturnTypeFromString("any");
@@ -223,7 +223,7 @@ func consumeString(Parser parser, SyntaxTree tree) -> String {
 
 	printPosition(createPositionFromLexer(tree.lexer));
 	print("did not find string\n");
-	
+
 	return (String)0;
 }
 
@@ -252,7 +252,7 @@ func parseProperty(Parser parser, SyntaxTree tree) -> Property {
 
 	next(tree.lexer);
 	var semicolon = tree.lexer.current.operator;
-	
+
 	next(tree.lexer);
 
 	return createProperty(propertyType, propertyName, semicolon);
@@ -378,7 +378,7 @@ func parseExpression(Parser parser, SyntaxTree tree, int precedence) -> Operatio
 			var rparen = consumeOperator(parser, tree, ")", (bool)0);
 			return createOperation(left, lparen, (Operation)0, rparen);
 		}
-		
+
 		var args = parseExpression(parser, tree, PREC_expression);
 
 		while (isOperator(tree.lexer.current.operator, ",")) {
@@ -530,7 +530,6 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 		var lparen = consumeOperator(parser, tree, "(", (bool)0);
 		var condition = parseExpression(parser, tree, PREC_expression);
 		var rparen = consumeOperator(parser, tree, ")", (bool)0);
-		
 		var block = -1;
 		var endPosition = (Position)0;
 
@@ -626,16 +625,16 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 		isKeyword(tree.lexer.current.name, KEYWORD_const)) {
 		var depth = 0;
 		if (outer != (Block)0) {
-		    depth = outer.depth;
+			depth = outer.depth;
 		}
 
 		var size = variableList.size;
 		if (depth == 0) {
-		    size = size + parser.variables.size + 1;
+			size = size + parser.variables.size + 1;
 		}
 
 		if (block != (Block)0 && block.function != (FunctionDefinition)0) {
-		    size = size + 1;
+			size = size + 1;
 		}
 
 		var variable = parseVariableDefinition(parser, tree, depth, size);
@@ -687,14 +686,14 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 }
 
 func parse(Parser parser, str fileName, str outerName) -> SyntaxTree {
-    if (outerName != (str)0) {
-	var filePath = getLocalFilePath(outerName, fileName);
-	fileName = getFullPathString(filePath);
-    }
+	if (outerName != (str)0) {
+		var filePath = getLocalFilePath(outerName, fileName);
+		fileName = getFullPathString(filePath);
+	}
 
 	var tree = findSyntaxTree(parser.files, fileName);
 	if (tree != (SyntaxTree)0) {
-	    return tree;
+		return tree;
 	}
 
 	tree = createSyntaxTree(fileName, parser.numAnds, parser.numOrs);
@@ -710,860 +709,860 @@ func parse(Parser parser, str fileName, str outerName) -> SyntaxTree {
 }
 
 func parseImports(Parser parser, SyntaxTree tree) {
-    if (tree.importTrees != (SyntaxTree[])0) {
-	return;
-    }
+	if (tree.importTrees != (SyntaxTree[])0) {
+		return;
+	}
 
-    tree.importTrees = (SyntaxTree[])malloc(8 * tree.imports.size);
+	tree.importTrees = (SyntaxTree[])malloc(8 * tree.imports.size);
 
-    var i = 0;
-    while (i < tree.imports.size) {
-	var importObj = tree.imports.list[i];
-	var name = strndup((str)((int)importObj.fileName.value + 1), strlen(importObj.fileName.value) - 2);
+	var i = 0;
+	while (i < tree.imports.size) {
+		var importObj = tree.imports.list[i];
+		var name = strndup((str)((int)importObj.fileName.value + 1), strlen(importObj.fileName.value) - 2);
 
-	var importTree = parse(parser, name, tree.fileName);
-	tree.importTrees[i] = importTree;
-	i = i + 1;
-    }
+		var importTree = parse(parser, name, tree.fileName);
+		tree.importTrees[i] = importTree;
+		i = i + 1;
+	}
 }
 
 func findFunctionInParser(Parser parser, SyntaxTree tree, Block block, str name) -> FunctionDefinition {
-    var function = (FunctionDefinition)0;
+	var function = (FunctionDefinition)0;
 
-    if (block != (Block)0) {
-	function = findFunctionInBlock(block, name);
-    }
+	if (block != (Block)0) {
+		function = findFunctionInBlock(block, name);
+	}
 
-    if (function == (FunctionDefinition)0) {
-	function = findFunction(tree.functions, name);
-    }
+	if (function == (FunctionDefinition)0) {
+		function = findFunction(tree.functions, name);
+	}
 
-    if (function == (FunctionDefinition)0) {
-	function = findFunction(parser.functions, name);
-    }
+	if (function == (FunctionDefinition)0) {
+		function = findFunction(parser.functions, name);
+	}
 
-    var i = 0;
-    while (i < tree.imports.size && function == (FunctionDefinition)0) {
-	function = findFunction(tree.importTrees[i].functions, name);
-	i = i + 1;
-    }
+	var i = 0;
+	while (i < tree.imports.size && function == (FunctionDefinition)0) {
+		function = findFunction(tree.importTrees[i].functions, name);
+		i = i + 1;
+	}
 
-    return function;
+	return function;
 }
 
 func findTypeInParser(Parser parser, SyntaxTree tree, Block block, str name) -> TypeDefinition {
-    var typeDef = (TypeDefinition)0;
+	var typeDef = (TypeDefinition)0;
 
-    if (block != (Block)0) {
-	typeDef = findTypeInBlock(block, name);
-    }
+	if (block != (Block)0) {
+		typeDef = findTypeInBlock(block, name);
+	}
 
-    if (typeDef == (TypeDefinition)0) {
-	typeDef = findType(tree.types, name);
-    }
+	if (typeDef == (TypeDefinition)0) {
+		typeDef = findType(tree.types, name);
+	}
 
-    if (typeDef == (TypeDefinition)0) {
-	typeDef = findType(parser.types, name);
-    }
+	if (typeDef == (TypeDefinition)0) {
+		typeDef = findType(parser.types, name);
+	}
 
-    var i = 0;
-    while (i < tree.imports.size && typeDef == (TypeDefinition)0) {
-	typeDef = findType(tree.importTrees[i].types, name);
-	i = i + 1;
-    }
+	var i = 0;
+	while (i < tree.imports.size && typeDef == (TypeDefinition)0) {
+		typeDef = findType(tree.importTrees[i].types, name);
+		i = i + 1;
+	}
 
-    return typeDef;
+	return typeDef;
 }
 
 func getTypeDefinitionFromType(Parser parser, SyntaxTree tree, Block block, Type typeObj) -> TypeDefinition {
-    var typeDef = findTypeInParser(parser, tree, block, typeObj.name.name);
+	var typeDef = findTypeInParser(parser, tree, block, typeObj.name.name);
 
-    var i = 0;
-    while (i < typeObj.brackets.size) {
-	typeDef = createArrayFrom((str)0, typeDef);
-	i = i + 2;
-    }
+	var i = 0;
+	while (i < typeObj.brackets.size) {
+		typeDef = createArrayFrom((str)0, typeDef);
+		i = i + 2;
+	}
 
-    return typeDef;
+	return typeDef;
 }
 
 func getSizeFromType(Parser parser, SyntaxTree tree, Block block, TypeDefinition typeObj) -> int {
-    if (typeObj.arrayType != (TypeDefinition)0) {
-	return 8;
-    }
+	if (typeObj.arrayType != (TypeDefinition)0) {
+		return 8;
+	}
 
-    if (typeObj.properties.size == 0) {
-	return typeObj.size;
-    }
+	if (typeObj.properties.size == 0) {
+		return typeObj.size;
+	}
 
-    var sum = 0;
-    var i = 0;
-    while (i < typeObj.properties.size) {
-	var propertyType = getTypeDefinitionFromType(parser, tree, block, typeObj.properties.list[i].typeName);
-	sum = sum + getSizeFromType(parser, tree, block, propertyType);
-	i = i + 1;
-    }
+	var sum = 0;
+	var i = 0;
+	while (i < typeObj.properties.size) {
+		var propertyType = getTypeDefinitionFromType(parser, tree, block, typeObj.properties.list[i].typeName);
+		sum = sum + getSizeFromType(parser, tree, block, propertyType);
+		i = i + 1;
+	}
 
-    return sum;
+	return sum;
 }
 
 func getPropertyOffset(Parser parser, SyntaxTree tree, Block block, TypeDefinition typeObj, str propertyName) -> int {
-    var sum = 0;
-    var i = 0;
-    while (i < typeObj.properties.size) {
-	var property = typeObj.properties.list[i];
-	if (streq(property.name.name, propertyName)) {
-	    return sum;
+	var sum = 0;
+	var i = 0;
+	while (i < typeObj.properties.size) {
+		var property = typeObj.properties.list[i];
+		if (streq(property.name.name, propertyName)) {
+			return sum;
+		}
+
+		var propertyType = getTypeDefinitionFromType(parser, tree, block, property.typeName);
+		sum = sum + getSizeFromType(parser, tree, block, propertyType);
+		i = i + 1;
 	}
 
-	var propertyType = getTypeDefinitionFromType(parser, tree, block, property.typeName);
-	sum = sum + getSizeFromType(parser, tree, block, propertyType);
-	i = i + 1;
-    }
-
-    return -1;
+	return -1;
 }
 
 func createVariableFromParameter(Parser parser, SyntaxTree tree, Block block, Parameter parameter, int position) -> VariableDefinition {
-    var variable = (VariableDefinition)malloc(sizeof(VariableDefinition));
+	var variable = (VariableDefinition)malloc(sizeof(VariableDefinition));
 
-    variable.region = parameter.region;
-    variable.keyword = (Name)0;
-    variable.name = parameter.name;
-    variable.equalSign = (Operator)0;
-    variable.value = (Operation)0;
-    variable.semicolon = (Operator)0;
+	variable.region = parameter.region;
+	variable.keyword = (Name)0;
+	variable.name = parameter.name;
+	variable.equalSign = (Operator)0;
+	variable.value = (Operation)0;
+	variable.semicolon = (Operator)0;
 
-    variable.depth = block.depth;
-    variable.position = position;
-    
-    variable.variableType = getTypeDefinitionFromType(parser, tree, block, parameter.parameterType);
+	variable.depth = block.depth;
+	variable.position = position;
 
-    return variable;
+	variable.variableType = getTypeDefinitionFromType(parser, tree, block, parameter.parameterType);
+
+	return variable;
 }
 
 func findVariableInParameters(Parser parser, SyntaxTree tree, Block block, FunctionDefinition function, str name) -> VariableDefinition {
-    var i = 0;
-    while (i < function.parameters.size) {
-	if (streq(function.parameters.list[i].name.name, name)) {
-	    return createVariableFromParameter(parser, tree, block, function.parameters.list[i], i);
+	var i = 0;
+	while (i < function.parameters.size) {
+		if (streq(function.parameters.list[i].name.name, name)) {
+			return createVariableFromParameter(parser, tree, block, function.parameters.list[i], i);
+		}
+		i = i + 1;
 	}
-	i = i + 1;
-    }
 
-    return (VariableDefinition)0;
+	return (VariableDefinition)0;
 }
 
 func findVariableInBlock(Parser parser, SyntaxTree tree, Block block, str name) -> VariableDefinition {
-    var variable = findVariable(block.variables, name);
+	var variable = findVariable(block.variables, name);
 
-    if (variable == (VariableDefinition)0 && block.function != (FunctionDefinition)0) {
-	variable = findVariableInParameters(parser, tree, block, block.function, name);
-    }
+	if (variable == (VariableDefinition)0 && block.function != (FunctionDefinition)0) {
+		variable = findVariableInParameters(parser, tree, block, block.function, name);
+	}
 
-    if (variable == (VariableDefinition)0 && block.outer != (Block)0) {
-	return findVariableInBlock(parser, tree, block.outer, name);
-    }
+	if (variable == (VariableDefinition)0 && block.outer != (Block)0) {
+		return findVariableInBlock(parser, tree, block.outer, name);
+	}
 
-    return variable;
+	return variable;
 }
 
 func findVariableInParser(Parser parser, SyntaxTree tree, Block block, str name) -> VariableDefinition {
-    var variable = (VariableDefinition)0;
+	var variable = (VariableDefinition)0;
 
-    if (block != (Block)0) {
-	variable = findVariableInBlock(parser, tree, block, name);
-    }
+	if (block != (Block)0) {
+		variable = findVariableInBlock(parser, tree, block, name);
+	}
 
-    if (variable == (VariableDefinition)0) {
-	variable = findVariable(tree.variables, name);
-    }
+	if (variable == (VariableDefinition)0) {
+		variable = findVariable(tree.variables, name);
+	}
 
-    if (variable == (VariableDefinition)0) {
-	variable = findVariable(parser.variables, name);
-    }
+	if (variable == (VariableDefinition)0) {
+		variable = findVariable(parser.variables, name);
+	}
 
-    var i = 0;
-    while (i < tree.imports.size && variable == (VariableDefinition)0) {
-	variable = findVariable(tree.importTrees[i].variables, name);
-	i = i + 1;
-    }
+	var i = 0;
+	while (i < tree.imports.size && variable == (VariableDefinition)0) {
+		variable = findVariable(tree.importTrees[i].variables, name);
+		i = i + 1;
+	}
 
-    return variable;
+	return variable;
 }
 
 func bindName(Parser parser, SyntaxTree tree, Name name, Block block) {
-    var function = findFunctionInParser(parser, tree, block, name.name);
-    if (function != (FunctionDefinition)0) {
-	name.definitionRegion = function.region;
-	return;
-    }
+	var function = findFunctionInParser(parser, tree, block, name.name);
+	if (function != (FunctionDefinition)0) {
+		name.definitionRegion = function.region;
+		return;
+	}
 
-    var typeDef = findTypeInParser(parser, tree, block, name.name);
-    if (typeDef != (TypeDefinition)0) {
-	name.definitionRegion = typeDef.region;
-	return;
-    }
+	var typeDef = findTypeInParser(parser, tree, block, name.name);
+	if (typeDef != (TypeDefinition)0) {
+		name.definitionRegion = typeDef.region;
+		return;
+	}
 
-    var variable = findVariableInParser(parser, tree, block, name.name);
-    if (variable != (VariableDefinition)0) {
-	name.definitionRegion = variable.region;
-	return;
-    }
+	var variable = findVariableInParser(parser, tree, block, name.name);
+	if (variable != (VariableDefinition)0) {
+		name.definitionRegion = variable.region;
+		return;
+	}
 
-    printPosition(name.region.start);
-    print("could not find name: '");
-    print(name.name);
-    print("'\n");
+	printPosition(name.region.start);
+	print("could not find name: '");
+	print(name.name);
+	print("'\n");
 }
 
 func bindNamesInType(Parser parser, SyntaxTree tree, Type typeObj, Block block) {
-    bindName(parser, tree, typeObj.name, block);
+	bindName(parser, tree, typeObj.name, block);
 }
 
 func bindNamesInOperation(Parser parser, SyntaxTree tree, Operation operation, Block block) {
-    if (operation.left != (Operation)0) {
-	bindNamesInOperation(parser, tree, operation.left, block);
-    }
-
-    if (operation.right != (Operation)0) {
-	if (operation.operator == (Operator)0 || isOperator(operation.operator, ".") != (bool)1) {
-	    bindNamesInOperation(parser, tree, operation.right, block);
+	if (operation.left != (Operation)0) {
+		bindNamesInOperation(parser, tree, operation.left, block);
 	}
-    }
 
-    if (operation.sizeOf != (SizeOf)0) {
-	bindNamesInType(parser, tree, operation.sizeOf.typeObj, block);
-    }
+	if (operation.right != (Operation)0) {
+		if (operation.operator == (Operator)0 || isOperator(operation.operator, ".") != (bool)1) {
+			bindNamesInOperation(parser, tree, operation.right, block);
+		}
+	}
 
-    if (operation.castType != (Type)0) {
-	bindNamesInType(parser, tree, operation.castType, block);
-    }
+	if (operation.sizeOf != (SizeOf)0) {
+		bindNamesInType(parser, tree, operation.sizeOf.typeObj, block);
+	}
 
-    if (operation.value != (Value)0 && operation.value.name != (Name)0) {
-	bindName(parser, tree, operation.value.name, block);
-    }
+	if (operation.castType != (Type)0) {
+		bindNamesInType(parser, tree, operation.castType, block);
+	}
+
+	if (operation.value != (Value)0 && operation.value.name != (Name)0) {
+		bindName(parser, tree, operation.value.name, block);
+	}
 }
 
 func bindNamesInExpression(Parser parser, SyntaxTree tree, Expression expression, Block block) {
-    bindNamesInOperation(parser, tree, expression.operation, block);
+	bindNamesInOperation(parser, tree, expression.operation, block);
 }
 
 func bindNamesInElseIf(Parser parser, SyntaxTree tree, ElseIf elseIf, Block block) {
-    if (elseIf.condition != (Operation)0) {
-	bindNamesInOperation(parser, tree, elseIf.condition, block);
-    }
+	if (elseIf.condition != (Operation)0) {
+		bindNamesInOperation(parser, tree, elseIf.condition, block);
+	}
 }
 
 func bindNamesInIf(Parser parser, SyntaxTree tree, If ifStatement, Block block) {
-    if (ifStatement.condition != (Operation)0) {
-	bindNamesInOperation(parser, tree, ifStatement.condition, block);
-    }
+	if (ifStatement.condition != (Operation)0) {
+		bindNamesInOperation(parser, tree, ifStatement.condition, block);
+	}
 
-    var i = 0;
-    while (i < ifStatement.elseIfs.size) {
-	bindNamesInElseIf(parser, tree, ifStatement.elseIfs.list[i], block);
-	i = i + 1;
-    }
+	var i = 0;
+	while (i < ifStatement.elseIfs.size) {
+		bindNamesInElseIf(parser, tree, ifStatement.elseIfs.list[i], block);
+		i = i + 1;
+	}
 }
 
 func bindNamesInWhile(Parser parser, SyntaxTree tree, While whileStatement, Block block) {
-    if (whileStatement.condition != (Operation)0) {
-	bindNamesInOperation(parser, tree, whileStatement.condition, block);
-    }
+	if (whileStatement.condition != (Operation)0) {
+		bindNamesInOperation(parser, tree, whileStatement.condition, block);
+	}
 }
 
 func bindNamesInFunctionDefinition(Parser parser, SyntaxTree tree, FunctionDefinition function, Block block) {
-    var i = 0;
-    while (i < function.parameters.size) {
-	bindNamesInType(parser, tree, function.parameters.list[i].parameterType, block);
-	i = i + 1;
-    }
+	var i = 0;
+	while (i < function.parameters.size) {
+		bindNamesInType(parser, tree, function.parameters.list[i].parameterType, block);
+		i = i + 1;
+	}
 }
 
 func bindNamesInTypeDefinition(Parser parser, SyntaxTree tree, TypeDefinition typeDef, Block block) {
-    var i = 0;
-    while (i < typeDef.properties.size) {
-	bindNamesInType(parser, tree, typeDef.properties.list[i].typeName, block);
-	i = i + 1;
-    }
+	var i = 0;
+	while (i < typeDef.properties.size) {
+		bindNamesInType(parser, tree, typeDef.properties.list[i].typeName, block);
+		i = i + 1;
+	}
 }
 
 func bindNamesInReturn(Parser parser, SyntaxTree tree, Return returnStatement, Block block) {
-    if (returnStatement.expression != (Operation)0) {
-	bindNamesInOperation(parser, tree, returnStatement.expression, block);
-    }
+	if (returnStatement.expression != (Operation)0) {
+		bindNamesInOperation(parser, tree, returnStatement.expression, block);
+	}
 }
 
 func bindNamesInStatementList(Parser parser, SyntaxTree tree, StatementList list, Block block) {
-    var i = 0;
-    while (i < list.size) {
-	var statement = list.list[i];
-	if (statement.expression != (Expression)0) {
-	    bindNamesInExpression(parser, tree, statement.expression, block);
-	} else if (statement.ifStatement != (If)0) {
-	    bindNamesInIf(parser, tree, statement.ifStatement, block);
-	} else if (statement.whileStatement != (While)0) {
-	    bindNamesInWhile(parser, tree, statement.whileStatement, block);
-	} else if (statement.variable != (VariableDefinition)0) {
-	    bindNamesInOperation(parser, tree, statement.variable.value, block);
-	} else if (statement.function != (FunctionDefinition)0) {
-	    bindNamesInFunctionDefinition(parser, tree, statement.function, block);
-	} else if (statement.typeStatement != (TypeDefinition)0) {
-	    bindNamesInTypeDefinition(parser, tree, statement.typeStatement, block);
-	} else if (statement.returnStatement != (Return)0) {
-	    bindNamesInReturn(parser, tree, statement.returnStatement, block);
-	}
+	var i = 0;
+	while (i < list.size) {
+		var statement = list.list[i];
+		if (statement.expression != (Expression)0) {
+			bindNamesInExpression(parser, tree, statement.expression, block);
+		} else if (statement.ifStatement != (If)0) {
+			bindNamesInIf(parser, tree, statement.ifStatement, block);
+		} else if (statement.whileStatement != (While)0) {
+			bindNamesInWhile(parser, tree, statement.whileStatement, block);
+		} else if (statement.variable != (VariableDefinition)0) {
+			bindNamesInOperation(parser, tree, statement.variable.value, block);
+		} else if (statement.function != (FunctionDefinition)0) {
+			bindNamesInFunctionDefinition(parser, tree, statement.function, block);
+		} else if (statement.typeStatement != (TypeDefinition)0) {
+			bindNamesInTypeDefinition(parser, tree, statement.typeStatement, block);
+		} else if (statement.returnStatement != (Return)0) {
+			bindNamesInReturn(parser, tree, statement.returnStatement, block);
+		}
 
-	i = i + 1;
-    }
+		i = i + 1;
+	}
 }
 
 func bindNames(Parser parser, str fileName) {
-    var tree = (SyntaxTree)0;
+	var tree = (SyntaxTree)0;
 
-    var i = 0;
-    while (i < parser.files.size) {
-	if (streq(parser.files.list[i].fileName, fileName)) {
-	    tree = parser.files.list[i];
+	var i = 0;
+	while (i < parser.files.size) {
+		if (streq(parser.files.list[i].fileName, fileName)) {
+			tree = parser.files.list[i];
+		}
+		i = i + 1;
 	}
-	i = i + 1;
-    }
 
-    if (tree == (SyntaxTree)0) {
-	print("no tree has been created for the file '");
-	print(fileName);
-	print("'\n");
-	return;
-    }
+	if (tree == (SyntaxTree)0) {
+		print("no tree has been created for the file '");
+		print(fileName);
+		print("'\n");
+		return;
+	}
 
-    parseImports(parser, tree);
+	parseImports(parser, tree);
 
-    bindNamesInStatementList(parser, tree, tree.statements, (Block)0);
+	bindNamesInStatementList(parser, tree, tree.statements, (Block)0);
 
-    i = 0;
-    while (i < tree.blocks.size) {
-	bindNamesInStatementList(parser, tree, tree.blocks.list[i].statements, tree.blocks.list[i]);
-	i = i + 1;
-    }
+	i = 0;
+	while (i < tree.blocks.size) {
+		bindNamesInStatementList(parser, tree, tree.blocks.list[i].statements, tree.blocks.list[i]);
+		i = i + 1;
+	}
 }
 
 func compareTypes(Parser parser, TypeDefinition a, TypeDefinition b) -> bool {
-    return a == b || b == parser.any;
+	return a == b || b == parser.any;
 }
 
 func checkTypesInName(Parser parser, SyntaxTree tree, Block block, Name name) -> TypeDefinition {
-    var variable = findVariableInParser(parser, tree, block, name.name);
+	var variable = findVariableInParser(parser, tree, block, name.name);
 
-    if (variable == (VariableDefinition)0) {
-	printPosition(name.region.start);
-	print("can not find variable '");
-	print(name.name);
-	print("'\n");
-	return (TypeDefinition)0;
-    }
+	if (variable == (VariableDefinition)0) {
+		printPosition(name.region.start);
+		print("can not find variable '");
+		print(name.name);
+		print("'\n");
+		return (TypeDefinition)0;
+	}
 
-    if (variable.variableType == (TypeDefinition)0) {
-	printPosition(name.region.start);
-	print(" the type of variable '");
-	print(variable.name.name);
-	print("' is not defined\n");
-    }
+	if (variable.variableType == (TypeDefinition)0) {
+		printPosition(name.region.start);
+		print(" the type of variable '");
+		print(variable.name.name);
+		print("' is not defined\n");
+	}
 
-    return variable.variableType;
+	return variable.variableType;
 }
 
 func checkTypesInValue(Parser parser, SyntaxTree tree, Block block, Value value) -> TypeDefinition {
-    if (value.name != (Name)0) {
-	return checkTypesInName(parser, tree, block, value.name);
-    }
+	if (value.name != (Name)0) {
+		return checkTypesInName(parser, tree, block, value.name);
+	}
 
-    if (value.number != (Number)0) {
-	return parser.int;
-    }
+	if (value.number != (Number)0) {
+		return parser.int;
+	}
 
-    if (value.character != (Character)0) {
-	return parser.char;
-    }
+	if (value.character != (Character)0) {
+		return parser.char;
+	}
 
-    if (value.string != (String)0) {
-	value.string.id = addUniqueString(parser.strings, value.string.value);
-	return parser.str;
-    }
+	if (value.string != (String)0) {
+		value.string.id = addUniqueString(parser.strings, value.string.value);
+		return parser.str;
+	}
 
-    print("value object is in an invalid state\n");
-    return (TypeDefinition)0;
+	print("value object is in an invalid state\n");
+	return (TypeDefinition)0;
 }
 
 func checkTypesInSizeOf(Parser parser, SyntaxTree tree, Block block, SizeOf sizeOf) -> TypeDefinition {
-    if (getTypeDefinitionFromType(parser, tree, block, sizeOf.typeObj) == (TypeDefinition)0) {
-	printPosition(sizeOf.typeObj.region.start);
-	print(" can not find type with this name\n");
-    }
+	if (getTypeDefinitionFromType(parser, tree, block, sizeOf.typeObj) == (TypeDefinition)0) {
+		printPosition(sizeOf.typeObj.region.start);
+		print(" can not find type with this name\n");
+	}
 
-    return parser.int;
+	return parser.int;
 }
 
 func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operation operation) -> TypeDefinition {
-    func getArgumentTypes(Parser parser, SyntaxTree tree, Block block, TypeList list, Operation operation) {
-	if (isOperator(operation.operator, ",")) {
-	    getArgumentTypes(parser, tree, block, list, operation.left);
-	    var argumentType = checkTypesInOperation(parser, tree, block, operation.right);
-	    addType(list, argumentType);
-	    return;
+	func getArgumentTypes(Parser parser, SyntaxTree tree, Block block, TypeList list, Operation operation) {
+		if (isOperator(operation.operator, ",")) {
+			getArgumentTypes(parser, tree, block, list, operation.left);
+			var argumentType = checkTypesInOperation(parser, tree, block, operation.right);
+			addType(list, argumentType);
+			return;
+		}
+
+		var argumentType = checkTypesInOperation(parser, tree, block, operation);
+		addType(list, argumentType);
 	}
 
-	var argumentType = checkTypesInOperation(parser, tree, block, operation);
-	addType(list, argumentType);
-    }
+	func checkTypesInFunctionCall(Parser parser, SyntaxTree tree, Block block, Operation call) -> TypeDefinition {
+		var functionName = call.left.value.name;
+		var function = findFunctionInParser(parser, tree, block, functionName.name);
 
-    func checkTypesInFunctionCall(Parser parser, SyntaxTree tree, Block block, Operation call) -> TypeDefinition {
-	var functionName = call.left.value.name;
-	var function = findFunctionInParser(parser, tree, block, functionName.name);
+		if (function == (FunctionDefinition)0) {
+			printPosition(functionName.region.start);
+			print(" can not find function with name '");
+			print(functionName.name);
+			print("'\n");
+			return (TypeDefinition)0;
+		}
 
-	if (function == (FunctionDefinition)0) {
-	    printPosition(functionName.region.start);
-	    print(" can not find function with name '");
-	    print(functionName.name);
-	    print("'\n");
-	    return (TypeDefinition)0;
+		var argumentList = createTypeList();
+		if (operation.right != (Operation)0) {
+			getArgumentTypes(parser, tree, block, argumentList, operation.right);
+		}
+
+		var expectedList = createTypeList();
+		var i = 0;
+		while (i < function.parameters.size) {
+			var expectedType = getTypeDefinitionFromType(parser, tree, block, function.parameters.list[i].parameterType);
+			addType(expectedList, expectedType);
+			i = i + 1;
+		}
+
+		i = 0;
+		var j = 0;
+		var typesMatching = (bool)1;
+		while (i < expectedList.size) {
+			var expectedType = expectedList.list[i];
+			var argumentType = (TypeDefinition)0;
+			if (j > argumentList.size) {
+				i = expectedList.size;
+			} else {
+				argumentType = argumentList.list[j];
+			}
+
+			if (compareTypes(parser, argumentType, expectedType)) {
+				j = j + 1;
+			} else {
+				typesMatching = (bool)0;
+			}
+			i = i + 1;
+		}
+
+		if (typesMatching != (bool)1) {
+			printPosition(call.operator.position);
+			print(" arguments do not match\n");
+			print("[NOTE] expected: ");
+			printTypeList(expectedList);
+			print(", got: ");
+			printTypeList(argumentList);
+			print("\n");
+		}
+
+		if (function.returnType == (ReturnType)0) {
+			return parser.null;
+		}
+
+		return getTypeDefinitionFromType(parser, tree, block, function.returnType.returnType);
 	}
 
-	var argumentList = createTypeList();
+	func checkTypesInProperty(Parser parser, SyntaxTree tree, Block block, Operation operation) -> TypeDefinition {
+		if (isVariable(operation.left) != (bool)1) {
+			printPosition(operation.operator.position);
+			print(" can not read a property from a value that is not a variable\n");
+			return (TypeDefinition)0;
+		}
+
+		var typeObj = checkTypesInOperation(parser, tree, block, operation.left);
+
+		if (typeObj == (TypeDefinition)0) {
+			printPosition(operation.left.region.start);
+			print(" type of struct is undefined\n");
+			return (TypeDefinition)0;
+		}
+
+		var rightValue = operation.right.value;
+		if (rightValue == (Value)0 || rightValue.name == (Name)0) {
+			printPosition(operation.right.region.start);
+			print(" expected an identifier after '.' operator\n");
+			return (TypeDefinition)0;
+		}
+
+		var property = findProperty(typeObj.properties, rightValue.name.name);
+		if (property == (Property)0) {
+			printPosition(operation.right.region.start);
+			print(" could not find property with name '");
+			print(rightValue.name.name);
+			print("'\n");
+			return (TypeDefinition)0;
+		}
+
+		return getTypeDefinitionFromType(parser, tree, block, property.typeName);
+	}
+
+	if (operation == (Operation)0) {
+		print("operation is null\n");
+		return (TypeDefinition)0;
+	}
+
+	if (operation.value != (Value)0) {
+		return checkTypesInValue(parser, tree, block, operation.value);
+	}
+
+	if (operation.sizeOf != (SizeOf)0) {
+		return checkTypesInSizeOf(parser, tree, block, operation.sizeOf);
+	}
+
+	if (isOperator(operation.operator, "(") && operation.left != (Operation)0) {
+		return checkTypesInFunctionCall(parser, tree, block, operation);
+	}
+
+	if (isOperator(operation.operator, ".")) {
+		return checkTypesInProperty(parser, tree, block, operation);
+	}
+
+	if (isOperator(operation.operator, "-") && operation.left == (Operation)0) {
+		var rightType = checkTypesInOperation(parser, tree, block, operation.right);
+
+		if (rightType != parser.int) {
+			printPosition(operation.right.region.start);
+			print(" expected type 'int' for the unary '-' operation\n");
+		}
+
+		return parser.int;
+	}
+
+	var leftType = (TypeDefinition)0;
+	var rightType = (TypeDefinition)0;
+
+	if (operation.left != (Operation)0) {
+		leftType = checkTypesInOperation(parser, tree, block, operation.left);
+	}
+
 	if (operation.right != (Operation)0) {
-	    getArgumentTypes(parser, tree, block, argumentList, operation.right);
+		rightType = checkTypesInOperation(parser, tree, block, operation.right);
 	}
 
-	var expectedList = createTypeList();
-	var i = 0;
-	while (i < function.parameters.size) {
-	    var expectedType = getTypeDefinitionFromType(parser, tree, block, function.parameters.list[i].parameterType);
-	    addType(expectedList, expectedType);
-	    i = i + 1;
-	}
+	//TODO: handle castType, and check other types
 
-	i = 0;
-	var j = 0;
-	var typesMatching = (bool)1;
-	while (i < expectedList.size) {
-	    var expectedType = expectedList.list[i];
-	    var argumentType = (TypeDefinition)0;
-	    if (j > argumentList.size) {
-		i = expectedList.size;
-	    } else {
-		argumentType = argumentList.list[j];
-	    }
+	if (isOperator(operation.operator, "<") ||
+		isOperator(operation.operator, ">") ||
+		isOperator(operation.operator, "<=") ||
+		isOperator(operation.operator, ">=") ||
+		isOperator(operation.operator, "==") ||
+		isOperator(operation.operator, "!=")) {
+		if (leftType != rightType) {
+			printPosition(operation.operator.position);
+			print(" can not compare values of different types\n");
+			print("[NOTE] types where: '");
+			printType(leftType);
+			print("' and '");
+			printType(rightType);
+			print("'\n");
+		}
+		return parser.bool;
+	} else if (isOperator(operation.operator, "[")) {
+		if (isVariable(operation.left) != (bool)1) {
+			printPosition(operation.operator.position);
+			print(" can not index from a value that is not a variable\n");
+			return (TypeDefinition)0;
+		}
 
-	    if (compareTypes(parser, argumentType, expectedType)) {
-		j = j + 1;
-	    } else {
-		typesMatching = (bool)0;
-	    }
-	    i = i + 1;
-	}
+		if (leftType == (TypeDefinition)0) {
+			printPosition(operation.operator.position);
+			print(" type of list is null\n");
+			return (TypeDefinition)0;
+		}
 
-	if (typesMatching != (bool)1) {
-	    printPosition(call.operator.position);
-	    print(" arguments do not match\n");
-	    print("[NOTE] expected: ");
-	    printTypeList(expectedList);
-	    print(", got: ");
-	    printTypeList(argumentList);
-	    print("\n");
-	}
+		if (rightType != parser.int) {
+			printPosition(operation.right.region.start);
+			print(" expected list index to be of type 'int'\n");
+			return (TypeDefinition)0;
+		}
 
-	if (function.returnType == (ReturnType)0) {
-	    return parser.null;
-	}
+		return leftType.arrayType;
+	} else if (isOperator(operation.operator, "+")) {
+		if (leftType == parser.int) {
+			if (rightType == parser.int) {
+				return parser.int;
+			} else if (rightType == parser.char) {
+				return parser.char;
+			} else {
+				printPosition(operation.operator.position);
+				print(" can not add values of type 'int' and '");
+				printType(rightType);
+				print("'\n");
+			}
+		} else if (leftType == parser.char) {
+			if (rightType == parser.int) {
+				return parser.char;
+			} else {
+				printPosition(operation.operator.position);
+				print(" can not add values of type 'char' and '");
+				printType(rightType);
+				print("'\n");
+			}
+		} else {
+			printPosition(operation.operator.position);
+			print(" can not add values of type '");
+			printType(leftType);
+			print("' and '");
+			printType(rightType);
+			print("'\n");
+		}
 
-	return getTypeDefinitionFromType(parser, tree, block, function.returnType.returnType);
-    }
+		return (TypeDefinition)0;
+	} else if (isOperator(operation.operator, "-")) {
+		if (leftType == parser.int) {
+			if (rightType == parser.int) {
+				return parser.int;
+			} else {
+				printPosition(operation.operator.position);
+				print(" can not subtract value of type '");
+				printType(rightType);
+				print("' from 'int'\n");
+			}
+		} else if (leftType == parser.char) {
+			if (rightType == parser.int) {
+				return parser.char;
+			} else if (rightType == parser.char) {
+				return parser.int;
+			} else {
+				printPosition(operation.operator.position);
+				print(" can not subtract value of type '");
+				printType(rightType);
+				print("' from 'char'\n");
+			}
+		} else {
+			printPosition(operation.operator.position);
+			print(" can not subtract value of type '");
+			printType(rightType);
+			print("' from '");
+			printType(leftType);
+			print("'\n");
+		}
 
-    func checkTypesInProperty(Parser parser, SyntaxTree tree, Block block, Operation operation) -> TypeDefinition {
-	if (isVariable(operation.left) != (bool)1) {
-	    printPosition(operation.operator.position);
-	    print(" can not read a property from a value that is not a variable\n");
-	    return (TypeDefinition)0;
-	}
+		return (TypeDefinition)0;
+	} else if (isOperator(operation.operator, "*") ||
+			isOperator(operation.operator, "&") ||
+			isOperator(operation.operator, "|") ||
+			isOperator(operation.operator, "<<") ||
+			isOperator(operation.operator, ">>")) {
+		if (leftType != parser.int || rightType != parser.int) {
+			printPosition(operation.operator.position);
+			print(" can not perform operation: '");
+			print(operation.operator.name);
+			print("' on values of type: '");
+			printType(leftType);
+			print("', and '");
+			printType(rightType);
+			print("'\n");
+		}
 
-	var typeObj = checkTypesInOperation(parser, tree, block, operation.left);
-
-	if (typeObj == (TypeDefinition)0) {
-	    printPosition(operation.left.region.start);
-	    print(" type of struct is undefined\n");
-	    return (TypeDefinition)0;
-	}
-	
-	var rightValue = operation.right.value;
-	if (rightValue == (Value)0 || rightValue.name == (Name)0) {
-	    printPosition(operation.right.region.start);
-	    print(" expected an identifier after '.' operator\n");
-	    return (TypeDefinition)0;
-	}
-
-	var property = findProperty(typeObj.properties, rightValue.name.name);
-	if (property == (Property)0) {
-	    printPosition(operation.right.region.start);
-	    print(" could not find property with name '");
-	    print(rightValue.name.name);
-	    print("'\n");
-	    return (TypeDefinition)0;
-	}
-
-	return getTypeDefinitionFromType(parser, tree, block, property.typeName);
-    }
-
-    if (operation == (Operation)0) {
-	print("operation is null\n");
-	return (TypeDefinition)0;
-    }
-
-    if (operation.value != (Value)0) {
-	return checkTypesInValue(parser, tree, block, operation.value);
-    }
-
-    if (operation.sizeOf != (SizeOf)0) {
-	return checkTypesInSizeOf(parser, tree, block, operation.sizeOf);
-    }
-
-    if (isOperator(operation.operator, "(") && operation.left != (Operation)0) {
-	return checkTypesInFunctionCall(parser, tree, block, operation);
-    }
-
-    if (isOperator(operation.operator, ".")) {
-	return checkTypesInProperty(parser, tree, block, operation);
-    }
-
-    if (isOperator(operation.operator, "-") && operation.left == (Operation)0) {
-	var rightType = checkTypesInOperation(parser, tree, block, operation.right);
-
-	if (rightType != parser.int) {
-	    printPosition(operation.right.region.start);
-	    print(" expected type 'int' for the unary '-' operation\n");
-        }
-	
-	return parser.int;
-    }
-
-    var leftType = (TypeDefinition)0;
-    var rightType = (TypeDefinition)0;
-
-    if (operation.left != (Operation)0) {
-	leftType = checkTypesInOperation(parser, tree, block, operation.left);
-    }
-
-    if (operation.right != (Operation)0) {
-	rightType = checkTypesInOperation(parser, tree, block, operation.right);
-    }
-
-    //TODO: handle castType, and check other types
-
-    if (isOperator(operation.operator, "<") ||
-	isOperator(operation.operator, ">") ||
-	isOperator(operation.operator, "<=") ||
-	isOperator(operation.operator, ">=") ||
-	isOperator(operation.operator, "==") ||
-	isOperator(operation.operator, "!=")) {
-	if (leftType != rightType) {
-	    printPosition(operation.operator.position);
-	    print(" can not compare values of different types\n");
-	    print("[NOTE] types where: '");
-	    printType(leftType);
-	    print("' and '");
-	    printType(rightType);
-	    print("'\n");
-	}
-	return parser.bool;
-    } else if (isOperator(operation.operator, "[")) {
-	if (isVariable(operation.left) != (bool)1) {
-	    printPosition(operation.operator.position);
-	    print(" can not index from a value that is not a variable\n");
-	    return (TypeDefinition)0;
-	}
-
-	if (leftType == (TypeDefinition)0) {
-	    printPosition(operation.operator.position);
-	    print(" type of list is null\n");
-	    return (TypeDefinition)0;
-	}
-
-	if (rightType != parser.int) {
-	    printPosition(operation.right.region.start);
-	    print(" expected list index to be of type 'int'\n");
-	    return (TypeDefinition)0;
-	}
-
-	return leftType.arrayType;
-    } else if (isOperator(operation.operator, "+")) {
-	if (leftType == parser.int) {
-	    if (rightType == parser.int) {
 		return parser.int;
-	    } else if (rightType == parser.char) {
-		return parser.char;
-	    } else {
-		printPosition(operation.operator.position);
-		print(" can not add values of type 'int' and '");
-		printType(rightType);
-		print("'\n");
-	    }
-	} else if (leftType == parser.char) {
-	    if (rightType == parser.int) {
-		return parser.char;
-	    } else {
-		printPosition(operation.operator.position);
-		print(" can not add values of type 'char' and '");
-		printType(rightType);
-		print("'\n");
-	    }
+	} else if (isOperator(operation.operator, "(")) {
+		var typeObj = checkTypesInOperation(parser, tree, block, operation.right);
+
+		if (operation.castType != (Type)0) {
+			return getTypeDefinitionFromType(parser, tree, block, operation.castType);
+		}
+
+		return typeObj;
+	} else if (isOperator(operation.operator, "=")) {
+		if (isVariable(operation.left) != (bool)1) {
+			printPosition(operation.operator.position);
+			print(" can not assign a value to a constant\n");
+			return (TypeDefinition)0;
+		}
+
+		if (leftType != rightType) {
+			printPosition(operation.operator.position);
+			print(" can not assign a value with a different type\n");
+			print("[NOTE] expected: '");
+			printType(leftType);
+			print("', got: '");
+			printType(rightType);
+			print("'\n");
+		}
+
+		return (TypeDefinition)0;
+	} else if (isOperator(operation.operator, "&&") ||
+			isOperator(operation.operator, "||")) {
+		if (leftType != parser.bool || rightType != parser.bool) {
+			printPosition(operation.operator.position);
+			print(" can not perform an 'and' or 'or' operation on values of type '");
+			printType(leftType);
+			print("' and '");
+			printType(rightType);
+			print("'\n");
+		}
+		return parser.bool;
 	} else {
-	    printPosition(operation.operator.position);
-	    print(" can not add values of type '");
-	    printType(leftType);
-	    print("' and '");
-	    printType(rightType);
-	    print("'\n");
+		printPosition(operation.region.start);
+		print(" do not support type checking for '");
+		print(operation.operator.name);
+		print("' operator yet\n");
 	}
 
 	return (TypeDefinition)0;
-    } else if (isOperator(operation.operator, "-")) {
-	if (leftType == parser.int) {
-	    if (rightType == parser.int) {
-		return parser.int;
-	    } else {
-		printPosition(operation.operator.position);
-		print(" can not subtract value of type '");
-		printType(rightType);
-		print("' from 'int'\n");
-	    }
-	} else if (leftType == parser.char) {
-	    if (rightType == parser.int) {
-		return parser.char;
-	    } else if (rightType == parser.char) {
-		return parser.int;
-	    } else {
-		printPosition(operation.operator.position);
-		print(" can not subtract value of type '");
-		printType(rightType);
-		print("' from 'char'\n");
-	    }
-	} else {
-	    printPosition(operation.operator.position);
-	    print(" can not subtract value of type '");
-	    printType(rightType);
-	    print("' from '");
-	    printType(leftType);
-	    print("'\n");
-	}
-
-	return (TypeDefinition)0;
-    } else if (isOperator(operation.operator, "*") ||
-		isOperator(operation.operator, "&") ||
-		isOperator(operation.operator, "|") ||
-		isOperator(operation.operator, "<<") ||
-		isOperator(operation.operator, ">>")) {
-	if (leftType != parser.int || rightType != parser.int) {
-	    printPosition(operation.operator.position);
-	    print(" can not perform operation: '");
-	    print(operation.operator.name);
-	    print("' on values of type: '");
-	    printType(leftType);
-	    print("', and '");
-	    printType(rightType);
-	    print("'\n");
-	}
-
-	return parser.int;
-    } else if (isOperator(operation.operator, "(")) {
-	var typeObj = checkTypesInOperation(parser, tree, block, operation.right);
-
-	if (operation.castType != (Type)0) {
-	    return getTypeDefinitionFromType(parser, tree, block, operation.castType);
-	}
-
-	return typeObj;
-    } else if (isOperator(operation.operator, "=")) {
-	if (isVariable(operation.left) != (bool)1) {
-	    printPosition(operation.operator.position);
-	    print(" can not assign a value to a constant\n");
-	    return (TypeDefinition)0;
-	}
-
-	if (leftType != rightType) {
-	    printPosition(operation.operator.position);
-	    print(" can not assign a value with a different type\n");
-	    print("[NOTE] expected: '");
-	    printType(leftType);
-	    print("', got: '");
-	    printType(rightType);
-	    print("'\n");
-	}
-
-	return (TypeDefinition)0;
-    } else if (isOperator(operation.operator, "&&") ||
-		isOperator(operation.operator, "||")) {
-	if (leftType != parser.bool || rightType != parser.bool) {
-	    printPosition(operation.operator.position);
-	    print(" can not perform an 'and' or 'or' operation on values of type '");
-	    printType(leftType);
-	    print("' and '");
-	    printType(rightType);
-	    print("'\n");
-	}
-	return parser.bool;
-    } else {
-	printPosition(operation.region.start);
-	print(" do not support type checking for '");
-	print(operation.operator.name);
-	print("' operator yet\n");
-    }
-
-    return (TypeDefinition)0;
 }
 
 func checkTypesInExpression(Parser parser, SyntaxTree tree, Block block, Expression expression) {
-    checkTypesInOperation(parser, tree, block, expression.operation);
+	checkTypesInOperation(parser, tree, block, expression.operation);
 }
 
 func checkTypesInIf(Parser parser, SyntaxTree tree, Block block, If ifStatement) {
-    var conditionType = checkTypesInOperation(parser, tree, block, ifStatement.condition);
-
-    if (conditionType != parser.bool) {
-	printPosition(ifStatement.region.start);
-	print(" expected if condition to be of type boolean\n");
-    }
-
-    var i = 0;
-    while (i < ifStatement.elseIfs.size) {
-	var conditionType = checkTypesInOperation(parser, tree, block, ifStatement.elseIfs.list[i].condition);
+	var conditionType = checkTypesInOperation(parser, tree, block, ifStatement.condition);
 
 	if (conditionType != parser.bool) {
-	    printPosition(ifStatement.elseIfs.list[i].region.start);
-	    print(" expected else if condition to be of type boolean\n");
+		printPosition(ifStatement.region.start);
+		print(" expected if condition to be of type boolean\n");
 	}
-	i = i + 1;
-    }
+
+	var i = 0;
+	while (i < ifStatement.elseIfs.size) {
+		var conditionType = checkTypesInOperation(parser, tree, block, ifStatement.elseIfs.list[i].condition);
+
+		if (conditionType != parser.bool) {
+			printPosition(ifStatement.elseIfs.list[i].region.start);
+			print(" expected else if condition to be of type boolean\n");
+		}
+		i = i + 1;
+	}
 }
 
 func checkTypesInWhile(Parser parser, SyntaxTree tree, Block block, While whileStatement) {
-    var conditionType = checkTypesInOperation(parser, tree, block, whileStatement.condition);
+	var conditionType = checkTypesInOperation(parser, tree, block, whileStatement.condition);
 
-    if (conditionType != parser.bool) {
-	printPosition(whileStatement.region.start);
-	print(" expected while condition to be of type boolean\n");
-    }
+	if (conditionType != parser.bool) {
+		printPosition(whileStatement.region.start);
+		print(" expected while condition to be of type boolean\n");
+	}
 }
 
 func checkTypesInVariable(Parser parser, SyntaxTree tree, Block block, VariableDefinition variable) {
-    var variableType = checkTypesInOperation(parser, tree, block, variable.value);
+	var variableType = checkTypesInOperation(parser, tree, block, variable.value);
 
-    if (variableType == (TypeDefinition)0) {
-	printPosition(variable.value.region.start);
-	print(" type is undefined\n");
-    }
+	if (variableType == (TypeDefinition)0) {
+		printPosition(variable.value.region.start);
+		print(" type is undefined\n");
+	}
 
-    variable.variableType = variableType;
+	variable.variableType = variableType;
 }
 
 func checkTypesInReturn(Parser parser, SyntaxTree tree, Block block, Return returnStatement) {
-    var returnType = parser.null;
-    if (returnStatement.expression != (Operation)0) {
-	returnType = checkTypesInOperation(parser, tree, block, returnStatement.expression);
-    }
-    
-    var function = getBlockFunction(block);
-    if (function == (FunctionDefinition)0) {
-	printPosition(returnStatement.region.start);
-	print(" can not return from outside a function\n");
-	return;
-    }
-
-    if (function.returnType == (ReturnType)0) {
-	if (returnType != parser.null) {
-	    printPosition(returnStatement.expression.region.start);
-	    print(" can not return a value from a null function\n");
+	var returnType = parser.null;
+	if (returnStatement.expression != (Operation)0) {
+		returnType = checkTypesInOperation(parser, tree, block, returnStatement.expression);
 	}
-	return;
-    }
 
-    var expectedType = getTypeDefinitionFromType(parser, tree, block, function.returnType.returnType);
+	var function = getBlockFunction(block);
+	if (function == (FunctionDefinition)0) {
+		printPosition(returnStatement.region.start);
+		print(" can not return from outside a function\n");
+		return;
+	}
 
-    if (returnType != expectedType) {
-	printPosition(returnStatement.expression.region.start);
-	print(" expected type '");
-	printType(expectedType);
-	print("', got '");
-	printType(returnType);
-	print("'\n");
-	return;
-    }
+	if (function.returnType == (ReturnType)0) {
+		if (returnType != parser.null) {
+			printPosition(returnStatement.expression.region.start);
+			print(" can not return a value from a null function\n");
+		}
+		return;
+	}
+
+	var expectedType = getTypeDefinitionFromType(parser, tree, block, function.returnType.returnType);
+
+	if (returnType != expectedType) {
+		printPosition(returnStatement.expression.region.start);
+		print(" expected type '");
+		printType(expectedType);
+		print("', got '");
+		printType(returnType);
+		print("'\n");
+		return;
+	}
 }
 
 func checkTypesInStatementList(Parser parser, SyntaxTree tree, Block block, StatementList list) {
-    var i = 0;
-    while (i < list.size) {
-	var statement = list.list[i];
-	if (statement.expression != (Expression)0) {
-	    checkTypesInExpression(parser, tree, block, statement.expression);
-	} else if (statement.ifStatement != (If)0) {
-	    checkTypesInIf(parser, tree, block, statement.ifStatement);
-	} else if (statement.whileStatement != (While)0) {
-	    checkTypesInWhile(parser, tree, block, statement.whileStatement);
-	} else if (statement.variable != (VariableDefinition)0) {
-	    checkTypesInVariable(parser, tree, block, statement.variable);
-	} else if (statement.returnStatement != (Return)0) {
-	    checkTypesInReturn(parser, tree, block, statement.returnStatement);
-	}
+	var i = 0;
+	while (i < list.size) {
+		var statement = list.list[i];
+		if (statement.expression != (Expression)0) {
+			checkTypesInExpression(parser, tree, block, statement.expression);
+		} else if (statement.ifStatement != (If)0) {
+			checkTypesInIf(parser, tree, block, statement.ifStatement);
+		} else if (statement.whileStatement != (While)0) {
+			checkTypesInWhile(parser, tree, block, statement.whileStatement);
+		} else if (statement.variable != (VariableDefinition)0) {
+			checkTypesInVariable(parser, tree, block, statement.variable);
+		} else if (statement.returnStatement != (Return)0) {
+			checkTypesInReturn(parser, tree, block, statement.returnStatement);
+		}
 
-	i = i + 1;
-    }
+		i = i + 1;
+	}
 }
 
 func checkTypes(Parser parser, SyntaxTree tree) {
-    if (tree == (SyntaxTree)0) {
-	print("syntax tree is null\n");
-	return;
-    }
+	if (tree == (SyntaxTree)0) {
+		print("syntax tree is null\n");
+		return;
+	}
 
-    checkTypesInStatementList(parser, tree, (Block)0, tree.statements);
+	checkTypesInStatementList(parser, tree, (Block)0, tree.statements);
 
-    var i = 0;
-    while (i < tree.blocks.size) {
-	var block = tree.blocks.list[i];
-	checkTypesInStatementList(parser, tree, block, block.statements);
-	i = i + 1;
-    }
+	var i = 0;
+	while (i < tree.blocks.size) {
+		var block = tree.blocks.list[i];
+		checkTypesInStatementList(parser, tree, block, block.statements);
+		i = i + 1;
+	}
 }
 
 func listFunctions(Parser parser) -> FunctionList {
-    var list = createFunctionList();
+	var list = createFunctionList();
 
-    extendFunctionList(list, parser.functions);
+	extendFunctionList(list, parser.functions);
 
-    var i = 0;
-    while (i < parser.files.size) {
-	var tree = parser.files.list[i];
+	var i = 0;
+	while (i < parser.files.size) {
+		var tree = parser.files.list[i];
 
-	if (tree == (SyntaxTree)0) {
-	    print("tree is null in 'listFunctions'\n");
-	    return list;
+		if (tree == (SyntaxTree)0) {
+			print("tree is null in 'listFunctions'\n");
+			return list;
+		}
+
+		extendFunctionList(list, tree.functions);
+
+		var j = 0;
+		while (j < tree.blocks.size) {
+			var block = tree.blocks.list[j];
+
+			if (block == (Block)0) {
+				print("block is null in 'listFunctions'\n");
+				return list;
+			}
+
+			extendFunctionList(list, block.functions);
+			j = j + 1;
+		}
+		i = i + 1;
 	}
 
-	extendFunctionList(list, tree.functions);
-
-	var j = 0;
-	while (j < tree.blocks.size) {
-	    var block = tree.blocks.list[j];
-
-	    if (block == (Block)0) {
-		print("block is null in 'listFunctions'\n");
-		return list;
-	    }
-
-	    extendFunctionList(list, block.functions);
-	    j = j + 1;
-	}
-	i = i + 1;
-    }
-
-    return list;
+	return list;
 }

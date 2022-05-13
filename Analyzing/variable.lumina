@@ -46,19 +46,19 @@ func createVariableDefinition(Name keyword, Name name, Operator equalSign, Opera
 }
 
 func createVariableFromString(str value, int depth, int position, TypeDefinition variableType) -> VariableDefinition {
-    var variable = (VariableDefinition)malloc(sizeof(VariableDefinition));
+	var variable = (VariableDefinition)malloc(sizeof(VariableDefinition));
 
-    variable.region = (Region)0;
-    variable.keyword = (Name)0;
-    variable.name = createNameFromString(value);
-    variable.equalSign = (Operator)0;
-    variable.value = (Operation)0;
-    variable.semicolon = (Operator)0;
-    variable.depth = depth;
-    variable.position = position;
-    variable.variableType = variableType;
+	variable.region = (Region)0;
+	variable.keyword = (Name)0;
+	variable.name = createNameFromString(value);
+	variable.equalSign = (Operator)0;
+	variable.value = (Operation)0;
+	variable.semicolon = (Operator)0;
+	variable.depth = depth;
+	variable.position = position;
+	variable.variableType = variableType;
 
-    return variable;
+	return variable;
 }
 
 func createVariableList() -> VariableList {
@@ -82,12 +82,12 @@ func addVariable(VariableList list, VariableDefinition variable) {
 }
 
 func findVariable(VariableList list, str name) -> VariableDefinition {
-    var i = 0;
-    while (i < list.size) {
-	if (streq(list.list[i].name.name, name)) {
-	    return list.list[i];
+	var i = 0;
+	while (i < list.size) {
+		if (streq(list.list[i].name.name, name)) {
+			return list.list[i];
+		}
+		i = i + 1;
 	}
-	i = i + 1;
-    }
-    return (VariableDefinition)0;
+	return (VariableDefinition)0;
 }

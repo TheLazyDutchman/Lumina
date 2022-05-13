@@ -44,9 +44,9 @@ func createBlock(Operator lbrace, StatementList statements, TypeList types, Func
 	block.outer = outer;
 
 	if (outer != (Block)0) {
-	    block.depth = outer.depth;
+		block.depth = outer.depth;
 	} else {
-	    block.depth = 0;
+		block.depth = 0;
 	}
 
 	block.function = (FunctionDefinition)0;
@@ -55,9 +55,9 @@ func createBlock(Operator lbrace, StatementList statements, TypeList types, Func
 }
 
 func setEnd(Block block, Operator rbrace) {
-    block.region = createRegion(block.lbrace.position, rbrace.position);
+	block.region = createRegion(block.lbrace.position, rbrace.position);
 
-    block.rbrace = rbrace;
+	block.rbrace = rbrace;
 }
 
 func createBlockList() -> BlockList {
@@ -83,29 +83,29 @@ func addBlock(BlockList list, Block block) -> int {
 }
 
 func findTypeInBlock(Block block, str name) -> TypeDefinition {
-    var typeObj = findType(block.types, name);
+	var typeObj = findType(block.types, name);
 
-    if (typeObj == (TypeDefinition)0 && block.outer != (Block)0) {
+	if (typeObj == (TypeDefinition)0 && block.outer != (Block)0) {
 	return findTypeInBlock(block.outer, name);
-    }
+	}
 
-    return typeObj;
+	return typeObj;
 }
 
 func findFunctionInBlock(Block block, str name) -> FunctionDefinition {
-    var function = findFunction(block.functions, name);
+	var function = findFunction(block.functions, name);
 
-    if (function == (FunctionDefinition)0 && block.outer != (Block)0) {
+	if (function == (FunctionDefinition)0 && block.outer != (Block)0) {
 	return findFunctionInBlock(block.outer, name);
-    }
+	}
 
-    return function;
+	return function;
 }
 
 func getBlockFunction(Block block) -> FunctionDefinition {
-    if (block.function != (FunctionDefinition)0) {
+	if (block.function != (FunctionDefinition)0) {
 	return block.function;
-    }
+	}
 
-    return getBlockFunction(block.outer);
+	return getBlockFunction(block.outer);
 }
