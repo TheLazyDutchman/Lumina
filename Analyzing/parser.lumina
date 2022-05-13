@@ -117,6 +117,17 @@ func findSyntaxTree(SyntaxTreeList list, str fileName) -> SyntaxTree {
 	return (SyntaxTree)0;
 }
 
+func getSyntaxTreeIndex(SyntaxTreeList list, SyntaxTree tree) -> int {
+	var i = 0;
+	while (i < list.size) {
+		if (list.list[i] == tree) {
+			return i;
+		}
+		i = i + 1;
+	}
+	return -1;
+}
+
 func createParser() -> Parser {
 	var parser = (Parser)malloc(sizeof(Parser));
 
@@ -631,6 +642,12 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 		var size = variableList.size;
 		if (depth == 0) {
 			size = size + parser.variables.size + 1;
+
+			var treeIndex = getSyntaxTreeIndex(parser.files, tree) + 1;
+			while (treeIndex < parser.files.size) {
+				size = size + parser.files.list[treeIndex].variables.size;
+				treeIndex = treeIndex + 1;
+			}
 		}
 
 		if (block != (Block)0 && block.function != (FunctionDefinition)0) {

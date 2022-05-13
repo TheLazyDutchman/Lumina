@@ -1012,31 +1012,6 @@ func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output,
 			writeIf(parser, tree, block, output, statement.ifStatement, registers, functions);
 		} else if (statement.whileStatement != (While)0) {
 			writeWhile(parser, tree, block, output, statement.whileStatement, registers, functions);
-		} else if (statement.importStatement != (Import)0) {
-			var fileName = statement.importStatement.fileName.value;
-			fileName = strndup((str)((int)fileName + 1), strlen(fileName) - 2);
-
-			var filePath = getLocalFilePath(tree.fileName, fileName);
-			fileName = getFullPathString(filePath);
-
-			var file = findSyntaxTree(parser.files, fileName);
-
-			if (file == (SyntaxTree)0) {
-			print("could not find syntaxtree of file: '");
-			print(fileName);
-			print("'\n");
-
-			var i = 0;
-			while (i < parser.files.size) {
-				print("file: '");
-				print(parser.files.list[i].fileName);
-				print("'\n");
-				i = i + 1;
-			}
-			return;
-			}
-
-			writeStatementList(parser, file, (Block)0, output, file.statements, registers, functions);
 		} else if (statement.variable != (VariableDefinition)0) {
 			writeVariable(parser, tree, block, output, statement.variable, registers, functions);
 		} else if (statement.returnStatement != (Return)0) {
@@ -1205,7 +1180,6 @@ func createChild(str name, str[] args) -> int {
 
 func CompileLinuxx86_nasm(str fileName, bool debug) {
 	var parser = checkFiles(fileName);
-	var tree = findSyntaxTree(parser.files, fileName);
 
 	const O_WRONLY = 1;
 	const O_CREAT = 64;
@@ -1228,7 +1202,13 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 	}
 
 	writeStart(output);
-	writeStatementList(parser, tree, (Block)0, output, tree.statements, registers, functions);
+
+	var filesWritten = parser.files.size - 1;
+	while (filesWritten >= 0) {
+		var tree = parser.files.list[filesWritten];
+		writeStatementList(parser, tree, (Block)0, output, tree.statements, registers, functions);
+		filesWritten = filesWritten - 1;
+	}
 
 	writeFooter(output, parser.strings);
 
