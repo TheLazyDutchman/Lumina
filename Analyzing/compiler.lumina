@@ -117,6 +117,11 @@ func printEscapedCharacter(int output, char chr) {
 
 	var charString = (str)malloc(5);
 
+	if ((int)charString + 5 > (int)curEnd) {
+		print("malloc returned an invalid pointer at 'printEscapedCharacter'\n");
+		return;
+	}
+
 	charString[0] = '0';
 	charString[1] = 'x';
 

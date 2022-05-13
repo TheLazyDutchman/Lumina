@@ -491,7 +491,7 @@ func parseReturnType(Parser parser, SyntaxTree tree) -> ReturnType {
 	return createReturnType(rarrow, typeObj);
 }
 
-func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeList, FunctionList functionList, VariableList variableList, ImportList importList, Block outer) -> Statement {
+func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeList, FunctionList functionList, VariableList variableList, ImportList importList) -> Statement {
 	func parseBlock(SyntaxTree tree, Block outer) -> int {
 		var lbrace = consumeOperator(parser, tree, "{", (bool)0);
 
@@ -504,7 +504,7 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 		var blockIndex = addBlock(tree.blocks, block);
 
 		while (isOperator(tree.lexer.current.operator, "}") != (bool)1 || tree.lexer.current.isEOF) {
-			var statement = parseStatement(parser, tree, block, typeList, functionList, variableList, importList, block);
+			var statement = parseStatement(parser, tree, block, typeList, functionList, variableList, importList);
 			addStatement(statementList, statement);
 		}
 
@@ -635,8 +635,8 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 	if (isKeyword(tree.lexer.current.name, KEYWORD_var) ||
 		isKeyword(tree.lexer.current.name, KEYWORD_const)) {
 		var depth = 0;
-		if (outer != (Block)0) {
-			depth = outer.depth;
+		if (block != (Block)0) {
+			depth = block.depth;
 		}
 
 		var size = variableList.size;
@@ -648,6 +648,16 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 				size = size + parser.files.list[treeIndex].variables.size;
 				treeIndex = treeIndex + 1;
 			}
+
+			if (block != (Block)0) {
+				size = size + tree.variables.size;
+			}
+		}
+
+		var outerBlock = block;
+		while (outerBlock.outer != (Block)0 && outerBlock.outer.depth == depth) {
+			outerBlock = outerBlock.outer;
+			size = size + outerBlock.variables.size;
 		}
 
 		if (block != (Block)0 && block.function != (FunctionDefinition)0) {
@@ -660,17 +670,17 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 
 		return createVariableStatement(variable);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_func)) {
-		var function = parseFunctionDefinition(parser, tree, outer);
+		var function = parseFunctionDefinition(parser, tree, block);
 
 		addFunction(functionList, function);
 
 		return createFunctionStatement(function);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_if)) {
-		var ifStatement = parseIf(parser, tree, outer);
+		var ifStatement = parseIf(parser, tree, block);
 
 		return createIfStatement(ifStatement);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_while)) {
-		var whileStatement = parseWhile(tree, outer);
+		var whileStatement = parseWhile(tree, block);
 
 		return createWhileStatement(whileStatement);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_type)) {
@@ -690,7 +700,7 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 
 		return createReturnStatement(returnStatement);
 	} else if (isOperator(tree.lexer.current.operator, "{")) {
-		var blockId = parseBlock(tree, outer);
+		var blockId = parseBlock(tree, block);
 
 		return createBlockStatement(blockId, tree.blocks.list[blockId].region);
 	}
@@ -716,7 +726,7 @@ func parse(Parser parser, str fileName, str outerName) -> SyntaxTree {
 	tree = createSyntaxTree(fileName, parser.numAnds, parser.numOrs);
 
 	while (tree.lexer.current.isEOF != (bool)1) {
-		var statement = parseStatement(parser, tree, (Block)0, tree.types, tree.functions, tree.variables, tree.imports, (Block)0);
+		var statement = parseStatement(parser, tree, (Block)0, tree.types, tree.functions, tree.variables, tree.imports);
 		addStatement(tree.statements, statement);
 	}
 
@@ -804,6 +814,11 @@ func getTypeDefinitionFromType(Parser parser, SyntaxTree tree, Block block, Type
 }
 
 func getSizeFromType(Parser parser, SyntaxTree tree, Block block, TypeDefinition typeObj) -> int {
+	if (typeObj == (TypeDefinition)0) {
+		print("type obj is null in 'getSizeFromType'\n");
+		return 0;
+	}
+
 	if (typeObj.arrayType != (TypeDefinition)0) {
 		return 8;
 	}

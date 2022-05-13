@@ -28,7 +28,7 @@ func expandHeap(int size) -> int {
 
 func malloc(int size) -> ptr {
     var oldEnd = curEnd;
-    if ((int)_heapHead + size >= (int)curEnd) {
+    if ((int)_heapHead + size * 2 >= (int)curEnd) {
 	expandHeap(size * 2);
 
 	if (oldEnd >= curEnd) {
