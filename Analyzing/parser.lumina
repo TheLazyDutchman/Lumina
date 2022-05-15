@@ -2,6 +2,7 @@ import "../std/path.lumina"
 import "../std/io.lumina"
 import "../std/string.lumina"
 import "../std/memory.lumina"
+import "../std/syscalls.lumina"
 
 import "block.lumina"
 import "type.lumina"
@@ -19,6 +20,7 @@ import "while.lumina"
 import "name.lumina"
 import "position.lumina"
 import "import.lumina"
+import "comment.lumina"
 
 
 type SyntaxTree {
@@ -806,6 +808,15 @@ func findTypeInParser(Parser parser, SyntaxTree tree, Block block, str name) -> 
 func getTypeDefinitionFromType(Parser parser, SyntaxTree tree, Block block, Type typeObj) -> TypeDefinition {
 	var typeDef = findTypeInParser(parser, tree, block, typeObj.name.name);
 
+	if (typeDef == (TypeDefinition)0) {
+		printPosition(typeObj.region.start);
+		print(" type is null in 'getTypeDefinitionFromType' in file: '");
+		print(tree.fileName);
+		print("'\n");
+
+		return typeDef;
+	}
+
 	var i = 0;
 	while (i < typeObj.brackets.size) {
 		typeDef = createArrayFrom((str)0, typeDef);
@@ -818,6 +829,7 @@ func getTypeDefinitionFromType(Parser parser, SyntaxTree tree, Block block, Type
 func getSizeFromType(Parser parser, SyntaxTree tree, Block block, TypeDefinition typeObj) -> int {
 	if (typeObj == (TypeDefinition)0) {
 		print("type obj is null in 'getSizeFromType'\n");
+		exit(1);
 		return 0;
 	}
 
@@ -833,6 +845,15 @@ func getSizeFromType(Parser parser, SyntaxTree tree, Block block, TypeDefinition
 	var i = 0;
 	while (i < typeObj.properties.size) {
 		var propertyType = getTypeDefinitionFromType(parser, tree, block, typeObj.properties.list[i].typeName);
+
+		if (propertyType == (TypeDefinition)0) {
+			printPosition(typeObj.properties.list[i].region.start);
+			print(" property type is null in 'getSizeFromType' in file: '");
+			print(tree.fileName);
+			print("'\n");
+			return 0;
+		}
+
 		sum = sum + getSizeFromType(parser, tree, block, propertyType);
 		i = i + 1;
 	}
@@ -850,6 +871,15 @@ func getPropertyOffset(Parser parser, SyntaxTree tree, Block block, TypeDefiniti
 		}
 
 		var propertyType = getTypeDefinitionFromType(parser, tree, block, property.typeName);
+
+		if (propertyType == (TypeDefinition)0) {
+			printPosition(property.region.start);
+			print(" property type is null in 'getPropertyOffset' in file: '");
+			print(tree.fileName);
+			print("'\n");
+			return 0;
+		}
+
 		sum = sum + getSizeFromType(parser, tree, block, propertyType);
 		i = i + 1;
 	}

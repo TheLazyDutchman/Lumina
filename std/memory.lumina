@@ -23,6 +23,8 @@ func expandHeap(int size) -> int {
 	syscall(1, 1, "could not expand heap\n", 22, 0, 0, 0);
     }
 
+    syscall(1, 1, "expanded heap\n", 14, 0, 0, 0);
+
     return totalSize;
 }
 

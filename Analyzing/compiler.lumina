@@ -5,22 +5,25 @@ import "../std/string.lumina"
 import "../std/path.lumina"
 
 import "parser.lumina"
-import "operation.lumina"
-import "operator.lumina"
-import "statement.lumina"
+
+import "block.lumina"
+import "comment.lumina"
 import "expression.lumina"
-import "if.lumina"
-import "while.lumina"
-import "variable.lumina"
 import "function.lumina"
-import "value.lumina"
+import "if.lumina"
 import "immediate.lumina"
+import "import.lumina"
 import "lexer.lumina"
 import "name.lumina"
-import "block.lumina"
+import "operation.lumina"
+import "operator.lumina"
 import "position.lumina"
-import "import.lumina"
+import "statement.lumina"
 import "type.lumina"
+import "value.lumina"
+import "variable.lumina"
+import "while.lumina"
+import "whitespace.lumina"
 
 
 type Register {
@@ -240,6 +243,12 @@ func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Na
 		variable = findVariable(tree.variables, name.name);
 	}
 
+	var i = 0;
+	while (i < tree.imports.size && variable == (VariableDefinition)0) {
+		variable = findVariable(tree.importTrees[i].variables, name.name);
+		i = i + 1;
+	}
+
 	if (variable == (VariableDefinition)0) {
 		variable = findVariable(parser.variables, name.name);
 	}
@@ -437,6 +446,13 @@ func writeAddress(int output, str addr, int id) {
 
 func writeSizeOf(Parser parser, SyntaxTree tree, Block block, int output, SizeOf sizeOf, str register) -> str {
 	var typeDef = getTypeDefinitionFromType(parser, tree, block, sizeOf.typeObj);
+
+	if (typeDef == (TypeDefinition)0) {
+		printPosition(sizeOf.region.start);
+		print(" type is null in size of\n");
+		return register;
+	}
+
 	var size = getSizeFromType(parser, tree, block, typeDef);
 
 	fprint(output, "	mov ");
@@ -622,8 +638,21 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 		writeOperation(parser, tree, block, output, operation.left, registers, register, (bool)1, functions);
 
 		var typeObj = checkTypesInOperation(parser, tree, block, operation.left);
+
+		if (typeObj == (TypeDefinition)0) {
+			printPosition(operation.operator.position);
+			print(" struct type is null\n");
+			return register.name;
+		}
+
 		var propertyName = operation.right.value.name;
 		var propertyType = checkTypesInOperation(parser, tree, block, operation);
+
+		if (propertyType == (TypeDefinition)0) {
+			printPosition(operation.operator.position);
+			print(" type of property is null\n");
+			return register.name;
+		}
 
 		var offset = getPropertyOffset(parser, tree, block, typeObj, propertyName.name);
 		
@@ -668,6 +697,13 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 
 		if (isOperator(operation.left.operator, "[")) {
 			var arrayType = checkTypesInOperation(parser, tree, block, operation.left);
+
+			if (arrayType == (TypeDefinition)0) {
+				printPosition(operation.operator.position);
+				print(" array type is null\n");
+				return register.name;
+			}
+
 			var size = getSizeFromType(parser, tree, block, arrayType);
 
 			var movWord = "mov";
@@ -693,6 +729,13 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 			fprint(output, " ;; assign to list\n");
 		} else if (isOperator(operation.left.operator, ".")) {
 			var propertyType = checkTypesInOperation(parser, tree, block, operation.left);
+
+			if (propertyType == (TypeDefinition)0) {
+				printPosition(operation.operator.position);
+				print(" type is null\n");
+				return register.name;
+			}
+
 			var size = getSizeFromType(parser, tree, block, propertyType);
 
 			var movWord = "mov";
@@ -849,6 +892,13 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 		return writeComparison(output, "cmovge", registerA, registerB);
 	} else if (isOperator(operation.operator, "[")) {
 		var typeObj = checkTypesInOperation(parser, tree, block, operation);
+
+		if (typeObj == (TypeDefinition)0) {
+			printPosition(operation.operator.position);
+			print(" array type is null\n");
+			return registerA.name;
+		}
+
 		var size = getSizeFromType(parser, tree, block, typeObj);
 		return writeIndex(output, size, registerA, registerB, getValue);
 	} else if (isOperator(operation.operator, "+")) {
@@ -1135,6 +1185,10 @@ func checkFiles(str fileName) -> Parser {
 
 	parse(parser, fileName, (str)0);
 
+	print("parsed file: '");
+	print(fileName);
+	print("'\n");
+
 	var numFilesNamesBound = 0;
 	while (numFilesNamesBound < parser.files.size) {
 		var fileName = parser.files.list[numFilesNamesBound].fileName;
@@ -1142,12 +1196,20 @@ func checkFiles(str fileName) -> Parser {
 		numFilesNamesBound = numFilesNamesBound + 1;
 	}
 
+	print("bound names in file: '");
+	print(fileName);
+	print("'\n");
+
 	var numFilesTypeChecked = parser.files.size - 1;
 	while (numFilesTypeChecked >= 0) {
 		var tree = parser.files.list[numFilesTypeChecked];
 		checkTypes(parser, tree);
 		numFilesTypeChecked = numFilesTypeChecked - 1;
 	}
+
+	print("checked types in file: '");
+	print(fileName);
+	print("'\n");
 
 	return parser;
 }
@@ -1203,6 +1265,11 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 		var function = functions.list[i];
 		var tree = findSyntaxTree(parser.files, function.region.file);
 		writeFunctionDefinition(parser, tree, output, function, registers, functions, i);
+
+		print("finished compiling function: '");
+		print(function.name.name);
+		print("'\n");
+
 		i = i + 1;
 	}
 
@@ -1212,6 +1279,10 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 	while (filesWritten >= 0) {
 		var tree = parser.files.list[filesWritten];
 		writeStatementList(parser, tree, (Block)0, output, tree.statements, registers, functions);
+		print("finished compiling file: '");
+		print(tree.fileName);
+		print("'\n");
+
 		filesWritten = filesWritten - 1;
 	}
 
