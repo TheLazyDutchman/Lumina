@@ -55,6 +55,17 @@ func readFile(str fileName) -> str {
 
 	var buffer = (str)malloc(len + 1);
 
+	if ((int)buffer < 0) {
+		print("[ERROR] could not allocate buffer for file: '");
+		print(fileName);
+		print("'\n");
+
+		printi(-(int)buffer);
+		print("\n");
+
+		exit(-(int)buffer);
+	}
+
 	len = read(file, buffer, len);
 
 	if (len < 0) {
@@ -62,7 +73,10 @@ func readFile(str fileName) -> str {
 		print(fileName);
 		print("'\n");
 
-		exit(1);
+		printi(-len);
+		print("\n");
+		
+		exit(-len);
 	}
 
 	buffer[len] = '\0';
