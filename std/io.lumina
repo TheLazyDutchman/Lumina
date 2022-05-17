@@ -54,7 +54,7 @@ func execvp(str fileName, str[] args) -> int {
 		}
 
 		cwdLength = cwdLength * 2;
-		cwd = (str)realloc((ptr)cwd, strlen(cwd), cwdLength);
+		cwd = (str)realloc((ptr)cwd, cwdLength);
 		code = getcwd(cwd, cwdLength);
 	}
 

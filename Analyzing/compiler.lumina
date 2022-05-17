@@ -63,8 +63,8 @@ func addRegister(RegisterList list, Register reg) {
 	list.size = list.size + 1;
 
 	if (list.size == list.maxSize) {
-		list.list = (Register[])realloc((ptr)list.list, list.maxSize * 8, list.maxSize * 8 * 2);
 		list.maxSize = list.maxSize * 2;
+		list.list = (Register[])realloc((ptr)list.list, list.maxSize);
 	}
 }
 
