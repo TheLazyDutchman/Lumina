@@ -132,10 +132,10 @@ func createReturnTypeFromString(str typeName) -> ReturnType {
 	return returnType;
 }
 
-func createFunctionDefinition(Name keyword, Name name, Operator lparen, ParameterList parameters, Operator rparen, ReturnType returnType, int blockId, Position end) -> FunctionDefinition {
+func createFunctionDefinition(Name keyword, Name name, Operator lparen, ParameterList parameters, Operator rparen, ReturnType returnType) -> FunctionDefinition {
 	var function = (FunctionDefinition)malloc(sizeof(FunctionDefinition));
 
-	function.region = createRegion(keyword.region.start, end);
+	function.region = (Region)0;
 
 	function.keyword = keyword;
 	function.name = name;
@@ -143,7 +143,7 @@ func createFunctionDefinition(Name keyword, Name name, Operator lparen, Paramete
 	function.parameters = parameters;
 	function.rparen = rparen;
 	function.returnType = returnType;
-	function.blockId = blockId;
+	function.blockId = -1;
 
 	return function;
 }

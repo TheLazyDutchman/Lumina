@@ -29,7 +29,7 @@ type BlockList {
 	Block[] list;
 }
 
-func createBlock(Operator lbrace, StatementList statements, TypeList types, FunctionList functions, VariableList variables, Block outer) -> Block {
+func createBlock(Operator lbrace, StatementList statements, TypeList types, FunctionList functions, VariableList variables, Block outer, FunctionDefinition function) -> Block {
 	var block = (Block)malloc(sizeof(Block));
 
 	block.region = (Region)0;
@@ -49,7 +49,7 @@ func createBlock(Operator lbrace, StatementList statements, TypeList types, Func
 		block.depth = 0;
 	}
 
-	block.function = (FunctionDefinition)0;
+	block.function = function;
 
 	return block;
 }
@@ -58,6 +58,12 @@ func setEnd(Block block, Operator rbrace) {
 	block.region = createRegion(block.lbrace.position, rbrace.position);
 
 	block.rbrace = rbrace;
+
+	if (block.function != (FunctionDefinition)0) {
+		block.function.region = createRegion(
+			block.function.keyword.region.start,
+			block.region.end);
+	}
 }
 
 func createBlockList() -> BlockList {

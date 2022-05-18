@@ -1075,6 +1075,7 @@ func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output,
 	}
 
 	var i = 0;
+
 	while (i < statements.size) {
 		writeStatement(parser, tree, block, output, statements.list[i], registers, functions);
 		i = i + 1;
@@ -1264,6 +1265,11 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 	while (i < functions.size) {
 		var function = functions.list[i];
 		var tree = findSyntaxTree(parser.files, function.region.file);
+
+		print("compiling function: '");
+		print(function.name.name);
+		print("'\n");
+
 		writeFunctionDefinition(parser, tree, output, function, registers, functions, i);
 
 		print("finished compiling function: '");

@@ -494,7 +494,7 @@ func parseReturnType(Parser parser, SyntaxTree tree) -> ReturnType {
 }
 
 func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeList, FunctionList functionList, VariableList variableList, ImportList importList) -> Statement {
-	func parseBlock(SyntaxTree tree, Block outer) -> int {
+	func parseBlock(SyntaxTree tree, Block outer, FunctionDefinition function) -> int {
 		var lbrace = consumeOperator(parser, tree, "{", (bool)0);
 
 		var statementList = createStatementList();
@@ -502,8 +502,12 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 		var functionList = createFunctionList();
 		var variableList = createVariableList();
 
-		var block = createBlock(lbrace, statementList, typeList, functionList, variableList, outer);
+		var block = createBlock(lbrace, statementList, typeList, functionList, variableList, outer, function);
 		var blockIndex = addBlock(tree.blocks, block);
+
+		if (block.function != (FunctionDefinition)0) {
+			block.depth = block.depth + 1;
+		}
 
 		while (isOperator(tree.lexer.current.operator, "}") != (bool)1 || tree.lexer.current.isEOF) {
 			var statement = parseStatement(parser, tree, block, typeList, functionList, variableList, importList);
@@ -522,7 +526,7 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 		var lparen = consumeOperator(parser, tree, "(", (bool)0);
 		var condition = parseExpression(parser, tree, PREC_expression);
 		var rparen = consumeOperator(parser, tree, ")", (bool)0);
-		var block = parseBlock(tree, outer);
+		var block = parseBlock(tree, outer, (FunctionDefinition)0);
 		var endPosition = tree.blocks.list[block].region.end;
 
 		var elseIf = createElseIf(elseKeyword, ifKeyword, lparen, condition, rparen, block, endPosition, parser.numIfs);
@@ -531,7 +535,7 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 	}
 
 	func parseElse(SyntaxTree tree, Name keyword, Block outer) -> Else {
-		var block = parseBlock(tree, outer);
+		var block = parseBlock(tree, outer, (FunctionDefinition)0);
 		var endPosition = tree.blocks.list[block].region.end;
 
 		return createElse(keyword, block, endPosition);
@@ -547,7 +551,7 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 		var endPosition = (Position)0;
 
 		if (isOperator(tree.lexer.current.operator, "{")) {
-			block = parseBlock(tree, outer);
+			block = parseBlock(tree, outer, (FunctionDefinition)0);
 			endPosition = tree.blocks.list[block].region.end;
 		} else {
 			print("expected block after 'if'\n");
@@ -584,7 +588,7 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 		var endPosition = (Position)0;
 
 		if (isOperator(tree.lexer.current.operator, "{")) {
-			block = parseBlock(tree, outer);
+			block = parseBlock(tree, outer, (FunctionDefinition)0);
 			endPosition = tree.blocks.list[block].region.end;
 		} else  {
 			print("expected block after while\n");
@@ -608,13 +612,10 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 			returnType = parseReturnType(parser, tree);
 		}
 
-		var block = parseBlock(tree, outer);
-		var blockObj = tree.blocks.list[block];
-		var endPosition = blockObj.region.end;
+		var function = createFunctionDefinition(keyword, name, lparen, parameters, rparen, returnType);
 
-		var function = createFunctionDefinition(keyword, name, lparen, parameters, rparen, returnType, block, endPosition);
-		blockObj.function = function;
-		blockObj.depth = blockObj.depth + 1;
+		var block = parseBlock(tree, outer, function);
+		function.blockId = block;
 
 		return function;
 	}
@@ -651,9 +652,7 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 				treeIndex = treeIndex + 1;
 			}
 
-			if (block != (Block)0) {
-				size = size + tree.variables.size;
-			}
+			size = size + tree.variables.size;
 		}
 
 		if (block != (Block)0) {
@@ -662,10 +661,10 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 				outerBlock = outerBlock.outer;
 				size = size + outerBlock.variables.size;
 			}
-		}
 
-		if (block != (Block)0 && block.function != (FunctionDefinition)0) {
-			size = size + 1;
+			if (outerBlock.function != (FunctionDefinition)0) {
+				size = size + outerBlock.function.parameters.size + 1;
+			}
 		}
 
 		var variable = parseVariableDefinition(parser, tree, depth, size);
@@ -704,7 +703,7 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 
 		return createReturnStatement(returnStatement);
 	} else if (isOperator(tree.lexer.current.operator, "{")) {
-		var blockId = parseBlock(tree, block);
+		var blockId = parseBlock(tree, block, (FunctionDefinition)0);
 
 		return createBlockStatement(blockId, tree.blocks.list[blockId].region);
 	}
