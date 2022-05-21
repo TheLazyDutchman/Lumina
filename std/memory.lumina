@@ -34,6 +34,8 @@ func _expand_heap(int size) -> int {
 	    syscall(1, 1, "could not expand heap\n", 22, 0, 0, 0);
 	}
 
+	//syscall(1, 1, "expanded heap\n", 14, 0, 0, 0);
+
 	return val;
 }
 
@@ -87,8 +89,6 @@ func malloc(int size) -> ptr {
 	if (size <= 0) {
 		return (ptr)0;
 	}
-
-	size = size * 2; // malloc sometimes does not allocate enough, there must be some math wrong
 
 	var block = _heap_start;
 
@@ -150,6 +150,7 @@ func malloc(int size) -> ptr {
 
 func free(ptr addr) {
 	var block = (_heap_block)((int)addr - sizeof(_heap_block));
+
 	block.free = 0 == 0; // true keyword not implemented
 
 	if (block.next > (_heap_block)0) {

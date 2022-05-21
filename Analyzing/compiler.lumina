@@ -1184,6 +1184,8 @@ func writeFunctionDefinition(Parser parser, SyntaxTree tree, int output, Functio
 func checkFiles(str fileName) -> Parser {
 	var parser = createParser();
 
+	print("created parser\n");
+
 	parse(parser, fileName, (str)0);
 
 	print("parsed file: '");

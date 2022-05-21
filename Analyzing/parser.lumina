@@ -642,7 +642,7 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 			depth = block.depth;
 		}
 
-		var size = variableList.size;
+		var size = 0;
 		if (depth == 0) {
 			size = size + parser.variables.size + 1;
 
@@ -721,6 +721,10 @@ func parse(Parser parser, str fileName, str outerName) -> SyntaxTree {
 		fileName = getFullPathString(filePath);
 	}
 
+	print("created filePath: '");
+	print(fileName);
+	print("'\n");
+
 	var tree = findSyntaxTree(parser.files, fileName);
 	if (tree != (SyntaxTree)0) {
 		return tree;
@@ -728,10 +732,16 @@ func parse(Parser parser, str fileName, str outerName) -> SyntaxTree {
 
 	tree = createSyntaxTree(fileName, parser.numAnds, parser.numOrs);
 
+	print("created syntaxTree for file: '");
+	print(fileName);
+	print("'\n");
+
 	while (tree.lexer.current.isEOF != (bool)1) {
 		var statement = parseStatement(parser, tree, (Block)0, tree.types, tree.functions, tree.variables, tree.imports);
 		addStatement(tree.statements, statement);
 	}
+
+	freeLexer(tree.lexer);
 
 	addSyntaxTree(parser.files, tree);
 
