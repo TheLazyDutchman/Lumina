@@ -53,7 +53,21 @@ func readFile(str fileName) -> str {
 	var len = lseek(file, 0, SEEK_END);
 	lseek(file, 0, SEEK_SET);
 
+	print("heap start: ");
+	printi((int)_heap_start);
+	print("\n");
+
+	print("heap end before buffer allocation: ");
+	printi((int)curEnd);
+	print("\n");
+
 	var buffer = (str)malloc(len + 1);
+
+	print("curEnd: ");
+	printi((int)curEnd);
+	print(", buffer: ");
+	printi((int)buffer);
+	print("\n");
 
 	if ((int)buffer < 0) {
 		print("[ERROR] could not allocate buffer for file: '");

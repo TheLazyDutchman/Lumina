@@ -1,12 +1,22 @@
 import "syscalls.lumina"
 
-var PAGESIZE = 4096;
+const PAGESIZE = 4096;
+
+const PROT_READ = 1;
+const PROT_WRITE = 2;
+
+const MAP_PRIVATE = 2;
+const MAP_ANONIMOUS = 32;
 
 type _heap_block {
 	int size;
 	bool free;
 	_heap_block prev;
 	_heap_block next;
+}
+
+type _map_header {
+	int size;
 }
 
 var _heap_start = (_heap_block)brk((ptr)0);
@@ -90,6 +100,20 @@ func malloc(int size) -> ptr {
 		return (ptr)0;
 	}
 
+	if (size + sizeof(_map_header) >= PAGESIZE * 2) {
+		var mapSize = PAGESIZE;
+		while (mapSize < size + sizeof(_map_header)) {
+			mapSize = mapSize + PAGESIZE;
+		}
+
+		var addr = mmap((ptr)0, mapSize, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONIMOUS, 0, 0);
+
+		var map = (_map_header)addr;
+		map.size = mapSize - sizeof(_map_header);
+
+		return (ptr)((int)addr + sizeof(_map_header));
+	}
+
 	var block = _heap_start;
 
 	while (block >= _heap_start && (ptr)block < (ptr)((int)curEnd - sizeof(_heap_block))) {
@@ -149,6 +173,12 @@ func malloc(int size) -> ptr {
 }
 
 func free(ptr addr) {
+	if (addr < (ptr)_heap_start || addr > curEnd) {
+		var map = (_map_header)((int)addr - sizeof(_map_header));
+		munmap(addr, map.size);
+		return;
+	}
+
 	var block = (_heap_block)((int)addr - sizeof(_heap_block));
 
 	block.free = 0 == 0; // true keyword not implemented
