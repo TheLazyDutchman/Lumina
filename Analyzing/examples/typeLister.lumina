@@ -31,5 +31,6 @@ while (i < syntaxTree.types.size) {
 	}
 
 	print(typeDef.name.name);
+	print("\n");
 	i = i + 1;
 }
