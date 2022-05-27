@@ -5,6 +5,7 @@ import "operator.lumina"
 import "value.lumina"
 import "type.lumina"
 import "name.lumina"
+import "whitespace.lumina"
 
 
 type SizeOf {

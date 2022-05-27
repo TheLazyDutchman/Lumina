@@ -453,7 +453,7 @@ func writeSizeOf(Parser parser, SyntaxTree tree, Block block, int output, SizeOf
 		return register;
 	}
 
-	var size = getSizeFromType(parser, tree, block, typeDef);
+	var size = getSizeFromType(parser, tree, block, typeDef, (bool)0);
 
 	fprint(output, "	mov ");
 	fprint(output, register);
@@ -669,7 +669,7 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 
 			fprint(output, "] ;; read offset\n");
 
-			var propertySize = getSizeFromType(parser, tree, block, propertyType);
+			var propertySize = getSizeFromType(parser, tree, block, propertyType, (bool)1);
 
 			if (propertySize != 8) {
 				fprint(output, "	and ");
@@ -704,7 +704,7 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 				return register.name;
 			}
 
-			var size = getSizeFromType(parser, tree, block, arrayType);
+			var size = getSizeFromType(parser, tree, block, arrayType, (bool)1);
 
 			var movWord = "mov";
 			if (size != 8) {
@@ -736,7 +736,7 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 				return register.name;
 			}
 
-			var size = getSizeFromType(parser, tree, block, propertyType);
+			var size = getSizeFromType(parser, tree, block, propertyType, (bool)1);
 
 			var movWord = "mov";
 			if (size != 8) {
@@ -899,7 +899,7 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 			return registerA.name;
 		}
 
-		var size = getSizeFromType(parser, tree, block, typeObj);
+		var size = getSizeFromType(parser, tree, block, typeObj, (bool)1);
 		return writeIndex(output, size, registerA, registerB, getValue);
 	} else if (isOperator(operation.operator, "+")) {
 		operationString = "add";
@@ -1184,13 +1184,7 @@ func writeFunctionDefinition(Parser parser, SyntaxTree tree, int output, Functio
 func checkFiles(str fileName) -> Parser {
 	var parser = createParser();
 
-	print("created parser\n");
-
 	parse(parser, fileName, (str)0);
-
-	print("parsed file: '");
-	print(fileName);
-	print("'\n");
 
 	var numFilesNamesBound = 0;
 	while (numFilesNamesBound < parser.files.size) {
@@ -1199,20 +1193,12 @@ func checkFiles(str fileName) -> Parser {
 		numFilesNamesBound = numFilesNamesBound + 1;
 	}
 
-	print("bound names in file: '");
-	print(fileName);
-	print("'\n");
-
 	var numFilesTypeChecked = parser.files.size - 1;
 	while (numFilesTypeChecked >= 0) {
 		var tree = parser.files.list[numFilesTypeChecked];
 		checkTypes(parser, tree);
 		numFilesTypeChecked = numFilesTypeChecked - 1;
 	}
-
-	print("checked types in file: '");
-	print(fileName);
-	print("'\n");
 
 	return parser;
 }
@@ -1268,15 +1254,7 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 		var function = functions.list[i];
 		var tree = findSyntaxTree(parser.files, function.region.file);
 
-		print("compiling function: '");
-		print(function.name.name);
-		print("'\n");
-
 		writeFunctionDefinition(parser, tree, output, function, registers, functions, i);
-
-		print("finished compiling function: '");
-		print(function.name.name);
-		print("'\n");
 
 		i = i + 1;
 	}
@@ -1287,10 +1265,6 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 	while (filesWritten >= 0) {
 		var tree = parser.files.list[filesWritten];
 		writeStatementList(parser, tree, (Block)0, output, tree.statements, registers, functions);
-		print("finished compiling file: '");
-		print(tree.fileName);
-		print("'\n");
-
 		filesWritten = filesWritten - 1;
 	}
 

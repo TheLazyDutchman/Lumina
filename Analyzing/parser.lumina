@@ -17,6 +17,7 @@ import "value.lumina"
 import "immediate.lumina"
 import "if.lumina"
 import "while.lumina"
+import "whitespace.lumina"
 import "name.lumina"
 import "position.lumina"
 import "import.lumina"
@@ -721,10 +722,6 @@ func parse(Parser parser, str fileName, str outerName) -> SyntaxTree {
 		fileName = getFullPathString(filePath);
 	}
 
-	print("created filePath: '");
-	print(fileName);
-	print("'\n");
-
 	var tree = findSyntaxTree(parser.files, fileName);
 	if (tree != (SyntaxTree)0) {
 		return tree;
@@ -732,16 +729,10 @@ func parse(Parser parser, str fileName, str outerName) -> SyntaxTree {
 
 	tree = createSyntaxTree(fileName, parser.numAnds, parser.numOrs);
 
-	print("created syntaxTree for file: '");
-	print(fileName);
-	print("'\n");
-
 	while (tree.lexer.current.isEOF != (bool)1) {
 		var statement = parseStatement(parser, tree, (Block)0, tree.types, tree.functions, tree.variables, tree.imports);
 		addStatement(tree.statements, statement);
 	}
-
-	freeLexer(tree.lexer);
 
 	addSyntaxTree(parser.files, tree);
 
@@ -835,7 +826,7 @@ func getTypeDefinitionFromType(Parser parser, SyntaxTree tree, Block block, Type
 	return typeDef;
 }
 
-func getSizeFromType(Parser parser, SyntaxTree tree, Block block, TypeDefinition typeObj) -> int {
+func getSizeFromType(Parser parser, SyntaxTree tree, Block block, TypeDefinition typeObj, bool isProperty) -> int {
 	if (typeObj == (TypeDefinition)0) {
 		print("type obj is null in 'getSizeFromType'\n");
 		exit(1);
@@ -846,7 +837,7 @@ func getSizeFromType(Parser parser, SyntaxTree tree, Block block, TypeDefinition
 		return 8;
 	}
 
-	if (typeObj.properties.size == 0) {
+	if (typeObj.properties.size == 0 || isProperty) {
 		return typeObj.size;
 	}
 
@@ -863,7 +854,7 @@ func getSizeFromType(Parser parser, SyntaxTree tree, Block block, TypeDefinition
 			return 0;
 		}
 
-		sum = sum + getSizeFromType(parser, tree, block, propertyType);
+		sum = sum + getSizeFromType(parser, tree, block, propertyType, (bool)1);
 		i = i + 1;
 	}
 
@@ -889,7 +880,7 @@ func getPropertyOffset(Parser parser, SyntaxTree tree, Block block, TypeDefiniti
 			return 0;
 		}
 
-		sum = sum + getSizeFromType(parser, tree, block, propertyType);
+		sum = sum + getSizeFromType(parser, tree, block, propertyType, (bool)1);
 		i = i + 1;
 	}
 

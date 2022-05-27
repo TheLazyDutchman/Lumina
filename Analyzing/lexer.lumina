@@ -99,15 +99,6 @@ func createLexer(str fileName) -> Lexer {
 	return lexer;
 }
 
-func freeLexer(Lexer lexer) {
-	if ((ptr)lexer.file < curEnd) {
-		free((ptr)lexer.file);
-	}
-
-	free((ptr)lexer.buffer);
-	free((ptr)lexer);
-}
-
 func createToken() -> Token {
 	var token = (Token)malloc(sizeof(Token) * 2); // there is a bug with malloc, so we allocate more memory than needed
 

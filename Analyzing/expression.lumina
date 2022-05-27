@@ -3,6 +3,7 @@ import "../std/memory.lumina"
 import "position.lumina"
 import "operation.lumina"
 import "operator.lumina"
+import "whitespace.lumina"
 
 
 type Expression {

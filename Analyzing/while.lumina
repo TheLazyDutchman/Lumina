@@ -4,6 +4,7 @@ import "position.lumina"
 import "operator.lumina"
 import "operation.lumina"
 import "name.lumina"
+import "whitespace.lumina"
 
 
 type While {

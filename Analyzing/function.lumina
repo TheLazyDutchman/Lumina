@@ -8,6 +8,7 @@ import "operation.lumina"
 import "operator.lumina"
 import "type.lumina"
 import "variable.lumina"
+import "whitespace.lumina"
 
 
 type Parameter {

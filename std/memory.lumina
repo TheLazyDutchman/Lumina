@@ -16,10 +16,10 @@ var _heapHead = brk((ptr)0);
 var curEnd = brk((ptr)((int)_heapHead + PAGESIZE * 4));
 
 func expandHeap(int size) -> int {
-	var totalSize = PAGESIZE;
+	var totalSize = PAGESIZE * 4;
 
 	while (totalSize < size) {
-	totalSize = totalSize + PAGESIZE;
+		totalSize = totalSize + PAGESIZE;
 	}
 
 	var oldEnd = curEnd;
@@ -28,8 +28,6 @@ func expandHeap(int size) -> int {
 	if (oldEnd >= curEnd) {
 	syscall(1, 1, "could not expand heap\n", 22, 0, 0, 0);
 	}
-
-	syscall(1, 1, "expanded heap\n", 14, 0, 0, 0);
 
 	return totalSize;
 }
@@ -49,8 +47,8 @@ func malloc(int size) -> ptr {
 	}
 
 	var oldEnd = curEnd;
-	if ((int)_heapHead + size >= (int)curEnd) {
-			expandHeap(size);
+	if ((int)_heapHead + size * 2 >= (int)curEnd) {
+		expandHeap(size);
 
 		if (oldEnd >= curEnd) {
 			syscall(1, 1, "did not expand heap\n", 20, 0, 0, 0);

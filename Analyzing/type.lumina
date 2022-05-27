@@ -5,6 +5,7 @@ import "../std/io.lumina"
 import "name.lumina" 
 import "operator.lumina"
 import "position.lumina"
+import "whitespace.lumina"
 
 
 type Type {

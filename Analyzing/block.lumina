@@ -6,6 +6,8 @@ import "statement.lumina"
 import "type.lumina"
 import "function.lumina"
 import "variable.lumina"
+import "name.lumina"
+import "whitespace.lumina"
 
 
 type Block {

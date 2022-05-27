@@ -6,6 +6,8 @@ import "name.lumina"
 import "operation.lumina"
 import "operator.lumina"
 import "type.lumina"
+import "whitespace.lumina"
+import "position.lumina"
 
 
 type VariableDefinition {
