@@ -454,6 +454,7 @@ func parseVariableDefinition(Parser parser, SyntaxTree tree, int depth, int posi
 	next(tree.lexer);
 
 	var name = consumeIdentifier(parser, tree);
+
 	var equalSign = consumeOperator(parser, tree, "=", (bool)0);
 	var value = parseExpression(parser, tree, PREC_expression);
 	var semicolon = consumeOperator(parser, tree, ";", (bool)0);
@@ -647,16 +648,20 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 		if (depth == 0) {
 			size = size + parser.variables.size + 1;
 
-			var treeIndex = getSyntaxTreeIndex(parser.files, tree) + 1;
-			while (treeIndex < parser.files.size) {
-				size = size + parser.files.list[treeIndex].variables.size;
-				treeIndex = treeIndex + 1;
+			var i = 1;
+			while (i < parser.files.size) {
+				var tree = parser.files.list[i];
+				size = size + tree.variables.size;
+
+				i = i + 1;
 			}
 
 			size = size + tree.variables.size;
 		}
 
 		if (block != (Block)0) {
+			size = size + block.variables.size;
+
 			var outerBlock = block;
 			while (outerBlock.outer != (Block)0 && outerBlock.outer.depth == depth) {
 				outerBlock = outerBlock.outer;

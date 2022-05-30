@@ -26,7 +26,7 @@ func expandHeap(int size) -> int {
 	curEnd = brk((ptr)((int)curEnd + totalSize));
 
 	if (oldEnd >= curEnd) {
-	syscall(1, 1, "could not expand heap\n", 22, 0, 0, 0);
+		syscall(1, 1, "could not expand heap\n", 22, 0, 0, 0);
 	}
 
 	return totalSize;
@@ -47,8 +47,8 @@ func malloc(int size) -> ptr {
 	}
 
 	var oldEnd = curEnd;
-	if ((int)_heapHead + size * 2 >= (int)curEnd) {
-		expandHeap(size);
+	if ((int)_heapHead + size * 4 >= (int)curEnd) {
+		expandHeap(size * 3);
 
 		if (oldEnd >= curEnd) {
 			syscall(1, 1, "did not expand heap\n", 20, 0, 0, 0);

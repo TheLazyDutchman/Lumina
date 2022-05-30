@@ -1237,6 +1237,10 @@ func createChild(str name, str[] args) -> int {
 func CompileLinuxx86_nasm(str fileName, bool debug) {
 	var parser = checkFiles(fileName);
 
+	print("[FILE] checked file: '");
+	print(fileName);
+	print("'\n");
+
 	const O_WRONLY = 1;
 	const O_CREAT = 64;
 	const O_TRUNC = 512;
@@ -1261,12 +1265,23 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 
 	writeStart(output);
 
-	var filesWritten = parser.files.size - 1;
-	while (filesWritten >= 0) {
+	// write all imported files in order of importing, then write main file
+	// TODO: clean up how imports work, link: https://github.com/TheLazyDutchmen/Lumina/issues/40
+	var filesWritten = 1;
+	while (filesWritten < parser.files.size) {
 		var tree = parser.files.list[filesWritten];
+
+		fprint(output, ";; starting file: '");
+		fprint(output, tree.fileName);
+		fprint(output, "'\n");
+
 		writeStatementList(parser, tree, (Block)0, output, tree.statements, registers, functions);
-		filesWritten = filesWritten - 1;
+
+		filesWritten = filesWritten + 1;
 	}
+
+	var tree = parser.files.list[0];
+	writeStatementList(parser, tree, (Block)0, output, tree.statements, registers, functions);
 
 	writeFooter(output, parser.strings);
 
