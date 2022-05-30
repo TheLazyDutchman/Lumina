@@ -145,7 +145,7 @@ func createTypeDefinition(Name keyword, Name name, Operator lbrace, PropertyList
 
 	typeDef.keyword = keyword;
 	typeDef.name = name;
-	typeDef.size = 0;
+	typeDef.size = 8;
 	typeDef.lbrace = lbrace;
 	typeDef.properties = properties;
 	typeDef.rbrace = rbrace;

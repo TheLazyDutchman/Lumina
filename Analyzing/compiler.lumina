@@ -672,10 +672,12 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 			var propertySize = getSizeFromType(parser, tree, block, propertyType, (bool)1);
 
 			if (propertySize != 8) {
+				var mask = (1 << (8 * propertySize)) - 1;
+
 				fprint(output, "	and ");
 				fprint(output, register.name);
 				fprint(output, ", ");
-				fprinti(output, (1 << (8 * propertySize)) - 1);
+				fprinti(output, mask);
 				fprint(output, " ;; mask\n");
 			}
 		} else if (offset != 0) {
@@ -945,7 +947,7 @@ func writeReturn(Parser parser, SyntaxTree tree, Block block, int output, Return
 		block = block.outer;
 	}
 
-	numVariables = numVariables;
+	numVariables = numVariables + block.variables.size;
 
 	fprint(output, "	xchg rsp, [datarsp]\n");
 
