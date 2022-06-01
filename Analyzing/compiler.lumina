@@ -942,12 +942,32 @@ func writeReturn(Parser parser, SyntaxTree tree, Block block, int output, Return
 	}
 
 	var numVariables = 0;
+
 	while (block.function == (FunctionDefinition)0) {
-		numVariables = numVariables + block.variables.size;
+		var i = 0;
+		while (i < block.variables.size) {
+			if (block.variables.list[i].region.start.index < returnStatement.region.start.index) {
+				numVariables = numVariables + 1;
+			} else {
+				i = block.variables.size;
+			}
+
+			i = i + 1;
+		}
+
 		block = block.outer;
 	}
 
-	numVariables = numVariables + block.variables.size;
+	var i = 0;
+	while (i < block.variables.size) {
+		if (block.variables.list[i].region.start.index < returnStatement.region.start.index) {
+			numVariables = numVariables + 1;
+		} else {
+			i = block.variables.size;
+		}
+
+		i = i + 1;
+	}
 
 	fprint(output, "	xchg rsp, [datarsp]\n");
 
@@ -1195,12 +1215,32 @@ func checkFiles(str fileName) -> Parser {
 		numFilesNamesBound = numFilesNamesBound + 1;
 	}
 
+	var numImportedVars = 0;
+	var files = 1;
+	while (files < parser.files.size) {
+		numImportedVars = numImportedVars + parser.files.list[files].variables.size;
+		files = files + 1;
+	}
+
+	var tree = parser.files.list[0];
+	var i = 0;
+
+	while (i < tree.variables.size) {
+		var variable = tree.variables.list[i];
+		variable.position = variable.position + numImportedVars;
+		i = i + 1;
+	}
+
+	print("[FILE] parsed files\n");
+
 	var numFilesTypeChecked = parser.files.size - 1;
 	while (numFilesTypeChecked >= 0) {
 		var tree = parser.files.list[numFilesTypeChecked];
 		checkTypes(parser, tree);
 		numFilesTypeChecked = numFilesTypeChecked - 1;
 	}
+
+	print("[FILE] type checked files\n");
 
 	return parser;
 }
