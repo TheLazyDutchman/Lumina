@@ -38,6 +38,7 @@ type RegisterList {
 }
 
 const CALLSTACKSIZE = 2048;
+const DATASTACKSIZE = 4096;
 
 func createRegister(str name) -> Register {
 	var reg = (Register)malloc(sizeof(Register));
@@ -196,7 +197,7 @@ func writeHeader(int output) {
 func writeStart(int output) {
 	fprint(output, "_start:\n");
 	fprint(output, "	lea rax, [datastack + ");
-	fprinti(output, CALLSTACKSIZE);
+	fprinti(output, DATASTACKSIZE);
 	fprint(output, "]\n");
 	fprint(output, "	mov [basestack], rax\n");
 	fprint(output, "	xchg rsp, rax\n");
@@ -222,7 +223,7 @@ func writeFooter(int output, StringList strings) {
 
 	fprint(output, "	datarsp: resq 1\n");
 	fprint(output, "	datastack: resq ");
-	fprinti(output, CALLSTACKSIZE);
+	fprinti(output, DATASTACKSIZE);
 	fprint(output, "\n");
 	
 	fprint(output, "section .data\n");
@@ -471,8 +472,8 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 		var i = 0;
 		while (i < functions.size) {
 			if (streq(functions.list[i].name.name, name)) {
-			id = i;
-			i = functions.size;
+				id = i;
+				i = functions.size;
 			}
 			i = i + 1;
 		}
@@ -513,13 +514,13 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 			fprint(output, ", rax ;; return value\n");
 		}
 
-		i = 0;
-		while (i < registers.size) {
+		i = registers.size - 1;
+		while (i >= 0) {
 			var reg = registers.list[i];
 			if (reg.used && reg != register) {
-			writePopData(output, reg);
+				writePopData(output, reg);
 			}
-			i = i + 1;
+			i = i - 1;
 		}
 
 		return register.name;
@@ -1279,6 +1280,8 @@ func createChild(str name, str[] args) -> int {
 func CompileLinuxx86_nasm(str fileName, bool debug) {
 	var parser = checkFiles(fileName);
 
+	var filePath = getPathFromString(fileName);
+
 	print("[FILE] checked file: '");
 	print(fileName);
 	print("'\n");
@@ -1288,7 +1291,10 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 	const O_TRUNC = 512;
 
 	const ALLOW_ALL = 511;
-	var output = open("output.asm", O_WRONLY | O_CREAT | O_TRUNC, ALLOW_ALL);
+
+	filePath.extension = "asm";
+	var outputName = getFullPathString(filePath);
+	var output = open(outputName, O_WRONLY | O_CREAT | O_TRUNC, ALLOW_ALL);
 
 	var registers = initRegisters();
 
@@ -1334,14 +1340,14 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 	nasmDebugArgs[3] = "-F";
 	nasmDebugArgs[4] = "dwarf";
 	nasmDebugArgs[5] = "-g";
-	nasmDebugArgs[6] = "output.asm";
+	nasmDebugArgs[6] = outputName;
 	nasmDebugArgs[7] = (str)0;
 
 	var nasmArgs = (str[])malloc(8 * 5); // ptr size is 8
 	nasmArgs[0] = "nasm";
 	nasmArgs[1] = "-f";
 	nasmArgs[2] = "elf64";
-	nasmArgs[3] = "output.asm";
+	nasmArgs[3] = outputName;
 	nasmArgs[4] = (str)0;
 
 	var nasm_pid = 0;
@@ -1367,11 +1373,17 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 		}
 	}
 
+	filePath.extension = "o";
+	var objectName = getFullPathString(filePath);
+
+	filePath.extension = (str)0;
+	var executableName = getFullPathString(filePath);
+
 	var linkerArgs = (str[])malloc(8 * 5);
 	linkerArgs[0] = "ld";
 	linkerArgs[1] = "-o";
-	linkerArgs[2] = "output";
-	linkerArgs[3] = "output.o";
+	linkerArgs[2] = executableName;
+	linkerArgs[3] = objectName;
 	linkerArgs[4] = (str)0;
 
 	var linkerStatus = (int[])malloc(8); // pointer to int
