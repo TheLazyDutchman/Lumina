@@ -295,119 +295,119 @@ func parseTypeDefinition(Parser parser, SyntaxTree tree) -> TypeDefinition {
 	return createTypeDefinition(keyword, typeName, lbrace, properties, rbrace);
 }
 
-func parseExpression(Parser parser, SyntaxTree tree, int precedence) -> Operation {
-	func parseUnary(Parser parser, SyntaxTree tree) -> Operation {
-		func parseGroup(Parser parser, SyntaxTree tree) -> Operation {
-			var lparen = consumeOperator(parser, tree, "(", (bool)0);
+func parseGroup(Parser parser, SyntaxTree tree) -> Operation {
+	var lparen = consumeOperator(parser, tree, "(", (bool)0);
 
-			if (isIdentifier(tree.lexer.current.name)) {
-				var typeObj = parseType(parser, tree, (bool)1);
-				var rparen = consumeOperator(parser, tree, ")", (bool)0);
-
-				var operation = parseExpression(parser, tree, PREC_index);
-				return createTypeCast(lparen, typeObj, rparen, operation);
-			}
-
-			var operation = parseExpression(parser, tree, PREC_expression);
-			var rparen = consumeOperator(parser, tree, ")", (bool)0);
-
-			var group = createUnaryOperation(lparen, operation, rparen);
-			return group;
-		}
-
-		func parseNegative(Parser parser, SyntaxTree tree) -> Operation {
-			var operator = consumeOperator(parser, tree, "-", (bool)0);
-
-			var operation = parseUnary(parser, tree);
-			return createUnaryOperation(operator, operation, (Operator)0);
-		}
-
-		func parseSizeof(Parser parser, SyntaxTree tree) -> Operation {
-			var keyword = consumeKeyword(parser, tree, KEYWORD_sizeof);
-			var lparen = consumeOperator(parser, tree, "(", (bool)0);
-			var typeObj = parseType(parser, tree, (bool)0);
-			var rparen = consumeOperator(parser, tree, ")", (bool)0);
-
-			var sizeOf = createSizeOf(keyword, lparen, typeObj, rparen);
-			return createOperationFromSizeOf(sizeOf);
-		}
-
-		var value = (Value)0;
-
-		if (isNumber(tree.lexer.current)) {
-			value = createValueFromNumber(tree.lexer.current.number);
-		} else if (isCharacter(tree.lexer.current)) {
-			value = createValueFromCharacter(tree.lexer.current.character);
-		} else if (isString(tree.lexer.current)) {
-			value = createValueFromString(tree.lexer.current.string);
-		} else if (isIdentifier(tree.lexer.current.name)) {
-			value = createValueFromIdentifier(tree.lexer.current.name);
-		}
-
-		if (value != (Value)0) {
-			next(tree.lexer);
-			return createOperationFromValue(value);
-		}
-
-		if (isKeyword(tree.lexer.current.name, KEYWORD_sizeof)) {
-			return parseSizeof(parser, tree);
-		}
-
-		if (isOperator(tree.lexer.current.operator, "-")) {
-			return parseNegative(parser, tree);
-		}
-
-		if (isOperator(tree.lexer.current.operator, "(")) {
-			return parseGroup(parser, tree);
-		}
-
-		if (tree.lexer.current.operator == (Operator)0) {
-			printPosition(createPositionFromLexer(tree.lexer));
-			print("operator is null\n");
-		} else {
-			printPosition(tree.lexer.current.operator.position);
-			print(" '");
-			print(tree.lexer.current.operator.name);
-			print("', ");
-		}
-
-		print("do not recognise as unary\n");
-
-		next(tree.lexer);
-		return (Operation)0;
-	}
-
-	func parseIndex(SyntaxTree tree, Operation left) -> Operation {
-		var lbracket = consumeOperator(parser, tree, "[", (bool)0);
-		var index = parseExpression(parser, tree, PREC_expression);
-		var rbracket = consumeOperator(parser, tree, "]", (bool)0);
-
-		return createOperation(left, lbracket, index, rbracket);
-	}
-
-	func parseCall(SyntaxTree tree, Operation left) -> Operation {
-		var lparen = consumeOperator(parser, tree, "(", (bool)0);
-
-		if (isOperator(tree.lexer.current.operator, ")")) {
-			var rparen = consumeOperator(parser, tree, ")", (bool)0);
-			return createOperation(left, lparen, (Operation)0, rparen);
-		}
-
-		var args = parseExpression(parser, tree, PREC_expression);
-
-		while (isOperator(tree.lexer.current.operator, ",")) {
-			var comma = consumeOperator(parser, tree, ",", (bool)0);
-
-			var right = parseExpression(parser, tree, PREC_expression);
-
-			args = createOperation(args, comma, right, (Operator)0);
-		}
-
+	if (isIdentifier(tree.lexer.current.name)) {
+		var typeObj = parseType(parser, tree, (bool)1);
 		var rparen = consumeOperator(parser, tree, ")", (bool)0);
 
-		return createOperation(left, lparen, args, rparen);
+		var operation = parseExpression(parser, tree, PREC_index);
+		return createTypeCast(lparen, typeObj, rparen, operation);
 	}
 
+	var operation = parseExpression(parser, tree, PREC_expression);
+	var rparen = consumeOperator(parser, tree, ")", (bool)0);
+
+	var group = createUnaryOperation(lparen, operation, rparen);
+	return group;
+}
+
+func parseNegative(Parser parser, SyntaxTree tree) -> Operation {
+	var operator = consumeOperator(parser, tree, "-", (bool)0);
+
+	var operation = parseUnary(parser, tree);
+	return createUnaryOperation(operator, operation, (Operator)0);
+}
+
+func parseSizeof(Parser parser, SyntaxTree tree) -> Operation {
+	var keyword = consumeKeyword(parser, tree, KEYWORD_sizeof);
+	var lparen = consumeOperator(parser, tree, "(", (bool)0);
+	var typeObj = parseType(parser, tree, (bool)0);
+	var rparen = consumeOperator(parser, tree, ")", (bool)0);
+
+	var sizeOf = createSizeOf(keyword, lparen, typeObj, rparen);
+	return createOperationFromSizeOf(sizeOf);
+}
+
+func parseUnary(Parser parser, SyntaxTree tree) -> Operation {
+	var value = (Value)0;
+
+	if (isNumber(tree.lexer.current)) {
+		value = createValueFromNumber(tree.lexer.current.number);
+	} else if (isCharacter(tree.lexer.current)) {
+		value = createValueFromCharacter(tree.lexer.current.character);
+	} else if (isString(tree.lexer.current)) {
+		value = createValueFromString(tree.lexer.current.string);
+	} else if (isIdentifier(tree.lexer.current.name)) {
+		value = createValueFromIdentifier(tree.lexer.current.name);
+	}
+
+	if (value != (Value)0) {
+		next(tree.lexer);
+		return createOperationFromValue(value);
+	}
+
+	if (isKeyword(tree.lexer.current.name, KEYWORD_sizeof)) {
+		return parseSizeof(parser, tree);
+	}
+
+	if (isOperator(tree.lexer.current.operator, "-")) {
+		return parseNegative(parser, tree);
+	}
+
+	if (isOperator(tree.lexer.current.operator, "(")) {
+		return parseGroup(parser, tree);
+	}
+
+	if (tree.lexer.current.operator == (Operator)0) {
+		printPosition(createPositionFromLexer(tree.lexer));
+		print("operator is null\n");
+	} else {
+		printPosition(tree.lexer.current.operator.position);
+		print(" '");
+		print(tree.lexer.current.operator.name);
+		print("', ");
+	}
+
+	print("do not recognise as unary\n");
+
+	next(tree.lexer);
+	return (Operation)0;
+}
+
+func parseIndex(Parser parser, SyntaxTree tree, Operation left) -> Operation {
+	var lbracket = consumeOperator(parser, tree, "[", (bool)0);
+	var index = parseExpression(parser, tree, PREC_expression);
+	var rbracket = consumeOperator(parser, tree, "]", (bool)0);
+
+	return createOperation(left, lbracket, index, rbracket);
+}
+
+func parseCall(Parser parser, SyntaxTree tree, Operation left) -> Operation {
+	var lparen = consumeOperator(parser, tree, "(", (bool)0);
+
+	if (isOperator(tree.lexer.current.operator, ")")) {
+		var rparen = consumeOperator(parser, tree, ")", (bool)0);
+		return createOperation(left, lparen, (Operation)0, rparen);
+	}
+
+	var args = parseExpression(parser, tree, PREC_expression);
+
+	while (isOperator(tree.lexer.current.operator, ",")) {
+		var comma = consumeOperator(parser, tree, ",", (bool)0);
+
+		var right = parseExpression(parser, tree, PREC_expression);
+
+		args = createOperation(args, comma, right, (Operator)0);
+	}
+
+	var rparen = consumeOperator(parser, tree, ")", (bool)0);
+
+	return createOperation(left, lparen, args, rparen);
+}
+
+func parseExpression(Parser parser, SyntaxTree tree, int precedence) -> Operation {
 	var operation = parseUnary(parser, tree);
 
 	if (operation == (Operation)0) {
@@ -419,9 +419,9 @@ func parseExpression(Parser parser, SyntaxTree tree, int precedence) -> Operatio
 
 	while (operator != (Operator)0 && operator.precedence >= precedence) {
 		if (isOperator(operator, "[")) {
-			operation = parseIndex(tree, operation);
+			operation = parseIndex(parser, tree, operation);
 		} else if (isOperator(operator, "(")) {
-			operation = parseCall(tree, operation);
+			operation = parseCall(parser, tree, operation);
 		} else {
 			next(tree.lexer);
 
@@ -495,148 +495,148 @@ func parseReturnType(Parser parser, SyntaxTree tree) -> ReturnType {
 	return createReturnType(rarrow, typeObj);
 }
 
-func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeList, FunctionList functionList, VariableList variableList, ImportList importList) -> Statement {
-	func parseBlock(SyntaxTree tree, Block outer, FunctionDefinition function) -> Block {
-		var lbrace = consumeOperator(parser, tree, "{", (bool)0);
+func parseBlock(Parser parser, SyntaxTree tree, Block outer, FunctionDefinition function, ImportList importList) -> Block {
+	var lbrace = consumeOperator(parser, tree, "{", (bool)0);
 
-		var statementList = createStatementList();
-		var typeList = createTypeList();
-		var functionList = createFunctionList();
-		var variableList = createVariableList();
+	var statementList = createStatementList();
+	var typeList = createTypeList();
+	var functionList = createFunctionList();
+	var variableList = createVariableList();
 
-		var block = createBlock(lbrace, statementList, typeList, functionList, variableList, outer, function);
-		addBlock(tree.blocks, block);
+	var block = createBlock(lbrace, statementList, typeList, functionList, variableList, outer, function);
+	addBlock(tree.blocks, block);
 
-		if (block.function != (FunctionDefinition)0) {
-			block.depth = block.depth + 1;
-		}
-
-		while (isOperator(tree.lexer.current.operator, "}") != (bool)1 || tree.lexer.current.isEOF) {
-			var statement = parseStatement(parser, tree, block, typeList, functionList, variableList, importList);
-			addStatement(statementList, statement);
-		}
-
-		var rbrace = consumeOperator(parser, tree, "}", (bool)0);
-
-		setEnd(block, rbrace);
-
-		return block;
+	if (block.function != (FunctionDefinition)0) {
+		block.depth = block.depth + 1;
 	}
 
-	func parseElseIf(Parser parser, SyntaxTree tree, ElseIfList list, Name elseKeyword, Block outer) {
-		var ifKeyword = consumeKeyword(parser, tree, KEYWORD_if);
-		var lparen = consumeOperator(parser, tree, "(", (bool)0);
-		var condition = parseExpression(parser, tree, PREC_expression);
-		var rparen = consumeOperator(parser, tree, ")", (bool)0);
-		var block = parseBlock(tree, outer, (FunctionDefinition)0);
-		var endPosition = block.region.end;
-
-		var elseIf = createElseIf(elseKeyword, ifKeyword, lparen, condition, rparen, block, endPosition, parser.numIfs);
-		parser.numIfs = parser.numIfs + 1;
-		addElseIf(list, elseIf);
+	while (isOperator(tree.lexer.current.operator, "}") != (bool)1 || tree.lexer.current.isEOF) {
+		var statement = parseStatement(parser, tree, block, typeList, functionList, variableList, importList);
+		addStatement(statementList, statement);
 	}
 
-	func parseElse(SyntaxTree tree, Name keyword, Block outer) -> Else {
-		var block = parseBlock(tree, outer, (FunctionDefinition)0);
-		var endPosition = block.region.end;
+	var rbrace = consumeOperator(parser, tree, "}", (bool)0);
 
-		return createElse(keyword, block, endPosition);
+	setEnd(block, rbrace);
+
+	return block;
+}
+
+func parseElseIf(Parser parser, SyntaxTree tree, ElseIfList list, Name elseKeyword, Block outer, ImportList importList) {
+	var ifKeyword = consumeKeyword(parser, tree, KEYWORD_if);
+	var lparen = consumeOperator(parser, tree, "(", (bool)0);
+	var condition = parseExpression(parser, tree, PREC_expression);
+	var rparen = consumeOperator(parser, tree, ")", (bool)0);
+	var block = parseBlock(parser, tree, outer, (FunctionDefinition)0, importList);
+	var endPosition = block.region.end;
+
+	var elseIf = createElseIf(elseKeyword, ifKeyword, lparen, condition, rparen, block, endPosition, parser.numIfs);
+	parser.numIfs = parser.numIfs + 1;
+	addElseIf(list, elseIf);
+}
+
+func parseElse(Parser parser, SyntaxTree tree, Name keyword, Block outer, ImportList importList) -> Else {
+	var block = parseBlock(parser, tree, outer, (FunctionDefinition)0, importList);
+	var endPosition = block.region.end;
+
+	return createElse(keyword, block, endPosition);
+}
+
+func parseIf(Parser parser, SyntaxTree tree, Block outer, ImportList importList) -> If {
+	var ifKeyword = consumeKeyword(parser, tree, KEYWORD_if);
+
+	var lparen = consumeOperator(parser, tree, "(", (bool)0);
+	var condition = parseExpression(parser, tree, PREC_expression);
+	var rparen = consumeOperator(parser, tree, ")", (bool)0);
+	var block = (Block)0;
+	var endPosition = (Position)0;
+
+	if (isOperator(tree.lexer.current.operator, "{")) {
+		block = parseBlock(parser, tree, outer, (FunctionDefinition)0, importList);
+		endPosition = block.region.end;
+	} else {
+		print("expected block after 'if'\n");
 	}
 
-	func parseIf(Parser parser, SyntaxTree tree, Block outer) -> If {
-		var ifKeyword = consumeKeyword(parser, tree, KEYWORD_if);
+	var elseIfs = createElseIfList();
 
-		var lparen = consumeOperator(parser, tree, "(", (bool)0);
-		var condition = parseExpression(parser, tree, PREC_expression);
-		var rparen = consumeOperator(parser, tree, ")", (bool)0);
-		var block = (Block)0;
-		var endPosition = (Position)0;
+	while (isKeyword(tree.lexer.current.name, KEYWORD_else)) {
+		var elseKeyword = consumeKeyword(parser, tree, KEYWORD_else);
 
-		if (isOperator(tree.lexer.current.operator, "{")) {
-			block = parseBlock(tree, outer, (FunctionDefinition)0);
-			endPosition = block.region.end;
+		if (isKeyword(tree.lexer.current.name, KEYWORD_if)) {
+			parseElseIf(parser, tree, elseIfs, elseKeyword, outer, importList);
 		} else {
-			print("expected block after 'if'\n");
+			var elseObj = parseElse(parser, tree, elseKeyword, outer, importList);
+			var ifObj = createIf(ifKeyword, lparen, condition, rparen, block, elseIfs, elseObj, endPosition, parser.numIfs);
+			parser.numIfs = parser.numIfs + 1;
+			return ifObj;
 		}
-
-		var elseIfs = createElseIfList();
-
-		while (isKeyword(tree.lexer.current.name, KEYWORD_else)) {
-			var elseKeyword = consumeKeyword(parser, tree, KEYWORD_else);
-
-			if (isKeyword(tree.lexer.current.name, KEYWORD_if)) {
-				parseElseIf(parser, tree, elseIfs, elseKeyword, outer);
-			} else {
-				var elseObj = parseElse(tree, elseKeyword, outer);
-				var ifObj = createIf(ifKeyword, lparen, condition, rparen, block, elseIfs, elseObj, endPosition, parser.numIfs);
-				parser.numIfs = parser.numIfs + 1;
-				return ifObj;
-			}
-		}
-
-		var ifObj = createIf(ifKeyword, lparen, condition, rparen, block, elseIfs, (Else)0, endPosition, parser.numIfs);
-		parser.numIfs = parser.numIfs + 1;
-		return ifObj;
 	}
 
-	func parseWhile(SyntaxTree tree, Block outer) -> While {
-		var keyword = consumeKeyword(parser, tree, KEYWORD_while);
+	var ifObj = createIf(ifKeyword, lparen, condition, rparen, block, elseIfs, (Else)0, endPosition, parser.numIfs);
+	parser.numIfs = parser.numIfs + 1;
+	return ifObj;
+}
 
-		var lparen = consumeOperator(parser, tree, "(", (bool)0);
-		var condition = parseExpression(parser, tree, PREC_expression);
-		var rparen = consumeOperator(parser, tree, ")", (bool)0);
+func parseWhile(Parser parser, SyntaxTree tree, Block outer, ImportList importList) -> While {
+	var keyword = consumeKeyword(parser, tree, KEYWORD_while);
 
-		var block = (Block)0;
-		var endPosition = (Position)0;
+	var lparen = consumeOperator(parser, tree, "(", (bool)0);
+	var condition = parseExpression(parser, tree, PREC_expression);
+	var rparen = consumeOperator(parser, tree, ")", (bool)0);
 
-		if (isOperator(tree.lexer.current.operator, "{")) {
-			block = parseBlock(tree, outer, (FunctionDefinition)0);
-			endPosition = block.region.end;
-		} else  {
-			print("expected block after while\n");
-		}
+	var block = (Block)0;
+	var endPosition = (Position)0;
 
-		var whileObj = createWhile(keyword, lparen, condition, rparen, block, endPosition, parser.numWhiles);
-		parser.numWhiles = parser.numWhiles + 1;
-		return whileObj;
+	if (isOperator(tree.lexer.current.operator, "{")) {
+		block = parseBlock(parser, tree, outer, (FunctionDefinition)0, importList);
+		endPosition = block.region.end;
+	} else  {
+		print("expected block after while\n");
 	}
 
-	func parseFunctionDefinition(Parser parser, SyntaxTree tree, Block outer) -> FunctionDefinition {
-		var keyword = consumeKeyword(parser, tree, KEYWORD_func);
-		var name = consumeIdentifier(parser, tree);
+	var whileObj = createWhile(keyword, lparen, condition, rparen, block, endPosition, parser.numWhiles);
+	parser.numWhiles = parser.numWhiles + 1;
+	return whileObj;
+}
 
-		var lparen = consumeOperator(parser, tree, "(", (bool)0);
-		var parameters = parseParameterList(parser, tree);
-		var rparen = consumeOperator(parser, tree, ")", (bool)0);
+func parseFunctionDefinition(Parser parser, SyntaxTree tree, Block outer, ImportList importList) -> FunctionDefinition {
+	var keyword = consumeKeyword(parser, tree, KEYWORD_func);
+	var name = consumeIdentifier(parser, tree);
 
-		var returnType = (ReturnType)0;
-		if (isOperator(tree.lexer.current.operator, "->")) {
-			returnType = parseReturnType(parser, tree);
-		}
+	var lparen = consumeOperator(parser, tree, "(", (bool)0);
+	var parameters = parseParameterList(parser, tree);
+	var rparen = consumeOperator(parser, tree, ")", (bool)0);
 
-		var function = createFunctionDefinition(keyword, name, lparen, parameters, rparen, returnType);
-
-		var block = parseBlock(tree, outer, function);
-		function.block = block;
-
-		return function;
+	var returnType = (ReturnType)0;
+	if (isOperator(tree.lexer.current.operator, "->")) {
+		returnType = parseReturnType(parser, tree);
 	}
 
-	func parseReturn(SyntaxTree tree) -> Return {
-		var keyword = consumeKeyword(parser, tree, KEYWORD_return);
+	var function = createFunctionDefinition(keyword, name, lparen, parameters, rparen, returnType);
 
-		if (isOperator(tree.lexer.current.operator, ";")) {
-			var semicolon = consumeOperator(parser, tree, ";", (bool)0);
+	var block = parseBlock(parser, tree, outer, function, importList);
+	function.block = block;
 
-			return createReturn(keyword, (Operation)0, semicolon);
-		}
+	return function;
+}
 
-		var expression = parseExpression(parser, tree, PREC_expression);
+func parseReturn(Parser parser, SyntaxTree tree) -> Return {
+	var keyword = consumeKeyword(parser, tree, KEYWORD_return);
+
+	if (isOperator(tree.lexer.current.operator, ";")) {
 		var semicolon = consumeOperator(parser, tree, ";", (bool)0);
 
-		return createReturn(keyword, expression, semicolon);
+		return createReturn(keyword, (Operation)0, semicolon);
 	}
 
+	var expression = parseExpression(parser, tree, PREC_expression);
+	var semicolon = consumeOperator(parser, tree, ";", (bool)0);
+
+	return createReturn(keyword, expression, semicolon);
+}
+
+func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeList, FunctionList functionList, VariableList variableList, ImportList importList) -> Statement {
 	if (isKeyword(tree.lexer.current.name, KEYWORD_var) ||
 		isKeyword(tree.lexer.current.name, KEYWORD_const)) {
 		var depth = 0;
@@ -679,17 +679,17 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 
 		return createVariableStatement(variable);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_func)) {
-		var function = parseFunctionDefinition(parser, tree, block);
+		var function = parseFunctionDefinition(parser, tree, block, importList);
 
 		addFunction(functionList, function);
 
 		return createFunctionStatement(function);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_if)) {
-		var ifStatement = parseIf(parser, tree, block);
+		var ifStatement = parseIf(parser, tree, block, importList);
 
 		return createIfStatement(ifStatement);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_while)) {
-		var whileStatement = parseWhile(tree, block);
+		var whileStatement = parseWhile(parser, tree, block, importList);
 
 		return createWhileStatement(whileStatement);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_type)) {
@@ -705,11 +705,11 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 
 		return createImportStatement(importStatement);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_return)) {
-		var returnStatement = parseReturn(tree);
+		var returnStatement = parseReturn(parser, tree);
 
 		return createReturnStatement(returnStatement);
 	} else if (isOperator(tree.lexer.current.operator, "{")) {
-		var innerBlock = parseBlock(tree, block, (FunctionDefinition)0);
+		var innerBlock = parseBlock(parser, tree, block, (FunctionDefinition)0, importList);
 
 		return createBlockStatement(innerBlock, innerBlock.region);
 	}
@@ -1172,115 +1172,115 @@ func checkTypesInSizeOf(Parser parser, SyntaxTree tree, Block block, SizeOf size
 	return parser.int;
 }
 
-func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operation operation) -> TypeDefinition {
-	func getArgumentTypes(Parser parser, SyntaxTree tree, Block block, TypeList list, Operation operation) {
-		if (isOperator(operation.operator, ",")) {
-			getArgumentTypes(parser, tree, block, list, operation.left);
-			var argumentType = checkTypesInOperation(parser, tree, block, operation.right);
-			addType(list, argumentType);
-			return;
-		}
-
-		var argumentType = checkTypesInOperation(parser, tree, block, operation);
+func getArgumentTypes(Parser parser, SyntaxTree tree, Block block, TypeList list, Operation operation) {
+	if (isOperator(operation.operator, ",")) {
+		getArgumentTypes(parser, tree, block, list, operation.left);
+		var argumentType = checkTypesInOperation(parser, tree, block, operation.right);
 		addType(list, argumentType);
+		return;
 	}
 
-	func checkTypesInFunctionCall(Parser parser, SyntaxTree tree, Block block, Operation call) -> TypeDefinition {
-		var functionName = call.left.value.name;
-		var function = findFunctionInParser(parser, tree, block, functionName.name);
+	var argumentType = checkTypesInOperation(parser, tree, block, operation);
+	addType(list, argumentType);
+}
 
-		if (function == (FunctionDefinition)0) {
-			printPosition(functionName.region.start);
-			print(" can not find function with name '");
-			print(functionName.name);
-			print("'\n");
-			return (TypeDefinition)0;
-		}
+func checkTypesInFunctionCall(Parser parser, SyntaxTree tree, Block block, Operation call) -> TypeDefinition {
+	var functionName = call.left.value.name;
+	var function = findFunctionInParser(parser, tree, block, functionName.name);
 
-		var argumentList = createTypeList();
-		if (operation.right != (Operation)0) {
-			getArgumentTypes(parser, tree, block, argumentList, operation.right);
-		}
-
-		var expectedList = createTypeList();
-		var i = 0;
-		while (i < function.parameters.size) {
-			var expectedType = getTypeDefinitionFromType(parser, tree, block, function.parameters.list[i].parameterType);
-			addType(expectedList, expectedType);
-			i = i + 1;
-		}
-
-		i = 0;
-		var j = 0;
-		var typesMatching = (bool)1;
-		while (i < expectedList.size) {
-			var expectedType = expectedList.list[i];
-			var argumentType = (TypeDefinition)0;
-			if (j > argumentList.size) {
-				i = expectedList.size;
-			} else {
-				argumentType = argumentList.list[j];
-			}
-
-			if (compareTypes(parser, argumentType, expectedType)) {
-				j = j + 1;
-			} else {
-				typesMatching = (bool)0;
-			}
-			i = i + 1;
-		}
-
-		if (typesMatching != (bool)1) {
-			printPosition(call.operator.position);
-			print(" arguments do not match\n");
-			print("[NOTE] expected: ");
-			printTypeList(expectedList);
-			print(", got: ");
-			printTypeList(argumentList);
-			print("\n");
-		}
-
-		if (function.returnType == (ReturnType)0) {
-			return parser.null;
-		}
-
-		return getTypeDefinitionFromType(parser, tree, block, function.returnType.returnType);
+	if (function == (FunctionDefinition)0) {
+		printPosition(functionName.region.start);
+		print(" can not find function with name '");
+		print(functionName.name);
+		print("'\n");
+		return (TypeDefinition)0;
 	}
 
-	func checkTypesInProperty(Parser parser, SyntaxTree tree, Block block, Operation operation) -> TypeDefinition {
-		if (isVariable(operation.left) != (bool)1) {
-			printPosition(operation.operator.position);
-			print(" can not read a property from a value that is not a variable\n");
-			return (TypeDefinition)0;
-		}
-
-		var typeObj = checkTypesInOperation(parser, tree, block, operation.left);
-
-		if (typeObj == (TypeDefinition)0) {
-			printPosition(operation.left.region.start);
-			print(" type of struct is undefined\n");
-			return (TypeDefinition)0;
-		}
-
-		var rightValue = operation.right.value;
-		if (rightValue == (Value)0 || rightValue.name == (Name)0) {
-			printPosition(operation.right.region.start);
-			print(" expected an identifier after '.' operator\n");
-			return (TypeDefinition)0;
-		}
-
-		var property = findProperty(typeObj.properties, rightValue.name.name);
-		if (property == (Property)0) {
-			printPosition(operation.right.region.start);
-			print(" could not find property with name '");
-			print(rightValue.name.name);
-			print("'\n");
-			return (TypeDefinition)0;
-		}
-
-		return getTypeDefinitionFromType(parser, tree, block, property.typeName);
+	var argumentList = createTypeList();
+	if (call.right != (Operation)0) {
+		getArgumentTypes(parser, tree, block, argumentList, call.right);
 	}
 
+	var expectedList = createTypeList();
+	var i = 0;
+	while (i < function.parameters.size) {
+		var expectedType = getTypeDefinitionFromType(parser, tree, block, function.parameters.list[i].parameterType);
+		addType(expectedList, expectedType);
+		i = i + 1;
+	}
+
+	i = 0;
+	var j = 0;
+	var typesMatching = (bool)1;
+	while (i < expectedList.size) {
+		var expectedType = expectedList.list[i];
+		var argumentType = (TypeDefinition)0;
+		if (j > argumentList.size) {
+			i = expectedList.size;
+		} else {
+			argumentType = argumentList.list[j];
+		}
+
+		if (compareTypes(parser, argumentType, expectedType)) {
+			j = j + 1;
+		} else {
+			typesMatching = (bool)0;
+		}
+		i = i + 1;
+	}
+
+	if (typesMatching != (bool)1) {
+		printPosition(call.operator.position);
+		print(" arguments do not match\n");
+		print("[NOTE] expected: ");
+		printTypeList(expectedList);
+		print(", got: ");
+		printTypeList(argumentList);
+		print("\n");
+	}
+
+	if (function.returnType == (ReturnType)0) {
+		return parser.null;
+	}
+
+	return getTypeDefinitionFromType(parser, tree, block, function.returnType.returnType);
+}
+
+func checkTypesInProperty(Parser parser, SyntaxTree tree, Block block, Operation operation) -> TypeDefinition {
+	if (isVariable(operation.left) != (bool)1) {
+		printPosition(operation.operator.position);
+		print(" can not read a property from a value that is not a variable\n");
+		return (TypeDefinition)0;
+	}
+
+	var typeObj = checkTypesInOperation(parser, tree, block, operation.left);
+
+	if (typeObj == (TypeDefinition)0) {
+		printPosition(operation.left.region.start);
+		print(" type of struct is undefined\n");
+		return (TypeDefinition)0;
+	}
+
+	var rightValue = operation.right.value;
+	if (rightValue == (Value)0 || rightValue.name == (Name)0) {
+		printPosition(operation.right.region.start);
+		print(" expected an identifier after '.' operator\n");
+		return (TypeDefinition)0;
+	}
+
+	var property = findProperty(typeObj.properties, rightValue.name.name);
+	if (property == (Property)0) {
+		printPosition(operation.right.region.start);
+		print(" could not find property with name '");
+		print(rightValue.name.name);
+		print("'\n");
+		return (TypeDefinition)0;
+	}
+
+	return getTypeDefinitionFromType(parser, tree, block, property.typeName);
+}
+
+func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operation operation) -> TypeDefinition {
 	if (operation == (Operation)0) {
 		print("operation is null\n");
 		return (TypeDefinition)0;
