@@ -5,13 +5,14 @@ import "name.lumina"
 import "operation.lumina"
 import "operator.lumina"
 import "whitespace.lumina"
+import "block.lumina"
 
 
 type Else {
 	Region region;
 
 	Name keyword;
-	int blockId;
+	Block block;
 }
 
 type ElseIf {
@@ -22,7 +23,7 @@ type ElseIf {
 	Operator lparen;
 	Operation condition;
 	Operator rparen;
-	int blockId;
+	Block block;
 
 	int id;
 }
@@ -39,25 +40,25 @@ type If {
 	Operator lparen;
 	Operation condition;
 	Operator rparen;
-	int blockId;
+	Block block;
 	ElseIfList elseIfs;
 	Else elseObj;
 
 	int id;
 }
 
-func createElse(Name keyword, int blockId, Position end) -> Else {
+func createElse(Name keyword, Block block, Position end) -> Else {
 	var elseStatement = (Else)malloc(sizeof(Else));
 
 	elseStatement.region = createRegion(keyword.region.start, end);
 
 	elseStatement.keyword = keyword;
-	elseStatement.blockId = blockId;
+	elseStatement.block = block;
 
 	return elseStatement;
 }
 
-func createElseIf(Name elseKeyword, Name ifKeyword, Operator lparen, Operation condition, Operator rparen, int blockId, Position end, int id) -> ElseIf {
+func createElseIf(Name elseKeyword, Name ifKeyword, Operator lparen, Operation condition, Operator rparen, Block block, Position end, int id) -> ElseIf {
 	var elseIf = (ElseIf)malloc(sizeof(ElseIf));
 
 	elseIf.region = createRegion(elseKeyword.region.start, end);
@@ -67,7 +68,7 @@ func createElseIf(Name elseKeyword, Name ifKeyword, Operator lparen, Operation c
 	elseIf.lparen = lparen;
 	elseIf.condition = condition;
 	elseIf.rparen = rparen;
-	elseIf.blockId = blockId;
+	elseIf.block = block;
 
 	elseIf.id = id;
 
@@ -94,7 +95,7 @@ func addElseIf(ElseIfList list, ElseIf elseIf) {
 	}
 }
 
-func createIf(Name keyword, Operator lparen, Operation condition, Operator rparen, int blockId, ElseIfList elseIfs, Else elseObj, Position end, int id) -> If {
+func createIf(Name keyword, Operator lparen, Operation condition, Operator rparen, Block block, ElseIfList elseIfs, Else elseObj, Position end, int id) -> If {
 	var ifStatement = (If)malloc(sizeof(If));
 
 	if (elseObj != (Else)0) {
@@ -109,7 +110,7 @@ func createIf(Name keyword, Operator lparen, Operation condition, Operator rpare
 	ifStatement.lparen = lparen;
 	ifStatement.condition = condition;
 	ifStatement.rparen = rparen;
-	ifStatement.blockId = blockId;
+	ifStatement.block = block;
 	ifStatement.elseIfs = elseIfs;
 	ifStatement.elseObj = elseObj;
 

@@ -8,6 +8,7 @@ import "import.lumina"
 import "variable.lumina"
 import "function.lumina"
 import "type.lumina"
+import "block.lumina"
 
 
 type Statement {
@@ -20,7 +21,7 @@ type Statement {
 	FunctionDefinition function;
 	TypeDefinition typeStatement;
 	Return returnStatement;
-	int blockStatement;
+	Block blockStatement;
 }
 
 type StatementList {
@@ -41,7 +42,7 @@ func createStatement() -> Statement {
 	statement.function = (FunctionDefinition)0;
 	statement.returnStatement = (Return)0;
 	statement.typeStatement = (TypeDefinition)0;
-	statement.blockStatement = -1;
+	statement.blockStatement = (Block)0;
 
 	return statement;
 }
@@ -118,11 +119,11 @@ func createTypeStatement(TypeDefinition typeStatement) -> Statement {
 	return statement;
 }
 
-func createBlockStatement(int blockId, Region region) -> Statement {
+func createBlockStatement(Block block, Region region) -> Statement {
 	var statement = createStatement();
 
 	statement.region = region;
-	statement.blockStatement = blockId;
+	statement.blockStatement = block;
 
 	return statement;
 }

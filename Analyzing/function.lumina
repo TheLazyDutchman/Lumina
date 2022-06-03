@@ -9,6 +9,7 @@ import "operator.lumina"
 import "type.lumina"
 import "variable.lumina"
 import "whitespace.lumina"
+import "block.lumina"
 
 
 type Parameter {
@@ -44,7 +45,7 @@ type FunctionDefinition {
 
 	ReturnType returnType;
 
-	int blockId;
+	Block block;
 }
 
 type FunctionList {
@@ -144,7 +145,7 @@ func createFunctionDefinition(Name keyword, Name name, Operator lparen, Paramete
 	function.parameters = parameters;
 	function.rparen = rparen;
 	function.returnType = returnType;
-	function.blockId = -1;
+	function.block = (Block)0;
 
 	return function;
 }
@@ -159,7 +160,7 @@ func createFunctionFromString(str value, ParameterList parameters, ReturnType re
 	function.parameters = parameters;
 	function.rparen = (Operator)0;
 	function.returnType = returnType;
-	function.blockId = -1;
+	function.block = (Block)0;
 
 	return function;
 }

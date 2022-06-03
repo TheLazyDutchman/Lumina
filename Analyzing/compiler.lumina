@@ -1033,7 +1033,7 @@ func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output,
 
 		conditionRegister.used = (bool)0;
 
-		writeBlock(parser, tree, block, output, tree.blocks.list[ifStatement.blockId], registers, functions);
+		writeBlock(parser, tree, block, output, ifStatement.block, registers, functions);
 
 		if (ifStatement.elseIfs.size != 0 || ifStatement.elseObj != (Else)0) {
 			writeJump(output, "addr_if_end_", ifStatement.id);
@@ -1047,7 +1047,7 @@ func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output,
 			writeOperation(parser, tree, block, output, elseIf.condition, registers, conditionRegister, (bool)1, functions);
 			writeJumpNotEqual(output, conditionRegister, "addr_if_", elseIf.id);
 
-			writeBlock(parser, tree, block, output, tree.blocks.list[elseIf.blockId], registers, functions);
+			writeBlock(parser, tree, block, output, elseIf.block, registers, functions);
 
 			writeJump(output, "addr_if_end_", ifStatement.id);
 			writeAddress(output, "addr_if_", elseIf.id);
@@ -1055,7 +1055,7 @@ func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output,
 		}
 
 		if (ifStatement.elseObj != (Else)0) {
-			writeBlock(parser, tree, block, output, tree.blocks.list[ifStatement.elseObj.blockId], registers, functions);
+			writeBlock(parser, tree, block, output, ifStatement.elseObj.block, registers, functions);
 		}
 
 		if (ifStatement.elseIfs.size != 0 || ifStatement.elseObj != (Else)0) {
@@ -1073,7 +1073,7 @@ func writeStatementList(Parser parser, SyntaxTree tree, Block block, int output,
 
 		conditionRegister.used = (bool)0;
 
-		writeBlock(parser, tree, block, output, tree.blocks.list[whileStatement.blockId], registers, functions);
+		writeBlock(parser, tree, block, output, whileStatement.block, registers, functions);
 
 		writeJump(output, "addr_while_condition_", whileStatement.id);
 		writeAddress(output, "addr_while_end_", whileStatement.id);
@@ -1112,7 +1112,7 @@ func writeFunctionDefinition(Parser parser, SyntaxTree tree, int output, Functio
 	fprinti(output, id);
 	fprint(output, ":\n");
 
-	var block = tree.blocks.list[function.blockId];
+	var block = function.block;
 
 	var basePointer = getRegister(registers);
 	var baseValue = getRegister(registers);

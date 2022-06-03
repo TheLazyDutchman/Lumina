@@ -496,7 +496,7 @@ func parseReturnType(Parser parser, SyntaxTree tree) -> ReturnType {
 }
 
 func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeList, FunctionList functionList, VariableList variableList, ImportList importList) -> Statement {
-	func parseBlock(SyntaxTree tree, Block outer, FunctionDefinition function) -> int {
+	func parseBlock(SyntaxTree tree, Block outer, FunctionDefinition function) -> Block {
 		var lbrace = consumeOperator(parser, tree, "{", (bool)0);
 
 		var statementList = createStatementList();
@@ -505,7 +505,7 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 		var variableList = createVariableList();
 
 		var block = createBlock(lbrace, statementList, typeList, functionList, variableList, outer, function);
-		var blockIndex = addBlock(tree.blocks, block);
+		addBlock(tree.blocks, block);
 
 		if (block.function != (FunctionDefinition)0) {
 			block.depth = block.depth + 1;
@@ -520,7 +520,7 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 
 		setEnd(block, rbrace);
 
-		return blockIndex;
+		return block;
 	}
 
 	func parseElseIf(Parser parser, SyntaxTree tree, ElseIfList list, Name elseKeyword, Block outer) {
@@ -529,7 +529,7 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 		var condition = parseExpression(parser, tree, PREC_expression);
 		var rparen = consumeOperator(parser, tree, ")", (bool)0);
 		var block = parseBlock(tree, outer, (FunctionDefinition)0);
-		var endPosition = tree.blocks.list[block].region.end;
+		var endPosition = block.region.end;
 
 		var elseIf = createElseIf(elseKeyword, ifKeyword, lparen, condition, rparen, block, endPosition, parser.numIfs);
 		parser.numIfs = parser.numIfs + 1;
@@ -538,7 +538,7 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 
 	func parseElse(SyntaxTree tree, Name keyword, Block outer) -> Else {
 		var block = parseBlock(tree, outer, (FunctionDefinition)0);
-		var endPosition = tree.blocks.list[block].region.end;
+		var endPosition = block.region.end;
 
 		return createElse(keyword, block, endPosition);
 	}
@@ -549,12 +549,12 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 		var lparen = consumeOperator(parser, tree, "(", (bool)0);
 		var condition = parseExpression(parser, tree, PREC_expression);
 		var rparen = consumeOperator(parser, tree, ")", (bool)0);
-		var block = -1;
+		var block = (Block)0;
 		var endPosition = (Position)0;
 
 		if (isOperator(tree.lexer.current.operator, "{")) {
 			block = parseBlock(tree, outer, (FunctionDefinition)0);
-			endPosition = tree.blocks.list[block].region.end;
+			endPosition = block.region.end;
 		} else {
 			print("expected block after 'if'\n");
 		}
@@ -586,12 +586,12 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 		var condition = parseExpression(parser, tree, PREC_expression);
 		var rparen = consumeOperator(parser, tree, ")", (bool)0);
 
-		var block = -1;
+		var block = (Block)0;
 		var endPosition = (Position)0;
 
 		if (isOperator(tree.lexer.current.operator, "{")) {
 			block = parseBlock(tree, outer, (FunctionDefinition)0);
-			endPosition = tree.blocks.list[block].region.end;
+			endPosition = block.region.end;
 		} else  {
 			print("expected block after while\n");
 		}
@@ -617,7 +617,7 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 		var function = createFunctionDefinition(keyword, name, lparen, parameters, rparen, returnType);
 
 		var block = parseBlock(tree, outer, function);
-		function.blockId = block;
+		function.block = block;
 
 		return function;
 	}
@@ -709,9 +709,9 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 
 		return createReturnStatement(returnStatement);
 	} else if (isOperator(tree.lexer.current.operator, "{")) {
-		var blockId = parseBlock(tree, block, (FunctionDefinition)0);
+		var innerBlock = parseBlock(tree, block, (FunctionDefinition)0);
 
-		return createBlockStatement(blockId, tree.blocks.list[blockId].region);
+		return createBlockStatement(innerBlock, innerBlock.region);
 	}
 
 	var operation = parseExpression(parser, tree, PREC_assignment);
