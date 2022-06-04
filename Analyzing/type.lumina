@@ -5,6 +5,7 @@ import "../std/io.lumina"
 import "name.lumina" 
 import "operator.lumina"
 import "position.lumina"
+import "whitespace.lumina"
 
 
 type Type {
@@ -68,12 +69,12 @@ func createType(Name name, OperatorList brackets) -> Type {
 }
 
 func createTypeObjFromString(str typeName) -> Type {
-    var typeObj = (Type)malloc(sizeof(Type));
+	var typeObj = (Type)malloc(sizeof(Type));
 
-    typeObj.name = createNameFromString(typeName);
-    typeObj.brackets = createOperatorList();
+	typeObj.name = createNameFromString(typeName);
+	typeObj.brackets = createOperatorList();
 
-    return typeObj;
+	return typeObj;
 }
 
 func createProperty(Type typeName, Name name, Operator semicolon) -> Property {
@@ -117,22 +118,18 @@ func addProperty(PropertyList list, Property property) {
 }
 
 func findProperty(PropertyList list, str name) -> Property {
-    var i = 0;
-    while (i < list.size) {
-	if (streq(list.list[i].name.name, name)) {
-	    return list.list[i];
+	var i = 0;
+	while (i < list.size) {
+		if (streq(list.list[i].name.name, name)) {
+			return list.list[i];
+		}
+		i = i + 1;
 	}
-	i = i + 1;
-    }
-    return (Property)0;
+	return (Property)0;
 }
 
 func createTypeDefinition(Name keyword, Name name, Operator lbrace, PropertyList properties, Operator rbrace) -> TypeDefinition {
 	var typeDef = (TypeDefinition)malloc(sizeof(TypeDefinition));
-
-//	if (isKeyword(keyword, KEYWORD_type) != (bool)1) {
-//		print("expected 'type' keyword for type definition\n");
-//	}
 
 	if (isIdentifier(name) != (bool)1) {
 		print("expected type name to be an identifier\n");
@@ -148,7 +145,7 @@ func createTypeDefinition(Name keyword, Name name, Operator lbrace, PropertyList
 
 	typeDef.keyword = keyword;
 	typeDef.name = name;
-	typeDef.size = 0;
+	typeDef.size = 8;
 	typeDef.lbrace = lbrace;
 	typeDef.properties = properties;
 	typeDef.rbrace = rbrace;
@@ -161,45 +158,45 @@ func createTypeDefinition(Name keyword, Name name, Operator lbrace, PropertyList
 }
 
 func createTypeFromString(str value, int size) -> TypeDefinition {
-    var typeDef = (TypeDefinition)malloc(sizeof(TypeDefinition));
+	var typeDef = (TypeDefinition)malloc(sizeof(TypeDefinition));
 
-    typeDef.region = (Region)0;
-    typeDef.keyword = (Name)0;
-    typeDef.name = createNameFromString(value);
-    typeDef.size = size;
-    typeDef.lbrace = (Operator)0;
-    typeDef.properties = createPropertyList();
-    typeDef.rbrace = (Operator)0;
-    typeDef.listOf = (TypeDefinition)0;
-    typeDef.arrayType = (TypeDefinition)0;
+	typeDef.region = (Region)0;
+	typeDef.keyword = (Name)0;
+	typeDef.name = createNameFromString(value);
+	typeDef.size = size;
+	typeDef.lbrace = (Operator)0;
+	typeDef.properties = createPropertyList();
+	typeDef.rbrace = (Operator)0;
+	typeDef.listOf = (TypeDefinition)0;
+	typeDef.arrayType = (TypeDefinition)0;
 
-    return typeDef;
+	return typeDef;
 }
 
 func createArrayFrom(str name, TypeDefinition arrayType) -> TypeDefinition {
-    if (arrayType.listOf != (TypeDefinition)0) {
-	return arrayType.listOf;
-    }
+	if (arrayType.listOf != (TypeDefinition)0) {
+		return arrayType.listOf;
+	}
 
-    var typeDef = (TypeDefinition)malloc(sizeof(TypeDefinition));
+	var typeDef = (TypeDefinition)malloc(sizeof(TypeDefinition));
 
-    typeDef.region = (Region)0;
-    typeDef.keyword = (Name)0;
-    if (name == (str)0) {
-	typeDef.name = (Name)0;
-    } else {
-	typeDef.name = createNameFromString(name);
-    }
-    typeDef.lbrace = (Operator)0;
-    typeDef.properties = createPropertyList();
-    typeDef.rbrace = (Operator)0;
+	typeDef.region = (Region)0;
+	typeDef.keyword = (Name)0;
+	if (name == (str)0) {
+		typeDef.name = (Name)0;
+	} else {
+		typeDef.name = createNameFromString(name);
+	}
+	typeDef.lbrace = (Operator)0;
+	typeDef.properties = createPropertyList();
+	typeDef.rbrace = (Operator)0;
 
-    typeDef.arrayType = arrayType;
-    typeDef.listOf = (TypeDefinition)0;
+	typeDef.arrayType = arrayType;
+	typeDef.listOf = (TypeDefinition)0;
 
-    arrayType.listOf = typeDef;
+	arrayType.listOf = typeDef;
 
-    return typeDef;
+	return typeDef;
 }
 
 func createTypeList() -> TypeList {
@@ -223,38 +220,38 @@ func addType(TypeList list, TypeDefinition typeDefinition) {
 }
 
 func findType(TypeList list, str name) -> TypeDefinition {
-    var i = 0;
-    while (i < list.size) {
-	if (streq(list.list[i].name.name, name)) {
-	    return list.list[i];
+	var i = 0;
+	while (i < list.size) {
+		if (streq(list.list[i].name.name, name)) {
+			return list.list[i];
+		}
+		i = i + 1;
 	}
-	i = i + 1;
-    }
-    return (TypeDefinition)0;
+	return (TypeDefinition)0;
 }
 
 func printType(TypeDefinition typeObj) {
-    if (typeObj == (TypeDefinition)0) {
-	print("type is null");
-	return;
-    }
+	if (typeObj == (TypeDefinition)0) {
+		print("type is null");
+		return;
+	}
 
-    if (typeObj.name == (Name)0) {
-	print("type name is null");
-    }
+	if (typeObj.name == (Name)0) {
+		print("type name is null");
+	}
 
-    print(typeObj.name.name);
+	print(typeObj.name.name);
 }
 
 func printTypeList(TypeList list) {
-    var i = 0;
-    print("[");
-    while (i < list.size) {
-	printType(list.list[i]);
-	if (i != list.size) {
-	    print(",");
+	var i = 0;
+	print("[");
+	while (i < list.size) {
+		printType(list.list[i]);
+		if (i != list.size) {
+			print(",");
+		}
+		i = i + 1;
 	}
-	i = i + 1;
-    }
-    print("]");
+	print("]");
 }

@@ -177,7 +177,7 @@ func mprotect(int start, int len, int prot) -> int {
 	return (int)syscall(SYSMPROTECT, start, len, prot, 0, 0, 0);
 }
 
-func munmap(int addr, int len) -> int {
+func munmap(ptr addr, int len) -> int {
 	return (int)syscall(SYSMUNMAP, addr, len, 0, 0, 0, 0);
 }
 

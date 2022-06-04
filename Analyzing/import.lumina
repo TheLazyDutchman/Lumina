@@ -3,6 +3,7 @@ import "../std/memory.lumina"
 import "position.lumina"
 import "name.lumina"
 import "immediate.lumina"
+import "whitespace.lumina"
 
 
 type Import {
@@ -12,9 +13,9 @@ type Import {
 }
 
 type ImportList {
-    int size;
-    int maxSize;
-    Import[] list;
+	int size;
+	int maxSize;
+	Import[] list;
 }
 
 func createImport(Name keyword, String fileName) -> Import {
@@ -28,22 +29,22 @@ func createImport(Name keyword, String fileName) -> Import {
 }
 
 func createImportList() -> ImportList {
-    var list = (ImportList)malloc(sizeof(ImportList));
+	var list = (ImportList)malloc(sizeof(ImportList));
 
-    list.size = 0;
-    list.maxSize = 8;
+	list.size = 0;
+	list.maxSize = 8;
 
-    list.list = (Import[])malloc(8 * 8);
+	list.list = (Import[])malloc(8 * 8);
 
-    return list;
+	return list;
 }
 
 func addImport(ImportList list, Import importObj) {
-    list.list[list.size] = importObj;
-    list.size = list.size + 1;
+	list.list[list.size] = importObj;
+	list.size = list.size + 1;
 
-    if (list.size == list.maxSize) {
-	list.list = (Import[])realloc((ptr)list.list, list.maxSize * 8, list.maxSize * 8 * 2);
-	list.maxSize = list.maxSize * 2;
-    }
+	if (list.size == list.maxSize) {
+		list.list = (Import[])realloc((ptr)list.list, list.maxSize * 8, list.maxSize * 8 * 2);
+		list.maxSize = list.maxSize * 2;
+	}
 }

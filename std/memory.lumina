@@ -1,5 +1,11 @@
 import "syscalls.lumina"
 
+const PROT_READ = 1;
+const PROT_WRITE = 2;
+
+const MAP_PRIVATE = 2;
+const MAP_ANONIMOUS = 32;
+
 // DISCLAIMER this is not an actual malloc implementation
 // the previous one just had a lot of bugs, so this is a quick (hopefully) in between "solution", before I create an actual garbage collector
 
@@ -10,42 +16,79 @@ var _heapHead = brk((ptr)0);
 var curEnd = brk((ptr)((int)_heapHead + PAGESIZE * 4));
 
 func expandHeap(int size) -> int {
-    var totalSize = PAGESIZE;
+	var totalSize = PAGESIZE * 4;
 
-    while (totalSize < size) {
-	totalSize = totalSize + PAGESIZE;
-    }
+	while (totalSize < size) {
+		totalSize = totalSize + PAGESIZE;
+	}
 
-    curEnd = brk((ptr)((int)curEnd + totalSize));
-    return totalSize;
+	var oldEnd = curEnd;
+	curEnd = brk((ptr)((int)curEnd + totalSize));
+
+	if (oldEnd >= curEnd) {
+		syscall(1, 1, "could not expand heap\n", 22, 0, 0, 0);
+	}
+
+	return totalSize;
 }
 
 func malloc(int size) -> ptr {
-    if ((int)curEnd - (int)_heapHead < size * 3) {
-	expandHeap(size);
-    }
+	if (size <= 0) {
+		return (ptr)0;
+	}
 
-    var oldPtr = _heapHead;
-    _heapHead = (ptr)((int)_heapHead + size * 2);
-    return oldPtr;
+	if (size >= PAGESIZE * 2) {
+		var mapSize = PAGESIZE;
+		while (mapSize < size) {
+			mapSize = mapSize + PAGESIZE;
+		}
+
+		return mmap((ptr)0, mapSize, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONIMOUS, 0, 0);
+	}
+
+	var oldEnd = curEnd;
+	if ((int)_heapHead + size * 4 >= (int)curEnd) {
+		expandHeap(size * 3);
+
+		if (oldEnd >= curEnd) {
+			syscall(1, 1, "did not expand heap\n", 20, 0, 0, 0);
+		}
+
+		if ((int)curEnd - (int)oldEnd < size) {
+			syscall(1, 1, "expansion of heap is not enough\n", 28, 0, 0, 0);
+		}
+	}
+
+	var oldPtr = _heapHead;
+	_heapHead = (ptr)((int)_heapHead + size);
+
+	if ((int)oldPtr + size > (int)curEnd) {
+		syscall(1, 1, "went over end of heap\n", 22, 0, 0, 0);
+	}
+
+	if (brk((ptr)0) != curEnd) {
+		syscall(1, 1, "heap end is not correct\n", 24, 0, 0, 0);
+	}
+
+	return oldPtr;
 }
 
 func realloc(ptr addr, int oldSize, int newSize) -> ptr {
-    if (oldSize >= newSize) {
+	if (oldSize >= newSize) {
 	return addr;
-    }
+	}
 
-    var newAddr = malloc(newSize);
+	var newAddr = malloc(newSize);
 
-    var i = 0;
-    while (i < oldSize) {
-	((char[])newAddr)[i] = ((char[])addr)[i];
-	i = i + 1;
-    }
+	var i = 0;
+	while (i < oldSize) {
+		((char[])newAddr)[i] = ((char[])addr)[i];
+		i = i + 1;
+	}
 
-    return newAddr;
+	return newAddr;
 }
 
 func free(ptr addr) {
-    // this hack of a heap can not free memory
+	// this hack of a heap can not free memory
 }

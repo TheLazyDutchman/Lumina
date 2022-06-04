@@ -4,6 +4,7 @@ import "../std/io.lumina"
 import "name.lumina"
 import "position.lumina"
 import "immediate.lumina"
+import "whitespace.lumina"
 
 
 type Value {
@@ -75,9 +76,9 @@ func createValueFromString(String string) -> Value {
 }
 
 func isName(Value value) -> bool {
-    if (value == (Value)0) {
-	return (bool)0;
-    }
+	if (value == (Value)0) {
+		return (bool)0;
+	}
 
-    return value.name != (Name)0;
+	return value.name != (Name)0;
 }

@@ -1,52 +1,52 @@
-import "../std/io.lumina"
-
+const SYS_write = 1;
+const STDOUT = 1;
 var a = 10;
 var b = 20;
 
 if (a == b) {
-	print("equal\n");
+	syscall(SYS_write, STDOUT, SYS_write, STDOUT, "equal\n", 6, 0, 0, 0);
 } else if (a < b) {
-	print("less\n");
+	syscall(SYS_write, STDOUT, "less\n", 5, 0, 0, 0);
 } else if (a > b) {
-	print("greater\n");
+	syscall(SYS_write, STDOUT, "greater\n", 8, 0, 0, 0);
 } else {
-	print("unreachable\n");
+	syscall(SYS_write, STDOUT, "unreachable\n", 12, 0, 0, 0);
 }
 
 if (a == a) {
-	print("identity\n");
+	syscall(SYS_write, STDOUT, "identity\n", 9, 0, 0, 0);
 }
 
 if (a < b && b < b) {
-	print("should not happen\n");
+	syscall(SYS_write, STDOUT, "should not happen\n", 18, 0, 0, 0);
 }
 
 if (b < b && a < b) {
-	print("should still not happen\n");
+	syscall(SYS_write, STDOUT, "should still not happen\n", 24, 0, 0, 0);
 }
 
 if (a < b && b > a) {
-	print("and works\n");
+	syscall(SYS_write, STDOUT, "and works\n", 10, 0, 0, 0);
 }
 
 if (b < b || a < b) {
-	print("should be true\n");
+	syscall(SYS_write, STDOUT, "should be true\n", 15, 0, 0, 0);
 }
 
 if (a < b || b < a) {
-	print("should have jumped\n");
+	syscall(SYS_write, STDOUT, "should have jumped\n", 19, 0, 0, 0);
 }
 
 if (a > b || b != b) {
-	print("should not have worked\n");
+	syscall(SYS_write, STDOUT, "should not have worked\n", 23, 0, 0, 0);
 }
 
 while (a < b) {
-	print("am looping\n");
+	syscall(SYS_write, STDOUT, "am looping\n", 11, 0, 0, 0);
 
 	var i = 0;
 	while (i < 3) {
-		print("nested loop\n");
+		syscall(SYS_write, STDOUT, "nested loop\n", 12, 0, 0, 0);
 		i = i + 1;
 	}
 	a = a + 1;
@@ -54,6 +54,6 @@ while (a < b) {
 
 if (1 < b) {
 	if (a >= a) {
-		print("nested if\n");
+		syscall(SYS_write, STDOUT, "nested if\n", 10, 0, 0, 0);
 	}
 }

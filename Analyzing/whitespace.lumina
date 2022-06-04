@@ -4,12 +4,14 @@ import "../std/string.lumina"
 
 type WhiteSpace {
 	str value;
+	int length;
 }
 
 func createSpace(str start, int len) -> WhiteSpace {
 	var space = (WhiteSpace)malloc(sizeof(WhiteSpace));
 
-	space.value = strndup(start, len);
+	space.value = start;
+	space.length = len;
 
 	return space;
 }
