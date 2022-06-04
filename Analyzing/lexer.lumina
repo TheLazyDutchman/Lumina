@@ -1,0 +1,315 @@
+import "../std/io.lumina"
+import "../std/string.lumina"
+import "../std/syscalls.lumina"
+import "../std/memory.lumina"
+
+import "position.lumina"
+import "name.lumina"
+import "immediate.lumina"
+import "operator.lumina"
+import "whitespace.lumina"
+import "comment.lumina"
+
+// this is a type to hold the different possible tokens
+type Token {
+	Name name;
+	String string;
+	Character character;
+	Number number;
+	Operator operator;
+	Comment comment;
+
+	bool isEOF;
+	bool isError;
+}
+
+type Lexer {
+	str file;
+	str buffer;
+
+	int index;
+	int line;
+	int column;
+
+	Token current;
+}
+
+func readFile(str fileName) -> str {
+	var flags = 0; //READONLY
+	var mode = 0;
+
+	var file = open(fileName, flags, mode);
+
+	if (file < 0) {
+		print("[ERROR] can not open file '");
+		print(fileName);
+		print("'\n");
+		exit(1);
+	}
+
+	var SEEK_SET = 0;
+	var SEEK_END = 2;
+
+	var len = lseek(file, 0, SEEK_END);
+	lseek(file, 0, SEEK_SET);
+
+	var buffer = (str)malloc(len + 1);
+
+	if ((int)buffer < 0) {
+		print("[ERROR] could not allocate buffer for file: '");
+		print(fileName);
+		print("'\n");
+
+		printi(-(int)buffer);
+		print("\n");
+
+		exit(-(int)buffer);
+	}
+
+	len = read(file, buffer, len);
+
+	if (len < 0) {
+		print("[ERROR] when reading file '");
+		print(fileName);
+		print("'\n");
+
+		printi(-len);
+		print("\n");
+		
+		exit(-len);
+	}
+
+	buffer[len] = '\0';
+
+	close(file);
+
+	return buffer;
+}
+
+func createLexer(str fileName) -> Lexer {
+	var lexer = (Lexer)malloc(sizeof(Lexer));
+
+	lexer.file = fileName;
+	lexer.buffer = readFile(fileName);
+
+	lexer.index = 0;
+	lexer.line = 0;
+	lexer.column = 0;
+
+	return lexer;
+}
+
+func createToken() -> Token {
+	var token = (Token)malloc(sizeof(Token) * 2); // there is a bug with malloc, so we allocate more memory than needed
+
+	token.name = (Name)0;
+	token.string = (String)0;
+	token.character = (Character)0;
+	token.number = (Number)0;
+	token.operator = (Operator)0;
+	token.comment = (Comment)0;
+
+	token.isEOF = (bool)0;
+	token.isError = (bool)0;
+
+	return token;
+}
+
+func current(Lexer lexer) -> char {
+	return lexer.buffer[lexer.index];
+}
+
+func advance(Lexer lexer) {
+	lexer.index = lexer.index + 1;
+	lexer.column = lexer.column + 1;
+
+	if (current(lexer) == '\n') {
+		lexer.line = lexer.line + 1;
+		lexer.column = 0;
+	}
+}
+
+func createPositionFromLexer(Lexer lexer) -> Position {
+	return createPosition(lexer.file, lexer.buffer, lexer.index, lexer.line, lexer.column);
+}
+
+func lexComments(Lexer lexer, Token token, WhiteSpace space) -> Token {
+	var start = createPositionFromLexer(lexer);
+
+	while (current(lexer) != '\n') {
+		advance(lexer);
+	}
+
+	var end = createPositionFromLexer(lexer);
+
+	token.comment = createComment(start, end, space);
+	return token;
+}
+
+func lexWhiteSpace(Lexer lexer) -> WhiteSpace {
+	var startString = (str)((int)lexer.buffer + lexer.index);
+	var startIndex = lexer.index;
+
+	while (isspace(current(lexer))) {
+		advance(lexer);
+	}
+
+	return createSpace(startString, lexer.index - startIndex);
+}
+
+func lexName(Lexer lexer, Token token, WhiteSpace space) -> Token {
+	var start = createPositionFromLexer(lexer);
+
+	while (isalnum(current(lexer)) || current(lexer) == '_') {
+		advance(lexer);
+	}
+
+	var end = createPositionFromLexer(lexer);
+
+	token.name = createName(start, end, space);
+
+	return token;
+}
+
+// TODO: add error handling for invalid character and string literals
+func lexString(Lexer lexer, Token token, WhiteSpace space) -> Token {
+	var start = createPositionFromLexer(lexer);
+
+	advance(lexer);
+
+	while (current(lexer) != '"') {
+		if (current(lexer) == '\\') {
+			advance(lexer);
+		}
+		advance(lexer);
+	}
+
+	advance(lexer);
+
+	var end = createPositionFromLexer(lexer);
+
+	token.string = createString(start, end, space);
+
+	return token;
+}
+
+func lexCharacter(Lexer lexer, Token token, WhiteSpace space) -> Token {
+	var start = createPositionFromLexer(lexer);
+
+	advance(lexer);
+
+	if (current(lexer) == '\\') {
+		advance(lexer);
+	}
+
+	advance(lexer);
+
+	advance(lexer);
+
+	var end = createPositionFromLexer(lexer);
+
+	token.character = createCharacter(start, end, space);
+
+	return token;
+}
+
+func lexNumber(Lexer lexer, Token token, WhiteSpace space) -> Token {
+	var start = createPositionFromLexer(lexer);
+
+	while (isnumeric(current(lexer))) {
+		advance(lexer);
+	}
+
+	var end = createPositionFromLexer(lexer);
+
+	token.number = createNumber(start, end, space);
+
+	return token;
+}
+
+func lexOperator(Lexer lexer, Token token, WhiteSpace space) -> Token {
+	var position = createPositionFromLexer(lexer);
+
+	token.operator = createOperator(position, space);
+
+	var i = 0;
+	while (i < strlen(token.operator.name)) {
+		advance(lexer);
+		i = i + 1;
+	}
+
+	return token;
+}
+
+func nextToken(Lexer lexer) -> Token {
+	var token = createToken();
+
+	var space = (WhiteSpace)0;
+	if (isspace(current(lexer))) {
+		space = lexWhiteSpace(lexer);
+	}
+
+	if (current(lexer) == '\0') {
+		token.isEOF = (bool)1;
+		return token;
+	}
+
+	if (current(lexer) == '/' && lexer.buffer[lexer.index + 1] == '/') {
+		return lexComments(lexer, token, space);
+	}
+
+	if (isalpha(current(lexer)) || current(lexer) == '_') {
+		return lexName(lexer, token, space);
+	}
+
+	if (current(lexer) == '"') {
+		return lexString(lexer, token, space);
+	}
+
+	if (current(lexer) == '\'') {
+		return lexCharacter(lexer, token, space);
+	}
+
+	if (isnumeric(current(lexer))) {
+		return lexNumber(lexer, token, space);
+	}
+
+	var operatorToken = lexOperator(lexer, token, space);
+
+	if (operatorToken.operator.operatorType == -1) {
+		print("[ERROR] did not expect this character: '");
+		print(operatorToken.operator.name);
+		print("'\n");
+
+		token.isError = (bool)1;
+		return token;
+	} else {
+		return operatorToken;
+	}
+
+	return token; // will never come here
+}
+
+func isString(Token token) -> bool {
+	return token.string != (String)0;
+}
+
+func isCharacter(Token token) -> bool {
+	return token.character != (Character)0;
+}
+
+func isNumber(Token token) -> bool {
+	return token.number != (Number)0;
+}
+
+func isComment(Token token) -> bool {
+	return token.comment != (Comment)0;
+}
+
+func next(Lexer lexer) {
+	lexer.current = nextToken(lexer);
+
+	if (isComment(lexer.current)) {
+		next(lexer);
+	}
+}

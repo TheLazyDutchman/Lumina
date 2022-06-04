@@ -1,0 +1,91 @@
+import "../std/memory.lumina"
+import "../std/string.lumina"
+
+import "position.lumina"
+import "whitespace.lumina"
+
+
+const KEYWORD_var = 0;
+const KEYWORD_const = 1;
+const KEYWORD_func = 2;
+const KEYWORD_if = 3;
+const KEYWORD_else = 4;
+const KEYWORD_while = 5;
+const KEYWORD_type = 6;
+const KEYWORD_import = 7;
+const KEYWORD_return = 8;
+const KEYWORD_sizeof = 9;
+const NUMKEYWORDS = 10;
+
+var _keywordList = (str[])malloc(sizeof(str) * NUMKEYWORDS);
+_keywordList[0] = "var";
+_keywordList[1] = "const";
+_keywordList[2] = "func";
+_keywordList[3] = "if";
+_keywordList[4] = "else";
+_keywordList[5] = "while";
+_keywordList[6] = "type";
+_keywordList[7] = "import";
+_keywordList[8] = "return";
+_keywordList[9] = "sizeof";
+
+type Name {
+	WhiteSpace space;
+	Region region;
+	Region definitionRegion;
+	str name;
+	int keyword;
+}
+
+func createName(Position start, Position end, WhiteSpace space) -> Name {
+	var name = (Name)malloc(sizeof(Name));
+
+	name.region = createRegion(start, end);
+	name.definitionRegion = (Region)0;
+	name.space = space;
+	name.keyword = -1;
+
+	var length = end.index - start.index;
+
+	var stringStart = (str)((int)start.buffer + start.index);
+	name.name = strndup(stringStart, length);
+
+	var i = 0;
+	while (i < NUMKEYWORDS) {
+		if (streq(name.name, _keywordList[i])) {
+			name.keyword = i;
+			i = NUMKEYWORDS;
+		}
+		i = i + 1;
+	}
+
+	return name;
+}
+
+func createNameFromString(str value) -> Name {
+	var name = (Name)malloc(sizeof(Name));
+
+	name.region = (Region)0;
+	name.definitionRegion = (Region)0;
+	name.space = (WhiteSpace)0;
+	name.keyword = -1;
+	name.name = value;
+
+	return name;
+}
+
+func isKeyword(Name name, int keywordId) -> bool {
+	if (name == (Name)0) {
+		return (bool)0;
+	}
+
+	return name.keyword == keywordId;
+}
+
+func isIdentifier(Name name) -> bool {
+	if (name == (Name)0) {
+		return (bool)0;
+	}
+
+	return name.keyword == -1;
+}

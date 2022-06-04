@@ -1,0 +1,223 @@
+import "../std/memory.lumina"
+import "../std/string.lumina"
+import "../std/io.lumina"
+
+import "position.lumina"
+import "name.lumina"
+import "operation.lumina"
+import "operator.lumina"
+import "type.lumina"
+import "variable.lumina"
+import "whitespace.lumina"
+import "block.lumina"
+
+
+type Parameter {
+	Region region;
+	
+	Type parameterType;
+	Name name;
+	Operator comma;
+}
+
+type ParameterList {
+	int size;
+	int maxSize;
+	Parameter[] list;
+}
+
+type ReturnType {
+	Region region;
+
+	Operator rarrow;
+	Type returnType;
+}
+
+type FunctionDefinition {
+	Region region;
+
+	Name keyword;
+	Name name;
+
+	Operator lparen;
+	ParameterList parameters;
+	Operator rparen;
+
+	ReturnType returnType;
+
+	Block block;
+}
+
+type FunctionList {
+	int size;
+	int maxSize;
+	FunctionDefinition[] list;
+}
+
+type Return {
+	Region region;
+
+	Name keyword;
+	Operation expression;
+	Operator semicolon;
+}
+
+func createParameter(Type parameterType, Name name, Operator comma) -> Parameter {
+	var parameter = (Parameter)malloc(sizeof(Parameter));
+
+	if (comma != (Operator)0) {
+		parameter.region = createRegion(parameterType.region.start, comma.position);
+	} else {
+		parameter.region = createRegion(parameterType.region.start, name.region.end);
+	}
+
+	parameter.parameterType = parameterType;
+	parameter.name = name;
+
+	return parameter;
+}
+
+func createParameterFromString(str typeName, str name) -> Parameter {
+	var parameter = (Parameter)malloc(sizeof(Parameter));
+
+	parameter.region = (Region)0;
+	parameter.parameterType = createTypeObjFromString(typeName);
+	if (name != (str)0) {
+		parameter.name = createNameFromString(name);
+	} else {
+		parameter.name = (Name)0;
+	}
+	parameter.comma = (Operator)0;
+
+	return parameter;
+}
+
+func createParameterList() -> ParameterList {
+	var list = (ParameterList)malloc(sizeof(ParameterList));
+
+	list.size = 0;
+	list.maxSize = 8;
+	list.list = (Parameter[])malloc(8 * 8);
+
+	return list;
+}
+
+func addParameter(ParameterList list, Parameter parameter) {
+	list.list[list.size] = parameter;
+	list.size = list.size + 1;
+
+	if (list.size == list.maxSize) {
+		list.list = (Parameter[])realloc((ptr)list.list, 8 * list.maxSize, list.maxSize * 8 * 2);
+		list.maxSize = list.maxSize * 2;
+	}
+}
+
+func createReturnType(Operator rarrow, Type typeObj) -> ReturnType {
+	var returnType = (ReturnType)malloc(sizeof(ReturnType));
+
+	returnType.region = createRegion(rarrow.position, typeObj.region.end);
+	
+	returnType.rarrow = rarrow;
+	returnType.returnType = typeObj;
+
+	return returnType;
+}
+
+func createReturnTypeFromString(str typeName) -> ReturnType {
+	var returnType = (ReturnType)malloc(sizeof(ReturnType));
+
+	returnType.region = (Region)0;
+
+	returnType.rarrow = (Operator)0;
+	returnType.returnType = createTypeObjFromString(typeName);
+
+	return returnType;
+}
+
+func createFunctionDefinition(Name keyword, Name name, Operator lparen, ParameterList parameters, Operator rparen, ReturnType returnType) -> FunctionDefinition {
+	var function = (FunctionDefinition)malloc(sizeof(FunctionDefinition));
+
+	function.region = (Region)0;
+
+	function.keyword = keyword;
+	function.name = name;
+	function.lparen = lparen;
+	function.parameters = parameters;
+	function.rparen = rparen;
+	function.returnType = returnType;
+	function.block = (Block)0;
+
+	return function;
+}
+
+func createFunctionFromString(str value, ParameterList parameters, ReturnType returnType) -> FunctionDefinition {
+	var function = (FunctionDefinition)malloc(sizeof(FunctionDefinition));
+
+	function.region = (Region)0;
+	function.keyword = (Name)0;
+	function.name = createNameFromString(value);
+	function.lparen = (Operator)0;
+	function.parameters = parameters;
+	function.rparen = (Operator)0;
+	function.returnType = returnType;
+	function.block = (Block)0;
+
+	return function;
+}
+
+func createFunctionList() -> FunctionList {
+	var list = (FunctionList)malloc(sizeof(FunctionList));
+
+	list.size = 0;
+	list.maxSize = 8;
+	list.list = (FunctionDefinition[])malloc(8 * 8);
+
+	return list;
+}
+
+func addFunction(FunctionList list, FunctionDefinition function) {
+	list.list[list.size] = function;
+	list.size = list.size + 1;
+
+	if (list.size == list.maxSize) {
+		list.list = (FunctionDefinition[])realloc((ptr)list.list, list.maxSize * 8, list.maxSize * 8 * 2);
+		list.maxSize = list.maxSize * 2;
+	}
+}
+
+func findFunction(FunctionList list, str name) -> FunctionDefinition {
+	var i = 0;
+	while (i < list.size) {
+		if (streq(list.list[i].name.name, name)) {
+			return list.list[i];
+		}
+		i = i + 1;
+	}
+	return (FunctionDefinition)0;
+}
+
+func extendFunctionList(FunctionList destination, FunctionList source) {
+	var i = 0;
+
+	if (source == (FunctionList)0) {
+		print("source was zero in 'extendFunctionList'\n");
+		return;
+	}
+
+	while (i < source.size) {
+		addFunction(destination, source.list[i]);
+		i = i + 1;
+	}
+}
+
+func createReturn(Name keyword, Operation expression, Operator semicolon) -> Return {
+	var returnObj = (Return)malloc(sizeof(Return));
+
+	returnObj.region = createRegion(keyword.region.start, semicolon.position);
+
+	returnObj.keyword = keyword;
+	returnObj.expression = expression;
+	returnObj.semicolon = semicolon;
+
+	return returnObj;
+}

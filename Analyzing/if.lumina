@@ -1,0 +1,120 @@
+import "../std/memory.lumina"
+
+import "position.lumina"
+import "name.lumina"
+import "operation.lumina"
+import "operator.lumina"
+import "whitespace.lumina"
+import "block.lumina"
+
+
+type Else {
+	Region region;
+
+	Name keyword;
+	Block block;
+}
+
+type ElseIf {
+	Region region;
+
+	Name elseKeyword;
+	Name ifKeyword;
+	Operator lparen;
+	Operation condition;
+	Operator rparen;
+	Block block;
+
+	int id;
+}
+
+type ElseIfList {
+	int size;
+	int maxSize;
+	ElseIf[] list;
+}
+
+type If {
+	Region region;
+	Name keyword;
+	Operator lparen;
+	Operation condition;
+	Operator rparen;
+	Block block;
+	ElseIfList elseIfs;
+	Else elseObj;
+
+	int id;
+}
+
+func createElse(Name keyword, Block block, Position end) -> Else {
+	var elseStatement = (Else)malloc(sizeof(Else));
+
+	elseStatement.region = createRegion(keyword.region.start, end);
+
+	elseStatement.keyword = keyword;
+	elseStatement.block = block;
+
+	return elseStatement;
+}
+
+func createElseIf(Name elseKeyword, Name ifKeyword, Operator lparen, Operation condition, Operator rparen, Block block, Position end, int id) -> ElseIf {
+	var elseIf = (ElseIf)malloc(sizeof(ElseIf));
+
+	elseIf.region = createRegion(elseKeyword.region.start, end);
+
+	elseIf.elseKeyword = elseKeyword;
+	elseIf.ifKeyword = ifKeyword;
+	elseIf.lparen = lparen;
+	elseIf.condition = condition;
+	elseIf.rparen = rparen;
+	elseIf.block = block;
+
+	elseIf.id = id;
+
+	return elseIf;
+}
+
+func createElseIfList() -> ElseIfList {
+	var list = (ElseIfList)malloc(sizeof(ElseIfList));
+
+	list.size = 0;
+	list.maxSize = 8;
+	list.list = (ElseIf[])malloc(8 * 8);
+
+	return list;
+}
+
+func addElseIf(ElseIfList list, ElseIf elseIf) {
+	list.list[list.size] = elseIf;
+	list.size = list.size + 1;
+	
+	if (list.size == list.maxSize) {
+		list.list = (ElseIf[])realloc((ptr)list.list, list.maxSize * 8, 8 * list.maxSize * 2);
+		list.maxSize = list.maxSize * 2;
+	}
+}
+
+func createIf(Name keyword, Operator lparen, Operation condition, Operator rparen, Block block, ElseIfList elseIfs, Else elseObj, Position end, int id) -> If {
+	var ifStatement = (If)malloc(sizeof(If));
+
+	if (elseObj != (Else)0) {
+		ifStatement.region = createRegion(keyword.region.start, end);
+	} else if (elseIfs.size > 0) {
+		ifStatement.region = createRegion(keyword.region.start, elseIfs.list[elseIfs.size - 1].region.end);
+	} else {
+		ifStatement.region = createRegion(keyword.region.start, end);
+	}
+
+	ifStatement.keyword = keyword;
+	ifStatement.lparen = lparen;
+	ifStatement.condition = condition;
+	ifStatement.rparen = rparen;
+	ifStatement.block = block;
+	ifStatement.elseIfs = elseIfs;
+	ifStatement.elseObj = elseObj;
+
+	ifStatement.id = id;
+
+	return ifStatement;
+}

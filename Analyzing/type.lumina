@@ -1,0 +1,257 @@
+import "../std/string.lumina"
+import "../std/memory.lumina"
+import "../std/io.lumina"
+
+import "name.lumina" 
+import "operator.lumina"
+import "position.lumina"
+import "whitespace.lumina"
+
+
+type Type {
+	Region region;
+	Name name;
+	OperatorList brackets;
+}
+
+type Property {
+	Region region;
+	Type typeName;
+	Name name;
+	Operator semicolon;
+}
+
+type PropertyList {
+	int size;
+	int maxSize;
+	Property[] list;
+}
+
+type TypeDefinition {
+	Region region;
+	Name keyword;
+	Name name;
+	int size;
+
+	Operator lbrace;
+
+	PropertyList properties;
+
+	Operator rbrace;
+
+	TypeDefinition listOf;
+	TypeDefinition arrayType;
+}
+
+type TypeList {
+	int size;
+	int maxSize;
+	TypeDefinition[] list;
+}
+
+func createType(Name name, OperatorList brackets) -> Type {
+	if (isIdentifier(name) != (bool)1) {
+		print("expected type name to be an identifier\n");
+	}
+
+	var value = (Type)malloc(sizeof(Type));
+	
+	if (brackets.size > 0) {
+		value.region = createRegion(name.region.start, brackets.list[brackets.size - 1].position);
+	} else {
+		value.region = name.region;
+	}
+
+	value.name = name;
+	value.brackets = brackets;
+
+	return value;
+}
+
+func createTypeObjFromString(str typeName) -> Type {
+	var typeObj = (Type)malloc(sizeof(Type));
+
+	typeObj.name = createNameFromString(typeName);
+	typeObj.brackets = createOperatorList();
+
+	return typeObj;
+}
+
+func createProperty(Type typeName, Name name, Operator semicolon) -> Property {
+	if (isIdentifier(name) != (bool)1) {
+		print("expected property name to be an identifier\n");
+	}
+
+	if (streq(semicolon.name, ";") == (bool)0) {
+		print("expected ';' in property\n");
+	}
+
+	var property = (Property)malloc(sizeof(Property));
+
+	property.typeName = typeName;
+	property.name = name;
+	property.semicolon = semicolon;
+
+	property.region = createRegion(typeName.region.start, semicolon.position);
+
+	return property;
+}
+
+func createPropertyList() -> PropertyList {
+	var list = (PropertyList)malloc(sizeof(PropertyList));
+
+	list.size = 0;
+	list.maxSize = 8;
+	list.list = (Property[])malloc(8 * 8);
+
+	return list;
+}
+
+func addProperty(PropertyList list, Property property) {
+	list.list[list.size] = property;
+	list.size = list.size + 1;
+
+	if (list.size == list.maxSize) {
+		list.list = (Property[])realloc((ptr)list.list, list.maxSize * 8, 8 * list.maxSize * 2);
+		list.maxSize = list.maxSize * 2;
+	}
+}
+
+func findProperty(PropertyList list, str name) -> Property {
+	var i = 0;
+	while (i < list.size) {
+		if (streq(list.list[i].name.name, name)) {
+			return list.list[i];
+		}
+		i = i + 1;
+	}
+	return (Property)0;
+}
+
+func createTypeDefinition(Name keyword, Name name, Operator lbrace, PropertyList properties, Operator rbrace) -> TypeDefinition {
+	var typeDef = (TypeDefinition)malloc(sizeof(TypeDefinition));
+
+	if (isIdentifier(name) != (bool)1) {
+		print("expected type name to be an identifier\n");
+	}
+
+	if (isOperator(lbrace, "{") != (bool)1) {
+		print("expected '{' after type name\n");
+	}
+
+	if (isOperator(rbrace, "}") != (bool)1) {
+		print("expected '}' after type definition\n");
+	}
+
+	typeDef.keyword = keyword;
+	typeDef.name = name;
+	typeDef.size = 8;
+	typeDef.lbrace = lbrace;
+	typeDef.properties = properties;
+	typeDef.rbrace = rbrace;
+	typeDef.listOf = (TypeDefinition)0;
+	typeDef.arrayType = (TypeDefinition)0;
+
+	typeDef.region = createRegion(keyword.region.start, rbrace.position);
+
+	return typeDef;
+}
+
+func createTypeFromString(str value, int size) -> TypeDefinition {
+	var typeDef = (TypeDefinition)malloc(sizeof(TypeDefinition));
+
+	typeDef.region = (Region)0;
+	typeDef.keyword = (Name)0;
+	typeDef.name = createNameFromString(value);
+	typeDef.size = size;
+	typeDef.lbrace = (Operator)0;
+	typeDef.properties = createPropertyList();
+	typeDef.rbrace = (Operator)0;
+	typeDef.listOf = (TypeDefinition)0;
+	typeDef.arrayType = (TypeDefinition)0;
+
+	return typeDef;
+}
+
+func createArrayFrom(str name, TypeDefinition arrayType) -> TypeDefinition {
+	if (arrayType.listOf != (TypeDefinition)0) {
+		return arrayType.listOf;
+	}
+
+	var typeDef = (TypeDefinition)malloc(sizeof(TypeDefinition));
+
+	typeDef.region = (Region)0;
+	typeDef.keyword = (Name)0;
+	if (name == (str)0) {
+		typeDef.name = (Name)0;
+	} else {
+		typeDef.name = createNameFromString(name);
+	}
+	typeDef.lbrace = (Operator)0;
+	typeDef.properties = createPropertyList();
+	typeDef.rbrace = (Operator)0;
+
+	typeDef.arrayType = arrayType;
+	typeDef.listOf = (TypeDefinition)0;
+
+	arrayType.listOf = typeDef;
+
+	return typeDef;
+}
+
+func createTypeList() -> TypeList {
+	var list = (TypeList)malloc(sizeof(TypeList));
+
+	list.size = 0;
+	list.maxSize = 8;
+	list.list = (TypeDefinition[])malloc(8 * 8);
+
+	return list;
+}
+
+func addType(TypeList list, TypeDefinition typeDefinition) {
+	list.list[list.size] = typeDefinition;
+	list.size = list.size + 1;
+
+	if (list.size == list.maxSize) {
+		list.list = (TypeDefinition[])realloc((ptr)list.list, list.maxSize * 8, 8 * list.maxSize * 2);
+		list.maxSize = list.maxSize * 2;
+	}
+}
+
+func findType(TypeList list, str name) -> TypeDefinition {
+	var i = 0;
+	while (i < list.size) {
+		if (streq(list.list[i].name.name, name)) {
+			return list.list[i];
+		}
+		i = i + 1;
+	}
+	return (TypeDefinition)0;
+}
+
+func printType(TypeDefinition typeObj) {
+	if (typeObj == (TypeDefinition)0) {
+		print("type is null");
+		return;
+	}
+
+	if (typeObj.name == (Name)0) {
+		print("type name is null");
+	}
+
+	print(typeObj.name.name);
+}
+
+func printTypeList(TypeList list) {
+	var i = 0;
+	print("[");
+	while (i < list.size) {
+		printType(list.list[i]);
+		if (i != list.size) {
+			print(",");
+		}
+		i = i + 1;
+	}
+	print("]");
+}

@@ -1,3 +1,5 @@
+import "memory.lumina"
+import "syscalls.lumina"
 import "string.lumina"
 import "environment.lumina"
 
@@ -52,7 +54,7 @@ func execvp(str fileName, str[] args) -> int {
 		}
 
 		cwdLength = cwdLength * 2;
-		cwd = (str)realloc((ptr)cwd, cwdLength);
+		cwd = (str)realloc((ptr)cwd, strlen(cwd), cwdLength);
 		code = getcwd(cwd, cwdLength);
 	}
 

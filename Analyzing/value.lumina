@@ -1,0 +1,84 @@
+import "../std/memory.lumina"
+import "../std/io.lumina"
+
+import "name.lumina"
+import "position.lumina"
+import "immediate.lumina"
+import "whitespace.lumina"
+
+
+type Value {
+	Region region;
+	Name name;
+	Number number;
+	Character character;
+	String string;
+}
+
+func createValue() -> Value {
+	var value = (Value)malloc(sizeof(Value));
+
+	value.region = (Region)0;
+	value.name = (Name)0;
+	value.number = (Number)0;
+	value.character = (Character)0;
+	value.string = (String)0;
+
+	return value;
+}
+
+func createValueFromIdentifier(Name identifier) -> Value {
+	if (isIdentifier(identifier) != (bool)1) {
+		print("expected name to be an identifier in when creating value\n");
+	}
+
+	var value = createValue();
+
+	value.region = identifier.region;
+	value.name = identifier;
+	return value;
+}
+
+func createValueFromNumber(Number number) -> Value {
+	if (number == (Number)0) {
+		print("expected number to not be null when creating value\n");
+	}
+
+	var value = createValue();
+
+	value.region = number.region;
+	value.number = number;
+	return value;
+}
+
+func createValueFromCharacter(Character character) -> Value {
+	if (character == (Character)0) {
+		print("expected character to not be null when creating value\n");
+	}
+
+	var value = createValue();
+
+	value.region = character.region;
+	value.character = character;
+	return value;
+}
+
+func createValueFromString(String string) -> Value {
+	if (string == (String)0) {
+		print("expected string to not be null when creating value\n");
+	}
+
+	var value = createValue();
+
+	value.region = string.region;
+	value.string = string;
+	return value;
+}
+
+func isName(Value value) -> bool {
+	if (value == (Value)0) {
+		return (bool)0;
+	}
+
+	return value.name != (Name)0;
+}

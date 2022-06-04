@@ -1,0 +1,28 @@
+import "../lexer.lumina"
+
+if (argc < 2) {
+	print("[ERROR] expected argument <filename>\n");
+	exit(1);
+}
+
+if (argc > 2) {
+	print("[ERROR] expected a single argument\n");
+	exit(1);
+}
+
+var fileName = argv[1];
+
+var lexer = createLexer(fileName);
+
+var token = nextToken(lexer);
+
+while (token.isEOF == (bool)0) {
+	if (isName(token) && isIdentifier(token.name)) {
+		printPosition(token.name.region.start);
+		print(" '");
+		print(token.name.name);
+		print("'\n");
+	}
+
+	token = nextToken(lexer);
+}

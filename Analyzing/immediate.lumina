@@ -1,0 +1,112 @@
+import "../std/memory.lumina"
+import "../std/string.lumina"
+
+import "position.lumina"
+import "whitespace.lumina"
+
+
+type String {
+	WhiteSpace space;
+	Region region;
+	str value;
+
+	int id;
+}
+
+type Character {
+	WhiteSpace space;
+	Region region;
+	char value;
+}
+
+type Number {
+	WhiteSpace space;
+	Region region;
+	int value;
+}
+
+type StringList {
+	int size;
+	int maxSize;
+	str[] list;
+}
+
+func createString(Position start, Position end, WhiteSpace space) -> String {
+	var string = (String)malloc(sizeof(String));
+
+	string.region = createRegion(start, end);
+	string.space = space;
+
+	var length = end.index - start.index;
+
+	var stringStart = (str)((int)start.buffer + start.index);
+	string.value = strndup(stringStart, length);
+
+	string.id = -1;
+	
+	return string;
+}
+
+func createCharacter(Position start, Position end, WhiteSpace space) -> Character {
+	var character = (Character)malloc(sizeof(Character));
+
+	character.region = createRegion(start, end);
+	character.space = space;
+
+	character.value = unEscapeCharacter((str)((int)start.buffer + start.index + 1));
+	
+	return character;
+}
+
+func createNumber(Position start, Position end, WhiteSpace space) -> Number {
+	var number = (Number)malloc(sizeof(Number));
+
+	number.region = createRegion(start, end);
+	number.space = space;
+	
+	var length = end.index - start.index;
+
+	var numberStart = (str)((int)start.buffer + start.index);
+	number.value = strToInt(numberStart, length);
+
+	return number;
+}
+
+func createStringList() -> StringList {
+	var list = (StringList)malloc(sizeof(StringList));
+
+	list.size = 0;
+	list.maxSize = 8;
+	list.list = (str[])malloc(8 * 8);
+
+	return list;
+}
+
+func findString(StringList list, str string) -> int {
+	var i = 0;
+	while (i < list.size) {
+		if (streq(list.list[i], string)) {
+			return i;
+		}
+		i = i + 1;
+	}
+
+	return -1;
+}
+
+func addUniqueString(StringList list, str string) -> int {
+	var index = findString(list, string);
+	if (index != -1) {
+		return index;
+	}
+
+	list.list[list.size] = string;
+	list.size = list.size + 1;
+
+	if (list.size == list.maxSize) {
+		list.list = (str[])realloc((ptr)list.list, list.maxSize * 8, list.maxSize * 8 * 2);
+		list.maxSize = list.maxSize * 2;
+	}
+
+	return list.size - 1;
+}

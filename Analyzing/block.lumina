@@ -1,0 +1,119 @@
+import "../std/memory.lumina"
+
+import "position.lumina"
+import "operator.lumina"
+import "statement.lumina"
+import "type.lumina"
+import "function.lumina"
+import "variable.lumina"
+import "name.lumina"
+import "whitespace.lumina"
+
+
+type Block {
+	Region region;
+
+	Operator lbrace;
+	StatementList statements;
+	TypeList types;
+	FunctionList functions;
+	VariableList variables;
+	Operator rbrace;
+	int depth;
+
+	Block outer;
+	FunctionDefinition function;
+}
+
+type BlockList {
+	int size;
+	int maxSize;
+	Block[] list;
+}
+
+func createBlock(Operator lbrace, StatementList statements, TypeList types, FunctionList functions, VariableList variables, Block outer, FunctionDefinition function) -> Block {
+	var block = (Block)malloc(sizeof(Block));
+
+	block.region = (Region)0;
+
+	block.lbrace = lbrace;
+	block.statements = statements;
+	block.types = types;
+	block.functions = functions;
+	block.variables = variables;
+	block.rbrace = (Operator)0;
+
+	block.outer = outer;
+
+	if (outer != (Block)0) {
+		block.depth = outer.depth;
+	} else {
+		block.depth = 0;
+	}
+
+	block.function = function;
+
+	return block;
+}
+
+func setEnd(Block block, Operator rbrace) {
+	block.region = createRegion(block.lbrace.position, rbrace.position);
+
+	block.rbrace = rbrace;
+
+	if (block.function != (FunctionDefinition)0) {
+		block.function.region = createRegion(
+			block.function.keyword.region.start,
+			block.region.end);
+	}
+}
+
+func createBlockList() -> BlockList {
+	var list = (BlockList)malloc(sizeof(BlockList));
+
+	list.size = 0;
+	list.maxSize = 8;
+	list.list = (Block[])malloc(8 * 8);
+
+	return list;
+}
+
+func addBlock(BlockList list, Block block) -> int {
+	list.list[list.size] = block;
+	list.size = list.size + 1;
+
+	if (list.size == list.maxSize) {
+		list.list = (Block[])realloc((ptr)list.list, 8 * list.maxSize, list.maxSize * 8 * 2);
+		list.maxSize = list.maxSize * 2;
+	}
+
+	return list.size - 1;
+}
+
+func findTypeInBlock(Block block, str name) -> TypeDefinition {
+	var typeObj = findType(block.types, name);
+
+	if (typeObj == (TypeDefinition)0 && block.outer != (Block)0) {
+	return findTypeInBlock(block.outer, name);
+	}
+
+	return typeObj;
+}
+
+func findFunctionInBlock(Block block, str name) -> FunctionDefinition {
+	var function = findFunction(block.functions, name);
+
+	if (function == (FunctionDefinition)0 && block.outer != (Block)0) {
+	return findFunctionInBlock(block.outer, name);
+	}
+
+	return function;
+}
+
+func getBlockFunction(Block block) -> FunctionDefinition {
+	if (block.function != (FunctionDefinition)0) {
+	return block.function;
+	}
+
+	return getBlockFunction(block.outer);
+}

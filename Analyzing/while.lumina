@@ -1,0 +1,37 @@
+import "../std/memory.lumina"
+
+import "position.lumina"
+import "operator.lumina"
+import "operation.lumina"
+import "name.lumina"
+import "whitespace.lumina"
+import "block.lumina"
+
+
+type While {
+	Region region;
+	
+	Name keyword;
+	Operator lparen;
+	Operation condition;
+	Operator rparen;
+	Block block;
+
+	int id;
+}
+
+func createWhile (Name keyword, Operator lparen, Operation condition, Operator rparen, Block block, Position end, int id) -> While {
+	var whileStatement = (While)malloc(sizeof(While));
+
+	whileStatement.region = createRegion(keyword.region.start, end);
+
+	whileStatement.keyword = keyword;
+	whileStatement.lparen = lparen;
+	whileStatement.condition = condition;
+	whileStatement.rparen = rparen;
+	whileStatement.block = block;
+
+	whileStatement.id = id;
+
+	return whileStatement;
+}

@@ -1,0 +1,23 @@
+import "../std/memory.lumina"
+
+import "position.lumina"
+import "operation.lumina"
+import "operator.lumina"
+import "whitespace.lumina"
+
+
+type Expression {
+	Region region;
+	Operation operation;
+	Operator semicolon;
+}
+
+func createExpression(Operation operation, Operator semicolon) -> Expression {
+	var expression = (Expression)malloc(sizeof(Expression));
+
+	expression.region = createRegion(operation.region.start, semicolon.position);
+	expression.operation = operation;
+	expression.semicolon = semicolon;
+
+	return expression;
+}

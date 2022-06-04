@@ -1,0 +1,52 @@
+import "../std/syscalls.lumina"
+import "../std/memory.lumina"
+import "../std/io.lumina"
+
+
+var heapStart = brk((ptr)0);
+
+const PROT_READ = 1;
+const PROT_WRITE = 2;
+
+const MAP_PRIVATE = 2;
+const MAP_ANONIMOUS = 32;
+
+var mapStart = mmap((ptr)0, PAGESIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONIMOUS, 0, 0);
+if ((int)mapStart < 0) {
+	write(1, (ptr)"map did not work\n", 17);
+	exit(-(int)mapStart);
+}
+
+print("heapStart: ");
+printi((int)heapStart);
+print(", mapStart: ");
+printi((int)mapStart);
+print("\n");
+
+var newBrk = brk((ptr)0);
+
+if (heapStart < newBrk) {
+	write(1, (ptr)"heap changed\n", 13);
+} else {
+	write(1, (ptr)"did not change\n", 15);
+}
+
+if (heapStart < mapStart) {
+	write(1, (ptr)"map after heap\n", 15);
+} else if (heapStart == mapStart) {
+	write(1, (ptr)"map equals heap\n", 16);
+} else {
+	write(1, (ptr)"map before heap\n", 16);
+}
+
+type StringView {
+	str value;
+	int length;
+}
+
+var string = (StringView)mapStart;
+string.value = "this is in mapped memory\n";
+string.length = 25;
+
+
+write(1, (ptr)string.value, string.length);

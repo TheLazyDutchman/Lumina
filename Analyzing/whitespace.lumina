@@ -1,0 +1,17 @@
+import "../std/memory.lumina"
+import "../std/string.lumina"
+
+
+type WhiteSpace {
+	str value;
+	int length;
+}
+
+func createSpace(str start, int len) -> WhiteSpace {
+	var space = (WhiteSpace)malloc(sizeof(WhiteSpace));
+
+	space.value = start;
+	space.length = len;
+
+	return space;
+}

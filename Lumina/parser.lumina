@@ -218,6 +218,11 @@ func expression(Parser parser, bool isConstant) -> int {
 
 			if (parser.lastType != variable.varType) {
 				parseError(parser, parser.current, "cannot assign a value with a different type");
+				print("[NOTE] expected type: '");
+				print(variable.varType.name);
+				print("', got: '");
+				print(parser.lastType.name);
+				print("'\n");
 			}
 
 			regId = writeAssignment(parser.compiler, variable.position, variable.functionDepth, regId);
@@ -288,21 +293,28 @@ func expression(Parser parser, bool isConstant) -> int {
 			}
 
 			var regId = 0;
+			var intType = findType(parser.scope, "int", 3, (bool)0);
+			var charType = findType(parser.scope, "char", 4, (bool)0);
+			var strType = findType(parser.scope, "str", 3, (bool)0);
 			
 			// parsing constant
-			if (constant.constType == findType(parser.scope, "int", 3, (bool)0)) {
+			if (constant.constType == intType) {
 				var numValue = intToString(constant.value);
 				regId = writeNumber(parser.compiler, numValue);
 				free((ptr)numValue);
-			} else if (constant.constType == findType(parser.scope, "char", 4, (bool)0)) {
+				parser.lastType = intType;
+			} else if (constant.constType == charType) {
 				var charString = (str)malloc(2);
 				charString[0] = (char)constant.value;
 				charString[1] = '\0';
 
 				regId = writeCharacter(parser.compiler, charString);
 				free((ptr)charString);
-			} else if (constant.constType == findType(parser.scope, "str", 3, (bool)0)) {
+
+				parser.lastType = charType;
+			} else if (constant.constType == strType) {
 				regId = writeString(parser.compiler, constant.value);
+				parser.lastType = strType;
 			} else {
 				parseError(parser, parser.current, "Lumina currently does not support constants of this type");
 				print("[NOTE] type whas: '");
