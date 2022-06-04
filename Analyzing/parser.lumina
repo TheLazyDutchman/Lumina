@@ -1042,6 +1042,22 @@ func bindNamesInWhile(Parser parser, SyntaxTree tree, While whileStatement, Bloc
 }
 
 func bindNamesInFunctionDefinition(Parser parser, SyntaxTree tree, FunctionDefinition function, Block block) {
+	var foundFunction = findFunctionInParser(parser, tree, block, function.name.name);
+	if (foundFunction != (FunctionDefinition)0 && foundFunction != function) {
+		printPosition(function.name.region.start);
+		print(" a function with this name already exists\n");
+	}
+
+	if (findVariableInParser(parser, tree, block, function.name.name) != (VariableDefinition)0) {
+		printPosition(function.name.region.start);
+		print(" a variable with this name already exists\n");
+	}
+
+	if (findTypeInParser(parser, tree, block, function.name.name) != (TypeDefinition)0) {
+		printPosition(function.name.region.start);
+		print(" a type with this name already exists\n");
+	}
+
 	var i = 0;
 	while (i < function.parameters.size) {
 		bindNamesInType(parser, tree, function.parameters.list[i].parameterType, block);
@@ -1050,11 +1066,47 @@ func bindNamesInFunctionDefinition(Parser parser, SyntaxTree tree, FunctionDefin
 }
 
 func bindNamesInTypeDefinition(Parser parser, SyntaxTree tree, TypeDefinition typeDef, Block block) {
+	var foundType = findTypeInParser(parser, tree, block, typeDef.name.name);
+	if (foundType != (TypeDefinition)0 && foundType != typeDef) {
+		printPosition(typeDef.name.region.start);
+		print(" a type with this name already exists\n");
+	}
+
+	if (findVariableInParser(parser, tree, block, typeDef.name.name) != (VariableDefinition)0) {
+		printPosition(typeDef.name.region.start);
+		print(" a variable with this name already exists\n");
+	}
+
+	if (findFunctionInParser(parser, tree, block, typeDef.name.name) != (FunctionDefinition)0) {
+		printPosition(typeDef.name.region.start);
+		print(" a function with this name already exists\n");
+	}
+
 	var i = 0;
 	while (i < typeDef.properties.size) {
 		bindNamesInType(parser, tree, typeDef.properties.list[i].typeName, block);
 		i = i + 1;
 	}
+}
+
+func bindNamesInVariable(Parser parser, SyntaxTree tree, VariableDefinition variable, Block block) {
+	var foundVariable = findVariableInParser(parser, tree, block, variable.name.name);
+	if (foundVariable != (VariableDefinition)0 && foundVariable.depth != variable.depth && foundVariable != variable) {
+		printPosition(variable.name.region.start);
+		print(" a type with this name already exists\n");
+	}
+
+	if (findTypeInParser(parser, tree, block, variable.name.name) != (TypeDefinition)0) {
+		printPosition(variable.name.region.start);
+		print(" a type with this name already exists\n");
+	}
+
+	if (findFunctionInParser(parser, tree, block, variable.name.name) != (FunctionDefinition)0) {
+		printPosition(variable.name.region.start);
+		print(" a function with this name already exists\n");
+	}
+
+	bindNamesInOperation(parser, tree, variable.value, block);
 }
 
 func bindNamesInReturn(Parser parser, SyntaxTree tree, Return returnStatement, Block block) {
@@ -1074,7 +1126,7 @@ func bindNamesInStatementList(Parser parser, SyntaxTree tree, StatementList list
 		} else if (statement.whileStatement != (While)0) {
 			bindNamesInWhile(parser, tree, statement.whileStatement, block);
 		} else if (statement.variable != (VariableDefinition)0) {
-			bindNamesInOperation(parser, tree, statement.variable.value, block);
+			bindNamesInVariable(parser, tree, statement.variable, block);
 		} else if (statement.function != (FunctionDefinition)0) {
 			bindNamesInFunctionDefinition(parser, tree, statement.function, block);
 		} else if (statement.typeStatement != (TypeDefinition)0) {
