@@ -1280,6 +1280,10 @@ func createChild(str name, str[] args) -> int {
 func CompileLinuxx86_nasm(str fileName, bool debug) {
 	var parser = checkFiles(fileName);
 
+	if (parser.hadError) {
+		exit(1);
+	}
+
 	var filePath = getPathFromString(fileName);
 
 	print("[FILE] checked file: '");
