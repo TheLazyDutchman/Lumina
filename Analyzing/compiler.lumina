@@ -38,7 +38,7 @@ type RegisterList {
 }
 
 const CALLSTACKSIZE = 2048;
-const DATASTACKSIZE = 4096;
+const DATASTACKSIZE = 40960;
 
 func createRegister(str name) -> Register {
 	var reg = (Register)malloc(sizeof(Register));
