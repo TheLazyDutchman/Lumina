@@ -781,14 +781,14 @@ func writeAnd(Parser parser, SyntaxTree tree, Block block, int output, Operation
 
 	var andId = parser.numAnds;
 
-	writeJumpNotEqual(output, register, "addr_and_", andId);
+	writeJumpNotEqual(output, register, ".addr_and_", andId);
 	register.used = (bool)1;
 
 	parser.numAnds = parser.numAnds + 1;
 
 	writeOperation(parser, tree, block, output, operation.right, registers, register, (bool)1, functions);
 
-	writeAddress(output, "addr_and_", andId);
+	writeAddress(output, ".addr_and_", andId);
 
 	return register.name;
 }
@@ -798,14 +798,14 @@ func writeOr(Parser parser, SyntaxTree tree, Block block, int output, Operation 
 
 	var orId = parser.numOrs;
 
-	writeJumpEqual(output, register, "addr_or_", orId);
+	writeJumpEqual(output, register, ".addr_or_", orId);
 	register.used = (bool)1;
 
 	parser.numOrs = parser.numOrs + 1;
 
 	writeOperation(parser, tree, block, output, operation.right, registers, register, (bool)1, functions);
 
-	writeAddress(output, "addr_or_", orId);
+	writeAddress(output, ".addr_or_", orId);
 
 	return register.name;
 }
@@ -1028,28 +1028,28 @@ func writeBlock(Parser parser, SyntaxTree tree, Block outer, int output, Block b
 func writeIf(Parser parser, SyntaxTree tree, Block block, int output, If ifStatement, RegisterList registers, FunctionList functions) {
 	var conditionRegister = getRegister(registers);
 	writeOperation(parser, tree, block, output, ifStatement.condition, registers, conditionRegister, (bool)1, functions);
-	writeJumpNotEqual(output, conditionRegister, "addr_if_", ifStatement.id);
+	writeJumpNotEqual(output, conditionRegister, ".addr_if_", ifStatement.id);
 
 	conditionRegister.used = (bool)0;
 
 	writeBlock(parser, tree, block, output, ifStatement.block, registers, functions);
 
 	if (ifStatement.elseIfs.size != 0 || ifStatement.elseObj != (Else)0) {
-		writeJump(output, "addr_if_end_", ifStatement.id);
+		writeJump(output, ".addr_if_end_", ifStatement.id);
 	}
 
-	writeAddress(output, "addr_if_", ifStatement.id);
+	writeAddress(output, ".addr_if_", ifStatement.id);
 	var i = 0;
 	while (i < ifStatement.elseIfs.size) {
 		var elseIf = ifStatement.elseIfs.list[i];
 		var conditionRegister = getRegister(registers);
 		writeOperation(parser, tree, block, output, elseIf.condition, registers, conditionRegister, (bool)1, functions);
-		writeJumpNotEqual(output, conditionRegister, "addr_if_", elseIf.id);
+		writeJumpNotEqual(output, conditionRegister, ".addr_if_", elseIf.id);
 
 		writeBlock(parser, tree, block, output, elseIf.block, registers, functions);
 
-		writeJump(output, "addr_if_end_", ifStatement.id);
-		writeAddress(output, "addr_if_", elseIf.id);
+		writeJump(output, ".addr_if_end_", ifStatement.id);
+		writeAddress(output, ".addr_if_", elseIf.id);
 		i = i + 1;
 	}
 
@@ -1058,24 +1058,24 @@ func writeIf(Parser parser, SyntaxTree tree, Block block, int output, If ifState
 	}
 
 	if (ifStatement.elseIfs.size != 0 || ifStatement.elseObj != (Else)0) {
-		writeAddress(output, "addr_if_end_", ifStatement.id);
+		writeAddress(output, ".addr_if_end_", ifStatement.id);
 	}
 }
 
 func writeWhile(Parser parser, SyntaxTree tree, Block block, int output, While whileStatement, RegisterList registers, FunctionList functions) {
 	var conditionRegister = getRegister(registers);
 
-	writeAddress(output, "addr_while_condition_", whileStatement.id);
+	writeAddress(output, ".addr_while_condition_", whileStatement.id);
 
 	writeOperation(parser, tree, block, output, whileStatement.condition, registers, conditionRegister, (bool)1, functions);
-	writeJumpNotEqual(output, conditionRegister, "addr_while_end_", whileStatement.id);
+	writeJumpNotEqual(output, conditionRegister, ".addr_while_end_", whileStatement.id);
 
 	conditionRegister.used = (bool)0;
 
 	writeBlock(parser, tree, block, output, whileStatement.block, registers, functions);
 
-	writeJump(output, "addr_while_condition_", whileStatement.id);
-	writeAddress(output, "addr_while_end_", whileStatement.id);
+	writeJump(output, ".addr_while_condition_", whileStatement.id);
+	writeAddress(output, ".addr_while_end_", whileStatement.id);
 }
 
 func writeStatement(Parser parser, SyntaxTree tree, Block block, int output, Statement statement, RegisterList registers, FunctionList functions) {
