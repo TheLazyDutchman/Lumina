@@ -90,11 +90,11 @@ func addBlock(BlockList list, Block block) -> int {
 	return list.size - 1;
 }
 
-func findTypeInBlock(Block block, str name) -> TypeDefinition {
+func findTypeInBlock(Block block, str name) -> Type {
 	var typeObj = findType(block.types, name);
 
-	if (typeObj == (TypeDefinition)0 && block.outer != (Block)0) {
-	return findTypeInBlock(block.outer, name);
+	if (typeObj == (Type)0 && block.outer != (Block)0) {
+		return findTypeInBlock(block.outer, name);
 	}
 
 	return typeObj;
@@ -104,7 +104,7 @@ func findFunctionInBlock(Block block, str name) -> FunctionDefinition {
 	var function = findFunction(block.functions, name);
 
 	if (function == (FunctionDefinition)0 && block.outer != (Block)0) {
-	return findFunctionInBlock(block.outer, name);
+		return findFunctionInBlock(block.outer, name);
 	}
 
 	return function;

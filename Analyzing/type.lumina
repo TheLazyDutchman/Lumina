@@ -8,6 +8,15 @@ import "position.lumina"
 import "whitespace.lumina"
 
 
+type Type {
+	str name;
+	TypeDefinition definition;
+	int size;
+
+	Type listOf;
+	Type listType;
+}
+
 type TypeName {
 	Region region;
 	Name name;
@@ -46,10 +55,10 @@ type TypeDefinition {
 type TypeList {
 	int size;
 	int maxSize;
-	TypeDefinition[] list;
+	Type[] list;
 }
 
-func createType(Name name, OperatorList brackets) -> TypeName {
+func createTypeName(Name name, OperatorList brackets) -> TypeName {
 	if (isIdentifier(name) != (bool)1) {
 		print("expected type name to be an identifier\n");
 	}
@@ -157,46 +166,43 @@ func createTypeDefinition(Name keyword, Name name, Operator lbrace, PropertyList
 	return typeDef;
 }
 
-func createTypeFromString(str value, int size) -> TypeDefinition {
-	var typeDef = (TypeDefinition)malloc(sizeof(TypeDefinition));
+func createTypeFromDefinition(TypeDefinition definition) -> Type {
+	var typeObj = (Type)malloc(sizeof(Type));
 
-	typeDef.region = (Region)0;
-	typeDef.keyword = (Name)0;
-	typeDef.name = createNameFromString(value);
-	typeDef.size = size;
-	typeDef.lbrace = (Operator)0;
-	typeDef.properties = createPropertyList();
-	typeDef.rbrace = (Operator)0;
-	typeDef.listOf = (TypeDefinition)0;
-	typeDef.arrayType = (TypeDefinition)0;
+	typeObj.name = definition.name.name;
+	typeObj.definition = definition;
+	typeObj.size = -1;
+	
+	typeObj.listOf = (Type)0;
+	typeObj.listType = (Type)0;
 
-	return typeDef;
+	return typeObj;
 }
 
-func createArrayFrom(str name, TypeDefinition arrayType) -> TypeDefinition {
-	if (arrayType.listOf != (TypeDefinition)0) {
-		return arrayType.listOf;
+func createTypeFromString(str name, int size) -> Type {
+	var typeObj = (Type)malloc(sizeof(Type));
+
+	typeObj.name = name;
+	typeObj.definition = (TypeDefinition)0;
+	typeObj.size = size;
+
+	typeObj.listOf = (Type)0;
+	typeObj.listType = (Type)0;
+
+	return typeObj;
+}
+
+func createListType(str name, Type typeObj) -> Type {
+	if (typeObj.listOf != (Type)0) {
+		return typeObj.listOf;
 	}
 
-	var typeDef = (TypeDefinition)malloc(sizeof(TypeDefinition));
+	var listType = createTypeFromString(name, 8);
+	listType.listType = typeObj;
 
-	typeDef.region = (Region)0;
-	typeDef.keyword = (Name)0;
-	if (name == (str)0) {
-		typeDef.name = (Name)0;
-	} else {
-		typeDef.name = createNameFromString(name);
-	}
-	typeDef.lbrace = (Operator)0;
-	typeDef.properties = createPropertyList();
-	typeDef.rbrace = (Operator)0;
+	typeObj.listOf = listType;
 
-	typeDef.arrayType = arrayType;
-	typeDef.listOf = (TypeDefinition)0;
-
-	arrayType.listOf = typeDef;
-
-	return typeDef;
+	return listType;
 }
 
 func createTypeList() -> TypeList {
@@ -204,53 +210,53 @@ func createTypeList() -> TypeList {
 
 	list.size = 0;
 	list.maxSize = 8;
-	list.list = (TypeDefinition[])malloc(8 * 8);
+	list.list = (Type[])malloc(8 * 8);
 
 	return list;
 }
 
-func addType(TypeList list, TypeDefinition typeDefinition) {
-	list.list[list.size] = typeDefinition;
+func addType(TypeList list, Type typeObj) {
+	list.list[list.size] = typeObj;
 	list.size = list.size + 1;
 
 	if (list.size == list.maxSize) {
-		list.list = (TypeDefinition[])realloc((ptr)list.list, list.maxSize * 8, 8 * list.maxSize * 2);
+		list.list = (Type[])realloc((ptr)list.list, list.maxSize * 8, 8 * list.maxSize * 2);
 		list.maxSize = list.maxSize * 2;
 	}
 }
 
-func findType(TypeList list, str name) -> TypeDefinition {
+func findType(TypeList list, str name) -> Type {
 	var i = 0;
 	while (i < list.size) {
-		if (streq(list.list[i].name.name, name)) {
+		if (streq(list.list[i].name, name)) {
 			return list.list[i];
 		}
 		i = i + 1;
 	}
-	return (TypeDefinition)0;
+	return (Type)0;
 }
 
-func printType(TypeDefinition typeObj) {
-	if (typeObj == (TypeDefinition)0) {
+func printType(Type typeObj) {
+	if (typeObj == (Type)0) {
 		print("type is null");
 		return;
 	}
 
-	if (typeObj.name == (Name)0) {
+	if (typeObj.name == (str)0) {
 		print("type name is null");
 	}
 
-	print(typeObj.name.name);
+	print(typeObj.name);
 }
 
 func printTypeList(TypeList list) {
 	var i = 0;
 	print("[");
 	while (i < list.size) {
-		printType(list.list[i]);
-		if (i != list.size) {
+		if (i != 0) {
 			print(",");
 		}
+		printType(list.list[i]);
 		i = i + 1;
 	}
 	print("]");

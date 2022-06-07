@@ -446,15 +446,15 @@ func writeAddress(int output, str addr, int id) {
 }
 
 func writeSizeOf(Parser parser, SyntaxTree tree, Block block, int output, SizeOf sizeOf, str register) -> str {
-	var typeDef = getTypeDefinitionFromType(parser, tree, block, sizeOf.typeObj);
+	var typeObj = getTypeFromTypeName(parser, tree, block, sizeOf.typeObj);
 
-	if (typeDef == (TypeDefinition)0) {
+	if (typeObj == (Type)0) {
 		printPosition(sizeOf.region.start);
 		print(" type is null in size of\n");
 		return register;
 	}
 
-	var size = getSizeFromType(parser, tree, block, typeDef, (bool)0);
+	var size = getSizeFromType(parser, tree, block, typeObj, (bool)0);
 
 	fprint(output, "	mov ");
 	fprint(output, register);
@@ -639,7 +639,7 @@ func writeProperty(Parser parser, SyntaxTree tree, Block block, int output, Oper
 
 	var typeObj = checkTypesInOperation(parser, tree, block, operation.left);
 
-	if (typeObj == (TypeDefinition)0) {
+	if (typeObj == (Type)0) {
 		printPosition(operation.operator.position);
 		print(" struct type is null\n");
 		return register.name;
@@ -648,7 +648,7 @@ func writeProperty(Parser parser, SyntaxTree tree, Block block, int output, Oper
 	var propertyName = operation.right.value.name;
 	var propertyType = checkTypesInOperation(parser, tree, block, operation);
 
-	if (propertyType == (TypeDefinition)0) {
+	if (propertyType == (Type)0) {
 		printPosition(operation.operator.position);
 		print(" type of property is null\n");
 		return register.name;
@@ -700,7 +700,7 @@ func writeAssignment(Parser parser, SyntaxTree tree, Block block, int output, Op
 	if (isOperator(operation.left.operator, "[")) {
 		var arrayType = checkTypesInOperation(parser, tree, block, operation.left);
 
-		if (arrayType == (TypeDefinition)0) {
+		if (arrayType == (Type)0) {
 			printPosition(operation.operator.position);
 			print(" array type is null\n");
 			return register.name;
@@ -732,7 +732,7 @@ func writeAssignment(Parser parser, SyntaxTree tree, Block block, int output, Op
 	} else if (isOperator(operation.left.operator, ".")) {
 		var propertyType = checkTypesInOperation(parser, tree, block, operation.left);
 
-		if (propertyType == (TypeDefinition)0) {
+		if (propertyType == (Type)0) {
 			printPosition(operation.operator.position);
 			print(" type is null\n");
 			return register.name;
@@ -896,7 +896,7 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	} else if (isOperator(operation.operator, "[")) {
 		var typeObj = checkTypesInOperation(parser, tree, block, operation);
 
-		if (typeObj == (TypeDefinition)0) {
+		if (typeObj == (Type)0) {
 			printPosition(operation.operator.position);
 			print(" array type is null\n");
 			return registerA.name;

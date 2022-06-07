@@ -21,7 +21,7 @@ type VariableDefinition {
 	int depth;
 	int position;
 
-	TypeDefinition variableType;
+	Type variableType;
 }
 
 type VariableList {
@@ -42,12 +42,12 @@ func createVariableDefinition(Name keyword, Name name, Operator equalSign, Opera
 	variable.semicolon = semicolon;
 	variable.depth = depth;
 	variable.position = position;
-	variable.variableType = (TypeDefinition)0;
+	variable.variableType = (Type)0;
 
 	return variable;
 }
 
-func createVariableFromString(str value, int depth, int position, TypeDefinition variableType) -> VariableDefinition {
+func createVariableFromString(str value, int depth, int position, Type variableType) -> VariableDefinition {
 	var variable = (VariableDefinition)malloc(sizeof(VariableDefinition));
 
 	variable.region = (Region)0;
