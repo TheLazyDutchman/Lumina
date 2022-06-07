@@ -843,7 +843,7 @@ func getSizeFromType(Parser parser, SyntaxTree tree, Block block, Type typeObj, 
 		return 0;
 	}
 
-	if (typeObj.definition.properties.size == 0 || isProperty || typeObj.listType != (Type)0) {
+	if (typeObj.definition == (TypeDefinition)0 || isProperty || typeObj.listType != (Type)0) {
 		return typeObj.size;
 	}
 
@@ -968,7 +968,9 @@ func bindName(Parser parser, SyntaxTree tree, Name name, Block block) {
 
 	var typeDef = findTypeInParser(parser, tree, block, name.name);
 	if (typeDef != (Type)0) {
-		name.definitionRegion = typeDef.definition.region;
+		if (typeDef.definition != (TypeDefinition)0) {
+			name.definitionRegion = typeDef.definition.region;
+		}
 		return;
 	}
 
