@@ -15,7 +15,7 @@ import "block.lumina"
 type Parameter {
 	Region region;
 	
-	Type parameterType;
+	TypeName parameterType;
 	Name name;
 	Operator comma;
 }
@@ -30,7 +30,7 @@ type ReturnType {
 	Region region;
 
 	Operator rarrow;
-	Type returnType;
+	TypeName returnType;
 }
 
 type FunctionDefinition {
@@ -62,7 +62,7 @@ type Return {
 	Operator semicolon;
 }
 
-func createParameter(Type parameterType, Name name, Operator comma) -> Parameter {
+func createParameter(TypeName parameterType, Name name, Operator comma) -> Parameter {
 	var parameter = (Parameter)malloc(sizeof(Parameter));
 
 	if (comma != (Operator)0) {
@@ -112,7 +112,7 @@ func addParameter(ParameterList list, Parameter parameter) {
 	}
 }
 
-func createReturnType(Operator rarrow, Type typeObj) -> ReturnType {
+func createReturnType(Operator rarrow, TypeName typeObj) -> ReturnType {
 	var returnType = (ReturnType)malloc(sizeof(ReturnType));
 
 	returnType.region = createRegion(rarrow.position, typeObj.region.end);

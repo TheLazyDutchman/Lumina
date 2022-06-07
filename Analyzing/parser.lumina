@@ -248,7 +248,7 @@ func consumeString(Parser parser, SyntaxTree tree) -> String {
 	return (String)0;
 }
 
-func parseType(Parser parser, SyntaxTree tree, bool ignoreErrors) -> Type {
+func parseType(Parser parser, SyntaxTree tree, bool ignoreErrors) -> TypeName {
 	var name = consumeIdentifier(parser, tree);
 
 	var brackets = createOperatorList();
@@ -815,7 +815,7 @@ func findTypeInParser(Parser parser, SyntaxTree tree, Block block, str name) -> 
 	return typeDef;
 }
 
-func getTypeDefinitionFromType(Parser parser, SyntaxTree tree, Block block, Type typeObj) -> TypeDefinition {
+func getTypeDefinitionFromType(Parser parser, SyntaxTree tree, Block block, TypeName typeObj) -> TypeDefinition {
 	var typeDef = findTypeInParser(parser, tree, block, typeObj.name.name);
 
 	if (typeDef == (TypeDefinition)0) {
@@ -986,7 +986,7 @@ func bindName(Parser parser, SyntaxTree tree, Name name, Block block) {
 	print("'\n");
 }
 
-func bindNamesInType(Parser parser, SyntaxTree tree, Type typeObj, Block block) {
+func bindNamesInType(Parser parser, SyntaxTree tree, TypeName typeObj, Block block) {
 	bindName(parser, tree, typeObj.name, block);
 }
 
@@ -1005,7 +1005,7 @@ func bindNamesInOperation(Parser parser, SyntaxTree tree, Operation operation, B
 		bindNamesInType(parser, tree, operation.sizeOf.typeObj, block);
 	}
 
-	if (operation.castType != (Type)0) {
+	if (operation.castType != (TypeName)0) {
 		bindNamesInType(parser, tree, operation.castType, block);
 	}
 
@@ -1467,7 +1467,7 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 	} else if (isOperator(operation.operator, "(")) {
 		var typeObj = checkTypesInOperation(parser, tree, block, operation.right);
 
-		if (operation.castType != (Type)0) {
+		if (operation.castType != (TypeName)0) {
 			return getTypeDefinitionFromType(parser, tree, block, operation.castType);
 		}
 

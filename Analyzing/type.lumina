@@ -8,7 +8,7 @@ import "position.lumina"
 import "whitespace.lumina"
 
 
-type Type {
+type TypeName {
 	Region region;
 	Name name;
 	OperatorList brackets;
@@ -16,7 +16,7 @@ type Type {
 
 type Property {
 	Region region;
-	Type typeName;
+	TypeName typeName;
 	Name name;
 	Operator semicolon;
 }
@@ -49,12 +49,12 @@ type TypeList {
 	TypeDefinition[] list;
 }
 
-func createType(Name name, OperatorList brackets) -> Type {
+func createType(Name name, OperatorList brackets) -> TypeName {
 	if (isIdentifier(name) != (bool)1) {
 		print("expected type name to be an identifier\n");
 	}
 
-	var value = (Type)malloc(sizeof(Type));
+	var value = (TypeName)malloc(sizeof(TypeName));
 	
 	if (brackets.size > 0) {
 		value.region = createRegion(name.region.start, brackets.list[brackets.size - 1].position);
@@ -68,8 +68,8 @@ func createType(Name name, OperatorList brackets) -> Type {
 	return value;
 }
 
-func createTypeObjFromString(str typeName) -> Type {
-	var typeObj = (Type)malloc(sizeof(Type));
+func createTypeObjFromString(str typeName) -> TypeName {
+	var typeObj = (TypeName)malloc(sizeof(TypeName));
 
 	typeObj.name = createNameFromString(typeName);
 	typeObj.brackets = createOperatorList();
@@ -77,7 +77,7 @@ func createTypeObjFromString(str typeName) -> Type {
 	return typeObj;
 }
 
-func createProperty(Type typeName, Name name, Operator semicolon) -> Property {
+func createProperty(TypeName typeName, Name name, Operator semicolon) -> Property {
 	if (isIdentifier(name) != (bool)1) {
 		print("expected property name to be an identifier\n");
 	}
