@@ -26,6 +26,8 @@ type Operation {
 	Value value;
 	SizeOf sizeOf;
 	TypeName castType;
+
+	Type operationType;
 }
 
 type OperationList {

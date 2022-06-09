@@ -1278,13 +1278,16 @@ func checkTypesInFunctionCall(Parser parser, SyntaxTree tree, Block block, Opera
 	}
 
 	if (function.returnType == (ReturnType)0) {
+		call.operationType = parser.null;
 		return parser.null;
 	}
 
-	return getTypeFromTypeName(parser, tree, block, function.returnType.returnType);
+	var returnType = getTypeFromTypeName(parser, tree, block, function.returnType.returnType);
+	call.operationType = returnType;
+	return returnType;
 }
 
-func checkTypesInPropertyDefinition(Parser parser, SyntaxTree tree, Block block, Operation operation) -> Type {
+func checkTypesInProperty(Parser parser, SyntaxTree tree, Block block, Operation operation) -> Type {
 	if (isVariable(operation.left) != (bool)1) {
 		printError(parser, operation.operator.position, " can not read a property from a value that is not a variable\n");
 		return (Type)0;
@@ -1311,7 +1314,9 @@ func checkTypesInPropertyDefinition(Parser parser, SyntaxTree tree, Block block,
 		return (Type)0;
 	}
 
-	return getTypeFromTypeName(parser, tree, block, property.typeName);
+	var propertyType = getTypeFromTypeName(parser, tree, block, property.typeName);
+	operation.operationType = propertyType;
+	return propertyType;
 }
 
 func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operation operation) -> Type {
@@ -1321,10 +1326,13 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 	}
 
 	if (operation.value != (Value)0) {
-		return checkTypesInValue(parser, tree, block, operation.value);
+		var valueType = checkTypesInValue(parser, tree, block, operation.value);
+		operation.operationType = valueType;
+		return valueType;
 	}
 
 	if (operation.sizeOf != (SizeOf)0) {
+		operation.operationType = parser.int;
 		return checkTypesInSizeOf(parser, tree, block, operation.sizeOf);
 	}
 
@@ -1333,7 +1341,7 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 	}
 
 	if (isOperator(operation.operator, ".")) {
-		return checkTypesInPropertyDefinition(parser, tree, block, operation);
+		return checkTypesInProperty(parser, tree, block, operation);
 	}
 
 	if (isOperator(operation.operator, "-") && operation.left == (Operation)0) {
@@ -1343,6 +1351,7 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 			printError(parser, operation.right.region.start, " expected type 'int' for the unary '-' operation\n");
 		}
 
+		operation.operationType = parser.int;
 		return parser.int;
 	}
 
@@ -1373,6 +1382,7 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 			printType(rightType);
 			print("'\n");
 		}
+		operation.operationType = parser.bool;
 		return parser.bool;
 	} else if (isOperator(operation.operator, "[")) {
 		if (isVariable(operation.left) != (bool)1) {
@@ -1390,12 +1400,15 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 			return (Type)0;
 		}
 
+		operation.operationType = leftType.listType;
 		return leftType.listType;
 	} else if (isOperator(operation.operator, "+")) {
 		if (leftType == parser.int) {
 			if (rightType == parser.int) {
+				operation.operationType = parser.int;
 				return parser.int;
 			} else if (rightType == parser.char) {
+				operation.operationType = parser.char;
 				return parser.char;
 			} else {
 				printError(parser, operation.operator.position, " can not add values of type 'int' and '");
@@ -1404,6 +1417,7 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 			}
 		} else if (leftType == parser.char) {
 			if (rightType == parser.int) {
+				operation.operationType = parser.char;
 				return parser.char;
 			} else {
 				printError(parser, operation.operator.position, " can not add values of type 'char' and '");
@@ -1422,6 +1436,7 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 	} else if (isOperator(operation.operator, "-")) {
 		if (leftType == parser.int) {
 			if (rightType == parser.int) {
+				operation.operationType = parser.int;
 				return parser.int;
 			} else {
 				printError(parser, operation.operator.position, " can not subtract value of type '");
@@ -1430,8 +1445,10 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 			}
 		} else if (leftType == parser.char) {
 			if (rightType == parser.int) {
+				operation.operationType = parser.char;
 				return parser.char;
 			} else if (rightType == parser.char) {
+				operation.operationType = parser.int;
 				return parser.int;
 			} else {
 				printError(parser, operation.operator.position, " can not subtract value of type '");
@@ -1462,14 +1479,18 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 			print("'\n");
 		}
 
+		operation.operationType = parser.int;
 		return parser.int;
 	} else if (isOperator(operation.operator, "(")) {
 		var typeObj = checkTypesInOperation(parser, tree, block, operation.right);
 
 		if (operation.castType != (TypeName)0) {
-			return getTypeFromTypeName(parser, tree, block, operation.castType);
+			var castType = getTypeFromTypeName(parser, tree, block, operation.castType);
+			operation.operationType = castType;
+			return castType;
 		}
 
+		operation.operationType = typeObj;
 		return typeObj;
 	} else if (isOperator(operation.operator, "=")) {
 		if (isVariable(operation.left) != (bool)1) {
@@ -1496,6 +1517,7 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 			printType(rightType);
 			print("'\n");
 		}
+		operation.operationType = parser.bool;
 		return parser.bool;
 	} else {
 		printError(parser, operation.region.start, " do not support type checking for '");

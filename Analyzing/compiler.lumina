@@ -637,7 +637,7 @@ func writeShift(Parser parser, SyntaxTree tree, Block block, int output, str shi
 func writePropertyDefinition(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, RegisterList registers, Register register, bool getValue, FunctionList functions) -> str {
 	writeOperation(parser, tree, block, output, operation.left, registers, register, (bool)1, functions);
 
-	var typeObj = checkTypesInOperation(parser, tree, block, operation.left);
+	var typeObj = operation.left.operationType;
 
 	if (typeObj == (Type)0) {
 		printPosition(operation.operator.position);
@@ -646,7 +646,7 @@ func writePropertyDefinition(Parser parser, SyntaxTree tree, Block block, int ou
 	}
 
 	var propertyName = operation.right.value.name;
-	var propertyType = checkTypesInOperation(parser, tree, block, operation);
+	var propertyType = operation.operationType;
 
 	if (propertyType == (Type)0) {
 		printPosition(operation.operator.position);
@@ -698,7 +698,7 @@ func writeAssignment(Parser parser, SyntaxTree tree, Block block, int output, Op
 	writeOperation(parser, tree, block, output, operation.right, registers, valueRegister, (bool)1, functions);
 
 	if (isOperator(operation.left.operator, "[")) {
-		var arrayType = checkTypesInOperation(parser, tree, block, operation.left);
+		var arrayType = operation.left.operationType;
 
 		if (arrayType == (Type)0) {
 			printPosition(operation.operator.position);
@@ -730,7 +730,7 @@ func writeAssignment(Parser parser, SyntaxTree tree, Block block, int output, Op
 		fprint(output, valueRegister.name);
 		fprint(output, " ;; assign to list\n");
 	} else if (isOperator(operation.left.operator, ".")) {
-		var propertyType = checkTypesInOperation(parser, tree, block, operation.left);
+		var propertyType = operation.left.operationType;
 
 		if (propertyType == (Type)0) {
 			printPosition(operation.operator.position);
@@ -894,7 +894,7 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	} else if (isOperator(operation.operator, ">=")) {
 		return writeComparison(output, "cmovge", registerA, registerB);
 	} else if (isOperator(operation.operator, "[")) {
-		var typeObj = checkTypesInOperation(parser, tree, block, operation);
+		var typeObj = operation.operationType;
 
 		if (typeObj == (Type)0) {
 			printPosition(operation.operator.position);
