@@ -634,7 +634,7 @@ func writeShift(Parser parser, SyntaxTree tree, Block block, int output, str shi
 	return register.name;
 }
 
-func writeProperty(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, RegisterList registers, Register register, bool getValue, FunctionList functions) -> str {
+func writePropertyDefinition(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, RegisterList registers, Register register, bool getValue, FunctionList functions) -> str {
 	writeOperation(parser, tree, block, output, operation.left, registers, register, (bool)1, functions);
 
 	var typeObj = checkTypesInOperation(parser, tree, block, operation.left);
@@ -654,7 +654,7 @@ func writeProperty(Parser parser, SyntaxTree tree, Block block, int output, Oper
 		return register.name;
 	}
 
-	var offset = getPropertyOffset(parser, tree, block, typeObj, propertyName.name);
+	var offset = getPropertyDefinitionOffset(parser, tree, block, typeObj, propertyName.name);
 	
 	if (getValue) {
 		fprint(output, "	mov ");
@@ -856,7 +856,7 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	}
 
 	if (isOperator(operation.operator, ".")) {
-		return writeProperty(parser, tree, block, output, operation, registers, registerA, getValue, functions);
+		return writePropertyDefinition(parser, tree, block, output, operation, registers, registerA, getValue, functions);
 	}
 
 	if (isOperator(operation.operator, "&&")) {
