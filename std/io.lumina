@@ -4,8 +4,7 @@ import "string.lumina"
 import "environment.lumina"
 
 func fprintn(int fd, str string, int length) -> int {
-	var SYSWRITE = 1;
-	return (int)syscall(SYSWRITE, fd, string, length, 0, 0, 0);
+	return write(fd, (ptr)string, length);
 }
 
 func fprint(int fd, str string) -> int {

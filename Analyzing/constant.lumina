@@ -1,0 +1,94 @@
+import "../std/memory.lumina"
+import "../std/string.lumina"
+
+import "position.lumina"
+import "name.lumina"
+import "operation.lumina"
+import "operator.lumina"
+import "type.lumina"
+import "whitespace.lumina"
+
+
+type ConstantDefinition {
+	Region region;
+	
+	Name keyword;
+	Name name;
+	Operator equalSign;
+	Operation value;
+	Operator semicolon;
+
+	Type constantType;
+	int constantValue;
+	bool evaluated;
+}
+
+type ConstantList {
+	int size;
+	int maxSize;
+	ConstantDefinition[] list;
+}
+
+func createConstantDefinition(Name keyword, Name name, Operator equalSign, Operation value, Operator semicolon) -> ConstantDefinition {
+	var constant = (ConstantDefinition)malloc(sizeof(ConstantDefinition));
+
+	constant.region = createRegion(keyword.region.start, semicolon.position);
+
+	constant.keyword = keyword;
+	constant.name = name;
+	constant.equalSign = equalSign;
+	constant.value = value;
+	constant.semicolon = semicolon;
+	constant.constantType = (Type)0;
+	constant.constantValue = -1;
+	constant.evaluated = (bool)0;
+
+	return constant;
+}
+
+func createConstantFromString(str value, Type constantType, int constantValue) -> ConstantDefinition {
+	var constant = (ConstantDefinition)malloc(sizeof(ConstantDefinition));
+
+	constant.region = (Region)0;
+	constant.keyword = (Name)0;
+	constant.name = createNameFromString(value);
+	constant.equalSign = (Operator)0;
+	constant.value = (Operation)0;
+	constant.semicolon = (Operator)0;
+	constant.constantType = constantType;
+	constant.constantValue = constantValue;
+	constant.evaluated = (bool)1;
+
+	return constant;
+}
+
+func createConstantList() -> ConstantList {
+	var list = (ConstantList)malloc(sizeof(ConstantList));
+
+	list.size = 0;
+	list.maxSize = 8;
+	list.list = (ConstantDefinition[])malloc(8 * 8);
+
+	return list;
+}
+
+func addConstant(ConstantList list, ConstantDefinition constant) {
+	list.list[list.size] = constant;
+	list.size = list.size + 1;
+
+	if (list.size == list.maxSize) {
+		list.list = (ConstantDefinition[])realloc((ptr)list.list, list.maxSize * 8, list.maxSize * 8 * 2);
+		list.maxSize = list.maxSize * 2;
+	}
+}
+
+func findConstant(ConstantList list, str name) -> ConstantDefinition {
+	var i = 0;
+	while (i < list.size) {
+		if (streq(list.list[i].name.name, name)) {
+			return list.list[i];
+		}
+		i = i + 1;
+	}
+	return (ConstantDefinition)0;
+}

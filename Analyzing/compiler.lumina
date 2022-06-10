@@ -22,6 +22,7 @@ import "statement.lumina"
 import "type.lumina"
 import "value.lumina"
 import "variable.lumina"
+import "constant.lumina"
 import "while.lumina"
 import "whitespace.lumina"
 
@@ -103,6 +104,26 @@ func initRegisters() -> RegisterList {
 	addRegister(registers, createRegister("rdx"));
 
 	return registers;
+}
+
+func evaluateValue(Parser parser, Value value) -> int {
+	if (value.number != (Number)0) {
+		return value.number.value;
+	}
+
+	printError(parser, value.region.start, " do not support constant values of this type yet\n");
+
+	return -1;
+}
+
+func evaluateOperation(Parser parser, Operation operation) -> int {
+	if (operation.value != (Value)0) {
+		return evaluateValue(parser, operation.value);
+	}
+
+	printError(parser, operation.region.start, " do not support constant operations yet\n");
+	
+	return -1;
 }
 
 func printEscapedCharacter(int output, char chr) {
@@ -234,7 +255,39 @@ func writeFooter(int output, StringList strings) {
 	}
 }
 
+func writeConstant(Parser parser, int output, ConstantDefinition constant, str register) {
+	if (constant.evaluated != (bool)1) {
+		evaluateConstant(parser, constant);
+	}
+
+	fprint(output, "	mov ");
+	fprint(output, register);
+	fprint(output, ", ");
+
+	if (constant.constantType == parser.int) {
+		fprinti(output, constant.constantValue);
+	} else if (constant.constantType == parser.char) {
+		printEscapedCharacter(output, (char)constant.constantValue);
+	} else if (constant.constantType == parser.str) {
+		fprint(output, "string_");
+		fprinti(output, constant.constantValue);
+	} else {
+		printPosition(constant.value.region.start);
+		print(" do not support type '");
+		printType(constant.constantType);
+		print("' for constants yet\n");
+	}
+
+	fprint(output, " ;; constant\n");
+}
+
 func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Name name, str register, bool getValue) -> str {
+	var constant = findConstantInParser(parser, tree, block, name.name);
+	if (constant != (ConstantDefinition)0) {
+		writeConstant(parser, output, constant, register);
+		return register;
+	}
+
 	var variable = (VariableDefinition)0;
 	if (block != (Block)0) {
 		variable = findVariableInBlock(parser, tree, block, name.name);
@@ -933,6 +986,15 @@ func writeVariable(Parser parser, SyntaxTree tree, Block block, int output, Vari
 	writePushData(output, register);
 }
 
+func evaluateConstant(Parser parser, ConstantDefinition constant) {
+	if (constant.evaluated) {
+		return;
+	}
+
+	constant.constantValue = evaluateOperation(parser, constant.value);
+	constant.evaluated = (bool)1;
+}
+
 func writeReturn(Parser parser, SyntaxTree tree, Block block, int output, Return returnStatement, RegisterList registers, FunctionList functions) {
 	if (returnStatement.expression != (Operation)0) {
 		var rax = findRegister(registers, "rax");
@@ -1091,6 +1153,8 @@ func writeStatement(Parser parser, SyntaxTree tree, Block block, int output, Sta
 		writeWhile(parser, tree, block, output, statement.whileStatement, registers, functions);
 	} else if (statement.variable != (VariableDefinition)0) {
 		writeVariable(parser, tree, block, output, statement.variable, registers, functions);
+	} else if (statement.constant != (ConstantDefinition)0) {
+		evaluateConstant(parser, statement.constant);
 	} else if (statement.returnStatement != (Return)0) {
 		writeReturn(parser, tree, block, output, statement.returnStatement, registers, functions);
 	}
