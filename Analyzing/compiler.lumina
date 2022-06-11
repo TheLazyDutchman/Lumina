@@ -507,7 +507,7 @@ func writeSizeOf(Parser parser, SyntaxTree tree, Block block, int output, SizeOf
 		return register;
 	}
 
-	var size = getSizeFromType(parser, tree, block, typeObj, (bool)0);
+	var size = getSizeFromType(parser, tree, block, typeObj);
 
 	fprint(output, "	mov ");
 	fprint(output, register);
@@ -707,7 +707,7 @@ func writePropertyDefinition(Parser parser, SyntaxTree tree, Block block, int ou
 		return register.name;
 	}
 
-	var offset = getPropertyDefinitionOffset(parser, tree, block, typeObj, propertyName.name);
+	var offset = getPropertyOffset(parser, tree, block, typeObj, propertyName.name);
 	
 	if (getValue) {
 		fprint(output, "	mov ");
@@ -722,7 +722,7 @@ func writePropertyDefinition(Parser parser, SyntaxTree tree, Block block, int ou
 
 		fprint(output, "] ;; read offset\n");
 
-		var propertySize = getSizeFromType(parser, tree, block, propertyType, (bool)1);
+		var propertySize = propertyType.size;
 
 		if (propertySize != 8) {
 			var mask = (1 << (8 * propertySize)) - 1;
@@ -751,15 +751,15 @@ func writeAssignment(Parser parser, SyntaxTree tree, Block block, int output, Op
 	writeOperation(parser, tree, block, output, operation.right, registers, valueRegister, (bool)1, functions);
 
 	if (isOperator(operation.left.operator, "[")) {
-		var arrayType = operation.left.operationType;
+		var listType = operation.left.operationType;
 
-		if (arrayType == (Type)0) {
+		if (listType == (Type)0) {
 			printPosition(operation.operator.position);
-			print(" array type is null\n");
+			print(" list type is null\n");
 			return register.name;
 		}
 
-		var size = getSizeFromType(parser, tree, block, arrayType, (bool)1);
+		var size = listType.size;
 
 		var movWord = "mov";
 		if (size != 8) {
@@ -791,7 +791,7 @@ func writeAssignment(Parser parser, SyntaxTree tree, Block block, int output, Op
 			return register.name;
 		}
 
-		var size = getSizeFromType(parser, tree, block, propertyType, (bool)1);
+		var size = propertyType.size;
 
 		var movWord = "mov";
 		if (size != 8) {
@@ -955,8 +955,7 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 			return registerA.name;
 		}
 
-		var size = getSizeFromType(parser, tree, block, typeObj, (bool)1);
-		return writeIndex(output, size, registerA, registerB, getValue);
+		return writeIndex(output, typeObj.size, registerA, registerB, getValue);
 	} else if (isOperator(operation.operator, "+")) {
 		operationString = "add";
 	} else if (isOperator(operation.operator, "-")) {

@@ -858,14 +858,14 @@ func getTypeFromTypeName(Parser parser, SyntaxTree tree, Block block, TypeName t
 	return typeDef;
 }
 
-func getSizeFromType(Parser parser, SyntaxTree tree, Block block, Type typeObj, bool isPropertyDefinition) -> int {
+func getSizeFromType(Parser parser, SyntaxTree tree, Block block, Type typeObj) -> int {
 	if (typeObj == (Type)0) {
 		print("type obj is null in 'getSizeFromType'\n");
 		exit(1);
 		return 0;
 	}
 
-	if (typeObj.definition == (TypeDefinition)0 || isPropertyDefinition || typeObj.listType != (Type)0) {
+	if (typeObj.definition == (TypeDefinition)0 || typeObj.listType != (Type)0) {
 		return typeObj.size;
 	}
 
@@ -881,32 +881,32 @@ func getSizeFromType(Parser parser, SyntaxTree tree, Block block, Type typeObj, 
 			return 0;
 		}
 
-		sum = sum + getSizeFromType(parser, tree, block, propertyType, (bool)1);
+		sum = sum + propertyType.size;
 		i = i + 1;
 	}
 
 	return sum;
 }
 
-func getPropertyDefinitionOffset(Parser parser, SyntaxTree tree, Block block, Type typeObj, str propertyName) -> int {
+func getPropertyOffset(Parser parser, SyntaxTree tree, Block block, Type typeObj, str propertyName) -> int {
 	var sum = 0;
 	var i = 0;
-	while (i < typeObj.definition.properties.size) {
-		var property = typeObj.definition.properties.list[i];
-		if (streq(property.name.name, propertyName)) {
+	while (i < typeObj.properties.size) {
+		var property = typeObj.properties.list[i];
+		if (streq(property.name, propertyName)) {
 			return sum;
 		}
 
-		var propertyType = getTypeFromTypeName(parser, tree, block, property.typeName);
+		var propertyType = getTypeFromTypeName(parser, tree, block, property.definition.typeName);
 
 		if (propertyType == (Type)0) {
-			printError(parser, property.region.start, " property type is null in 'getPropertyDefinitionOffset' in file: '");
+			printError(parser, property.definition.region.start, " property type is null in 'getPropertyDefinitionOffset' in file: '");
 			print(tree.fileName);
 			print("'\n");
 			return 0;
 		}
 
-		sum = sum + getSizeFromType(parser, tree, block, propertyType, (bool)1);
+		sum = sum + propertyType.size;
 		i = i + 1;
 	}
 
@@ -1707,6 +1707,11 @@ func checkTypesInReturn(Parser parser, SyntaxTree tree, Block block, Return retu
 	var expectedType = getTypeFromTypeName(parser, tree, block, function.returnType.returnType);
 
 	if (returnType != expectedType) {
+		if (returnType == parser.null) {
+			printError(parser, returnStatement.semicolon.position, "expected a return value\n");
+			return;
+		}
+
 		printError(parser, returnStatement.expression.region.start, " expected type '");
 		printType(expectedType);
 		print("', got '");
