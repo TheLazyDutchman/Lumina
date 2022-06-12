@@ -10,6 +10,7 @@ import "constant.lumina"
 import "function.lumina"
 import "type.lumina"
 import "block.lumina"
+import "definition.lumina"
 
 
 type Statement {
@@ -18,8 +19,8 @@ type Statement {
 	If ifStatement;
 	While whileStatement;
 	Import importStatement;
-	VariableDefinition variable;
-	ConstantDefinition constant;
+
+	Definition definition;
 	FunctionDefinition function;
 	Type typeStatement;
 	Return returnStatement;
@@ -40,7 +41,6 @@ func createStatement() -> Statement {
 	statement.ifStatement = (If)0;
 	statement.whileStatement = (While)0;
 	statement.importStatement = (Import)0;
-	statement.variable = (VariableDefinition)0;
 	statement.function = (FunctionDefinition)0;
 	statement.returnStatement = (Return)0;
 	statement.typeStatement = (Type)0;
@@ -85,20 +85,11 @@ func createImportStatement(Import importStatement) -> Statement {
 	return statement;
 }
 
-func createVariableStatement(VariableDefinition variable) -> Statement {
+func createDefinitionStatement(Definition definition) -> Statement {
 	var statement = createStatement();
 
-	statement.region = variable.region;
-	statement.variable = variable;
-
-	return statement;
-}
-
-func createConstantStatement(ConstantDefinition constant) -> Statement {
-	var statement = createStatement();
-
-	statement.region = constant.region;
-	statement.constant = constant;
+	statement.region = definition.region;
+	statement.definition = definition;
 
 	return statement;
 }

@@ -980,6 +980,14 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	return registerA.name;
 }
 
+func writeDefinition(Parser parser, SyntaxTree tree, Block block, int output, Definition definition, RegisterList registers, FunctionList functions) {
+	if (definition.variable != (VariableDefinition)0) {
+		writeVariable(parser, tree, block, output, definition.variable, registers, functions);
+	} else if (definition.constant != (ConstantDefinition)0) {
+		evaluateConstant(parser, definition.constant);
+	}
+}
+
 func writeVariable(Parser parser, SyntaxTree tree, Block block, int output, VariableDefinition variable, RegisterList registers, FunctionList functions) {
 	var register = getRegister(registers);
 	writeOperation(parser, tree, block, output, variable.value, registers, register, (bool)1, functions);
@@ -1151,10 +1159,8 @@ func writeStatement(Parser parser, SyntaxTree tree, Block block, int output, Sta
 		writeIf(parser, tree, block, output, statement.ifStatement, registers, functions);
 	} else if (statement.whileStatement != (While)0) {
 		writeWhile(parser, tree, block, output, statement.whileStatement, registers, functions);
-	} else if (statement.variable != (VariableDefinition)0) {
-		writeVariable(parser, tree, block, output, statement.variable, registers, functions);
-	} else if (statement.constant != (ConstantDefinition)0) {
-		evaluateConstant(parser, statement.constant);
+	} else if (statement.definition != (Definition)0) {
+		writeDefinition(parser, tree, block, output, statement.definition, registers, functions);
 	} else if (statement.returnStatement != (Return)0) {
 		writeReturn(parser, tree, block, output, statement.returnStatement, registers, functions);
 	}
