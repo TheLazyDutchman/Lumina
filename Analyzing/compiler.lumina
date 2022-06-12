@@ -25,6 +25,7 @@ import "variable.lumina"
 import "constant.lumina"
 import "while.lumina"
 import "whitespace.lumina"
+import "definition.lumina"
 
 
 type Register {

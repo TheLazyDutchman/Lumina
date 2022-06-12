@@ -9,6 +9,7 @@ import "variable.lumina"
 import "constant.lumina"
 import "name.lumina"
 import "whitespace.lumina"
+import "definition.lumina"
 
 
 type Block {
@@ -16,6 +17,8 @@ type Block {
 
 	Operator lbrace;
 	StatementList statements;
+
+	DefinitionList definitions;
 	TypeList types;
 	FunctionList functions;
 	VariableList variables;
@@ -33,13 +36,15 @@ type BlockList {
 	Block[] list;
 }
 
-func createBlock(Operator lbrace, StatementList statements, TypeList types, FunctionList functions, VariableList variables, ConstantList constants, Block outer, FunctionDefinition function) -> Block {
+func createBlock(Operator lbrace, StatementList statements, DefinitionList definitions, TypeList types, FunctionList functions, VariableList variables, ConstantList constants, Block outer, FunctionDefinition function) -> Block {
 	var block = (Block)malloc(sizeof(Block));
 
 	block.region = (Region)0;
 
 	block.lbrace = lbrace;
 	block.statements = statements;
+
+	block.definitions = definitions;
 	block.types = types;
 	block.functions = functions;
 	block.variables = variables;

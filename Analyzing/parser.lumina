@@ -23,6 +23,7 @@ import "name.lumina"
 import "position.lumina"
 import "import.lumina"
 import "comment.lumina"
+import "definition.lumina"
 
 
 type SyntaxTree {
@@ -30,6 +31,8 @@ type SyntaxTree {
 	Lexer lexer;
 	BlockList blocks;
 	StatementList statements;
+
+	DefinitionList definitions;
 	TypeList types;
 	FunctionList functions;
 	VariableList variables;
@@ -47,6 +50,8 @@ type SyntaxTreeList {
 
 type Parser {
 	SyntaxTreeList files;
+
+	DefinitionList definitions;
 
 	TypeList types;
 	Type int;
@@ -83,6 +88,8 @@ func createSyntaxTree(str fileName, int numAnds, int numOrs) -> SyntaxTree {
 	next(tree.lexer);
 
 	tree.statements = createStatementList();
+
+	tree.definitions = createDefinitionList();
 	tree.types = createTypeList();
 	tree.functions = createFunctionList();
 	tree.variables = createVariableList();
@@ -141,6 +148,8 @@ func createParser() -> Parser {
 
 	parser.files = createSyntaxTreeList();
 
+	parser.definitions = createDefinitionList();
+
 	parser.types = createTypeList();
 	parser.int = createTypeFromString("int", 8);
 	parser.char = createTypeFromString("char", 1);
@@ -149,12 +158,20 @@ func createParser() -> Parser {
 	parser.any = createTypeFromString("any", 8);
 	parser.ptr = createTypeFromString("ptr", 8);
 	parser.null = createTypeFromString("null", 8);
+
+	addDefinition(parser.definitions, createDefinitionFromType(parser.int));
 	addType(parser.types, parser.int);
+	addDefinition(parser.definitions, createDefinitionFromType(parser.char));
 	addType(parser.types, parser.char);
+	addDefinition(parser.definitions, createDefinitionFromType(parser.str));
 	addType(parser.types, parser.str);
+	addDefinition(parser.definitions, createDefinitionFromType(parser.bool));
 	addType(parser.types, parser.bool);
+	addDefinition(parser.definitions, createDefinitionFromType(parser.any));
 	addType(parser.types, parser.any);
+	addDefinition(parser.definitions, createDefinitionFromType(parser.ptr));
 	addType(parser.types, parser.ptr);
+	addDefinition(parser.definitions, createDefinitionFromType(parser.null));
 	addType(parser.types, parser.null);
 
 	parser.functions = createFunctionList();
@@ -169,12 +186,15 @@ func createParser() -> Parser {
 	var syscallReturnType = createReturnTypeFromString("any");
 
 	parser.syscall = createFunctionFromString("syscall", syscallParameters, syscallReturnType);
+	addDefinition(parser.definitions, createDefinitionFromFunction(parser.syscall));
 	addFunction(parser.functions, parser.syscall);
 
 	parser.variables = createVariableList();
 	parser.argv = createVariableFromString("argv", 0, 1, createListType((str)0, parser.str));
 	parser.argc = createVariableFromString("argc", 0, 2, parser.int);
+	addDefinition(parser.definitions, createDefinitionFromVariable(parser.argv));
 	addVariable(parser.variables, parser.argv);
+	addDefinition(parser.definitions, createDefinitionFromVariable(parser.argc));
 	addVariable(parser.variables, parser.argc);
 
 	parser.numIfs = 0;
@@ -520,12 +540,14 @@ func parseBlock(Parser parser, SyntaxTree tree, Block outer, FunctionDefinition 
 	var lbrace = consumeOperator(parser, tree, "{", (bool)0);
 
 	var statementList = createStatementList();
+
+	var definitionList = createDefinitionList();
 	var typeList = createTypeList();
 	var functionList = createFunctionList();
 	var variableList = createVariableList();
 	var constantList = createConstantList();
 
-	var block = createBlock(lbrace, statementList, typeList, functionList, variableList, constantList, outer, function);
+	var block = createBlock(lbrace, statementList, definitionList, typeList, functionList, variableList, constantList, outer, function);
 	addBlock(tree.blocks, block);
 
 	if (block.function != (FunctionDefinition)0) {
@@ -533,7 +555,7 @@ func parseBlock(Parser parser, SyntaxTree tree, Block outer, FunctionDefinition 
 	}
 
 	while (isOperator(tree.lexer.current.operator, "}") != (bool)1 || tree.lexer.current.isEOF) {
-		var statement = parseStatement(parser, tree, block, typeList, functionList, variableList, constantList, importList);
+		var statement = parseStatement(parser, tree, block, definitionList, typeList, functionList, variableList, constantList, importList);
 		addStatement(statementList, statement);
 	}
 
@@ -658,7 +680,7 @@ func parseReturn(Parser parser, SyntaxTree tree) -> Return {
 	return createReturn(keyword, expression, semicolon);
 }
 
-func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeList, FunctionList functionList, VariableList variableList, ConstantList constantList, ImportList importList) -> Statement {
+func parseStatement(Parser parser, SyntaxTree tree, Block block, DefinitionList definitionList, TypeList typeList, FunctionList functionList, VariableList variableList, ConstantList constantList, ImportList importList) -> Statement {
 	if (isKeyword(tree.lexer.current.name, KEYWORD_var)) {
 		var depth = 0;
 		if (block != (Block)0) {
@@ -696,18 +718,21 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 
 		var variable = parseVariableDefinition(parser, tree, depth, size);
 
+		addDefinition(definitionList, createDefinitionFromVariable(variable));
 		addVariable(variableList, variable);
 
 		return createVariableStatement(variable);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_const)) {
 		var constant = parseConstantDefinition(parser, tree);
 
+		addDefinition(definitionList, createDefinitionFromConstant(constant));
 		addConstant(constantList, constant);
 		
 		return createConstantStatement(constant);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_func)) {
 		var function = parseFunctionDefinition(parser, tree, block, importList);
 
+		addDefinition(definitionList, createDefinitionFromFunction(function));
 		addFunction(functionList, function);
 
 		return createFunctionStatement(function);
@@ -723,6 +748,7 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, TypeList typeLi
 		var typeDefinition = parseType(parser, tree);
 		var typeObj = createTypeFromDefinition(typeDefinition);
 
+		addDefinition(definitionList, createDefinitionFromType(typeObj));
 		addType(typeList, typeObj);
 
 		return createTypeStatement(typeObj);
@@ -763,7 +789,7 @@ func parse(Parser parser, str fileName, str outerName) -> SyntaxTree {
 	tree = createSyntaxTree(fileName, parser.numAnds, parser.numOrs);
 
 	while (tree.lexer.current.isEOF != (bool)1) {
-		var statement = parseStatement(parser, tree, (Block)0, tree.types, tree.functions, tree.variables, tree.constants, tree.imports);
+		var statement = parseStatement(parser, tree, (Block)0, tree.definitions, tree.types, tree.functions, tree.variables, tree.constants, tree.imports);
 		addStatement(tree.statements, statement);
 	}
 
@@ -788,6 +814,40 @@ func parseImports(Parser parser, SyntaxTree tree) {
 		tree.importTrees[i] = importTree;
 		i = i + 1;
 	}
+}
+
+func findDefinitionInBlock(Block block, str name) -> Definition {
+	var definition = findDefinition(block.definitions, name);
+
+	if (definition == (Definition)0 && block.outer != (Block)0) {
+		return findDefinitionInBlock(block.outer, name);
+	}
+
+	return definition;
+}
+
+func findDefinitionInParser(Parser parser, SyntaxTree tree, Block block, str name) -> Definition {
+	var definition = (Definition)0;
+
+	if (block != (Block)0) {
+		definition = findDefinitionInBlock(block, name);
+	}
+
+	if (definition == (Definition)0) {
+		definition = findDefinition(tree.definitions, name);
+	}
+
+	if (definition == (Definition)0) {
+		definition = findDefinition(parser.definitions, name);
+	}
+
+	var i = 0;
+	while (i < tree.imports.size && definition == (Definition)0) {
+		definition = findDefinition(tree.importTrees[i].definitions, name);
+		i = i + 1;
+	}
+
+	return definition;
 }
 
 func findFunctionInParser(Parser parser, SyntaxTree tree, Block block, str name) -> FunctionDefinition {
