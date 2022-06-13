@@ -9,6 +9,20 @@ import "type.lumina"
 import "whitespace.lumina"
 
 
+type Variable {
+	str name;
+	VariableDefinition definition;
+
+	int depth;
+	int position;
+
+	Type variableType;
+	
+	bool isConstant;
+	bool isEvaluated;
+	int value;
+}
+
 type VariableDefinition {
 	Region region;
 
@@ -26,7 +40,7 @@ type VariableDefinition {
 type VariableList {
 	int size;
 	int maxSize;
-	VariableDefinition[] list;
+	Variable[] list;
 }
 
 func createVariableDefinition(Name keyword, Name name, Operator equalSign, Operation value, int depth, int position, Operator semicolon) -> VariableDefinition {
@@ -46,18 +60,28 @@ func createVariableDefinition(Name keyword, Name name, Operator equalSign, Opera
 	return variable;
 }
 
-func createVariableFromString(str value, int depth, int position, Type variableType) -> VariableDefinition {
-	var variable = (VariableDefinition)malloc(sizeof(VariableDefinition));
+func createVariableFromString(str name, int depth, int position, Type variableType) -> Variable {
+	var variable = (Variable)malloc(sizeof(Variable));
 
-	variable.region = (Region)0;
-	variable.keyword = (Name)0;
-	variable.name = createNameFromString(value);
-	variable.equalSign = (Operator)0;
-	variable.value = (Operation)0;
-	variable.semicolon = (Operator)0;
+	variable.name = name;
+	variable.definition = (VariableDefinition)0;
+
 	variable.depth = depth;
 	variable.position = position;
+
 	variable.variableType = variableType;
+
+	variable.isConstant = (bool)0;
+	variable.isEvaluated = (bool)0;
+	variable.value = 0;
+
+	return variable;
+}
+
+func createVariableFromDefinition(VariableDefinition definition) -> Variable {
+	var variable = createVariableFromString(definition.name.name, definition.depth, definition.position, definition.variableType);
+
+	variable.definition = definition;
 
 	return variable;
 }
@@ -67,28 +91,28 @@ func createVariableList() -> VariableList {
 
 	list.size = 0;
 	list.maxSize = 8;
-	list.list = (VariableDefinition[])malloc(8 * 8);
+	list.list = (Variable[])malloc(8 * 8);
 
 	return list;
 }
 
-func addVariable(VariableList list, VariableDefinition variable) {
+func addVariable(VariableList list, Variable variable) {
 	list.list[list.size] = variable;
 	list.size = list.size + 1;
 
 	if (list.size == list.maxSize) {
-		list.list = (VariableDefinition[])realloc((ptr)list.list, list.maxSize * 8, list.maxSize * 8 * 2);
+		list.list = (Variable[])realloc((ptr)list.list, list.maxSize * 8, list.maxSize * 8 * 2);
 		list.maxSize = list.maxSize * 2;
 	}
 }
 
-func findVariable(VariableList list, str name) -> VariableDefinition {
+func findVariable(VariableList list, str name) -> Variable {
 	var i = 0;
 	while (i < list.size) {
-		if (streq(list.list[i].name.name, name)) {
+		if (streq(list.list[i].name, name)) {
 			return list.list[i];
 		}
 		i = i + 1;
 	}
-	return (VariableDefinition)0;
+	return (Variable)0;
 }

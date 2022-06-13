@@ -18,7 +18,7 @@ type Statement {
 	If ifStatement;
 	While whileStatement;
 	Import importStatement;
-	VariableDefinition variable;
+	Variable variable;
 	ConstantDefinition constant;
 	FunctionDefinition function;
 	Type typeStatement;
@@ -40,7 +40,7 @@ func createStatement() -> Statement {
 	statement.ifStatement = (If)0;
 	statement.whileStatement = (While)0;
 	statement.importStatement = (Import)0;
-	statement.variable = (VariableDefinition)0;
+	statement.variable = (Variable)0;
 	statement.function = (FunctionDefinition)0;
 	statement.returnStatement = (Return)0;
 	statement.typeStatement = (Type)0;
@@ -85,10 +85,10 @@ func createImportStatement(Import importStatement) -> Statement {
 	return statement;
 }
 
-func createVariableStatement(VariableDefinition variable) -> Statement {
+func createVariableStatement(Variable variable) -> Statement {
 	var statement = createStatement();
 
-	statement.region = variable.region;
+	statement.region = variable.definition.region;
 	statement.variable = variable;
 
 	return statement;

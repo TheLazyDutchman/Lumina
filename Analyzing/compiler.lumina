@@ -289,26 +289,26 @@ func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Na
 		return register;
 	}
 
-	var variable = (VariableDefinition)0;
+	var variable = (Variable)0;
 	if (block != (Block)0) {
 		variable = findVariableInBlock(parser, tree, block, name.name);
 	}
 
-	if (variable == (VariableDefinition)0) {
+	if (variable == (Variable)0) {
 		variable = findVariable(tree.variables, name.name);
 	}
 
 	var i = 0;
-	while (i < tree.imports.size && variable == (VariableDefinition)0) {
+	while (i < tree.imports.size && variable == (Variable)0) {
 		variable = findVariable(tree.importTrees[i].variables, name.name);
 		i = i + 1;
 	}
 
-	if (variable == (VariableDefinition)0) {
+	if (variable == (Variable)0) {
 		variable = findVariable(parser.variables, name.name);
 	}
 
-	if (variable == (VariableDefinition)0) {
+	if (variable == (Variable)0) {
 		printPosition(name.region.start);
 		print(" can not find variable\n");
 		return (str)0;
@@ -980,9 +980,9 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	return registerA.name;
 }
 
-func writeVariable(Parser parser, SyntaxTree tree, Block block, int output, VariableDefinition variable, RegisterList registers, FunctionList functions) {
+func writeVariable(Parser parser, SyntaxTree tree, Block block, int output, Variable variable, RegisterList registers, FunctionList functions) {
 	var register = getRegister(registers);
-	writeOperation(parser, tree, block, output, variable.value, registers, register, (bool)1, functions);
+	writeOperation(parser, tree, block, output, variable.definition.value, registers, register, (bool)1, functions);
 	writePushData(output, register);
 }
 
@@ -1009,7 +1009,7 @@ func writeReturn(Parser parser, SyntaxTree tree, Block block, int output, Return
 	while (block.function == (FunctionDefinition)0) {
 		var i = 0;
 		while (i < block.variables.size) {
-			if (block.variables.list[i].region.start.index < returnStatement.region.start.index) {
+			if (block.variables.list[i].definition.region.start.index < returnStatement.region.start.index) {
 				numVariables = numVariables + 1;
 			} else {
 				i = block.variables.size;
@@ -1023,7 +1023,7 @@ func writeReturn(Parser parser, SyntaxTree tree, Block block, int output, Return
 
 	var i = 0;
 	while (i < block.variables.size) {
-		if (block.variables.list[i].region.start.index < returnStatement.region.start.index) {
+		if (block.variables.list[i].definition.region.start.index < returnStatement.region.start.index) {
 			numVariables = numVariables + 1;
 		} else {
 			i = block.variables.size;
@@ -1151,7 +1151,7 @@ func writeStatement(Parser parser, SyntaxTree tree, Block block, int output, Sta
 		writeIf(parser, tree, block, output, statement.ifStatement, registers, functions);
 	} else if (statement.whileStatement != (While)0) {
 		writeWhile(parser, tree, block, output, statement.whileStatement, registers, functions);
-	} else if (statement.variable != (VariableDefinition)0) {
+	} else if (statement.variable != (Variable)0) {
 		writeVariable(parser, tree, block, output, statement.variable, registers, functions);
 	} else if (statement.constant != (ConstantDefinition)0) {
 		evaluateConstant(parser, statement.constant);

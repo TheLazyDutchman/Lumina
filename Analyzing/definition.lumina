@@ -14,7 +14,7 @@ type Definition {
 	str name;
 
 	Type typeObj;
-	VariableDefinition variable;
+	Variable variable;
 	ConstantDefinition constant;
 	FunctionDefinition function;
 
@@ -32,7 +32,7 @@ func createDefinition() -> Definition {
 
 	definition.name = (str)0;
 	definition.typeObj = (Type)0;
-	definition.variable = (VariableDefinition)0;
+	definition.variable = (Variable)0;
 	definition.constant = (ConstantDefinition)0;
 	definition.function = (FunctionDefinition)0;
 
@@ -50,10 +50,10 @@ func createDefinitionFromType(Type typeObj) -> Definition {
 	return definition;
 }
 
-func createDefinitionFromVariable(VariableDefinition variable) -> Definition {
+func createDefinitionFromVariable(Variable variable) -> Definition {
 	var definition = createDefinition();
 
-	definition.name = variable.name.name;
+	definition.name = variable.name;
 	definition.variable = variable;
 
 	return definition;
