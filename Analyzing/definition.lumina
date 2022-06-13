@@ -12,7 +12,6 @@ import "function.lumina"
 
 type Definition {
 	str name;
-	Region region;
 
 	Type typeObj;
 	VariableDefinition variable;
@@ -32,8 +31,6 @@ func createDefinition() -> Definition {
 	var definition = (Definition)malloc(sizeof(Definition));
 
 	definition.name = (str)0;
-	definition.region = (Region)0;
-
 	definition.typeObj = (Type)0;
 	definition.variable = (VariableDefinition)0;
 	definition.constant = (ConstantDefinition)0;
@@ -48,7 +45,6 @@ func createDefinitionFromType(Type typeObj) -> Definition {
 	var definition = createDefinition();
 
 	definition.name = typeObj.name;
-	definition.region = typeObj.definition.region;
 	definition.typeObj = typeObj;
 
 	return definition;
@@ -58,7 +54,6 @@ func createDefinitionFromVariable(VariableDefinition variable) -> Definition {
 	var definition = createDefinition();
 
 	definition.name = variable.name.name;
-	definition.region = variable.region;
 	definition.variable = variable;
 
 	return definition;
@@ -68,7 +63,6 @@ func createDefinitionFromConstant(ConstantDefinition constant) -> Definition {
 	var definition = createDefinition();
 
 	definition.name = constant.name.name;
-	definition.region = constant.region;
 	definition.constant = constant;
 
 	return definition;
@@ -78,7 +72,6 @@ func createDefinitionFromFunction(FunctionDefinition function) -> Definition {
 	var definition = createDefinition();
 
 	definition.name = function.name.name;
-	definition.region = function.region;
 	definition.function = function;
 
 	return definition;

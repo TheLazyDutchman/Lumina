@@ -718,19 +718,17 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, DefinitionList 
 
 		var variable = parseVariableDefinition(parser, tree, depth, size);
 
-		var definition = createDefinitionFromVariable(variable);
-		addDefinition(definitionList, definition);
+		addDefinition(definitionList, createDefinitionFromVariable(variable));
 		addVariable(variableList, variable);
 
-		return createDefinitionStatement(definition);
+		return createVariableStatement(variable);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_const)) {
 		var constant = parseConstantDefinition(parser, tree);
-		var definition = createDefinitionFromConstant(constant);
 
-		addDefinition(definitionList, definition);
+		addDefinition(definitionList, createDefinitionFromConstant(constant));
 		addConstant(constantList, constant);
 		
-		return createDefinitionStatement(definition);
+		return createConstantStatement(constant);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_func)) {
 		var function = parseFunctionDefinition(parser, tree, block, importList);
 
@@ -1162,20 +1160,20 @@ func bindNamesInWhile(Parser parser, SyntaxTree tree, While whileStatement, Bloc
 }
 
 func bindNamesInFunctionDefinition(Parser parser, SyntaxTree tree, FunctionDefinition function, Block block) {
-	var definition = findDefinitionInParser(parser, tree, block, function.name.name);
-	if (definition.function != (FunctionDefinition)0 && definition.function != function) {
+	var foundFunction = findFunctionInParser(parser, tree, block, function.name.name);
+	if (foundFunction != (FunctionDefinition)0 && foundFunction != function) {
 		printError(parser, function.name.region.start, " a function with this name already exists\n");
 	}
 
-	if (definition.variable != (VariableDefinition)0) {
+	if (findVariableInParser(parser, tree, block, function.name.name) != (VariableDefinition)0) {
 		printError(parser, function.name.region.start, " a variable with this name already exists\n");
 	}
 
-	if (definition.constant != (ConstantDefinition)0) {
+	if (findConstantInParser(parser, tree, block, function.name.name) != (ConstantDefinition)0) {
 		printError(parser, function.name.region.start, " a constant with this name already exists\n");
 	}
 
-	if (definition.typeObj != (Type)0) {
+	if (findTypeInParser(parser, tree, block, function.name.name) != (Type)0) {
 		printError(parser, function.name.region.start, " a type with this name already exists\n");
 	}
 
@@ -1187,20 +1185,20 @@ func bindNamesInFunctionDefinition(Parser parser, SyntaxTree tree, FunctionDefin
 }
 
 func bindNamesInTypeDefinition(Parser parser, SyntaxTree tree, TypeDefinition typeDef, Block block) {
-	var definition = findDefinitionInParser(parser, tree, block, typeDef.name.name);
-	if (definition.typeObj != (Type)0 && definition.typeObj.definition != typeDef) {
+	var foundType = findTypeInParser(parser, tree, block, typeDef.name.name);
+	if (foundType != (Type)0 && foundType.definition != typeDef) {
 		printError(parser, typeDef.name.region.start, " a type with this name already exists\n");
 	}
 
-	if (definition.variable != (VariableDefinition)0) {
+	if (findVariableInParser(parser, tree, block, typeDef.name.name) != (VariableDefinition)0) {
 		printError(parser, typeDef.name.region.start, " a variable with this name already exists\n");
 	}
 
-	if (definition.constant != (ConstantDefinition)0) {
+	if (findConstantInParser(parser, tree, block, typeDef.name.name) != (ConstantDefinition)0) {
 		printError(parser, typeDef.name.region.start, " a constant with this name already exists\n");
 	}
 
-	if (definition.function != (FunctionDefinition)0) {
+	if (findFunctionInParser(parser, tree, block, typeDef.name.name) != (FunctionDefinition)0) {
 		printError(parser, typeDef.name.region.start, " a function with this name already exists\n");
 	}
 
@@ -1211,33 +1209,46 @@ func bindNamesInTypeDefinition(Parser parser, SyntaxTree tree, TypeDefinition ty
 	}
 }
 
-func bindNamesInDefinition(Parser parser, SyntaxTree tree, Definition definition, Block block) {
-	var foundDefinition = findDefinitionInParser(parser, tree, block, definition.name);
-	if (foundDefinition.variable != (VariableDefinition)0) {
-		if (foundDefinition != definition) {
-			printError(parser, definition.region.start, " a variable with this name already exists\n");
-		} else if (definition.variable != (VariableDefinition)0 || foundDefinition.variable.depth != definition.variable.depth) {
-			printError(parser, definition.region.start, " a variable with this name already exists\n");
-		}
+func bindNamesInVariable(Parser parser, SyntaxTree tree, VariableDefinition variable, Block block) {
+	var foundVariable = findVariableInParser(parser, tree, block, variable.name.name);
+	if (foundVariable != (VariableDefinition)0 && foundVariable.depth != variable.depth && foundVariable != variable) {
+		printError(parser, variable.name.region.start, " a variable with this name already exists\n");
 	}
 
-	if (foundDefinition.constant != (ConstantDefinition)0 && foundDefinition != definition) {
-		printError(parser, definition.region.start, " a constant with this name already exists\n");
+	if (findConstantInParser(parser, tree, block, variable.name.name) != (ConstantDefinition)0) {
+		printError(parser, variable.name.region.start, " a constant with this name already exists\n");
 	}
 
-	if (foundDefinition.typeObj != (Type)0 && foundDefinition != definition) {
-		printError(parser, definition.region.start, " a type with this name already exists\n");
+	if (findTypeInParser(parser, tree, block, variable.name.name) != (Type)0) {
+		printError(parser, variable.name.region.start, " a type with this name already exists\n");
 	}
 
-	if (foundDefinition.function != (FunctionDefinition)0 && foundDefinition != definition) {
-		printError(parser, definition.region.start, " a function with this name already exists\n");
+	if (findFunctionInParser(parser, tree, block, variable.name.name) != (FunctionDefinition)0) {
+		printError(parser, variable.name.region.start, " a function with this name already exists\n");
 	}
 
-	if (definition.variable != (VariableDefinition)0) {
-		bindNamesInOperation(parser, tree, definition.variable.value, block);
-	} else if (definition.constant != (ConstantDefinition)0) {
-		bindNamesInOperation(parser, tree, definition.constant.value, block);
+	bindNamesInOperation(parser, tree, variable.value, block);
+}
+
+func bindNamesInConstant(Parser parser, SyntaxTree tree, ConstantDefinition constant, Block block) {
+	var foundConstant = findConstantInParser(parser, tree, block, constant.name.name);
+	if (foundConstant != (ConstantDefinition)0 && foundConstant != constant) {
+		printError(parser, constant.name.region.start, " a constant with this name already exists\n");
 	}
+
+	if (findVariableInParser(parser, tree, block, constant.name.name) != (VariableDefinition)0) {
+		printError(parser, constant.name.region.start, " a variable with this name already exists\n");
+	}
+
+	if (findTypeInParser(parser, tree, block, constant.name.name) != (Type)0) {
+		printError(parser, constant.name.region.start, " a type with this name already exists\n");
+	}
+
+	if (findFunctionInParser(parser, tree, block, constant.name.name) != (FunctionDefinition)0) {
+		printError(parser, constant.name.region.start, " a function with this name already exists\n");
+	}
+
+	bindNamesInOperation(parser, tree, constant.value, block);
 }
 
 func bindNamesInReturn(Parser parser, SyntaxTree tree, Return returnStatement, Block block) {
@@ -1256,8 +1267,10 @@ func bindNamesInStatementList(Parser parser, SyntaxTree tree, StatementList list
 			bindNamesInIf(parser, tree, statement.ifStatement, block);
 		} else if (statement.whileStatement != (While)0) {
 			bindNamesInWhile(parser, tree, statement.whileStatement, block);
-		} else if (statement.definition != (Definition)0) {
-			bindNamesInDefinition(parser, tree, statement.definition, block);
+		} else if (statement.variable != (VariableDefinition)0) {
+			bindNamesInVariable(parser, tree, statement.variable, block);
+		} else if (statement.constant != (ConstantDefinition)0) {
+			bindNamesInConstant(parser, tree, statement.constant, block);
 		} else if (statement.function != (FunctionDefinition)0) {
 			bindNamesInFunctionDefinition(parser, tree, statement.function, block);
 		} else if (statement.typeStatement != (Type)0) {
@@ -1304,11 +1317,34 @@ func compareTypes(Parser parser, Type a, Type b) -> bool {
 }
 
 func checkTypesInName(Parser parser, SyntaxTree tree, Block block, Name name) -> Type {
-	var definition = findDefinitionInParser(parser, tree, block, name.name);
+	var variable = findVariableInParser(parser, tree, block, name.name);
 
-	if (definition == (Definition)0) { return (Type)0; }
+	if (variable == (VariableDefinition)0) {
+		var constant = findConstantInParser(parser, tree, block, name.name);
 
-	return definition.valueType;
+		if (constant != (ConstantDefinition)0) {
+			if (constant.constantType == (Type)0) {
+				printError(parser, name.region.start, " the type of constant '");
+				print(constant.name.name);
+				print("' is undefined\n");
+			}
+
+			return constant.constantType;
+		}
+
+		printError(parser, name.region.start, "can not find variable '");
+		print(name.name);
+		print("'\n");
+		return (Type)0;
+	}
+
+	if (variable.variableType == (Type)0) {
+		printError(parser, name.region.start, " the type of variable '");
+		print(variable.name.name);
+		print("' is not defined\n");
+	}
+
+	return variable.variableType;
 }
 
 func checkTypesInValue(Parser parser, SyntaxTree tree, Block block, Value value) -> Type {
@@ -1689,20 +1725,24 @@ func checkTypesInWhile(Parser parser, SyntaxTree tree, Block block, While whileS
 	}
 }
 
-func checkTypesInDefinition(Parser parser, SyntaxTree tree, Block block, Definition definition) {
-	if (definition.variable != (VariableDefinition)0) {
-		definition.valueType = checkTypesInOperation(parser, tree, block, definition.variable.value);
+func checkTypesInVariable(Parser parser, SyntaxTree tree, Block block, VariableDefinition variable) {
+	var variableType = checkTypesInOperation(parser, tree, block, variable.value);
 
-		if (definition.valueType == (Type)0) {
-			printError(parser, definition.variable.value.region.start, " type is undefined\n");
-		}
-	} else if (definition.constant != (ConstantDefinition)0) {
-		definition.valueType = checkTypesInOperation(parser, tree, block, definition.constant.value);
-
-		if (definition.valueType == (Type)0) {
-			printError(parser, definition.constant.value.region.start, " type is undefined\n");
-		}
+	if (variableType == (Type)0) {
+		printError(parser, variable.value.region.start, " type is undefined\n");
 	}
+
+	variable.variableType = variableType;
+}
+
+func checkTypesInConstant(Parser parser, SyntaxTree tree, Block block, ConstantDefinition constant) {
+	var constantType = checkTypesInOperation(parser, tree, block, constant.value);
+
+	if (constantType == (Type)0) {
+		printError(parser, constant.value.region.start, " type is undefined\n");
+	}
+
+	constant.constantType = constantType;
 }
 
 func checkTypesInReturn(Parser parser, SyntaxTree tree, Block block, Return returnStatement) {
@@ -1751,8 +1791,10 @@ func checkTypesInStatementList(Parser parser, SyntaxTree tree, Block block, Stat
 			checkTypesInIf(parser, tree, block, statement.ifStatement);
 		} else if (statement.whileStatement != (While)0) {
 			checkTypesInWhile(parser, tree, block, statement.whileStatement);
-		} else if (statement.definition != (Definition)0) {
-			checkTypesInDefinition(parser, tree, block, statement.definition);
+		} else if (statement.variable != (VariableDefinition)0) {
+			checkTypesInVariable(parser, tree, block, statement.variable);
+		} else if (statement.constant != (ConstantDefinition)0) {
+			checkTypesInConstant(parser, tree, block, statement.constant);
 		} else if (statement.returnStatement != (Return)0) {
 			checkTypesInReturn(parser, tree, block, statement.returnStatement);
 		}
