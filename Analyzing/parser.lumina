@@ -1465,6 +1465,11 @@ func checkTypesInProperty(Parser parser, SyntaxTree tree, Block block, Operation
 		return (Type)0;
 	}
 
+	if (typeObj.definition == (TypeDefinition)0) {
+		printError(parser, operation.left.region.start, " cannot read property of immediate type\n");
+		return (Type)0;
+	}
+
 	var rightValue = operation.right.value;
 	if (rightValue == (Value)0 || rightValue.name == (Name)0) {
 		printError(parser, operation.right.region.start, " expected an identifier after '.' operator\n");
