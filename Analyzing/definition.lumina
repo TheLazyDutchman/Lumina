@@ -6,7 +6,6 @@ import "position.lumina"
 import "whitespace.lumina"
 import "type.lumina"
 import "variable.lumina"
-import "constant.lumina"
 import "function.lumina"
 
 
@@ -15,7 +14,6 @@ type Definition {
 
 	Type typeObj;
 	Variable variable;
-	ConstantDefinition constant;
 	FunctionDefinition function;
 
 	Type valueType;
@@ -33,7 +31,6 @@ func createDefinition() -> Definition {
 	definition.name = (str)0;
 	definition.typeObj = (Type)0;
 	definition.variable = (Variable)0;
-	definition.constant = (ConstantDefinition)0;
 	definition.function = (FunctionDefinition)0;
 
 	definition.valueType = (Type)0;
@@ -55,15 +52,6 @@ func createDefinitionFromVariable(Variable variable) -> Definition {
 
 	definition.name = variable.name;
 	definition.variable = variable;
-
-	return definition;
-}
-
-func createDefinitionFromConstant(ConstantDefinition constant) -> Definition {
-	var definition = createDefinition();
-
-	definition.name = constant.name.name;
-	definition.constant = constant;
 
 	return definition;
 }

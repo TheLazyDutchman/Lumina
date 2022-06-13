@@ -6,7 +6,6 @@ import "if.lumina"
 import "while.lumina"
 import "import.lumina"
 import "variable.lumina"
-import "constant.lumina"
 import "function.lumina"
 import "type.lumina"
 import "block.lumina"
@@ -19,7 +18,6 @@ type Statement {
 	While whileStatement;
 	Import importStatement;
 	Variable variable;
-	ConstantDefinition constant;
 	FunctionDefinition function;
 	Type typeStatement;
 	Return returnStatement;
@@ -90,15 +88,6 @@ func createVariableStatement(Variable variable) -> Statement {
 
 	statement.region = variable.definition.region;
 	statement.variable = variable;
-
-	return statement;
-}
-
-func createConstantStatement(ConstantDefinition constant) -> Statement {
-	var statement = createStatement();
-
-	statement.region = constant.region;
-	statement.constant = constant;
 
 	return statement;
 }

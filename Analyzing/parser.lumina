@@ -8,7 +8,6 @@ import "block.lumina"
 import "type.lumina"
 import "function.lumina"
 import "variable.lumina"
-import "constant.lumina"
 import "expression.lumina"
 import "lexer.lumina"
 import "statement.lumina"
@@ -36,7 +35,6 @@ type SyntaxTree {
 	TypeList types;
 	FunctionList functions;
 	VariableList variables;
-	ConstantList constants;
 	ImportList imports;
 
 	SyntaxTree[] importTrees;
@@ -93,7 +91,6 @@ func createSyntaxTree(str fileName, int numAnds, int numOrs) -> SyntaxTree {
 	tree.types = createTypeList();
 	tree.functions = createFunctionList();
 	tree.variables = createVariableList();
-	tree.constants = createConstantList();
 	tree.imports = createImportList();
 
 	tree.importTrees = (SyntaxTree[])0;
@@ -477,7 +474,7 @@ func parseImport(Parser parser, SyntaxTree tree) -> Import {
 	return createImport(keyword, fileName);
 }
 
-func parseVariableDefinition(Parser parser, SyntaxTree tree, int depth, int position) -> VariableDefinition {
+func parseVariableDefinition(Parser parser, SyntaxTree tree) -> VariableDefinition {
 	var keyword = tree.lexer.current.name;
 	next(tree.lexer);
 
@@ -487,20 +484,7 @@ func parseVariableDefinition(Parser parser, SyntaxTree tree, int depth, int posi
 	var value = parseExpression(parser, tree, PREC_expression);
 	var semicolon = consumeOperator(parser, tree, ";", (bool)0);
 
-	return createVariableDefinition(keyword, name, equalSign, value, depth, position, semicolon);
-}
-
-func parseConstantDefinition(Parser parser, SyntaxTree tree) -> ConstantDefinition {
-	var keyword = tree.lexer.current.name;
-	next(tree.lexer);
-
-	var name = consumeIdentifier(parser, tree);
-
-	var equalSign = consumeOperator(parser, tree, "=", (bool)0);
-	var value = parseExpression(parser, tree, PREC_expression);
-	var semicolon = consumeOperator(parser, tree, ";", (bool)0);
-
-	return createConstantDefinition(keyword, name, equalSign, value, semicolon);
+	return createVariableDefinition(keyword, name, equalSign, value, semicolon);
 }
 
 func parseParameterList(Parser parser, SyntaxTree tree) -> ParameterList {
@@ -545,9 +529,8 @@ func parseBlock(Parser parser, SyntaxTree tree, Block outer, FunctionDefinition 
 	var typeList = createTypeList();
 	var functionList = createFunctionList();
 	var variableList = createVariableList();
-	var constantList = createConstantList();
 
-	var block = createBlock(lbrace, statementList, definitionList, typeList, functionList, variableList, constantList, outer, function);
+	var block = createBlock(lbrace, statementList, definitionList, typeList, functionList, variableList, outer, function);
 	addBlock(tree.blocks, block);
 
 	if (block.function != (FunctionDefinition)0) {
@@ -555,7 +538,7 @@ func parseBlock(Parser parser, SyntaxTree tree, Block outer, FunctionDefinition 
 	}
 
 	while (isOperator(tree.lexer.current.operator, "}") != (bool)1 || tree.lexer.current.isEOF) {
-		var statement = parseStatement(parser, tree, block, definitionList, typeList, functionList, variableList, constantList, importList);
+		var statement = parseStatement(parser, tree, block, definitionList, typeList, functionList, variableList, importList);
 		addStatement(statementList, statement);
 	}
 
@@ -680,7 +663,7 @@ func parseReturn(Parser parser, SyntaxTree tree) -> Return {
 	return createReturn(keyword, expression, semicolon);
 }
 
-func parseStatement(Parser parser, SyntaxTree tree, Block block, DefinitionList definitionList, TypeList typeList, FunctionList functionList, VariableList variableList, ConstantList constantList, ImportList importList) -> Statement {
+func parseStatement(Parser parser, SyntaxTree tree, Block block, DefinitionList definitionList, TypeList typeList, FunctionList functionList, VariableList variableList, ImportList importList) -> Statement {
 	if (isKeyword(tree.lexer.current.name, KEYWORD_var)) {
 		var depth = 0;
 		if (block != (Block)0) {
@@ -716,20 +699,21 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, DefinitionList 
 			}
 		}
 
-		var variableDefinition = parseVariableDefinition(parser, tree, depth, size);
-		var variable = createVariableFromDefinition(variableDefinition);
+		var variableDefinition = parseVariableDefinition(parser, tree);
+		var variable = createVariableFromDefinition(variableDefinition, depth, size);
 
 		addDefinition(definitionList, createDefinitionFromVariable(variable));
 		addVariable(variableList, variable);
 
 		return createVariableStatement(variable);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_const)) {
-		var constant = parseConstantDefinition(parser, tree);
+		var constantDefinition = parseVariableDefinition(parser, tree);
+		var constant = createConstantFromDefinition(constantDefinition);
 
-		addDefinition(definitionList, createDefinitionFromConstant(constant));
-		addConstant(constantList, constant);
+		addDefinition(definitionList, createDefinitionFromVariable(constant));
+		addVariable(variableList, constant);
 		
-		return createConstantStatement(constant);
+		return createVariableStatement(constant);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_func)) {
 		var function = parseFunctionDefinition(parser, tree, block, importList);
 
@@ -790,7 +774,7 @@ func parse(Parser parser, str fileName, str outerName) -> SyntaxTree {
 	tree = createSyntaxTree(fileName, parser.numAnds, parser.numOrs);
 
 	while (tree.lexer.current.isEOF != (bool)1) {
-		var statement = parseStatement(parser, tree, (Block)0, tree.definitions, tree.types, tree.functions, tree.variables, tree.constants, tree.imports);
+		var statement = parseStatement(parser, tree, (Block)0, tree.definitions, tree.types, tree.functions, tree.variables, tree.imports);
 		addStatement(tree.statements, statement);
 	}
 
@@ -1004,16 +988,6 @@ func findVariableInBlock(Parser parser, SyntaxTree tree, Block block, str name) 
 	return variable;
 }
 
-func findConstantInBlock(Parser parser, SyntaxTree tree, Block block, str name) -> ConstantDefinition {
-	var constant = findConstant(block.constants, name);
-
-	if (constant == (ConstantDefinition)0 && block.outer != (Block)0) {
-		return findConstantInBlock(parser, tree, block.outer, name);
-	}
-
-	return constant;
-}
-
 func findVariableInParser(Parser parser, SyntaxTree tree, Block block, str name) -> Variable {
 	var variable = (Variable)0;
 
@@ -1038,26 +1012,6 @@ func findVariableInParser(Parser parser, SyntaxTree tree, Block block, str name)
 	return variable;
 }
 
-func findConstantInParser(Parser parser, SyntaxTree tree, Block block, str name) -> ConstantDefinition {
-	var constant = (ConstantDefinition)0;
-
-	if (block != (Block)0) {
-		constant = findConstantInBlock(parser, tree, block, name);
-	}
-
-	if (constant == (ConstantDefinition)0) {
-		constant = findConstant(tree.constants, name);
-	}
-
-	var i = 0;
-	while (i < tree.imports.size && constant == (ConstantDefinition)0) {
-		constant = findConstant(tree.importTrees[i].constants, name);
-		i = i + 1;
-	}
-
-	return constant;
-}
-
 func bindName(Parser parser, SyntaxTree tree, Name name, Block block) {
 	var function = findFunctionInParser(parser, tree, block, name.name);
 	if (function != (FunctionDefinition)0) {
@@ -1078,12 +1032,6 @@ func bindName(Parser parser, SyntaxTree tree, Name name, Block block) {
 		if (variable.definition != (VariableDefinition)0) {
 			name.definitionRegion = variable.definition.region;
 		}
-		return;
-	}
-
-	var constant = findConstantInParser(parser, tree, block, name.name);
-	if (constant != (ConstantDefinition)0) {
-		name.definitionRegion = constant.region;
 		return;
 	}
 
@@ -1158,10 +1106,6 @@ func bindNamesInFunctionDefinition(Parser parser, SyntaxTree tree, FunctionDefin
 		printError(parser, function.name.region.start, " a variable with this name already exists\n");
 	}
 
-	if (findConstantInParser(parser, tree, block, function.name.name) != (ConstantDefinition)0) {
-		printError(parser, function.name.region.start, " a constant with this name already exists\n");
-	}
-
 	if (findTypeInParser(parser, tree, block, function.name.name) != (Type)0) {
 		printError(parser, function.name.region.start, " a type with this name already exists\n");
 	}
@@ -1183,10 +1127,6 @@ func bindNamesInTypeDefinition(Parser parser, SyntaxTree tree, TypeDefinition ty
 		printError(parser, typeDef.name.region.start, " a variable with this name already exists\n");
 	}
 
-	if (findConstantInParser(parser, tree, block, typeDef.name.name) != (ConstantDefinition)0) {
-		printError(parser, typeDef.name.region.start, " a constant with this name already exists\n");
-	}
-
 	if (findFunctionInParser(parser, tree, block, typeDef.name.name) != (FunctionDefinition)0) {
 		printError(parser, typeDef.name.region.start, " a function with this name already exists\n");
 	}
@@ -1204,10 +1144,6 @@ func bindNamesInVariable(Parser parser, SyntaxTree tree, Variable variable, Bloc
 		printError(parser, variable.definition.name.region.start, " a variable with this name already exists\n");
 	}
 
-	if (findConstantInParser(parser, tree, block, variable.name) != (ConstantDefinition)0) {
-		printError(parser, variable.definition.name.region.start, " a constant with this name already exists\n");
-	}
-
 	if (findTypeInParser(parser, tree, block, variable.name) != (Type)0) {
 		printError(parser, variable.definition.name.region.start, " a type with this name already exists\n");
 	}
@@ -1217,27 +1153,6 @@ func bindNamesInVariable(Parser parser, SyntaxTree tree, Variable variable, Bloc
 	}
 
 	bindNamesInOperation(parser, tree, variable.definition.value, block);
-}
-
-func bindNamesInConstant(Parser parser, SyntaxTree tree, ConstantDefinition constant, Block block) {
-	var foundConstant = findConstantInParser(parser, tree, block, constant.name.name);
-	if (foundConstant != (ConstantDefinition)0 && foundConstant != constant) {
-		printError(parser, constant.name.region.start, " a constant with this name already exists\n");
-	}
-
-	if (findVariableInParser(parser, tree, block, constant.name.name) != (Variable)0) {
-		printError(parser, constant.name.region.start, " a variable with this name already exists\n");
-	}
-
-	if (findTypeInParser(parser, tree, block, constant.name.name) != (Type)0) {
-		printError(parser, constant.name.region.start, " a type with this name already exists\n");
-	}
-
-	if (findFunctionInParser(parser, tree, block, constant.name.name) != (FunctionDefinition)0) {
-		printError(parser, constant.name.region.start, " a function with this name already exists\n");
-	}
-
-	bindNamesInOperation(parser, tree, constant.value, block);
 }
 
 func bindNamesInReturn(Parser parser, SyntaxTree tree, Return returnStatement, Block block) {
@@ -1258,8 +1173,6 @@ func bindNamesInStatementList(Parser parser, SyntaxTree tree, StatementList list
 			bindNamesInWhile(parser, tree, statement.whileStatement, block);
 		} else if (statement.variable != (Variable)0) {
 			bindNamesInVariable(parser, tree, statement.variable, block);
-		} else if (statement.constant != (ConstantDefinition)0) {
-			bindNamesInConstant(parser, tree, statement.constant, block);
 		} else if (statement.function != (FunctionDefinition)0) {
 			bindNamesInFunctionDefinition(parser, tree, statement.function, block);
 		} else if (statement.typeStatement != (Type)0) {
@@ -1309,18 +1222,6 @@ func checkTypesInName(Parser parser, SyntaxTree tree, Block block, Name name) ->
 	var variable = findVariableInParser(parser, tree, block, name.name);
 
 	if (variable == (Variable)0) {
-		var constant = findConstantInParser(parser, tree, block, name.name);
-
-		if (constant != (ConstantDefinition)0) {
-			if (constant.constantType == (Type)0) {
-				printError(parser, name.region.start, " the type of constant '");
-				print(constant.name.name);
-				print("' is undefined\n");
-			}
-
-			return constant.constantType;
-		}
-
 		printError(parser, name.region.start, "can not find variable '");
 		print(name.name);
 		print("'\n");
@@ -1729,16 +1630,6 @@ func checkTypesInVariable(Parser parser, SyntaxTree tree, Block block, Variable 
 	variable.variableType = variableType;
 }
 
-func checkTypesInConstant(Parser parser, SyntaxTree tree, Block block, ConstantDefinition constant) {
-	var constantType = checkTypesInOperation(parser, tree, block, constant.value);
-
-	if (constantType == (Type)0) {
-		printError(parser, constant.value.region.start, " type is undefined\n");
-	}
-
-	constant.constantType = constantType;
-}
-
 func checkTypesInReturn(Parser parser, SyntaxTree tree, Block block, Return returnStatement) {
 	var returnType = parser.null;
 	if (returnStatement.expression != (Operation)0) {
@@ -1787,8 +1678,6 @@ func checkTypesInStatementList(Parser parser, SyntaxTree tree, Block block, Stat
 			checkTypesInWhile(parser, tree, block, statement.whileStatement);
 		} else if (statement.variable != (Variable)0) {
 			checkTypesInVariable(parser, tree, block, statement.variable);
-		} else if (statement.constant != (ConstantDefinition)0) {
-			checkTypesInConstant(parser, tree, block, statement.constant);
 		} else if (statement.returnStatement != (Return)0) {
 			checkTypesInReturn(parser, tree, block, statement.returnStatement);
 		}

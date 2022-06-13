@@ -31,8 +31,6 @@ type VariableDefinition {
 	Operator equalSign;
 	Operation value;
 	Operator semicolon;
-	int depth;
-	int position;
 
 	Type variableType;
 }
@@ -43,7 +41,7 @@ type VariableList {
 	Variable[] list;
 }
 
-func createVariableDefinition(Name keyword, Name name, Operator equalSign, Operation value, int depth, int position, Operator semicolon) -> VariableDefinition {
+func createVariableDefinition(Name keyword, Name name, Operator equalSign, Operation value, Operator semicolon) -> VariableDefinition {
 	var variable = (VariableDefinition)malloc(sizeof(VariableDefinition));
 
 	variable.region = createRegion(keyword.region.start, semicolon.position);
@@ -53,8 +51,6 @@ func createVariableDefinition(Name keyword, Name name, Operator equalSign, Opera
 	variable.equalSign = equalSign;
 	variable.value = value;
 	variable.semicolon = semicolon;
-	variable.depth = depth;
-	variable.position = position;
 	variable.variableType = (Type)0;
 
 	return variable;
@@ -78,12 +74,21 @@ func createVariableFromString(str name, int depth, int position, Type variableTy
 	return variable;
 }
 
-func createVariableFromDefinition(VariableDefinition definition) -> Variable {
-	var variable = createVariableFromString(definition.name.name, definition.depth, definition.position, definition.variableType);
+func createVariableFromDefinition(VariableDefinition definition, int depth, int position) -> Variable {
+	var variable = createVariableFromString(definition.name.name, depth, position, definition.variableType);
 
 	variable.definition = definition;
 
 	return variable;
+}
+
+func createConstantFromDefinition(VariableDefinition definition) -> Variable {
+	var constant = createVariableFromString(definition.name.name, 0, 0, definition.variableType);
+
+	constant.isConstant = (bool)1;
+	constant.definition = definition;
+
+	return constant;
 }
 
 func createVariableList() -> VariableList {
