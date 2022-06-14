@@ -501,7 +501,7 @@ func writeAddress(int output, str addr, int id) {
 func writeSizeOf(Parser parser, SyntaxTree tree, Block block, int output, SizeOf sizeOf, str register) -> str {
 	var typeObj = getTypeFromTypeName(parser, tree, block, sizeOf.typeObj);
 
-	if (typeObj == (Type)0) {
+	if (typeObj == (TypeObj)0) {
 		printPosition(sizeOf.region.start);
 		print(" type is null in size of\n");
 		return register;
@@ -692,7 +692,7 @@ func writePropertyDefinition(Parser parser, SyntaxTree tree, Block block, int ou
 
 	var typeObj = operation.left.operationType;
 
-	if (typeObj == (Type)0) {
+	if (typeObj == (TypeObj)0) {
 		printPosition(operation.operator.position);
 		print(" struct type is null\n");
 		return register.name;
@@ -701,7 +701,7 @@ func writePropertyDefinition(Parser parser, SyntaxTree tree, Block block, int ou
 	var propertyName = operation.right.value.name;
 	var propertyType = operation.operationType;
 
-	if (propertyType == (Type)0) {
+	if (propertyType == (TypeObj)0) {
 		printPosition(operation.operator.position);
 		print(" type of property is null\n");
 		return register.name;
@@ -753,7 +753,7 @@ func writeAssignment(Parser parser, SyntaxTree tree, Block block, int output, Op
 	if (isOperator(operation.left.operator, "[")) {
 		var listType = operation.left.operationType;
 
-		if (listType == (Type)0) {
+		if (listType == (TypeObj)0) {
 			printPosition(operation.operator.position);
 			print(" list type is null\n");
 			return register.name;
@@ -785,7 +785,7 @@ func writeAssignment(Parser parser, SyntaxTree tree, Block block, int output, Op
 	} else if (isOperator(operation.left.operator, ".")) {
 		var propertyType = operation.left.operationType;
 
-		if (propertyType == (Type)0) {
+		if (propertyType == (TypeObj)0) {
 			printPosition(operation.operator.position);
 			print(" type is null\n");
 			return register.name;
@@ -949,7 +949,7 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	} else if (isOperator(operation.operator, "[")) {
 		var typeObj = operation.operationType;
 
-		if (typeObj == (Type)0) {
+		if (typeObj == (TypeObj)0) {
 			printPosition(operation.operator.position);
 			print(" array type is null\n");
 			return registerA.name;

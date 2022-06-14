@@ -19,7 +19,7 @@ type Statement {
 	Import importStatement;
 	Variable variable;
 	FunctionDefinition function;
-	Type typeStatement;
+	TypeObj typeStatement;
 	Return returnStatement;
 	Block blockStatement;
 }
@@ -41,7 +41,7 @@ func createStatement() -> Statement {
 	statement.variable = (Variable)0;
 	statement.function = (FunctionDefinition)0;
 	statement.returnStatement = (Return)0;
-	statement.typeStatement = (Type)0;
+	statement.typeStatement = (TypeObj)0;
 	statement.blockStatement = (Block)0;
 
 	return statement;
@@ -110,7 +110,7 @@ func createReturnStatement(Return returnStatement) -> Statement {
 	return statement;
 }
 
-func createTypeStatement(Type typeStatement) -> Statement {
+func createTypeStatement(TypeObj typeStatement) -> Statement {
 	var statement = createStatement();
 
 	statement.region = typeStatement.definition.region;

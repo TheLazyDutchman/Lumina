@@ -12,11 +12,11 @@ import "function.lumina"
 type Definition {
 	str name;
 
-	Type typeObj;
+	TypeObj typeObj;
 	Variable variable;
 	FunctionDefinition function;
 
-	Type valueType;
+	TypeObj valueType;
 }
 
 type DefinitionList {
@@ -29,16 +29,16 @@ func createDefinition() -> Definition {
 	var definition = (Definition)malloc(sizeof(Definition));
 
 	definition.name = (str)0;
-	definition.typeObj = (Type)0;
+	definition.typeObj = (TypeObj)0;
 	definition.variable = (Variable)0;
 	definition.function = (FunctionDefinition)0;
 
-	definition.valueType = (Type)0;
+	definition.valueType = (TypeObj)0;
 
 	return definition;
 }
 
-func createDefinitionFromType(Type typeObj) -> Definition {
+func createDefinitionFromType(TypeObj typeObj) -> Definition {
 	var definition = createDefinition();
 
 	definition.name = typeObj.name;

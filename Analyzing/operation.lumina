@@ -27,7 +27,7 @@ type Operation {
 	SizeOf sizeOf;
 	TypeName castType;
 
-	Type operationType;
+	TypeObj operationType;
 }
 
 type OperationList {

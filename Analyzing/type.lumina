@@ -13,7 +13,7 @@ type Property {
 	PropertyDefinition definition;
 	str typeName;
 
-	Type propertyType;
+	TypeObj propertyType;
 	int offset;
 }
 
@@ -23,15 +23,15 @@ type PropertyList {
 	Property[] list;
 }
 
-type Type {
+type TypeObj {
 	str name;
 	TypeDefinition definition;
 	int size;
 
 	PropertyList properties;
 
-	Type listOf;
-	Type listType;
+	TypeObj listOf;
+	TypeObj listType;
 }
 
 type TypeName {
@@ -72,7 +72,7 @@ type TypeDefinition {
 type TypeList {
 	int size;
 	int maxSize;
-	Type[] list;
+	TypeObj[] list;
 }
 
 func createTypeName(Name name, OperatorList brackets) -> TypeName {
@@ -143,15 +143,15 @@ func addPropertyDefinition(PropertyDefinitionList list, PropertyDefinition prope
 	}
 }
 
-func findPropertyDefinition(PropertyDefinitionList list, str name) -> PropertyDefinition {
+func findProperty(PropertyList list, str name) -> Property {
 	var i = 0;
 	while (i < list.size) {
-		if (streq(list.list[i].name.name, name)) {
+		if (streq(list.list[i].name, name)) {
 			return list.list[i];
 		}
 		i = i + 1;
 	}
-	return (PropertyDefinition)0;
+	return (Property)0;
 }
 
 func createTypeDefinition(Name keyword, Name name, Operator lbrace, PropertyDefinitionList properties, Operator rbrace) -> TypeDefinition {
@@ -191,12 +191,12 @@ func createPropertyFromDefinition(PropertyDefinition definition) -> Property {
 	property.typeName = definition.typeName.name.name;
 
 	property.offset = -1;
-	property.propertyType = (Type)0;
+	property.propertyType = (TypeObj)0;
 
 	return property;
 }
 
-func createPropertyFromString(str name, Type propertyType) -> Property {
+func createPropertyFromString(str name, TypeObj propertyType) -> Property {
 	var property = (Property)malloc(sizeof(Property));
 
 	property.name = name;
@@ -229,8 +229,8 @@ func addProperty(PropertyList list, Property property) {
 	}
 }
 
-func createTypeFromDefinition(TypeDefinition definition) -> Type {
-	var typeObj = (Type)malloc(sizeof(Type));
+func createTypeFromDefinition(TypeDefinition definition) -> TypeObj {
+	var typeObj = (TypeObj)malloc(sizeof(TypeObj));
 
 	typeObj.name = definition.name.name;
 	typeObj.definition = definition;
@@ -244,14 +244,14 @@ func createTypeFromDefinition(TypeDefinition definition) -> Type {
 		i = i + 1;
 	}
 	
-	typeObj.listOf = (Type)0;
-	typeObj.listType = (Type)0;
+	typeObj.listOf = (TypeObj)0;
+	typeObj.listType = (TypeObj)0;
 
 	return typeObj;
 }
 
-func createTypeFromString(str name, int size) -> Type {
-	var typeObj = (Type)malloc(sizeof(Type));
+func createTypeFromString(str name, int size) -> TypeObj {
+	var typeObj = (TypeObj)malloc(sizeof(TypeObj));
 
 	typeObj.name = name;
 	typeObj.definition = (TypeDefinition)0;
@@ -259,14 +259,14 @@ func createTypeFromString(str name, int size) -> Type {
 
 	typeObj.properties = createPropertyList();
 
-	typeObj.listOf = (Type)0;
-	typeObj.listType = (Type)0;
+	typeObj.listOf = (TypeObj)0;
+	typeObj.listType = (TypeObj)0;
 
 	return typeObj;
 }
 
-func createListType(str name, Type typeObj) -> Type {
-	if (typeObj.listOf != (Type)0) {
+func createListType(str name, TypeObj typeObj) -> TypeObj {
+	if (typeObj.listOf != (TypeObj)0) {
 		return typeObj.listOf;
 	}
 
@@ -283,22 +283,22 @@ func createTypeList() -> TypeList {
 
 	list.size = 0;
 	list.maxSize = 8;
-	list.list = (Type[])malloc(8 * 8);
+	list.list = (TypeObj[])malloc(8 * 8);
 
 	return list;
 }
 
-func addType(TypeList list, Type typeObj) {
+func addType(TypeList list, TypeObj typeObj) {
 	list.list[list.size] = typeObj;
 	list.size = list.size + 1;
 
 	if (list.size == list.maxSize) {
-		list.list = (Type[])realloc((ptr)list.list, list.maxSize * 8, 8 * list.maxSize * 2);
+		list.list = (TypeObj[])realloc((ptr)list.list, list.maxSize * 8, 8 * list.maxSize * 2);
 		list.maxSize = list.maxSize * 2;
 	}
 }
 
-func findType(TypeList list, str name) -> Type {
+func findType(TypeList list, str name) -> TypeObj {
 	var i = 0;
 	while (i < list.size) {
 		if (streq(list.list[i].name, name)) {
@@ -306,11 +306,11 @@ func findType(TypeList list, str name) -> Type {
 		}
 		i = i + 1;
 	}
-	return (Type)0;
+	return (TypeObj)0;
 }
 
-func printType(Type typeObj) {
-	if (typeObj == (Type)0) {
+func printType(TypeObj typeObj) {
+	if (typeObj == (TypeObj)0) {
 		print("type is null");
 		return;
 	}

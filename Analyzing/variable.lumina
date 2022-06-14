@@ -16,7 +16,7 @@ type Variable {
 	int depth;
 	int position;
 
-	Type variableType;
+	TypeObj variableType;
 	
 	bool isConstant;
 	bool isEvaluated;
@@ -32,7 +32,7 @@ type VariableDefinition {
 	Operation value;
 	Operator semicolon;
 
-	Type variableType;
+	TypeObj variableType;
 }
 
 type VariableList {
@@ -51,12 +51,12 @@ func createVariableDefinition(Name keyword, Name name, Operator equalSign, Opera
 	variable.equalSign = equalSign;
 	variable.value = value;
 	variable.semicolon = semicolon;
-	variable.variableType = (Type)0;
+	variable.variableType = (TypeObj)0;
 
 	return variable;
 }
 
-func createVariableFromString(str name, int depth, int position, Type variableType) -> Variable {
+func createVariableFromString(str name, int depth, int position, TypeObj variableType) -> Variable {
 	var variable = (Variable)malloc(sizeof(Variable));
 
 	variable.name = name;

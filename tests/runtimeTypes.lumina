@@ -1,0 +1,13 @@
+import "../std/io.lumina"
+
+print("int name: ");
+print(int.name);
+print("\n");
+
+print("char[] name: ");
+printi(char[].name);
+print("\n");
+
+print("bool size: ");
+printi(bool.size);
+print("\n");
