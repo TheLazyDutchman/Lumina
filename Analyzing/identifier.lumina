@@ -1,0 +1,31 @@
+import "../std/memory.lumina"
+import "../std/io.lumina"
+
+import "name.lumina"
+import "whitespace.lumina"
+import "position.lumina"
+import "definition.lumina"
+
+
+type Identifier {
+	str name;
+	Name definition;
+
+	Definition value;
+}
+
+func createIdentifierFromName(Name name) -> Identifier {
+	if (isIdentifier(name) != (bool)1) {
+		printPosition(name.region.start);
+		print(" expected an identifier\n");
+		return (Identifier)0;
+	}
+
+	var identifier = (Identifier)malloc(sizeof(Identifier));
+
+	identifier.name = name.name;
+	identifier.definition = name;
+	identifier.value = (Definition)0;
+
+	return identifier;
+}

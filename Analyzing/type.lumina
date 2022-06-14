@@ -4,6 +4,7 @@ import "../std/io.lumina"
 
 import "name.lumina" 
 import "operator.lumina"
+import "operation.lumina"
 import "position.lumina"
 import "whitespace.lumina"
 
@@ -42,7 +43,7 @@ type TypeName {
 
 type PropertyDefinition {
 	Region region;
-	TypeName typeName;
+	Operation propertyType;
 	Name name;
 	Operator semicolon;
 }
@@ -103,7 +104,7 @@ func createTypeObjFromString(str typeName) -> TypeName {
 	return typeObj;
 }
 
-func createPropertyDefinition(TypeName typeName, Name name, Operator semicolon) -> PropertyDefinition {
+func createPropertyDefinition(Operation propertyType, Name name, Operator semicolon) -> PropertyDefinition {
 	if (isIdentifier(name) != (bool)1) {
 		print("expected property name to be an identifier\n");
 	}
@@ -114,11 +115,11 @@ func createPropertyDefinition(TypeName typeName, Name name, Operator semicolon) 
 
 	var property = (PropertyDefinition)malloc(sizeof(PropertyDefinition));
 
-	property.typeName = typeName;
+	property.propertyType = propertyType;
 	property.name = name;
 	property.semicolon = semicolon;
 
-	property.region = createRegion(typeName.region.start, semicolon.position);
+	property.region = createRegion(propertyType.region.start, semicolon.position);
 
 	return property;
 }
@@ -188,7 +189,8 @@ func createPropertyFromDefinition(PropertyDefinition definition) -> Property {
 
 	property.name = definition.name.name;
 	property.definition = definition;
-	property.typeName = definition.typeName.name.name;
+
+	property.typeName = (str)0; // TODO: find a way to get this type
 
 	property.offset = -1;
 	property.propertyType = (TypeObj)0;

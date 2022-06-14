@@ -15,6 +15,7 @@ import "immediate.lumina"
 import "import.lumina"
 import "lexer.lumina"
 import "name.lumina"
+import "identifier.lumina"
 import "operation.lumina"
 import "operator.lumina"
 import "position.lumina"
@@ -283,28 +284,28 @@ func writeConstant(Parser parser, int output, Variable constant, str register) -
 	return register;
 }
 
-func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Name name, str register, bool getValue) -> str {
+func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Identifier identifier, str register, bool getValue) -> str {
 	var variable = (Variable)0;
 	if (block != (Block)0) {
-		variable = findVariableInBlock(parser, tree, block, name.name);
+		variable = findVariableInBlock(parser, tree, block, identifier.name);
 	}
 
 	if (variable == (Variable)0) {
-		variable = findVariable(tree.variables, name.name);
+		variable = findVariable(tree.variables, identifier.name);
 	}
 
 	var i = 0;
 	while (i < tree.imports.size && variable == (Variable)0) {
-		variable = findVariable(tree.importTrees[i].variables, name.name);
+		variable = findVariable(tree.importTrees[i].variables, identifier.name);
 		i = i + 1;
 	}
 
 	if (variable == (Variable)0) {
-		variable = findVariable(parser.variables, name.name);
+		variable = findVariable(parser.variables, identifier.name);
 	}
 
 	if (variable == (Variable)0) {
-		printPosition(name.region.start);
+		printPosition(identifier.definition.region.start);
 		print(" can not find variable\n");
 		return (str)0;
 	}
@@ -395,8 +396,8 @@ func writeValue(Parser parser, SyntaxTree tree, Block block, int output, Value v
 		fprint(output, ", string_");
 		fprinti(output, id);
 		fprint(output, " ;; string\n");
-	} else if (value.name != (Name)0) {
-		writeIdentifier(parser, tree, block, output, value.name, register, getValue);
+	} else if (value.identifier != (Identifier)0) {
+		writeIdentifier(parser, tree, block, output, value.identifier, register, getValue);
 	}
 
 	return register;
@@ -519,7 +520,7 @@ func writeSizeOf(Parser parser, SyntaxTree tree, Block block, int output, SizeOf
 }
 
 func writeCall(Parser parser, SyntaxTree tree, Block block, int output, Operation call, RegisterList registers, Register register, FunctionList functions) -> str {
-	var name = call.left.value.name.name;
+	var name = call.left.value.identifier.name;
 	var id = 0;
 	var i = 0;
 	while (i < functions.size) {
@@ -698,7 +699,7 @@ func writePropertyDefinition(Parser parser, SyntaxTree tree, Block block, int ou
 		return register.name;
 	}
 
-	var propertyName = operation.right.value.name;
+	var propertyName = operation.right.value.identifier;
 	var propertyType = operation.operationType;
 
 	if (propertyType == (TypeObj)0) {
