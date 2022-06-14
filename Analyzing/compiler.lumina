@@ -500,7 +500,7 @@ func writeAddress(int output, str addr, int id) {
 }
 
 func writeSizeOf(Parser parser, SyntaxTree tree, Block block, int output, SizeOf sizeOf, str register) -> str {
-	var typeObj = getTypeFromTypeName(parser, tree, block, sizeOf.typeObj);
+	var typeObj = getTypeFromOperation(parser, tree, block, sizeOf.typeObj);
 
 	if (typeObj == (TypeObj)0) {
 		printPosition(sizeOf.region.start);

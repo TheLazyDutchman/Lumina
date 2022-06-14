@@ -185,11 +185,11 @@ func createParser() -> Parser {
 
 	var i = 0;
 	while (i < 7) {
-		addParameter(syscallParameters, createParameterFromString("any", (str)0));
+		addParameter(syscallParameters, createParameterFromString(parser.any, (str)0));
 		i = i + 1;
 	}
 
-	var syscallReturnType = createReturnTypeFromString("any");
+	var syscallReturnType = createReturnTypeFromString(parser.any);
 
 	parser.syscall = createFunctionFromString("syscall", syscallParameters, syscallReturnType);
 	addDefinition(parser.definitions, createDefinitionFromFunction(parser.syscall));
@@ -332,7 +332,7 @@ func parseGroup(Parser parser, SyntaxTree tree) -> Operation {
 	var lparen = consumeOperator(parser, tree, "(", (bool)0);
 
 	if (isIdentifier(tree.lexer.current.name)) {
-		var typeObj = parseTypeName(parser, tree, (bool)1);
+		var typeObj = parseExpression(parser, tree, PREC_index);
 		var rparen = consumeOperator(parser, tree, ")", (bool)0);
 
 		var operation = parseExpression(parser, tree, PREC_index);
@@ -356,7 +356,7 @@ func parseNegative(Parser parser, SyntaxTree tree) -> Operation {
 func parseSizeof(Parser parser, SyntaxTree tree) -> Operation {
 	var keyword = consumeKeyword(parser, tree, KEYWORD_sizeof);
 	var lparen = consumeOperator(parser, tree, "(", (bool)0);
-	var typeObj = parseTypeName(parser, tree, (bool)0);
+	var typeObj = parseExpression(parser, tree, PREC_index);
 	var rparen = consumeOperator(parser, tree, ")", (bool)0);
 
 	var sizeOf = createSizeOf(keyword, lparen, typeObj, rparen);
@@ -507,7 +507,7 @@ func parseParameterList(Parser parser, SyntaxTree tree) -> ParameterList {
 		return list;
 	}
 
-	var parameterType = parseTypeName(parser, tree, (bool)0);
+	var parameterType = parseExpression(parser, tree, PREC_index);
 	var name = consumeIdentifier(parser, tree);
 
 	while (isOperator(tree.lexer.current.operator, ",")) {
@@ -516,7 +516,7 @@ func parseParameterList(Parser parser, SyntaxTree tree) -> ParameterList {
 		var parameter = createParameter(parameterType, name, comma);
 		addParameter(list, parameter);
 
-		parameterType = parseTypeName(parser, tree, (bool)0);
+		parameterType = parseExpression(parser, tree, PREC_index);
 		name = consumeIdentifier(parser, tree);
 	}
 
@@ -528,7 +528,7 @@ func parseParameterList(Parser parser, SyntaxTree tree) -> ParameterList {
 
 func parseReturnType(Parser parser, SyntaxTree tree) -> ReturnType {
 	var rarrow = consumeOperator(parser, tree, "->", (bool)0);
-	var typeObj = parseTypeName(parser, tree, (bool)0);
+	var typeObj = parseExpression(parser, tree, PREC_index);
 
 	return createReturnType(rarrow, typeObj);
 }
@@ -916,6 +916,11 @@ func getTypeFromValue(Parser parser, SyntaxTree tree, Block block, Value value) 
 }
 
 func getTypeFromOperation(Parser parser, SyntaxTree tree, Block block, Operation operation) -> TypeObj {
+	if (operation == (Operation)0) {
+		print("operation is null in 'getTypeFromOperation'\n");
+		exit(1);
+	}
+
 	if (operation.value != (Value)0) {
 		return getTypeFromValue(parser, tree, block, operation.value);
 	}
@@ -1007,7 +1012,7 @@ func getPropertyOffset(Parser parser, SyntaxTree tree, Block block, TypeObj type
 }
 
 func createVariableFromParameter(Parser parser, SyntaxTree tree, Block block, Parameter parameter, int position) -> Variable {
-	return createVariableFromString(parameter.name.name, block.depth, position, getTypeFromTypeName(parser, tree, block, parameter.parameterType));
+	return createVariableFromString(parameter.name.name, block.depth, position, getTypeFromOperation(parser, tree, block, parameter.parameterType));
 }
 
 func findVariableInParameters(Parser parser, SyntaxTree tree, Block block, FunctionDefinition function, str name) -> Variable {
@@ -1122,11 +1127,11 @@ func bindNamesInOperation(Parser parser, SyntaxTree tree, Operation operation, B
 	}
 
 	if (operation.sizeOf != (SizeOf)0) {
-		bindNamesInType(parser, tree, operation.sizeOf.typeObj, block);
+		bindNamesInOperation(parser, tree, operation.sizeOf.typeObj, block);
 	}
 
-	if (operation.castType != (TypeName)0) {
-		bindNamesInType(parser, tree, operation.castType, block);
+	if (operation.castType != (Operation)0) {
+		bindNamesInOperation(parser, tree, operation.castType, block);
 	}
 
 	if (operation.value != (Value)0 && operation.value.identifier != (Identifier)0) {
@@ -1178,8 +1183,12 @@ func bindNamesInFunctionDefinition(Parser parser, SyntaxTree tree, FunctionDefin
 
 	var i = 0;
 	while (i < function.parameters.size) {
-		bindNamesInType(parser, tree, function.parameters.list[i].parameterType, block);
+		bindNamesInOperation(parser, tree, function.parameters.list[i].parameterType, block);
 		i = i + 1;
+	}
+
+	if (function.returnType != (ReturnType)0) {
+		bindNamesInOperation(parser, tree, function.returnType.returnType, block);
 	}
 }
 
@@ -1331,7 +1340,12 @@ func checkTypesInValue(Parser parser, SyntaxTree tree, Block block, Value value)
 }
 
 func checkTypesInSizeOf(Parser parser, SyntaxTree tree, Block block, SizeOf sizeOf) -> TypeObj {
-	if (getTypeFromTypeName(parser, tree, block, sizeOf.typeObj) == (TypeObj)0) {
+	var typeType = checkTypesInOperation(parser, tree, block, sizeOf.typeObj);
+	if (typeType != parser.Type) {
+		printError(parser, sizeOf.typeObj.region.start, " can not take size of something that is not a type\n");
+	}
+
+	if (getTypeFromOperation(parser, tree, block, sizeOf.typeObj) == (TypeObj)0) {
 		printError(parser, sizeOf.typeObj.region.start, " can not find type with this name\n");
 	}
 
@@ -1369,7 +1383,17 @@ func checkTypesInFunctionCall(Parser parser, SyntaxTree tree, Block block, Opera
 	var expectedList = createTypeList();
 	var i = 0;
 	while (i < function.parameters.size) {
-		var expectedType = getTypeFromTypeName(parser, tree, block, function.parameters.list[i].parameterType);
+		var parameter = function.parameters.list[i];
+		var expectedType = parameter.typeObj;
+
+		if (expectedType == (TypeObj)0 && parameter.parameterType != (Operation)0) {
+			expectedType = getTypeFromOperation(parser, tree, block, parameter.parameterType);
+		}
+
+		if (expectedType == (TypeObj)0) {
+			printError(parser, parameter.region.start, " type definition not found\n");
+		}
+
 		addType(expectedList, expectedType);
 		i = i + 1;
 	}
@@ -1408,7 +1432,15 @@ func checkTypesInFunctionCall(Parser parser, SyntaxTree tree, Block block, Opera
 		return parser.null;
 	}
 
-	var returnType = getTypeFromTypeName(parser, tree, block, function.returnType.returnType);
+	var returnType = function.returnType.typeObj;
+	if (returnType == (TypeObj)0 && function.returnType.returnType != (Operation)0) {
+		returnType = getTypeFromOperation(parser, tree, block, function.returnType.returnType);
+	}
+
+	if (returnType == (TypeObj)0) {
+		printError(parser, function.returnType.region.start, " return type is null\n");
+	}
+
 	call.operationType = returnType;
 	return returnType;
 }
@@ -1633,8 +1665,8 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 	} else if (isOperator(operation.operator, "(")) {
 		var typeObj = checkTypesInOperation(parser, tree, block, operation.right);
 
-		if (operation.castType != (TypeName)0) {
-			var castType = getTypeFromTypeName(parser, tree, block, operation.castType);
+		if (operation.castType != (Operation)0) {
+			var castType = getTypeFromOperation(parser, tree, block, operation.castType);
 			operation.operationType = castType;
 			return castType;
 		}
@@ -1736,7 +1768,7 @@ func checkTypesInReturn(Parser parser, SyntaxTree tree, Block block, Return retu
 		return;
 	}
 
-	var expectedType = getTypeFromTypeName(parser, tree, block, function.returnType.returnType);
+	var expectedType = getTypeFromOperation(parser, tree, block, function.returnType.returnType);
 
 	if (returnType != expectedType) {
 		if (returnType == parser.null) {
