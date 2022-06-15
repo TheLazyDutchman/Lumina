@@ -173,8 +173,7 @@ func writeStringLiteral(int output, str string, int id) {
 	fprinti(output, id);
 	fprint(output, ": db ");
 	
-	string = (str)((int)string + 1);
-	var len = strlen(string) - 1; // remove '"' from string literal
+	var len = strlen(string);
 
 	var i = 0;
 	while (i < len) {
@@ -196,6 +195,33 @@ func writeStringLiteral(int output, str string, int id) {
 	}
 
 	fprint(output, "0x00\n");
+}
+
+func writeTypeLiteral(int output, TypeObj typeObj) {
+	fprint(output, "	type_");
+	fprint(output, typeObj.name);
+	fprint(output, ": dq string_");
+	fprinti(output, typeObj.nameId);
+	fprint(output, ", ");
+	fprinti(output, typeObj.objectSize);
+	fprint(output, ", ");
+
+	if (typeObj.listOf != (TypeObj)0 && typeObj.listOf.name != (str)0) {
+		fprint(output, "type_");
+		fprint(output, typeObj.listOf.name);
+		fprint(output, ", ");
+	} else {
+		fprint(output, "0, ");
+	}
+
+	if (typeObj.listType != (TypeObj)0 && typeObj.listType.name != (str)0) {
+		fprint(output, "type_");
+		fprint(output, typeObj.listType.name);
+	} else {
+		fprint(output, "0");
+	}
+
+	fprint(output, "\n");
 }
 
 func writeHeader(int output) {
@@ -232,7 +258,7 @@ func writeStart(int output) {
 	fprint(output, "	mov [datarsp], rax\n\n");
 }
 
-func writeFooter(int output, StringList strings) {
+func writeFooter(int output, StringList strings, TypeList types) {
 	fprint(output, "	mov rax, 60\n");
 	fprint(output, "	xor rdi, rdi\n");
 	fprint(output, "	syscall\n\n");
@@ -250,6 +276,14 @@ func writeFooter(int output, StringList strings) {
 	
 	fprint(output, "section .data\n");
 	var i = 0;
+	while (i < types.size) {
+		writeTypeLiteral(output, types.list[i]);
+		i = i + 1;
+	}
+
+	fprint(output, "\n\n");
+
+	i = 0;
 	while (i < strings.size) {
 		writeStringLiteral(output, strings.list[i], i);
 		i = i + 1;
@@ -688,15 +722,30 @@ func writeShift(Parser parser, SyntaxTree tree, Block block, int output, str shi
 	return register.name;
 }
 
-func writePropertyDefinition(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, RegisterList registers, Register register, bool getValue, FunctionList functions) -> str {
-	writeOperation(parser, tree, block, output, operation.left, registers, register, (bool)1, functions);
-
+func writeProperty(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, RegisterList registers, Register register, bool getValue, FunctionList functions) -> str {
 	var typeObj = operation.left.operationType;
 
 	if (typeObj == (TypeObj)0) {
 		printPosition(operation.operator.position);
 		print(" struct type is null\n");
 		return register.name;
+	}
+
+	if (typeObj == parser.Type) {
+		var typeLiteral = getTypeFromOperation(parser, tree, block, operation.left);
+		if (typeLiteral.name == (str)0) {
+			printPosition(operation.region.start);
+			print(" cannot access runtime type of undefined type\n");
+			return register.name;
+		}
+
+		fprint(output, "	mov ");
+		fprint(output, register.name);
+		fprint(output, ", type_");
+		fprint(output, typeLiteral.name);
+		fprint(output, "\n");
+	} else {
+		writeOperation(parser, tree, block, output, operation.left, registers, register, (bool)1, functions);
 	}
 
 	var propertyName = operation.right.value.identifier;
@@ -910,7 +959,7 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	}
 
 	if (isOperator(operation.operator, ".")) {
-		return writePropertyDefinition(parser, tree, block, output, operation, registers, registerA, getValue, functions);
+		return writeProperty(parser, tree, block, output, operation, registers, registerA, getValue, functions);
 	}
 
 	if (isOperator(operation.operator, "&&")) {
@@ -1365,6 +1414,7 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 	var registers = initRegisters();
 
 	var functions = listFunctions(parser);
+	var types = listTypes(parser);
 	writeHeader(output);
 
 	var i = parser.functions.size;
@@ -1397,7 +1447,7 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 	var tree = parser.files.list[0];
 	writeStatementList(parser, tree, (Block)0, output, tree.statements, registers, functions);
 
-	writeFooter(output, parser.strings);
+	writeFooter(output, parser.strings, types);
 
 	var nasmDebugArgs = (str[])malloc(8 * 8); // ptr size is 8
 	nasmDebugArgs[0] = "nasm";

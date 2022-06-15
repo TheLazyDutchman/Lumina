@@ -26,8 +26,10 @@ type PropertyList {
 
 type TypeObj {
 	str name;
+	int nameId;
 	TypeDefinition definition;
 	int size;
+	int objectSize;
 
 	PropertyList properties;
 
@@ -224,6 +226,7 @@ func createTypeFromString(str name, int size) -> TypeObj {
 	typeObj.name = name;
 	typeObj.definition = (TypeDefinition)0;
 	typeObj.size = size;
+	typeObj.objectSize = size;
 
 	typeObj.properties = createPropertyList();
 
@@ -275,6 +278,20 @@ func findType(TypeList list, str name) -> TypeObj {
 		i = i + 1;
 	}
 	return (TypeObj)0;
+}
+
+func extendTypeList(TypeList destination, TypeList source) {
+	if (source == (TypeList)0) {
+		print("source was zero in 'extendTypeList'\n");
+		return;
+	}
+
+	var i = 0;
+
+	while (i < source.size) {
+		addType(destination, source.list[i]);
+		i = i + 1;
+	}
 }
 
 func printType(TypeObj typeObj) {

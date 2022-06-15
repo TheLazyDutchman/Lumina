@@ -5,7 +5,7 @@ print(int.name);
 print("\n");
 
 print("char[] name: ");
-printi(char[].name);
+print(char[].name);
 print("\n");
 
 print("bool size: ");

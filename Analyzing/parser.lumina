@@ -149,6 +149,8 @@ func createParser() -> Parser {
 
 	parser.definitions = createDefinitionList();
 
+	parser.strings = createStringList();
+
 	parser.types = createTypeList();
 	parser.int = createTypeFromString("int", 8);
 	parser.char = createTypeFromString("char", 1);
@@ -158,18 +160,25 @@ func createParser() -> Parser {
 	parser.ptr = createTypeFromString("ptr", 8);
 	parser.null = createTypeFromString("null", 8);
 
+	parser.int.nameId = addUniqueString(parser.strings, parser.int.name);
 	addDefinition(parser.definitions, createDefinitionFromType(parser.int));
 	addType(parser.types, parser.int);
+	parser.char.nameId = addUniqueString(parser.strings, parser.char.name);
 	addDefinition(parser.definitions, createDefinitionFromType(parser.char));
 	addType(parser.types, parser.char);
+	parser.str.nameId = addUniqueString(parser.strings, parser.str.name);
 	addDefinition(parser.definitions, createDefinitionFromType(parser.str));
 	addType(parser.types, parser.str);
+	parser.bool.nameId = addUniqueString(parser.strings, parser.bool.name);
 	addDefinition(parser.definitions, createDefinitionFromType(parser.bool));
 	addType(parser.types, parser.bool);
+	parser.any.nameId = addUniqueString(parser.strings, parser.any.name);
 	addDefinition(parser.definitions, createDefinitionFromType(parser.any));
 	addType(parser.types, parser.any);
+	parser.ptr.nameId = addUniqueString(parser.strings, parser.ptr.name);
 	addDefinition(parser.definitions, createDefinitionFromType(parser.ptr));
 	addType(parser.types, parser.ptr);
+	parser.null.nameId = addUniqueString(parser.strings, parser.null.name);
 	addDefinition(parser.definitions, createDefinitionFromType(parser.null));
 	addType(parser.types, parser.null);
 
@@ -178,7 +187,11 @@ func createParser() -> Parser {
 	addProperty(parser.Type.properties, createPropertyFromString("size", parser.int));
 	addProperty(parser.Type.properties, createPropertyFromString("listOf", parser.Type));
 	addProperty(parser.Type.properties, createPropertyFromString("listType", parser.Type));
-	//TODO: add properties
+
+	parser.Type.nameId = addUniqueString(parser.strings, parser.Type.name);
+	parser.Type.objectSize = 32;
+	addDefinition(parser.definitions, createDefinitionFromType(parser.Type));
+	addType(parser.types, parser.Type);
 
 	parser.functions = createFunctionList();
 	var syscallParameters = createParameterList();
@@ -207,8 +220,6 @@ func createParser() -> Parser {
 	parser.numWhiles = 0;
 	parser.numAnds = 0;
 	parser.numOrs = 0;
-
-	parser.strings = createStringList();
 
 	parser.hadError = (bool)0;
 
@@ -727,6 +738,7 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, DefinitionList 
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_type)) {
 		var typeDefinition = parseTypeDefinition(parser, tree);
 		var typeObj = createTypeFromDefinition(typeDefinition);
+		typeObj.nameId = addUniqueString(parser.strings, typeObj.name);
 
 		addDefinition(definitionList, createDefinitionFromType(typeObj));
 		addType(typeList, typeObj);
@@ -788,9 +800,8 @@ func parseImports(Parser parser, SyntaxTree tree) {
 	var i = 0;
 	while (i < tree.imports.size) {
 		var importObj = tree.imports.list[i];
-		var name = strndup((str)((int)importObj.fileName.value + 1), strlen(importObj.fileName.value) - 2);
 
-		var importTree = parse(parser, name, tree.fileName);
+		var importTree = parse(parser, importObj.fileName.value, tree.fileName);
 		tree.importTrees[i] = importTree;
 		i = i + 1;
 	}
@@ -957,16 +968,14 @@ func getPropertyOffset(Parser parser, SyntaxTree tree, Block block, TypeObj type
 			return sum;
 		}
 
-		var propertyType = getTypeFromOperation(parser, tree, block, property.definition.propertyType);
-
-		if (propertyType == (TypeObj)0) {
+		if (property.propertyType == (TypeObj)0) {
 			printError(parser, property.definition.region.start, " property type is null in 'getPropertyDefinitionOffset' in file: '");
 			print(tree.fileName);
 			print("'\n");
 			return 0;
 		}
 
-		sum = sum + propertyType.size;
+		sum = sum + property.propertyType.size;
 		i = i + 1;
 	}
 
@@ -1210,6 +1219,7 @@ func bindNamesInStatementList(Parser parser, SyntaxTree tree, StatementList list
 			bindNamesInFunctionDefinition(parser, tree, statement.function, block);
 		} else if (statement.typeStatement != (TypeObj)0) {
 			bindNamesInTypeDefinition(parser, tree, statement.typeStatement.definition, block);
+			statement.typeStatement.objectSize = getSizeFromType(parser, tree, block, statement.typeStatement);
 		} else if (statement.returnStatement != (Return)0) {
 			bindNamesInReturn(parser, tree, statement.returnStatement, block);
 		}
@@ -1435,12 +1445,17 @@ func checkTypesInProperty(Parser parser, SyntaxTree tree, Block block, Operation
 		return (TypeObj)0;
 	}
 
-	if (property.definition == (PropertyDefinition)0) {
-		printError(parser, operation.right.region.start, " property has no definition\n");
+	var propertyType = property.propertyType;
+
+	if (propertyType == (TypeObj)0 && property.definition != (PropertyDefinition)0) {
+		propertyType = getTypeFromOperation(parser, tree, block, property.definition.propertyType);
+	}
+
+	if (propertyType == (TypeObj)0) {
+		printError(parser, operation.right.region.start, " property type is not defined\n");
 		return (TypeObj)0;
 	}
 
-	var propertyType = getTypeFromOperation(parser, tree, block, property.definition.propertyType);
 	operation.operationType = propertyType;
 	return propertyType;
 }
@@ -1743,6 +1758,19 @@ func checkTypesInReturn(Parser parser, SyntaxTree tree, Block block, Return retu
 	}
 }
 
+func checkTypesInTypeDefinition(Parser parser, SyntaxTree tree, Block block, TypeObj typeObj) {
+	var i = 0;
+	while (i < typeObj.properties.size) {
+		var property = typeObj.properties.list[i];
+		if (checkTypesInOperation(parser, tree, block, property.definition.propertyType) != parser.Type) {
+			printError(parser, property.definition.region.start, " expected property type te be a type\n");
+		}
+
+		property.propertyType = getTypeFromOperation(parser, tree, block, property.definition.propertyType);
+		i = i + 1;
+	}
+}
+
 func checkTypesInStatementList(Parser parser, SyntaxTree tree, Block block, StatementList list) {
 	var i = 0;
 	while (i < list.size) {
@@ -1757,6 +1785,8 @@ func checkTypesInStatementList(Parser parser, SyntaxTree tree, Block block, Stat
 			checkTypesInVariable(parser, tree, block, statement.variable);
 		} else if (statement.returnStatement != (Return)0) {
 			checkTypesInReturn(parser, tree, block, statement.returnStatement);
+		} else if (statement.typeStatement != (TypeObj)0) {
+			checkTypesInTypeDefinition(parser, tree, block, statement.typeStatement);
 		}
 
 		i = i + 1;
@@ -1805,6 +1835,40 @@ func listFunctions(Parser parser) -> FunctionList {
 			}
 
 			extendFunctionList(list, block.functions);
+			j = j + 1;
+		}
+		i = i + 1;
+	}
+
+	return list;
+}
+
+func listTypes(Parser parser) -> TypeList {
+	var list = createTypeList();
+
+	extendTypeList(list, parser.types);
+
+	var i = 0;
+	while (i < parser.files.size) {
+		var tree = parser.files.list[i];
+
+		if (tree == (SyntaxTree)0) {
+			print("tree is null in 'listTypes'\n");
+			return list;
+		}
+
+		extendTypeList(list, tree.types);
+
+		var j = 0;
+		while (j < tree.blocks.size) {
+			var block = tree.blocks.list[j];
+
+			if (block == (Block)0) {
+				print("block is null in 'listTypes'\n");
+				return list;
+			}
+
+			extendTypeList(list, block.types);
 			j = j + 1;
 		}
 		i = i + 1;
