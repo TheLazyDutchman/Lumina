@@ -277,24 +277,6 @@ func consumeString(Parser parser, SyntaxTree tree) -> String {
 	return (String)0;
 }
 
-func parseTypeName(Parser parser, SyntaxTree tree, bool ignoreErrors) -> TypeName {
-	var name = consumeIdentifier(parser, tree);
-
-	var brackets = createOperatorList();
-	while (isOperator(tree.lexer.current.operator, "[")) {
-		addOperator(brackets, tree.lexer.current.operator);
-
-		next(tree.lexer);
-		if (isOperator(tree.lexer.current.operator, "]") != (bool)1) {
-			print("expected ']' after '[' in list definition\n");
-		}
-		var lbracket = consumeOperator(parser, tree, "]", ignoreErrors);
-		addOperator(brackets, lbracket);
-	}
-
-	return createTypeName(name, brackets);
-}
-
 func parsePropertyDefinition(Parser parser, SyntaxTree tree) -> PropertyDefinition {
 	var propertyType = parseExpression(parser, tree, PREC_index);
 
@@ -935,26 +917,6 @@ func getTypeFromOperation(Parser parser, SyntaxTree tree, Block block, Operation
 	return createListType((str)0, typeObj);
 }
 
-func getTypeFromTypeName(Parser parser, SyntaxTree tree, Block block, TypeName typeObj) -> TypeObj {
-	var typeDef = findTypeInParser(parser, tree, block, typeObj.name.name);
-
-	if (typeDef == (TypeObj)0) {
-		printError(parser, typeObj.region.start, " type is null in 'getTypeFromTypeName' in file: '");
-		print(tree.fileName);
-		print("'\n");
-
-		return typeDef;
-	}
-
-	var i = 0;
-	while (i < typeObj.brackets.size) {
-		typeDef = createListType((str)0, typeDef);
-		i = i + 2;
-	}
-
-	return typeDef;
-}
-
 func getSizeFromType(Parser parser, SyntaxTree tree, Block block, TypeObj typeObj) -> int {
 	if (typeObj == (TypeObj)0) {
 		print("type obj is null in 'getSizeFromType'\n");
@@ -962,13 +924,13 @@ func getSizeFromType(Parser parser, SyntaxTree tree, Block block, TypeObj typeOb
 		return 0;
 	}
 
-	if (typeObj.definition == (TypeDefinition)0 || typeObj.listType != (TypeObj)0) {
+	if (typeObj.properties.size == 0 || typeObj.listType != (TypeObj)0) {
 		return typeObj.size;
 	}
 
 	var sum = 0;
 	var i = 0;
-	while (i < typeObj.definition.properties.size) {
+	while (i < typeObj.properties.size) {
 		var property = typeObj.properties.list[i];
 		var propertyType = getTypeFromOperation(parser, tree, block, property.definition.propertyType);
 
@@ -1109,10 +1071,6 @@ func bindIdentifier(Parser parser, SyntaxTree tree, Block block, Identifier iden
 	}
 
 	identifier.value = createDefinitionFromVariable(variable);
-}
-
-func bindNamesInType(Parser parser, SyntaxTree tree, TypeName typeObj, Block block) {
-	bindName(parser, tree, typeObj.name, block);
 }
 
 func bindNamesInOperation(Parser parser, SyntaxTree tree, Operation operation, Block block) {

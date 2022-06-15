@@ -35,12 +35,6 @@ type TypeObj {
 	TypeObj listType;
 }
 
-type TypeName {
-	Region region;
-	Name name;
-	OperatorList brackets;
-}
-
 type PropertyDefinition {
 	Region region;
 	Operation propertyType;
@@ -74,34 +68,6 @@ type TypeList {
 	int size;
 	int maxSize;
 	TypeObj[] list;
-}
-
-func createTypeName(Name name, OperatorList brackets) -> TypeName {
-	if (isIdentifier(name) != (bool)1) {
-		print("expected type name to be an identifier\n");
-	}
-
-	var value = (TypeName)malloc(sizeof(TypeName));
-	
-	if (brackets.size > 0) {
-		value.region = createRegion(name.region.start, brackets.list[brackets.size - 1].position);
-	} else {
-		value.region = name.region;
-	}
-
-	value.name = name;
-	value.brackets = brackets;
-
-	return value;
-}
-
-func createTypeObjFromString(str typeName) -> TypeName {
-	var typeObj = (TypeName)malloc(sizeof(TypeName));
-
-	typeObj.name = createNameFromString(typeName);
-	typeObj.brackets = createOperatorList();
-
-	return typeObj;
 }
 
 func createPropertyDefinition(Operation propertyType, Name name, Operator semicolon) -> PropertyDefinition {
