@@ -39,8 +39,8 @@ func createString(Position start, Position end, WhiteSpace space) -> String {
 
 	var length = end.index - start.index;
 
-	var stringStart = (str)((int)start.buffer + start.index);
-	string.value = strndup(stringStart, length);
+	var stringStart = (str)((int)start.buffer + start.index + 1);
+	string.value = strndup(stringStart, length - 2);
 
 	string.id = -1;
 	

@@ -8,6 +8,7 @@ import "function.lumina"
 import "variable.lumina"
 import "name.lumina"
 import "whitespace.lumina"
+import "definition.lumina"
 
 
 type Block {
@@ -15,6 +16,8 @@ type Block {
 
 	Operator lbrace;
 	StatementList statements;
+
+	DefinitionList definitions;
 	TypeList types;
 	FunctionList functions;
 	VariableList variables;
@@ -31,13 +34,15 @@ type BlockList {
 	Block[] list;
 }
 
-func createBlock(Operator lbrace, StatementList statements, TypeList types, FunctionList functions, VariableList variables, Block outer, FunctionDefinition function) -> Block {
+func createBlock(Operator lbrace, StatementList statements, DefinitionList definitions, TypeList types, FunctionList functions, VariableList variables, Block outer, FunctionDefinition function) -> Block {
 	var block = (Block)malloc(sizeof(Block));
 
 	block.region = (Region)0;
 
 	block.lbrace = lbrace;
 	block.statements = statements;
+
+	block.definitions = definitions;
 	block.types = types;
 	block.functions = functions;
 	block.variables = variables;
@@ -90,11 +95,11 @@ func addBlock(BlockList list, Block block) -> int {
 	return list.size - 1;
 }
 
-func findTypeInBlock(Block block, str name) -> TypeDefinition {
+func findTypeInBlock(Block block, str name) -> TypeObj {
 	var typeObj = findType(block.types, name);
 
-	if (typeObj == (TypeDefinition)0 && block.outer != (Block)0) {
-	return findTypeInBlock(block.outer, name);
+	if (typeObj == (TypeObj)0 && block.outer != (Block)0) {
+		return findTypeInBlock(block.outer, name);
 	}
 
 	return typeObj;
@@ -104,7 +109,7 @@ func findFunctionInBlock(Block block, str name) -> FunctionDefinition {
 	var function = findFunction(block.functions, name);
 
 	if (function == (FunctionDefinition)0 && block.outer != (Block)0) {
-	return findFunctionInBlock(block.outer, name);
+		return findFunctionInBlock(block.outer, name);
 	}
 
 	return function;

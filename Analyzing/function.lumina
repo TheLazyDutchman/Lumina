@@ -15,9 +15,11 @@ import "block.lumina"
 type Parameter {
 	Region region;
 	
-	Type parameterType;
+	Operation parameterType;
 	Name name;
 	Operator comma;
+
+	TypeObj typeObj;
 }
 
 type ParameterList {
@@ -30,7 +32,9 @@ type ReturnType {
 	Region region;
 
 	Operator rarrow;
-	Type returnType;
+	Operation returnType;
+
+	TypeObj typeObj;
 }
 
 type FunctionDefinition {
@@ -62,7 +66,7 @@ type Return {
 	Operator semicolon;
 }
 
-func createParameter(Type parameterType, Name name, Operator comma) -> Parameter {
+func createParameter(Operation parameterType, Name name, Operator comma) -> Parameter {
 	var parameter = (Parameter)malloc(sizeof(Parameter));
 
 	if (comma != (Operator)0) {
@@ -74,14 +78,17 @@ func createParameter(Type parameterType, Name name, Operator comma) -> Parameter
 	parameter.parameterType = parameterType;
 	parameter.name = name;
 
+	parameter.typeObj = (TypeObj)0;
+
 	return parameter;
 }
 
-func createParameterFromString(str typeName, str name) -> Parameter {
+func createParameterFromString(TypeObj typeObj, str name) -> Parameter {
 	var parameter = (Parameter)malloc(sizeof(Parameter));
 
 	parameter.region = (Region)0;
-	parameter.parameterType = createTypeObjFromString(typeName);
+	parameter.parameterType = (Operation)0;
+	parameter.typeObj = typeObj;
 	if (name != (str)0) {
 		parameter.name = createNameFromString(name);
 	} else {
@@ -112,7 +119,7 @@ func addParameter(ParameterList list, Parameter parameter) {
 	}
 }
 
-func createReturnType(Operator rarrow, Type typeObj) -> ReturnType {
+func createReturnType(Operator rarrow, Operation typeObj) -> ReturnType {
 	var returnType = (ReturnType)malloc(sizeof(ReturnType));
 
 	returnType.region = createRegion(rarrow.position, typeObj.region.end);
@@ -123,13 +130,14 @@ func createReturnType(Operator rarrow, Type typeObj) -> ReturnType {
 	return returnType;
 }
 
-func createReturnTypeFromString(str typeName) -> ReturnType {
+func createReturnTypeFromString(TypeObj typeObj) -> ReturnType {
 	var returnType = (ReturnType)malloc(sizeof(ReturnType));
 
 	returnType.region = (Region)0;
 
 	returnType.rarrow = (Operator)0;
-	returnType.returnType = createTypeObjFromString(typeName);
+	returnType.returnType = (Operation)0;
+	returnType.typeObj = typeObj;
 
 	return returnType;
 }

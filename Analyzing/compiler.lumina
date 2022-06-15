@@ -15,6 +15,7 @@ import "immediate.lumina"
 import "import.lumina"
 import "lexer.lumina"
 import "name.lumina"
+import "identifier.lumina"
 import "operation.lumina"
 import "operator.lumina"
 import "position.lumina"
@@ -24,6 +25,7 @@ import "value.lumina"
 import "variable.lumina"
 import "while.lumina"
 import "whitespace.lumina"
+import "definition.lumina"
 
 
 type Register {
@@ -38,7 +40,7 @@ type RegisterList {
 }
 
 const CALLSTACKSIZE = 2048;
-const DATASTACKSIZE = 4096;
+const DATASTACKSIZE = 40960;
 
 func createRegister(str name) -> Register {
 	var reg = (Register)malloc(sizeof(Register));
@@ -105,6 +107,26 @@ func initRegisters() -> RegisterList {
 	return registers;
 }
 
+func evaluateValue(Parser parser, Value value) -> int {
+	if (value.number != (Number)0) {
+		return value.number.value;
+	}
+
+	printError(parser, value.region.start, " do not support constant values of this type yet\n");
+
+	return -1;
+}
+
+func evaluateOperation(Parser parser, Operation operation) -> int {
+	if (operation.value != (Value)0) {
+		return evaluateValue(parser, operation.value);
+	}
+
+	printError(parser, operation.region.start, " do not support constant operations yet\n");
+	
+	return -1;
+}
+
 func printEscapedCharacter(int output, char chr) {
 	//split the higher and lower 4 bits of the character
 	var lower = (int)chr;
@@ -151,8 +173,7 @@ func writeStringLiteral(int output, str string, int id) {
 	fprinti(output, id);
 	fprint(output, ": db ");
 	
-	string = (str)((int)string + 1);
-	var len = strlen(string) - 1; // remove '"' from string literal
+	var len = strlen(string);
 
 	var i = 0;
 	while (i < len) {
@@ -174,6 +195,33 @@ func writeStringLiteral(int output, str string, int id) {
 	}
 
 	fprint(output, "0x00\n");
+}
+
+func writeTypeLiteral(int output, TypeObj typeObj) {
+	fprint(output, "	type_");
+	fprint(output, typeObj.name);
+	fprint(output, ": dq string_");
+	fprinti(output, typeObj.nameId);
+	fprint(output, ", ");
+	fprinti(output, typeObj.objectSize);
+	fprint(output, ", ");
+
+	if (typeObj.listOf != (TypeObj)0 && typeObj.listOf.name != (str)0) {
+		fprint(output, "type_");
+		fprint(output, typeObj.listOf.name);
+		fprint(output, ", ");
+	} else {
+		fprint(output, "0, ");
+	}
+
+	if (typeObj.listType != (TypeObj)0 && typeObj.listType.name != (str)0) {
+		fprint(output, "type_");
+		fprint(output, typeObj.listType.name);
+	} else {
+		fprint(output, "0");
+	}
+
+	fprint(output, "\n");
 }
 
 func writeHeader(int output) {
@@ -210,7 +258,7 @@ func writeStart(int output) {
 	fprint(output, "	mov [datarsp], rax\n\n");
 }
 
-func writeFooter(int output, StringList strings) {
+func writeFooter(int output, StringList strings, TypeList types) {
 	fprint(output, "	mov rax, 60\n");
 	fprint(output, "	xor rdi, rdi\n");
 	fprint(output, "	syscall\n\n");
@@ -228,36 +276,76 @@ func writeFooter(int output, StringList strings) {
 	
 	fprint(output, "section .data\n");
 	var i = 0;
+	while (i < types.size) {
+		writeTypeLiteral(output, types.list[i]);
+		i = i + 1;
+	}
+
+	fprint(output, "\n\n");
+
+	i = 0;
 	while (i < strings.size) {
 		writeStringLiteral(output, strings.list[i], i);
 		i = i + 1;
 	}
 }
 
-func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Name name, str register, bool getValue) -> str {
-	var variable = (VariableDefinition)0;
-	if (block != (Block)0) {
-		variable = findVariableInBlock(parser, tree, block, name.name);
+func writeConstant(Parser parser, int output, Variable constant, str register) -> str {
+	if (constant.isEvaluated != (bool)1) {
+		evaluateConstant(parser, constant);
 	}
 
-	if (variable == (VariableDefinition)0) {
-		variable = findVariable(tree.variables, name.name);
+	fprint(output, "	mov ");
+	fprint(output, register);
+	fprint(output, ", ");
+
+	if (constant.variableType == parser.int) {
+		fprinti(output, constant.value);
+	} else if (constant.variableType == parser.char) {
+		printEscapedCharacter(output, (char)constant.value);
+	} else if (constant.variableType == parser.str) {
+		fprint(output, "string_");
+		fprinti(output, constant.value);
+	} else {
+		printPosition(constant.definition.value.region.start);
+		print(" do not support type '");
+		printType(constant.variableType);
+		print("' for constants yet\n");
+	}
+
+	fprint(output, " ;; constant\n");
+
+	return register;
+}
+
+func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Identifier identifier, str register, bool getValue) -> str {
+	var variable = (Variable)0;
+	if (block != (Block)0) {
+		variable = findVariableInBlock(parser, tree, block, identifier.name);
+	}
+
+	if (variable == (Variable)0) {
+		variable = findVariable(tree.variables, identifier.name);
 	}
 
 	var i = 0;
-	while (i < tree.imports.size && variable == (VariableDefinition)0) {
-		variable = findVariable(tree.importTrees[i].variables, name.name);
+	while (i < tree.imports.size && variable == (Variable)0) {
+		variable = findVariable(tree.importTrees[i].variables, identifier.name);
 		i = i + 1;
 	}
 
-	if (variable == (VariableDefinition)0) {
-		variable = findVariable(parser.variables, name.name);
+	if (variable == (Variable)0) {
+		variable = findVariable(parser.variables, identifier.name);
 	}
 
-	if (variable == (VariableDefinition)0) {
-		printPosition(name.region.start);
+	if (variable == (Variable)0) {
+		printPosition(identifier.definition.region.start);
 		print(" can not find variable\n");
 		return (str)0;
+	}
+
+	if (variable.isConstant) {
+		return writeConstant(parser, output, variable, register);
 	}
 
 	fprint(output, "	mov ");
@@ -342,8 +430,8 @@ func writeValue(Parser parser, SyntaxTree tree, Block block, int output, Value v
 		fprint(output, ", string_");
 		fprinti(output, id);
 		fprint(output, " ;; string\n");
-	} else if (value.name != (Name)0) {
-		writeIdentifier(parser, tree, block, output, value.name, register, getValue);
+	} else if (value.identifier != (Identifier)0) {
+		writeIdentifier(parser, tree, block, output, value.identifier, register, getValue);
 	}
 
 	return register;
@@ -446,15 +534,15 @@ func writeAddress(int output, str addr, int id) {
 }
 
 func writeSizeOf(Parser parser, SyntaxTree tree, Block block, int output, SizeOf sizeOf, str register) -> str {
-	var typeDef = getTypeDefinitionFromType(parser, tree, block, sizeOf.typeObj);
+	var typeObj = getTypeFromOperation(parser, tree, block, sizeOf.typeObj);
 
-	if (typeDef == (TypeDefinition)0) {
+	if (typeObj == (TypeObj)0) {
 		printPosition(sizeOf.region.start);
 		print(" type is null in size of\n");
 		return register;
 	}
 
-	var size = getSizeFromType(parser, tree, block, typeDef, (bool)0);
+	var size = getSizeFromType(parser, tree, block, typeObj);
 
 	fprint(output, "	mov ");
 	fprint(output, register);
@@ -466,7 +554,7 @@ func writeSizeOf(Parser parser, SyntaxTree tree, Block block, int output, SizeOf
 }
 
 func writeCall(Parser parser, SyntaxTree tree, Block block, int output, Operation call, RegisterList registers, Register register, FunctionList functions) -> str {
-	var name = call.left.value.name.name;
+	var name = call.left.value.identifier.name;
 	var id = 0;
 	var i = 0;
 	while (i < functions.size) {
@@ -635,20 +723,35 @@ func writeShift(Parser parser, SyntaxTree tree, Block block, int output, str shi
 }
 
 func writeProperty(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, RegisterList registers, Register register, bool getValue, FunctionList functions) -> str {
-	writeOperation(parser, tree, block, output, operation.left, registers, register, (bool)1, functions);
+	var typeObj = operation.left.operationType;
 
-	var typeObj = checkTypesInOperation(parser, tree, block, operation.left);
-
-	if (typeObj == (TypeDefinition)0) {
+	if (typeObj == (TypeObj)0) {
 		printPosition(operation.operator.position);
 		print(" struct type is null\n");
 		return register.name;
 	}
 
-	var propertyName = operation.right.value.name;
-	var propertyType = checkTypesInOperation(parser, tree, block, operation);
+	if (typeObj == parser.Type) {
+		var typeLiteral = getTypeFromOperation(parser, tree, block, operation.left);
+		if (typeLiteral.name == (str)0) {
+			printPosition(operation.region.start);
+			print(" cannot access runtime type of undefined type\n");
+			return register.name;
+		}
 
-	if (propertyType == (TypeDefinition)0) {
+		fprint(output, "	mov ");
+		fprint(output, register.name);
+		fprint(output, ", type_");
+		fprint(output, typeLiteral.name);
+		fprint(output, "\n");
+	} else {
+		writeOperation(parser, tree, block, output, operation.left, registers, register, (bool)1, functions);
+	}
+
+	var propertyName = operation.right.value.identifier;
+	var propertyType = operation.operationType;
+
+	if (propertyType == (TypeObj)0) {
 		printPosition(operation.operator.position);
 		print(" type of property is null\n");
 		return register.name;
@@ -669,7 +772,7 @@ func writeProperty(Parser parser, SyntaxTree tree, Block block, int output, Oper
 
 		fprint(output, "] ;; read offset\n");
 
-		var propertySize = getSizeFromType(parser, tree, block, propertyType, (bool)1);
+		var propertySize = propertyType.size;
 
 		if (propertySize != 8) {
 			var mask = (1 << (8 * propertySize)) - 1;
@@ -698,15 +801,15 @@ func writeAssignment(Parser parser, SyntaxTree tree, Block block, int output, Op
 	writeOperation(parser, tree, block, output, operation.right, registers, valueRegister, (bool)1, functions);
 
 	if (isOperator(operation.left.operator, "[")) {
-		var arrayType = checkTypesInOperation(parser, tree, block, operation.left);
+		var listType = operation.left.operationType;
 
-		if (arrayType == (TypeDefinition)0) {
+		if (listType == (TypeObj)0) {
 			printPosition(operation.operator.position);
-			print(" array type is null\n");
+			print(" list type is null\n");
 			return register.name;
 		}
 
-		var size = getSizeFromType(parser, tree, block, arrayType, (bool)1);
+		var size = listType.size;
 
 		var movWord = "mov";
 		if (size != 8) {
@@ -730,15 +833,15 @@ func writeAssignment(Parser parser, SyntaxTree tree, Block block, int output, Op
 		fprint(output, valueRegister.name);
 		fprint(output, " ;; assign to list\n");
 	} else if (isOperator(operation.left.operator, ".")) {
-		var propertyType = checkTypesInOperation(parser, tree, block, operation.left);
+		var propertyType = operation.left.operationType;
 
-		if (propertyType == (TypeDefinition)0) {
+		if (propertyType == (TypeObj)0) {
 			printPosition(operation.operator.position);
 			print(" type is null\n");
 			return register.name;
 		}
 
-		var size = getSizeFromType(parser, tree, block, propertyType, (bool)1);
+		var size = propertyType.size;
 
 		var movWord = "mov";
 		if (size != 8) {
@@ -781,14 +884,14 @@ func writeAnd(Parser parser, SyntaxTree tree, Block block, int output, Operation
 
 	var andId = parser.numAnds;
 
-	writeJumpNotEqual(output, register, "addr_and_", andId);
+	writeJumpNotEqual(output, register, ".addr_and_", andId);
 	register.used = (bool)1;
 
 	parser.numAnds = parser.numAnds + 1;
 
 	writeOperation(parser, tree, block, output, operation.right, registers, register, (bool)1, functions);
 
-	writeAddress(output, "addr_and_", andId);
+	writeAddress(output, ".addr_and_", andId);
 
 	return register.name;
 }
@@ -798,14 +901,14 @@ func writeOr(Parser parser, SyntaxTree tree, Block block, int output, Operation 
 
 	var orId = parser.numOrs;
 
-	writeJumpEqual(output, register, "addr_or_", orId);
+	writeJumpEqual(output, register, ".addr_or_", orId);
 	register.used = (bool)1;
 
 	parser.numOrs = parser.numOrs + 1;
 
 	writeOperation(parser, tree, block, output, operation.right, registers, register, (bool)1, functions);
 
-	writeAddress(output, "addr_or_", orId);
+	writeAddress(output, ".addr_or_", orId);
 
 	return register.name;
 }
@@ -894,16 +997,15 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	} else if (isOperator(operation.operator, ">=")) {
 		return writeComparison(output, "cmovge", registerA, registerB);
 	} else if (isOperator(operation.operator, "[")) {
-		var typeObj = checkTypesInOperation(parser, tree, block, operation);
+		var typeObj = operation.operationType;
 
-		if (typeObj == (TypeDefinition)0) {
+		if (typeObj == (TypeObj)0) {
 			printPosition(operation.operator.position);
 			print(" array type is null\n");
 			return registerA.name;
 		}
 
-		var size = getSizeFromType(parser, tree, block, typeObj, (bool)1);
-		return writeIndex(output, size, registerA, registerB, getValue);
+		return writeIndex(output, typeObj.size, registerA, registerB, getValue);
 	} else if (isOperator(operation.operator, "+")) {
 		operationString = "add";
 	} else if (isOperator(operation.operator, "-")) {
@@ -927,10 +1029,19 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	return registerA.name;
 }
 
-func writeVariable(Parser parser, SyntaxTree tree, Block block, int output, VariableDefinition variable, RegisterList registers, FunctionList functions) {
+func writeVariable(Parser parser, SyntaxTree tree, Block block, int output, Variable variable, RegisterList registers, FunctionList functions) {
 	var register = getRegister(registers);
-	writeOperation(parser, tree, block, output, variable.value, registers, register, (bool)1, functions);
+	writeOperation(parser, tree, block, output, variable.definition.value, registers, register, (bool)1, functions);
 	writePushData(output, register);
+}
+
+func evaluateConstant(Parser parser, Variable constant) {
+	if (constant.isEvaluated) {
+		return;
+	}
+
+	constant.value = evaluateOperation(parser, constant.definition.value);
+	constant.isEvaluated = (bool)1;
 }
 
 func writeReturn(Parser parser, SyntaxTree tree, Block block, int output, Return returnStatement, RegisterList registers, FunctionList functions) {
@@ -947,7 +1058,7 @@ func writeReturn(Parser parser, SyntaxTree tree, Block block, int output, Return
 	while (block.function == (FunctionDefinition)0) {
 		var i = 0;
 		while (i < block.variables.size) {
-			if (block.variables.list[i].region.start.index < returnStatement.region.start.index) {
+			if (block.variables.list[i].definition.region.start.index < returnStatement.region.start.index) {
 				numVariables = numVariables + 1;
 			} else {
 				i = block.variables.size;
@@ -961,7 +1072,7 @@ func writeReturn(Parser parser, SyntaxTree tree, Block block, int output, Return
 
 	var i = 0;
 	while (i < block.variables.size) {
-		if (block.variables.list[i].region.start.index < returnStatement.region.start.index) {
+		if (block.variables.list[i].definition.region.start.index < returnStatement.region.start.index) {
 			numVariables = numVariables + 1;
 		} else {
 			i = block.variables.size;
@@ -1028,28 +1139,28 @@ func writeBlock(Parser parser, SyntaxTree tree, Block outer, int output, Block b
 func writeIf(Parser parser, SyntaxTree tree, Block block, int output, If ifStatement, RegisterList registers, FunctionList functions) {
 	var conditionRegister = getRegister(registers);
 	writeOperation(parser, tree, block, output, ifStatement.condition, registers, conditionRegister, (bool)1, functions);
-	writeJumpNotEqual(output, conditionRegister, "addr_if_", ifStatement.id);
+	writeJumpNotEqual(output, conditionRegister, ".addr_if_", ifStatement.id);
 
 	conditionRegister.used = (bool)0;
 
 	writeBlock(parser, tree, block, output, ifStatement.block, registers, functions);
 
 	if (ifStatement.elseIfs.size != 0 || ifStatement.elseObj != (Else)0) {
-		writeJump(output, "addr_if_end_", ifStatement.id);
+		writeJump(output, ".addr_if_end_", ifStatement.id);
 	}
 
-	writeAddress(output, "addr_if_", ifStatement.id);
+	writeAddress(output, ".addr_if_", ifStatement.id);
 	var i = 0;
 	while (i < ifStatement.elseIfs.size) {
 		var elseIf = ifStatement.elseIfs.list[i];
 		var conditionRegister = getRegister(registers);
 		writeOperation(parser, tree, block, output, elseIf.condition, registers, conditionRegister, (bool)1, functions);
-		writeJumpNotEqual(output, conditionRegister, "addr_if_", elseIf.id);
+		writeJumpNotEqual(output, conditionRegister, ".addr_if_", elseIf.id);
 
 		writeBlock(parser, tree, block, output, elseIf.block, registers, functions);
 
-		writeJump(output, "addr_if_end_", ifStatement.id);
-		writeAddress(output, "addr_if_", elseIf.id);
+		writeJump(output, ".addr_if_end_", ifStatement.id);
+		writeAddress(output, ".addr_if_", elseIf.id);
 		i = i + 1;
 	}
 
@@ -1058,24 +1169,24 @@ func writeIf(Parser parser, SyntaxTree tree, Block block, int output, If ifState
 	}
 
 	if (ifStatement.elseIfs.size != 0 || ifStatement.elseObj != (Else)0) {
-		writeAddress(output, "addr_if_end_", ifStatement.id);
+		writeAddress(output, ".addr_if_end_", ifStatement.id);
 	}
 }
 
 func writeWhile(Parser parser, SyntaxTree tree, Block block, int output, While whileStatement, RegisterList registers, FunctionList functions) {
 	var conditionRegister = getRegister(registers);
 
-	writeAddress(output, "addr_while_condition_", whileStatement.id);
+	writeAddress(output, ".addr_while_condition_", whileStatement.id);
 
 	writeOperation(parser, tree, block, output, whileStatement.condition, registers, conditionRegister, (bool)1, functions);
-	writeJumpNotEqual(output, conditionRegister, "addr_while_end_", whileStatement.id);
+	writeJumpNotEqual(output, conditionRegister, ".addr_while_end_", whileStatement.id);
 
 	conditionRegister.used = (bool)0;
 
 	writeBlock(parser, tree, block, output, whileStatement.block, registers, functions);
 
-	writeJump(output, "addr_while_condition_", whileStatement.id);
-	writeAddress(output, "addr_while_end_", whileStatement.id);
+	writeJump(output, ".addr_while_condition_", whileStatement.id);
+	writeAddress(output, ".addr_while_end_", whileStatement.id);
 }
 
 func writeStatement(Parser parser, SyntaxTree tree, Block block, int output, Statement statement, RegisterList registers, FunctionList functions) {
@@ -1089,7 +1200,7 @@ func writeStatement(Parser parser, SyntaxTree tree, Block block, int output, Sta
 		writeIf(parser, tree, block, output, statement.ifStatement, registers, functions);
 	} else if (statement.whileStatement != (While)0) {
 		writeWhile(parser, tree, block, output, statement.whileStatement, registers, functions);
-	} else if (statement.variable != (VariableDefinition)0) {
+	} else if (statement.variable != (Variable)0) {
 		writeVariable(parser, tree, block, output, statement.variable, registers, functions);
 	} else if (statement.returnStatement != (Return)0) {
 		writeReturn(parser, tree, block, output, statement.returnStatement, registers, functions);
@@ -1280,6 +1391,10 @@ func createChild(str name, str[] args) -> int {
 func CompileLinuxx86_nasm(str fileName, bool debug) {
 	var parser = checkFiles(fileName);
 
+	if (parser.hadError) {
+		exit(1);
+	}
+
 	var filePath = getPathFromString(fileName);
 
 	print("[FILE] checked file: '");
@@ -1299,6 +1414,7 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 	var registers = initRegisters();
 
 	var functions = listFunctions(parser);
+	var types = listTypes(parser);
 	writeHeader(output);
 
 	var i = parser.functions.size;
@@ -1331,7 +1447,7 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 	var tree = parser.files.list[0];
 	writeStatementList(parser, tree, (Block)0, output, tree.statements, registers, functions);
 
-	writeFooter(output, parser.strings);
+	writeFooter(output, parser.strings, types);
 
 	var nasmDebugArgs = (str[])malloc(8 * 8); // ptr size is 8
 	nasmDebugArgs[0] = "nasm";

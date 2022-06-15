@@ -1,0 +1,97 @@
+import "../std/memory.lumina"
+import "../std/string.lumina"
+
+import "name.lumina"
+import "position.lumina"
+import "whitespace.lumina"
+import "type.lumina"
+import "variable.lumina"
+import "function.lumina"
+
+
+type Definition {
+	str name;
+
+	TypeObj typeObj;
+	Variable variable;
+	FunctionDefinition function;
+
+	TypeObj valueType;
+}
+
+type DefinitionList {
+	int size;
+	int maxSize;
+	Definition[] list;
+}
+
+func createDefinition() -> Definition {
+	var definition = (Definition)malloc(sizeof(Definition));
+
+	definition.name = (str)0;
+	definition.typeObj = (TypeObj)0;
+	definition.variable = (Variable)0;
+	definition.function = (FunctionDefinition)0;
+
+	definition.valueType = (TypeObj)0;
+
+	return definition;
+}
+
+func createDefinitionFromType(TypeObj typeObj) -> Definition {
+	var definition = createDefinition();
+
+	definition.name = typeObj.name;
+	definition.typeObj = typeObj;
+
+	return definition;
+}
+
+func createDefinitionFromVariable(Variable variable) -> Definition {
+	var definition = createDefinition();
+
+	definition.name = variable.name;
+	definition.variable = variable;
+
+	return definition;
+}
+
+func createDefinitionFromFunction(FunctionDefinition function) -> Definition {
+	var definition = createDefinition();
+
+	definition.name = function.name.name;
+	definition.function = function;
+
+	return definition;
+}
+
+func createDefinitionList() -> DefinitionList {
+	var list = (DefinitionList)malloc(sizeof(DefinitionList));
+
+	list.size = 0;
+	list.maxSize = 8;
+	list.list = (Definition[])malloc(8 * 8);
+
+	return list;
+}
+
+func addDefinition(DefinitionList list, Definition definition) {
+	list.list[list.size] = definition;
+	list.size = list.size + 1;
+
+	if (list.size == list.maxSize) {
+		list.list = (Definition[])realloc((ptr)list.list, list.maxSize * 8, list.maxSize * 8 * 2);
+		list.maxSize = list.maxSize * 2;
+	}
+}
+
+func findDefinition(DefinitionList list, str name) -> Definition {
+	var i = 0;
+	while (i < list.size) {
+		if (streq(list.list[i].name, name)) {
+			return list.list[i];
+		}
+		i = i + 1;
+	}
+	return (Definition)0;
+}

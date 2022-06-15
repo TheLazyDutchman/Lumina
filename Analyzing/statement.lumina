@@ -17,9 +17,9 @@ type Statement {
 	If ifStatement;
 	While whileStatement;
 	Import importStatement;
-	VariableDefinition variable;
+	Variable variable;
 	FunctionDefinition function;
-	TypeDefinition typeStatement;
+	TypeObj typeStatement;
 	Return returnStatement;
 	Block blockStatement;
 }
@@ -38,10 +38,10 @@ func createStatement() -> Statement {
 	statement.ifStatement = (If)0;
 	statement.whileStatement = (While)0;
 	statement.importStatement = (Import)0;
-	statement.variable = (VariableDefinition)0;
+	statement.variable = (Variable)0;
 	statement.function = (FunctionDefinition)0;
 	statement.returnStatement = (Return)0;
-	statement.typeStatement = (TypeDefinition)0;
+	statement.typeStatement = (TypeObj)0;
 	statement.blockStatement = (Block)0;
 
 	return statement;
@@ -83,10 +83,10 @@ func createImportStatement(Import importStatement) -> Statement {
 	return statement;
 }
 
-func createVariableStatement(VariableDefinition variable) -> Statement {
+func createVariableStatement(Variable variable) -> Statement {
 	var statement = createStatement();
 
-	statement.region = variable.region;
+	statement.region = variable.definition.region;
 	statement.variable = variable;
 
 	return statement;
@@ -110,10 +110,10 @@ func createReturnStatement(Return returnStatement) -> Statement {
 	return statement;
 }
 
-func createTypeStatement(TypeDefinition typeStatement) -> Statement {
+func createTypeStatement(TypeObj typeStatement) -> Statement {
 	var statement = createStatement();
 
-	statement.region = typeStatement.region;
+	statement.region = typeStatement.definition.region;
 	statement.typeStatement = typeStatement;
 
 	return statement;

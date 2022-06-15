@@ -60,9 +60,9 @@ func malloc(int size) -> ptr {
 	}
 
 	var oldPtr = _heapHead;
-	_heapHead = (ptr)((int)_heapHead + size);
+	_heapHead = (ptr)((int)_heapHead + size * 2);
 
-	if ((int)oldPtr + size > (int)curEnd) {
+	if ((int)oldPtr + size * 2 > (int)curEnd) {
 		syscall(1, 1, "went over end of heap\n", 22, 0, 0, 0);
 	}
 
