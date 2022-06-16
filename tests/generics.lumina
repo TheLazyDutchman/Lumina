@@ -1,0 +1,27 @@
+import "../std/memory.lumina"
+
+
+type Bird {
+	str name;
+	int age;
+	str species;
+}
+
+type Array<T> {
+	int size;
+	int maxSize;
+	T[] list;
+}
+
+func createList<T>() -> Array<T> {
+	var array = (Array<T>)malloc(sizeof(Array<T>));
+
+	array.size = 0;
+	array.maxSize = 8;
+	array.list = (T[])malloc(8 * sizeof(T));
+
+	return array;
+}
+
+
+var birdList = createList<Bird>();

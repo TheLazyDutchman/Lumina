@@ -288,8 +288,32 @@ func consumeString(Parser parser, SyntaxTree tree) -> String {
 	return (String)0;
 }
 
+func parseType(Parser parser, SyntaxTree tree) -> Operation {
+	var operation = parseExpression(parser, tree, PREC_index);
+
+	if (isOperator(tree.lexer.current.operator, "<") != (bool)1) {
+		return operation;
+	}
+
+	var lesser = consumeOperator(parser, tree, "<", (bool)0);
+
+	var generics = parseType(parser, tree);
+
+	while (isOperator(tree.lexer.current.operator, ",")) {
+		var comma = consumeOperator(parser, tree, ",", (bool)0);
+
+		var right = parseType(parser, tree);
+
+		generics = createOperation(generics, comma, right, (Operator)0);
+	}
+
+	var greater = consumeOperator(parser, tree, ">", (bool)0);
+
+	return createOperation(operation, lesser, generics, greater);
+}
+
 func parsePropertyDefinition(Parser parser, SyntaxTree tree) -> PropertyDefinition {
-	var propertyType = parseExpression(parser, tree, PREC_index);
+	var propertyType = parseType(parser, tree);
 
 	var propertyName = consumeIdentifier(parser, tree);
 
@@ -298,42 +322,59 @@ func parsePropertyDefinition(Parser parser, SyntaxTree tree) -> PropertyDefiniti
 	return createPropertyDefinition(propertyType, propertyName, semicolon);
 }
 
+func parseGenerics(Parser parser, SyntaxTree tree) -> GenericsDefinition {
+	if (isOperator(tree.lexer.current.operator, "<") != (bool)1) {
+		return (GenericsDefinition)0;
+	}
+
+	var generics = createGenericDefinitionList();
+
+	var lesser = consumeOperator(parser, tree, "<", (bool)0);
+
+	var generic = consumeIdentifier(parser, tree);
+	addGenericDefinition(generics, createGenericDefinition((Operator)0, generic));
+
+	while (isOperator(tree.lexer.current.operator, ">") != (bool)1) {
+		var comma = consumeOperator(parser, tree, ",", (bool)0);
+		generic = consumeIdentifier(parser, tree);
+		addGenericDefinition(generics, createGenericDefinition(comma, generic));
+	}
+
+	var greater = consumeOperator(parser, tree, ">", (bool)0);
+
+	return createGenericsDefinition(lesser, generics, greater);
+}
+
 func parseTypeDefinition(Parser parser, SyntaxTree tree) -> TypeDefinition {
-	var keyword = tree.lexer.current.name;
+	var keyword = consumeKeyword(parser, tree, KEYWORD_type);
 
-	next(tree.lexer);
-	var typeName = tree.lexer.current.name;
+	var typeName = consumeIdentifier(parser, tree);
+	
+	var generics = parseGenerics(parser, tree);
 
-	next(tree.lexer);
-	var lbrace = tree.lexer.current.operator;
+	var lbrace = consumeOperator(parser, tree, "{", (bool)0);
 
 	var properties = createPropertyDefinitionList();
-	next(tree.lexer);
 	while (isOperator(tree.lexer.current.operator, "}") != (bool)1) {
 		var property = parsePropertyDefinition(parser, tree);
 		addPropertyDefinition(properties, property);
 	}
 
-	var rbrace = tree.lexer.current.operator;
-
-	next(tree.lexer);
+	var rbrace = consumeOperator(parser, tree, "}", (bool)0);
 
 	return createTypeDefinition(keyword, typeName, lbrace, properties, rbrace);
 }
 
 func parseGroup(Parser parser, SyntaxTree tree) -> Operation {
 	var lparen = consumeOperator(parser, tree, "(", (bool)0);
-
-	if (isIdentifier(tree.lexer.current.name)) {
-		var typeObj = parseExpression(parser, tree, PREC_index);
-		var rparen = consumeOperator(parser, tree, ")", (bool)0);
-
-		var operation = parseExpression(parser, tree, PREC_index);
-		return createTypeCast(lparen, typeObj, rparen, operation);
-	}
-
 	var operation = parseExpression(parser, tree, PREC_expression);
 	var rparen = consumeOperator(parser, tree, ")", (bool)0);
+
+	if (tree.lexer.current.operator == (Operator)0 || isOperator(tree.lexer.current.operator, "(")) {
+		var value = parseExpression(parser, tree, PREC_index);
+
+		return createTypeCast(lparen, operation, rparen, value);
+	}
 
 	var group = createUnaryOperation(lparen, operation, rparen);
 	return group;
@@ -349,7 +390,7 @@ func parseNegative(Parser parser, SyntaxTree tree) -> Operation {
 func parseSizeof(Parser parser, SyntaxTree tree) -> Operation {
 	var keyword = consumeKeyword(parser, tree, KEYWORD_sizeof);
 	var lparen = consumeOperator(parser, tree, "(", (bool)0);
-	var typeObj = parseExpression(parser, tree, PREC_index);
+	var typeObj = parseType(parser, tree);
 	var rparen = consumeOperator(parser, tree, ")", (bool)0);
 
 	var sizeOf = createSizeOf(keyword, lparen, typeObj, rparen);
@@ -463,7 +504,13 @@ func parseExpression(Parser parser, SyntaxTree tree, int precedence) -> Operatio
 				return (Operation)0;
 			}
 
-			operation = createOperation(operation, operator, right, (Operator)0);
+			if (isOperator(operator, "<") && 
+				isOperator(tree.lexer.current.operator, ">")) {
+				var greater = consumeOperator(parser, tree, ">", (bool)0);
+				operation = createOperation(operation, operator, right, greater); // TODO: this does not yet work for multiple generics
+			} else {
+				operation = createOperation(operation, operator, right, (Operator)0);
+			}
 		}
 
 		operator = tree.lexer.current.operator;
@@ -500,7 +547,7 @@ func parseParameterList(Parser parser, SyntaxTree tree) -> ParameterList {
 		return list;
 	}
 
-	var parameterType = parseExpression(parser, tree, PREC_index);
+	var parameterType = parseType(parser, tree);
 	var name = consumeIdentifier(parser, tree);
 
 	while (isOperator(tree.lexer.current.operator, ",")) {
@@ -509,7 +556,7 @@ func parseParameterList(Parser parser, SyntaxTree tree) -> ParameterList {
 		var parameter = createParameter(parameterType, name, comma);
 		addParameter(list, parameter);
 
-		parameterType = parseExpression(parser, tree, PREC_index);
+		parameterType = parseType(parser, tree);
 		name = consumeIdentifier(parser, tree);
 	}
 
@@ -521,7 +568,7 @@ func parseParameterList(Parser parser, SyntaxTree tree) -> ParameterList {
 
 func parseReturnType(Parser parser, SyntaxTree tree) -> ReturnType {
 	var rarrow = consumeOperator(parser, tree, "->", (bool)0);
-	var typeObj = parseExpression(parser, tree, PREC_index);
+	var typeObj = parseType(parser, tree);
 
 	return createReturnType(rarrow, typeObj);
 }
@@ -636,6 +683,8 @@ func parseWhile(Parser parser, SyntaxTree tree, Block outer, ImportList importLi
 func parseFunctionDefinition(Parser parser, SyntaxTree tree, Block outer, ImportList importList) -> FunctionDefinition {
 	var keyword = consumeKeyword(parser, tree, KEYWORD_func);
 	var name = consumeIdentifier(parser, tree);
+
+	var generics = parseGenerics(parser, tree);
 
 	var lparen = consumeOperator(parser, tree, "(", (bool)0);
 	var parameters = parseParameterList(parser, tree);
@@ -924,6 +973,10 @@ func getTypeFromOperation(Parser parser, SyntaxTree tree, Block block, Operation
 	}
 
 	var typeObj = getTypeFromOperation(parser, tree, block, operation.left);
+
+	if (typeObj == (TypeObj)0) {
+		return (TypeObj)0;
+	}
 
 	return createListType((str)0, typeObj);
 }
@@ -1333,6 +1386,11 @@ func getArgumentTypes(Parser parser, SyntaxTree tree, Block block, TypeList list
 }
 
 func checkTypesInFunctionCall(Parser parser, SyntaxTree tree, Block block, Operation call) -> TypeObj {
+	if (call.left.value == (Value)0) {
+		printError(parser, call.left.region.start, " can not call something that is not a name\n");
+		return (TypeObj)0;
+	}
+
 	var functionName = call.left.value.identifier;
 	var function = findFunctionInParser(parser, tree, block, functionName.name);
 
@@ -1500,7 +1558,7 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 		var leftType = checkTypesInOperation(parser, tree, block, operation.left);
 
 		if (leftType != parser.Type) {
-			printError(parser, operation.right.region.start, " expected a 'Type' for this list operator '[]'\n");
+			printError(parser, operation.left.region.start, " expected a 'Type' for this list operator '[]'\n");
 		}
 
 		operation.operationType = parser.Type;

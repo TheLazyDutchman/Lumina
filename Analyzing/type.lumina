@@ -24,6 +24,16 @@ type PropertyList {
 	Property[] list;
 }
 
+type Generic {
+	str name;
+}
+
+type GenericList {
+	int size;
+	int maxSize;
+	Generic[] list;
+}
+
 type TypeObj {
 	str name;
 	int nameId;
@@ -32,6 +42,7 @@ type TypeObj {
 	int objectSize;
 
 	PropertyList properties;
+	GenericList generics;
 
 	TypeObj listOf;
 	TypeObj listType;
@@ -48,6 +59,26 @@ type PropertyDefinitionList {
 	int size;
 	int maxSize;
 	PropertyDefinition[] list;
+}
+
+type GenericDefinition {
+	Region region;
+	Name name;
+	Operator comma;
+}
+
+type GenericDefinitionList {
+	int size;
+	int maxSize;
+	GenericDefinition[] list;
+}
+
+type GenericsDefinition {
+	Region region;
+
+	Operator lesser;
+	GenericDefinitionList generics;
+	Operator greater;
 }
 
 type TypeDefinition {
@@ -121,6 +152,53 @@ func findProperty(PropertyList list, str name) -> Property {
 		i = i + 1;
 	}
 	return (Property)0;
+}
+
+func createGenericDefinition(Operator comma, Name name) -> GenericDefinition {
+	var generic = (GenericDefinition)malloc(sizeof(GenericDefinition));
+
+	generic.comma = comma;
+	generic.name = name;
+
+	if (comma != (Operator)0) {
+		generic.region = createRegion(comma.position, name.region.end);
+	} else {
+		generic.region = name.region;
+	}
+
+	return generic;
+}
+
+func createGenericDefinitionList() -> GenericDefinitionList {
+	var list = (GenericDefinitionList)malloc(sizeof(GenericDefinitionList));
+
+	list.size = 0;
+	list.maxSize = 8;
+	list.list = (GenericDefinition[])malloc(8 * 8);
+
+	return list;
+}
+
+func addGenericDefinition(GenericDefinitionList list, GenericDefinition generic) {
+	list.list[list.size] = generic;
+	list.size = list.size + 1;
+
+	if (list.size == list.maxSize) {
+		list.list = (GenericDefinition[])realloc((ptr)list.list, list.maxSize * 8, 8 * list.maxSize * 2);
+		list.maxSize = list.maxSize * 2;
+	}
+}
+
+func createGenericsDefinition(Operator lesser, GenericDefinitionList generics, Operator greater) -> GenericsDefinition {
+	var definition = (GenericsDefinition)malloc(sizeof(GenericsDefinition));
+
+	definition.region = createRegion(lesser.position, greater.position);
+
+	definition.lesser = lesser;
+	definition.generics = generics;
+	definition.greater = greater;
+
+	return definition;
 }
 
 func createTypeDefinition(Name keyword, Name name, Operator lbrace, PropertyDefinitionList properties, Operator rbrace) -> TypeDefinition {
