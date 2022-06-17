@@ -95,16 +95,6 @@ func addBlock(BlockList list, Block block) -> int {
 	return list.size - 1;
 }
 
-func findTypeInBlock(Block block, str name) -> TypeObj {
-	var typeObj = findType(block.types, name);
-
-	if (typeObj == (TypeObj)0 && block.outer != (Block)0) {
-		return findTypeInBlock(block.outer, name);
-	}
-
-	return typeObj;
-}
-
 func findFunctionInBlock(Block block, str name) -> FunctionDefinition {
 	var function = findFunction(block.functions, name);
 

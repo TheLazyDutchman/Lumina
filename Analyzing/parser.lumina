@@ -323,11 +323,11 @@ func parsePropertyDefinition(Parser parser, SyntaxTree tree) -> PropertyDefiniti
 }
 
 func parseGenerics(Parser parser, SyntaxTree tree) -> GenericsDefinition {
-	if (isOperator(tree.lexer.current.operator, "<") != (bool)1) {
-		return (GenericsDefinition)0;
-	}
-
 	var generics = createGenericDefinitionList();
+
+	if (isOperator(tree.lexer.current.operator, "<") != (bool)1) {
+		return createGenericsDefinition((Operator)0, generics, (Operator)0);
+	}
 
 	var lesser = consumeOperator(parser, tree, "<", (bool)0);
 
@@ -362,7 +362,7 @@ func parseTypeDefinition(Parser parser, SyntaxTree tree) -> TypeDefinition {
 
 	var rbrace = consumeOperator(parser, tree, "}", (bool)0);
 
-	return createTypeDefinition(keyword, typeName, lbrace, properties, rbrace);
+	return createTypeDefinition(keyword, typeName, lbrace, generics, properties, rbrace);
 }
 
 func parseGroup(Parser parser, SyntaxTree tree) -> Operation {
@@ -695,7 +695,7 @@ func parseFunctionDefinition(Parser parser, SyntaxTree tree, Block outer, Import
 		returnType = parseReturnType(parser, tree);
 	}
 
-	var function = createFunctionDefinition(keyword, name, lparen, parameters, rparen, returnType);
+	var function = createFunctionDefinition(keyword, name, lparen, generics, parameters, rparen, returnType);
 
 	var block = parseBlock(parser, tree, outer, function, importList);
 	function.block = block;
@@ -914,6 +914,31 @@ func findFunctionInParser(Parser parser, SyntaxTree tree, Block block, str name)
 	return function;
 }
 
+func findTypeInGenerics(GenericList list, str name) -> TypeObj {
+	var i = 0;
+	while (i < list.size) {
+		if (streq(list.list[i].name, name)) {
+			return list.list[i].typeObj;
+		}
+		i = i + 1;
+	}
+	return (TypeObj)0;
+}
+
+func findTypeInBlock(Block block, str name) -> TypeObj {
+	var typeObj = findType(block.types, name);
+
+	if (typeObj == (TypeObj)0 && block.function != (FunctionDefinition)0) {
+		typeObj = findTypeInGenerics(block.function.generics, name);
+	}
+
+	if (typeObj == (TypeObj)0 && block.outer != (Block)0) {
+		return findTypeInBlock(block.outer, name);
+	}
+
+	return typeObj;
+}
+
 func findTypeInParser(Parser parser, SyntaxTree tree, Block block, str name) -> TypeObj {
 	var typeDef = (TypeObj)0;
 
@@ -1125,14 +1150,47 @@ func bindIdentifier(Parser parser, SyntaxTree tree, Block block, Identifier iden
 
 	var variable = findVariableInParser(parser, tree, block, identifier.name); // this is because findDefinitionInParser does not yet look for function parameters
 
-	if (variable == (Variable)0) {
-		printError(parser, identifier.definition.region.start, " did not find value with name: '");
-		print(identifier.name);
-		print("'\n");
+	if (variable != (Variable)0) {
+		identifier.value = createDefinitionFromVariable(variable);
 		return;
 	}
 
-	identifier.value = createDefinitionFromVariable(variable);
+	var typeObj = findTypeInParser(parser, tree, block, identifier.name); // this is because findDefinitionInParser does not yet look for function generics
+
+	if (typeObj != (TypeObj)0) {
+		identifier.value = createDefinitionFromType(typeObj);
+		return;
+	}
+
+	printError(parser, identifier.definition.region.start, " did not find value with name: '");
+	print(identifier.name);
+	print("'\n");
+}
+
+func bindTypeIdentifier(Parser parser, SyntaxTree tree, Block block, GenericList generics, Identifier identifier) {
+	identifier.value = findDefinitionInParser(parser, tree, block, identifier.name);
+
+	if (identifier.value != (Definition)0) {
+		return;
+	}
+
+	var variable = findVariableInParser(parser, tree, block, identifier.name); // this is because findDefinitionInParser does not yet look for function parameters
+
+	if (variable != (Variable)0) {
+		identifier.value = createDefinitionFromVariable(variable);
+		return;
+	}
+
+	var generic = findGeneric(generics, identifier.name);
+
+	if (generic != (Generic)0) {
+		identifier.value = createDefinitionFromType(generic.typeObj);
+		return;
+	}
+
+	printError(parser, identifier.definition.region.start, " did not find value with name: '");
+	print(identifier.name);
+	print("'\n");
 }
 
 func bindNamesInOperation(Parser parser, SyntaxTree tree, Operation operation, Block block) {
@@ -1156,6 +1214,20 @@ func bindNamesInOperation(Parser parser, SyntaxTree tree, Operation operation, B
 
 	if (operation.value != (Value)0 && operation.value.identifier != (Identifier)0) {
 		bindIdentifier(parser, tree, block, operation.value.identifier);
+	}
+}
+
+func bindTypeNamesInOperation(Parser parser, SyntaxTree tree, Operation operation, GenericList generics, Block block) {
+	if (operation.left != (Operation)0) {
+		bindTypeNamesInOperation(parser, tree, operation.left, generics, block);
+	}
+
+	if (operation.right != (Operation)0 && isOperator(operation.operator, ".") != (bool)1) {
+		bindTypeNamesInOperation(parser, tree, operation.right, generics, block);
+	}
+
+	if (operation.value != (Value)0 && operation.value.identifier != (Identifier)0) {
+		bindTypeIdentifier(parser, tree, block, generics, operation.value.identifier);
 	}
 }
 
@@ -1203,32 +1275,32 @@ func bindNamesInFunctionDefinition(Parser parser, SyntaxTree tree, FunctionDefin
 
 	var i = 0;
 	while (i < function.parameters.size) {
-		bindNamesInOperation(parser, tree, function.parameters.list[i].parameterType, block);
+		bindTypeNamesInOperation(parser, tree, function.parameters.list[i].parameterType, function.generics, block);
 		i = i + 1;
 	}
 
 	if (function.returnType != (ReturnType)0) {
-		bindNamesInOperation(parser, tree, function.returnType.returnType, block);
+		bindTypeNamesInOperation(parser, tree, function.returnType.returnType, function.generics, block);
 	}
 }
 
-func bindNamesInTypeDefinition(Parser parser, SyntaxTree tree, TypeDefinition typeDef, Block block) {
-	var foundType = findTypeInParser(parser, tree, block, typeDef.name.name);
-	if (foundType != (TypeObj)0 && foundType.definition != typeDef) {
-		printError(parser, typeDef.name.region.start, " a type with this name already exists\n");
+func bindNamesInTypeDefinition(Parser parser, SyntaxTree tree, TypeObj typeObj, Block block) {
+	var foundType = findTypeInParser(parser, tree, block, typeObj.name);
+	if (foundType != (TypeObj)0 && foundType != typeObj) {
+		printError(parser, typeObj.definition.name.region.start, " a type with this name already exists\n");
 	}
 
-	if (findVariableInParser(parser, tree, block, typeDef.name.name) != (Variable)0) {
-		printError(parser, typeDef.name.region.start, " a variable with this name already exists\n");
+	if (findVariableInParser(parser, tree, block, typeObj.name) != (Variable)0) {
+		printError(parser, typeObj.definition.name.region.start, " a variable with this name already exists\n");
 	}
 
-	if (findFunctionInParser(parser, tree, block, typeDef.name.name) != (FunctionDefinition)0) {
-		printError(parser, typeDef.name.region.start, " a function with this name already exists\n");
+	if (findFunctionInParser(parser, tree, block, typeObj.name) != (FunctionDefinition)0) {
+		printError(parser, typeObj.definition.name.region.start, " a function with this name already exists\n");
 	}
 
 	var i = 0;
-	while (i < typeDef.properties.size) {
-		bindNamesInOperation(parser, tree, typeDef.properties.list[i].propertyType, block);
+	while (i < typeObj.properties.size) {
+		bindTypeNamesInOperation(parser, tree, typeObj.properties.list[i].definition.propertyType, typeObj.generics, block);
 		i = i + 1;
 	}
 }
@@ -1271,7 +1343,7 @@ func bindNamesInStatementList(Parser parser, SyntaxTree tree, StatementList list
 		} else if (statement.function != (FunctionDefinition)0) {
 			bindNamesInFunctionDefinition(parser, tree, statement.function, block);
 		} else if (statement.typeStatement != (TypeObj)0) {
-			bindNamesInTypeDefinition(parser, tree, statement.typeStatement.definition, block);
+			bindNamesInTypeDefinition(parser, tree, statement.typeStatement, block);
 			statement.typeStatement.objectSize = getSizeFromType(parser, tree, block, statement.typeStatement);
 		} else if (statement.returnStatement != (Return)0) {
 			bindNamesInReturn(parser, tree, statement.returnStatement, block);

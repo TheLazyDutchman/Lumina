@@ -43,6 +43,9 @@ type FunctionDefinition {
 	Name keyword;
 	Name name;
 
+	GenericList generics;
+	GenericsDefinition genericsDefinition;
+
 	Operator lparen;
 	ParameterList parameters;
 	Operator rparen;
@@ -142,13 +145,22 @@ func createReturnTypeFromString(TypeObj typeObj) -> ReturnType {
 	return returnType;
 }
 
-func createFunctionDefinition(Name keyword, Name name, Operator lparen, ParameterList parameters, Operator rparen, ReturnType returnType) -> FunctionDefinition {
+func createFunctionDefinition(Name keyword, Name name, Operator lparen, GenericsDefinition genericsDefinition, ParameterList parameters, Operator rparen, ReturnType returnType) -> FunctionDefinition {
 	var function = (FunctionDefinition)malloc(sizeof(FunctionDefinition));
 
 	function.region = (Region)0;
 
 	function.keyword = keyword;
 	function.name = name;
+
+	function.generics = createGenericList();
+	function.genericsDefinition = genericsDefinition;
+	var i = 0;
+	while (i < genericsDefinition.generics.size) {
+		addGeneric(function.generics, createGenericFromDefinition(genericsDefinition.generics.list[i]));
+		i = i + 1;
+	}
+
 	function.lparen = lparen;
 	function.parameters = parameters;
 	function.rparen = rparen;
