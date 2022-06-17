@@ -444,8 +444,15 @@ func printType(TypeObj typeObj) {
 		return;
 	}
 
+	if (typeObj.listType != (TypeObj)0) {
+		printType(typeObj.listType);
+		print("[]");
+		return;
+	}
+
 	if (typeObj.name == (str)0) {
 		print("type name is null");
+		return;
 	}
 
 	print(typeObj.name);

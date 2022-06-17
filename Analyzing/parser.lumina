@@ -992,18 +992,28 @@ func getTypeFromOperation(Parser parser, SyntaxTree tree, Block block, Operation
 		return getTypeFromValue(parser, tree, block, operation.value);
 	}
 
-	if (isOperator(operation.operator, "[") != (bool)1) {
-		printError(parser, operation.operator.position, " can not get type object from this operator\n");
-		return (TypeObj)0;
+	if (isOperator(operation.operator, "[")) {
+		var typeObj = getTypeFromOperation(parser, tree, block, operation.left);
+
+		if (typeObj == (TypeObj)0) {
+			return (TypeObj)0;
+		}
+
+		return createListType((str)0, typeObj);
 	}
 
-	var typeObj = getTypeFromOperation(parser, tree, block, operation.left);
+	if (isOperator(operation.operator, "<")) {
+		var typeObj = getTypeFromOperation(parser, tree, block, operation.left);
 
-	if (typeObj == (TypeObj)0) {
-		return (TypeObj)0;
+		if (typeObj == (TypeObj)0) {
+			return (TypeObj)0;
+		}
+
+		return typeObj; // TODO: handle generics
 	}
 
-	return createListType((str)0, typeObj);
+	printError(parser, operation.operator.position, " can not get type object from this operator\n");
+	return (TypeObj)0;
 }
 
 func getSizeFromType(Parser parser, SyntaxTree tree, Block block, TypeObj typeObj) -> int {
@@ -1386,6 +1396,53 @@ func compareTypes(Parser parser, TypeObj a, TypeObj b) -> bool {
 	return a == b || b == parser.any;
 }
 
+func checkTypesInTypeIdentifier(Parser parser, SyntaxTree tree, Block block, Identifier identifier, GenericList generics) -> TypeObj {
+	var variable = findVariableInParser(parser, tree, block, identifier.name);
+
+	if (variable != (Variable)0) {
+		if (variable.variableType == (TypeObj)0) {
+			printError(parser, identifier.definition.region.start, " the type of variable '");
+			print(variable.name);
+			print("' is not defined\n");
+		}
+		return variable.variableType;
+	}
+
+	var typeObj = findTypeInParser(parser, tree, block, identifier.name);
+
+	if (typeObj == (TypeObj)0) {
+		typeObj = findTypeInGenerics(generics, identifier.name);
+	}
+
+	if (typeObj != (TypeObj)0) {
+		return parser.Type;
+	}
+
+	printError(parser, identifier.definition.region.start, " can not find variable '");
+	print(identifier.name);
+	print("'\n");
+	return (TypeObj)0;
+
+	var typeObj = findTypeInParser(parser, tree, block, identifier.name);
+
+
+
+	return (TypeObj)0;
+}
+
+func checkTypesInTypeOperation(Parser parser, SyntaxTree tree, Block block, Operation operation, GenericList generics) -> TypeObj {
+	if (operation.value != (Value)0 && operation.value.identifier != (Identifier)0) {
+		return checkTypesInTypeIdentifier(parser, tree, block, operation.value.identifier, generics);
+	}
+
+	if (isOperator(operation.operator, "[") && operation.right == (Operation)0) {
+		return checkTypesInTypeOperation(parser, tree, block, operation.left, generics);
+	}
+
+	printError(parser, operation.region.start, " this operation is not supported when checking types of typeObj\n");
+	return (TypeObj)0;
+}
+
 func checkTypesInName(Parser parser, SyntaxTree tree, Block block, Name name) -> TypeObj {
 	var variable = findVariableInParser(parser, tree, block, name.name);
 
@@ -1395,7 +1452,7 @@ func checkTypesInName(Parser parser, SyntaxTree tree, Block block, Name name) ->
 			return parser.Type;
 		}
 
-		printError(parser, name.region.start, "can not find variable '");
+		printError(parser, name.region.start, " can not find variable '");
 		print(name.name);
 		print("'\n");
 		return (TypeObj)0;
@@ -1458,12 +1515,18 @@ func getArgumentTypes(Parser parser, SyntaxTree tree, Block block, TypeList list
 }
 
 func checkTypesInFunctionCall(Parser parser, SyntaxTree tree, Block block, Operation call) -> TypeObj {
-	if (call.left.value == (Value)0) {
-		printError(parser, call.left.region.start, " can not call something that is not a name\n");
+	var functionName = (Identifier)0;
+
+	if (call.left.value == (Value)0 && isOperator(call.left.operator, "<")) {
+		functionName = call.left.left.value.identifier;
+	} else {
+		functionName = call.left.value.identifier;
+	}
+
+	if (functionName == (Identifier)0) {
 		return (TypeObj)0;
 	}
 
-	var functionName = call.left.value.identifier;
 	var function = findFunctionInParser(parser, tree, block, functionName.name);
 
 	if (function == (FunctionDefinition)0) {
@@ -1631,6 +1694,18 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 
 		if (leftType != parser.Type) {
 			printError(parser, operation.left.region.start, " expected a 'Type' for this list operator '[]'\n");
+		}
+
+		operation.operationType = parser.Type;
+		return parser.Type;
+	}
+
+	if (isOperator(operation.operator, "<") &&
+		isOperator(operation.end, ">")) {
+		var leftType = checkTypesInOperation(parser, tree, block, operation.left);
+
+		if (leftType != parser.Type) {
+			printError(parser, operation.left.region.start, " expected a 'Type' for the generic '<>' operator\n");
 		}
 
 		operation.operationType = parser.Type;
@@ -1892,7 +1967,7 @@ func checkTypesInTypeDefinition(Parser parser, SyntaxTree tree, Block block, Typ
 	var i = 0;
 	while (i < typeObj.properties.size) {
 		var property = typeObj.properties.list[i];
-		if (checkTypesInOperation(parser, tree, block, property.definition.propertyType) != parser.Type) {
+		if (checkTypesInTypeOperation(parser, tree, block, property.definition.propertyType, typeObj.generics) != parser.Type) {
 			printError(parser, property.definition.region.start, " expected property type te be a type\n");
 		}
 
