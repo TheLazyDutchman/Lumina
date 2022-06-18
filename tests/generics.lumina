@@ -7,10 +7,10 @@ type Bird {
 	str species;
 }
 
-type Array<T> {
+type Array<Y> {
 	int size;
 	int maxSize;
-	T[] list;
+	Y[] list;
 }
 
 func createList<T>() -> Array<T> {

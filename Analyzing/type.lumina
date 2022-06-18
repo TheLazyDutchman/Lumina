@@ -49,6 +49,8 @@ type TypeObj {
 
 	TypeObj listOf;
 	TypeObj listType;
+
+	TypeList variants;
 }
 
 type PropertyDefinition {
@@ -164,6 +166,16 @@ func createGenericFromString(str name) -> Generic {
 	generic.name = name;
 	generic.typeObj = createTypeFromString(name, 8);
 
+	generic.definition = (GenericDefinition)0;
+
+	return generic;
+}
+
+func createGenericFromType(TypeObj typeObj) -> Generic {
+	var generic = (Generic)malloc(sizeof(Generic));
+
+	generic.name = typeObj.name;
+	generic.typeObj = typeObj;
 	generic.definition = (GenericDefinition)0;
 
 	return generic;
@@ -314,12 +326,41 @@ func createPropertyFromString(str name, TypeObj propertyType) -> Property {
 	return property;
 }
 
+func copyProperty(Property original) -> Property {
+	var property = (Property)malloc(sizeof(Property));
+
+	property.name = original.name;
+	property.definition = original.definition;
+
+	property.typeName = original.typeName;
+	property.offset = original.offset;
+	property.propertyType = original.propertyType;
+	
+	return property;
+}
+
 func createPropertyList() -> PropertyList {
 	var list = (PropertyList)malloc(sizeof(PropertyList));
 
 	list.size = 0;
 	list.maxSize = 8;
 	list.list = (Property[])malloc(8 * 8);
+
+	return list;
+}
+
+func copyPropertyList(PropertyList original) -> PropertyList {
+	var list = (PropertyList)malloc(sizeof(PropertyList));
+
+	list.size = original.size;
+	list.maxSize = original.maxSize;
+	list.list = (Property[])malloc(8 * list.maxSize);
+
+	var i = 0;
+	while (i < original.size) {
+		list.list[i] = copyProperty(original.list[i]);
+		i = i + 1;
+	}
 
 	return list;
 }
@@ -360,6 +401,9 @@ func createTypeFromDefinition(TypeDefinition definition) -> TypeObj {
 	typeObj.listOf = (TypeObj)0;
 	typeObj.listType = (TypeObj)0;
 
+	typeObj.variants = createTypeList();
+	addType(typeObj.variants, typeObj);
+
 	return typeObj;
 }
 
@@ -377,7 +421,46 @@ func createTypeFromString(str name, int size) -> TypeObj {
 	typeObj.listOf = (TypeObj)0;
 	typeObj.listType = (TypeObj)0;
 
+	typeObj.variants = createTypeList();
+	addType(typeObj.variants, typeObj);
+
 	return typeObj;
+}
+
+func createNewVariant(TypeObj typeObj, TypeList newGenerics) -> TypeObj {
+	var newType = (TypeObj)malloc(sizeof(TypeObj));
+
+	newType.name = typeObj.name;
+	newType.definition = typeObj.definition;
+	newType.size = typeObj.size;
+	newType.objectSize = typeObj.objectSize;
+
+	newType.generics = createGenericList();
+	var i = 0;
+	while (i < newGenerics.size) {
+		addGeneric(newType.generics, createGenericFromType(newGenerics.list[i]));
+		i = i + 1;
+	}
+
+	newType.properties = copyPropertyList(typeObj.properties);
+	i = 0;
+	while (i < newType.properties.size) {
+		var j = 0;
+		while (j < typeObj.generics.size) {
+			newType.properties.list[i].propertyType = applyGeneric(newType.properties.list[i].propertyType, typeObj.generics.list[j].typeObj, newGenerics.list[j]);
+			j = j + 1;
+		}
+		i = i + 1;
+	}
+
+
+	newType.listOf = (TypeObj)0;
+	newType.listType = (TypeObj)0;
+
+	newType.variants = typeObj.variants;
+	addType(typeObj.variants, newType);
+
+	return newType;
 }
 
 func createListType(str name, TypeObj typeObj) -> TypeObj {
@@ -391,6 +474,55 @@ func createListType(str name, TypeObj typeObj) -> TypeObj {
 	typeObj.listOf = listType;
 
 	return listType;
+}
+
+func getVariantType(TypeObj typeObj, TypeList generics) -> TypeObj {
+	if (typeObj.generics.size != generics.size) {
+		print("expected ");
+		printi(typeObj.generics.size);
+		print(" generics, got ");
+		printi(generics.size);
+		print(" instead\n");
+		return (TypeObj)0;
+	}
+
+	var i = 0;
+	while (i < typeObj.variants.size) {
+		var j = 0;
+		var isEqual = (bool)1;
+		while (j < generics.size) {
+			if (typeObj.variants.list[i].generics.list[j].typeObj != generics.list[j]) {
+				isEqual = (bool)0;
+			}
+			j = j + 1;
+		}
+
+		if (isEqual) {
+			return typeObj.variants.list[i];
+		}
+		i = i + 1;
+	}
+
+	return createNewVariant(typeObj, generics);
+}
+
+func applyGeneric(TypeObj value, TypeObj old, TypeObj new) -> TypeObj {
+	if (value == old) { return new; }
+
+	if (value.listOf == old) { return new.listType; }
+	if (value.listType == old) { 
+		if (new.listOf == (TypeObj)0) {
+			createListType((str)0, new);
+		}
+		return new.listOf; 
+	}
+
+	if (value.generics.size != 0) {
+		print("can not handle this type in generics yet\n");
+		return (TypeObj)0;
+	}
+
+	return value;
 }
 
 func createTypeList() -> TypeList {
@@ -441,6 +573,21 @@ func extendTypeList(TypeList destination, TypeList source) {
 func printType(TypeObj typeObj) {
 	if (typeObj == (TypeObj)0) {
 		print("type is null");
+		return;
+	}
+
+	if (typeObj.generics.size != 0) {
+		print(typeObj.name);
+		print("<");
+		var i = 0;
+		while (i < typeObj.generics.size) {
+			if (i != 0) {
+				print(",");
+			}
+			printType(typeObj.generics.list[i].typeObj);
+			i = i + 1;
+		}
+		print(">");
 		return;
 	}
 

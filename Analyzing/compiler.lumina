@@ -554,7 +554,14 @@ func writeSizeOf(Parser parser, SyntaxTree tree, Block block, int output, SizeOf
 }
 
 func writeCall(Parser parser, SyntaxTree tree, Block block, int output, Operation call, RegisterList registers, Register register, FunctionList functions) -> str {
-	var name = call.left.value.identifier.name;
+	var name = (str)0;
+
+	if (call.left.value == (Value)0 && isOperator(call.left.operator, "<")) {
+		name = call.left.left.value.identifier.name;
+	} else {
+		name = call.left.value.identifier.name;
+	}
+
 	var id = 0;
 	var i = 0;
 	while (i < functions.size) {

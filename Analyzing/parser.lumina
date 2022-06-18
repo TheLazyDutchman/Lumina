@@ -1009,7 +1009,10 @@ func getTypeFromOperation(Parser parser, SyntaxTree tree, Block block, Operation
 			return (TypeObj)0;
 		}
 
-		return typeObj; // TODO: handle generics
+		var generics = createTypeList();
+		getTypeListFromOperation(parser, tree, block, generics, operation.right);
+
+		return getVariantType(typeObj, generics);
 	}
 
 	printError(parser, operation.operator.position, " can not get type object from this operator\n");
@@ -1502,6 +1505,18 @@ func checkTypesInSizeOf(Parser parser, SyntaxTree tree, Block block, SizeOf size
 	return parser.int;
 }
 
+func getTypeListFromOperation(Parser parser, SyntaxTree tree, Block block, TypeList list, Operation operation) {
+	if (isOperator(operation.operator, ",")) {
+		getTypeListFromOperation(parser, tree, block, list, operation.left);
+		var typeObj = getTypeFromOperation(parser, tree, block, operation.right);
+		addType(list, typeObj);
+		return;
+	}
+
+	var typeObj = getTypeFromOperation(parser, tree, block, operation);
+	addType(list, typeObj);
+}
+
 func getArgumentTypes(Parser parser, SyntaxTree tree, Block block, TypeList list, Operation operation) {
 	if (isOperator(operation.operator, ",")) {
 		getArgumentTypes(parser, tree, block, list, operation.left);
@@ -1845,6 +1860,7 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 
 		if (operation.castType != (Operation)0) {
 			var castType = getTypeFromOperation(parser, tree, block, operation.castType);
+
 			operation.operationType = castType;
 			return castType;
 		}
