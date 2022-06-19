@@ -65,3 +65,17 @@ while (i < birdList.size) {
 	print("\n");
 	i = i + 1;
 }
+
+i = 0;
+while (i < birdList.size) {
+	print(getItem<Bird>(birdList, i).name);
+	print("\n");
+	i = i + 1;
+}
+
+i = 0;
+while (i < birdList.size) {
+	print(birdList.list[i].name);
+	print("\n");
+	i = i + 1;
+}

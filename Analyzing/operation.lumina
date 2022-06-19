@@ -151,6 +151,13 @@ func isVariable(Operation operation) -> bool {
 		if (operation.left == (Operation)0) {
 			return isVariable(operation.right);
 		}
+
+		return isVariable(operation.left);
+	}
+
+	if (isOperator(operation.operator, "<") &&
+		isOperator(operation.end, ">")) {
+		return isVariable(operation.left);
 	}
 
 	return (bool)0;
