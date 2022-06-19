@@ -53,6 +53,8 @@ type FunctionDefinition {
 	ReturnType returnType;
 
 	Block block;
+
+	FunctionList variants;
 }
 
 type FunctionList {
@@ -102,12 +104,40 @@ func createParameterFromString(TypeObj typeObj, str name) -> Parameter {
 	return parameter;
 }
 
+func copyParameter(Parameter original) -> Parameter {
+	var parameter = (Parameter)malloc(sizeof(Parameter));
+
+	parameter.region = original.region;
+	parameter.parameterType = original.parameterType;
+	parameter.name = original.name;
+
+	parameter.typeObj = original.typeObj;
+
+	return parameter;
+}
+
 func createParameterList() -> ParameterList {
 	var list = (ParameterList)malloc(sizeof(ParameterList));
 
 	list.size = 0;
 	list.maxSize = 8;
 	list.list = (Parameter[])malloc(8 * 8);
+
+	return list;
+}
+
+func copyParameterList(ParameterList original) -> ParameterList {
+	var list = (ParameterList)malloc(sizeof(ParameterList));
+
+	list.size = original.size;
+	list.maxSize = original.maxSize;
+	list.list = (Parameter[])malloc(8 * list.maxSize);
+
+	var i = 0;
+	while (i < original.size) {
+		list.list[i] = copyParameter(original.list[i]);
+		i = i + 1;
+	}
 
 	return list;
 }
@@ -145,6 +175,17 @@ func createReturnTypeFromString(TypeObj typeObj) -> ReturnType {
 	return returnType;
 }
 
+func copyReturnType(ReturnType original) -> ReturnType {
+	var returnType = (ReturnType)malloc(sizeof(ReturnType));
+
+	returnType.region = original.region;
+	returnType.rarrow = original.rarrow;
+	returnType.returnType = original.returnType;
+	returnType.typeObj = original.typeObj;
+
+	return returnType;
+}
+
 func createFunctionDefinition(Name keyword, Name name, Operator lparen, GenericsDefinition genericsDefinition, ParameterList parameters, Operator rparen, ReturnType returnType) -> FunctionDefinition {
 	var function = (FunctionDefinition)malloc(sizeof(FunctionDefinition));
 
@@ -167,6 +208,8 @@ func createFunctionDefinition(Name keyword, Name name, Operator lparen, Generics
 	function.returnType = returnType;
 	function.block = (Block)0;
 
+	function.variants = createFunctionList();
+
 	return function;
 }
 
@@ -182,7 +225,82 @@ func createFunctionFromString(str value, ParameterList parameters, ReturnType re
 	function.returnType = returnType;
 	function.block = (Block)0;
 
+	function.variants = createFunctionList();
+
 	return function;
+}
+
+func createNewFunctionVariant(FunctionDefinition original, TypeList generics) -> FunctionDefinition {
+	var function = (FunctionDefinition)malloc(sizeof(FunctionDefinition));
+
+	function.region = original.region;
+	function.keyword = original.keyword;
+	function.name = original.name;
+
+	function.generics = createGenericList();
+	function.genericsDefinition = original.genericsDefinition;
+	var i = 0;
+	while (i < generics.size) {
+		addGeneric(function.generics, createGenericFromType(generics.list[i]));
+		i = i + 1;
+	}
+
+	function.lparen = original.lparen;
+	function.parameters = copyParameterList(original.parameters);
+	i = 0;
+	while (i < function.parameters.size) {
+		var j = 0;
+		while (j < generics.size) {
+			function.parameters.list[i].typeObj = applyGeneric(function.parameters.list[i].typeObj, original.generics.list[j].typeObj, generics.list[j]);
+			j = j + 1;
+		}
+		i = i + 1;
+	}
+
+	function.rparen = original.rparen;
+
+	if (original.returnType != (ReturnType)0) {
+		function.returnType = copyReturnType(original.returnType);
+		i = 0;
+		while (i < generics.size) {
+			function.returnType.typeObj = applyGeneric(function.returnType.typeObj, original.generics.list[i].typeObj, generics.list[i]);
+			i = i + 1;
+		}
+	}
+
+	function.block = original.block;
+
+	function.variants = original.variants;
+	addFunction(function.variants, function);
+
+	return function;
+}
+
+func getVariantFunction(FunctionDefinition function, TypeList generics) -> FunctionDefinition {
+	if (function.generics.size != generics.size) {
+		print("expected ");
+		printi(function.generics.size);
+		print(" generics, got ");
+		printi(generics.size);
+		print(" instead\n");
+		return (FunctionDefinition)0;
+	}
+
+	var i = 0;
+	while (i < function.variants.size) {
+		var variant = function.variants.list[i];
+		var j = 0;
+		var isEqual = (bool)1;
+		while (j < generics.size) {
+			if (variant.generics.list[j] == (Generic)0 || variant.generics.list[j].typeObj != generics.list[j]) {
+				isEqual = (bool)0;
+			}
+			j = j + 1;
+		}
+		i = i + 1;
+	}
+
+	return createNewFunctionVariant(function, generics);
 }
 
 func createFunctionList() -> FunctionList {

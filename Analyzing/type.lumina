@@ -172,6 +172,10 @@ func createGenericFromString(str name) -> Generic {
 }
 
 func createGenericFromType(TypeObj typeObj) -> Generic {
+	if (typeObj == (TypeObj)0) {
+		return (Generic)0;
+	}
+
 	var generic = (Generic)malloc(sizeof(Generic));
 
 	generic.name = typeObj.name;
@@ -427,7 +431,7 @@ func createTypeFromString(str name, int size) -> TypeObj {
 	return typeObj;
 }
 
-func createNewVariant(TypeObj typeObj, TypeList newGenerics) -> TypeObj {
+func createNewTypeVariant(TypeObj typeObj, TypeList newGenerics) -> TypeObj {
 	var newType = (TypeObj)malloc(sizeof(TypeObj));
 
 	newType.name = typeObj.name;
@@ -488,38 +492,54 @@ func getVariantType(TypeObj typeObj, TypeList generics) -> TypeObj {
 
 	var i = 0;
 	while (i < typeObj.variants.size) {
+		var variant = typeObj.variants.list[i];
 		var j = 0;
 		var isEqual = (bool)1;
 		while (j < generics.size) {
-			if (typeObj.variants.list[i].generics.list[j].typeObj != generics.list[j]) {
+			if (variant.generics.list[j] == (Generic)0 || variant.generics.list[j].typeObj != generics.list[j]) {
 				isEqual = (bool)0;
 			}
 			j = j + 1;
 		}
 
 		if (isEqual) {
-			return typeObj.variants.list[i];
+			return variant;
 		}
 		i = i + 1;
 	}
 
-	return createNewVariant(typeObj, generics);
+	return createNewTypeVariant(typeObj, generics);
 }
 
 func applyGeneric(TypeObj value, TypeObj old, TypeObj new) -> TypeObj {
 	if (value == old) { return new; }
+	if (value == (TypeObj)0) {
+		return (TypeObj)0;
+	}
 
 	if (value.listOf == old) { return new.listType; }
 	if (value.listType == old) { 
+		if (new == (TypeObj)0) {
+			return (TypeObj)0;
+		}
+
 		if (new.listOf == (TypeObj)0) {
 			createListType((str)0, new);
 		}
+
 		return new.listOf; 
 	}
 
 	if (value.generics.size != 0) {
-		print("can not handle this type in generics yet\n");
-		return (TypeObj)0;
+		var generics = createTypeList();
+		var i = 0;
+		while (i < value.generics.size) {
+			var original = value.generics.list[i].typeObj;
+			addType(generics, applyGeneric(original, old, new));
+			i = i + 1;
+		}
+
+		return getVariantType(value, generics);
 	}
 
 	return value;
@@ -591,7 +611,7 @@ func printType(TypeObj typeObj) {
 		return;
 	}
 
-	if (typeObj.listType != (TypeObj)0) {
+	if (typeObj.listType != (TypeObj)0 && typeObj.name == (str)0) {
 		printType(typeObj.listType);
 		print("[]");
 		return;

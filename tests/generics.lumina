@@ -1,4 +1,5 @@
 import "../std/memory.lumina"
+import "../std/io.lumina"
 
 
 type Bird {
@@ -23,5 +24,44 @@ func createList<T>() -> Array<T> {
 	return array;
 }
 
+func addItem<T>(Array<T> array, T item) {
+	array.list[array.size] = item;
+	array.size = array.size + 1;
+
+	if (array.size == array.maxSize) {
+		array.list = (T[])realloc((ptr)array.list, array.maxSize * 8, array.maxSize * 8 * 2);
+		array.maxSize = array.maxSize * 2;
+	}
+}
+
+func createBird(str name, int age, str species) -> Bird {
+	var bird = (Bird)malloc(sizeof(Bird));
+
+	bird.name = name;
+	bird.age = age;
+	bird.species = species;
+
+	return bird;
+}
+
+func getItem<T>(Array<T> array, int index) -> T {
+	return array.list[index];
+}
+
 
 var birdList = createList<Bird>();
+
+var bird1 = createBird("tom", 1, "hummingbird");
+addItem<Bird>(birdList, bird1);
+
+var bird2 = createBird("jerry", 2, "sparrow");
+addItem<Bird>(birdList, bird2);
+
+
+var i = 0;
+while (i < birdList.size) {
+	var bird = getItem<Bird>(birdList, i);
+	print(bird.name);
+	print("\n");
+	i = i + 1;
+}

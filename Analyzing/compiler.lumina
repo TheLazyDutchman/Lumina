@@ -1037,9 +1037,11 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 }
 
 func writeVariable(Parser parser, SyntaxTree tree, Block block, int output, Variable variable, RegisterList registers, FunctionList functions) {
-	var register = getRegister(registers);
-	writeOperation(parser, tree, block, output, variable.definition.value, registers, register, (bool)1, functions);
-	writePushData(output, register);
+	if (variable.isConstant == (bool)0) {
+		var register = getRegister(registers);
+		writeOperation(parser, tree, block, output, variable.definition.value, registers, register, (bool)1, functions);
+		writePushData(output, register);
+	}
 }
 
 func evaluateConstant(Parser parser, Variable constant) {
@@ -1337,7 +1339,7 @@ func checkFiles(str fileName) -> Parser {
 	var numImportedVars = 0;
 	var files = 1;
 	while (files < parser.files.size) {
-		numImportedVars = numImportedVars + parser.files.list[files].variables.size;
+		numImportedVars = numImportedVars + getNumVariables(parser.files.list[files].variables);
 		files = files + 1;
 	}
 
@@ -1347,6 +1349,20 @@ func checkFiles(str fileName) -> Parser {
 	while (i < tree.variables.size) {
 		var variable = tree.variables.list[i];
 		variable.position = variable.position + numImportedVars;
+		i = i + 1;
+	}
+
+	i = 0;
+	while (i < tree.blocks.size) {
+		var block = tree.blocks.list[i];
+		if (block.depth == 0) {
+			var j = 0;
+			while (j < block.variables.size) {
+				var variable = block.variables.list[j];
+				variable.position = variable.position + numImportedVars;
+				j = j + 1;
+			}
+		}
 		i = i + 1;
 	}
 
@@ -1452,6 +1468,11 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 	}
 
 	var tree = parser.files.list[0];
+
+	fprint(output, ";; starting file: ");
+	fprint(output, tree.fileName);
+	fprint(output, "'\n");
+
 	writeStatementList(parser, tree, (Block)0, output, tree.statements, registers, functions);
 
 	writeFooter(output, parser.strings, types);
