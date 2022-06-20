@@ -1329,6 +1329,14 @@ func checkFiles(str fileName) -> Parser {
 
 	parse(parser, fileName, (str)0);
 
+	var numFilesParsed = 0;
+	while (numFilesParsed < parser.files.size) {
+		var file = parser.files.list[numFilesParsed];
+		parseImports(parser, file);
+		numFilesParsed = numFilesParsed + 1;
+	}
+
+
 	var numFilesNamesBound = 0;
 	while (numFilesNamesBound < parser.files.size) {
 		var fileName = parser.files.list[numFilesNamesBound].fileName;

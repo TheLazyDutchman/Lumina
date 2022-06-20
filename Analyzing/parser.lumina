@@ -1392,8 +1392,6 @@ func bindNames(Parser parser, str fileName) {
 		return;
 	}
 
-	parseImports(parser, tree);
-
 	bindNamesInStatementList(parser, tree, tree.statements, (Block)0);
 
 	i = 0;

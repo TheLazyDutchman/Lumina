@@ -1,0 +1,40 @@
+import "../std/collections.lumina"
+import "../std/string.lumina"
+import "../std/io.lumina"
+import "../std/memory.lumina"
+
+
+type Cat {
+	str name;
+	int age;
+}
+
+func createCat(str name, int age) -> Cat {
+	var cat = (Cat)malloc(sizeof(Cat));
+
+	cat.name = name;
+	cat.age = age;
+
+	return cat;
+}
+
+func findCat(Array<Cat> cats, str name) -> Cat {
+	var i = 0;
+	while (i < cats.size) {
+		if (streq(cats.list[i].name, name)) {
+			return cats.list[i];
+		}
+		i = i + 1;
+	}
+	return (Cat)0;
+}
+
+var cats = createArray<Cat>();
+
+addItem<Cat>(cats, createCat("james", 3));
+addItem<Cat>(cats, createCat("jennifer", 2));
+
+var james = findCat(cats, "james");
+print("james` age is: ");
+printi(james.age);
+print("\n");
