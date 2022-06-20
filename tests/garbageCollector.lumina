@@ -1,0 +1,16 @@
+import "../std/io.lumina"
+
+
+type User {
+	str name;
+	str email;
+	int age;
+}
+
+var ilea = new User();
+
+ilea.name = "Ilea";
+ilea.email = "ilea@spears.com";
+ilea.age = 20;
+
+print(ilea.name);

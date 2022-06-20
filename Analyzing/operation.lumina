@@ -18,6 +18,13 @@ type SizeOf {
 	Operator rparen;
 }
 
+type NewOperation {
+	Region region;
+	
+	Name keyword;
+	Operation typeObj;
+}
+
 type Operation {
 	Region region;
 	Operation left;
@@ -27,6 +34,7 @@ type Operation {
 	Value value;
 	SizeOf sizeOf;
 	Operation castType;
+	NewOperation newOperation;
 
 	TypeObj operationType;
 }
@@ -42,6 +50,17 @@ func createSizeOf(Name keyword, Operator lparen, Operation typeObj, Operator rpa
 	sizeOf.rparen = rparen;
 
 	return sizeOf;
+}
+
+func createNewOperation(Name keyword, Operation typeObj) -> NewOperation {
+	var newOperation = (NewOperation)malloc(sizeof(NewOperation));
+
+	newOperation.region = createRegion(keyword.region.start, typeObj.region.end);
+
+	newOperation.keyword = keyword;
+	newOperation.typeObj = typeObj;
+
+	return newOperation;
 }
 
 func createOperation(Operation left, Operator operator, Operation right, Operator end) -> Operation {
@@ -60,6 +79,7 @@ func createOperation(Operation left, Operator operator, Operation right, Operato
 	operation.end = end;
 	operation.sizeOf = (SizeOf)0;
 	operation.castType = (Operation)0;
+	operation.newOperation = (NewOperation)0;
 
 	return operation;
 }
@@ -80,6 +100,7 @@ func createUnaryOperation(Operator operator, Operation right, Operator end) -> O
 	operation.end = end;
 	operation.sizeOf = (SizeOf)0;
 	operation.castType = (Operation)0;
+	operation.newOperation = (NewOperation)0;
 
 	return operation;
 }
@@ -95,6 +116,7 @@ func createOperationFromValue(Value value) -> Operation {
 	operation.end = (Operator)0;
 	operation.sizeOf = (SizeOf)0;
 	operation.castType = (Operation)0;
+	operation.newOperation = (NewOperation)0;
 
 	return operation;
 }
@@ -125,6 +147,24 @@ func createOperationFromSizeOf(SizeOf sizeOf) -> Operation {
 	operation.value = (Value)0;
 	operation.end = (Operator)0;
 	operation.sizeOf = sizeOf;
+	operation.castType = (Operation)0;
+	operation.newOperation = (NewOperation)0;
+
+	return operation;
+}
+
+func createOperationFromNew(NewOperation newOperation) -> Operation {
+	var operation = (Operation)malloc(sizeof(Operation));
+
+	operation.region = newOperation.region;
+	operation.left = (Operation)0;
+	operation.operator = (Operator)0;
+	operation.right = (Operation)0;
+	operation.value = (Value)0;
+	operation.end = (Operator)0;
+	operation.sizeOf = (SizeOf)0;
+	operation.castType = (Operation)0;
+	operation.newOperation = newOperation;
 
 	return operation;
 }

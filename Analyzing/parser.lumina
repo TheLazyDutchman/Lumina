@@ -372,6 +372,14 @@ func parseSizeof(Parser parser, SyntaxTree tree) -> Operation {
 	return createOperationFromSizeOf(sizeOf);
 }
 
+func parseNew(Parser parser, SyntaxTree tree) -> Operation {
+	var keyword = consumeKeyword(parser, tree, KEYWORD_new);
+	var typeObj = parseType(parser, tree);
+
+	var newOperation = createNewOperation(keyword, typeObj);
+	return createOperationFromNew(newOperation);
+}
+
 func parseUnary(Parser parser, SyntaxTree tree) -> Operation {
 	var value = (Value)0;
 
@@ -393,6 +401,10 @@ func parseUnary(Parser parser, SyntaxTree tree) -> Operation {
 
 	if (isKeyword(tree.lexer.current.name, KEYWORD_sizeof)) {
 		return parseSizeof(parser, tree);
+	}
+
+	if (isKeyword(tree.lexer.current.name, KEYWORD_new)) {
+		return parseNew(parser, tree);
 	}
 
 	if (isOperator(tree.lexer.current.operator, "-")) {

@@ -15,7 +15,8 @@ const KEYWORD_type = 6;
 const KEYWORD_import = 7;
 const KEYWORD_return = 8;
 const KEYWORD_sizeof = 9;
-const NUMKEYWORDS = 10;
+const KEYWORD_new = 10;
+const NUMKEYWORDS = 11;
 
 var _keywordList = (str[])malloc(sizeof(str) * NUMKEYWORDS);
 _keywordList[0] = "var";
@@ -28,6 +29,7 @@ _keywordList[6] = "type";
 _keywordList[7] = "import";
 _keywordList[8] = "return";
 _keywordList[9] = "sizeof";
+_keywordList[10] = "new";
 
 type Name {
 	WhiteSpace space;
