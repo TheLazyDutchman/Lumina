@@ -1,4 +1,5 @@
 import "../std/memory.lumina"
+import "../std/collections.lumina"
 
 import "position.lumina"
 import "operator.lumina"
@@ -15,12 +16,12 @@ type Block {
 	Region region;
 
 	Operator lbrace;
-	StatementList statements;
+	Array<Statement> statements;
 
-	DefinitionList definitions;
-	TypeList types;
-	FunctionList functions;
-	VariableList variables;
+	Array<Definition> definitions;
+	Array<TypeObj> types;
+	Array<FunctionDefinition> functions;
+	Array<Variable> variables;
 	Operator rbrace;
 	int depth;
 
@@ -28,13 +29,7 @@ type Block {
 	FunctionDefinition function;
 }
 
-type BlockList {
-	int size;
-	int maxSize;
-	Block[] list;
-}
-
-func createBlock(Operator lbrace, StatementList statements, DefinitionList definitions, TypeList types, FunctionList functions, VariableList variables, Block outer, FunctionDefinition function) -> Block {
+func createBlock(Operator lbrace, Array<Statement> statements, Array<Definition> definitions, Array<TypeObj> types, Array<FunctionDefinition> functions, Array<Variable> variables, Block outer, FunctionDefinition function) -> Block {
 	var block = (Block)malloc(sizeof(Block));
 
 	block.region = (Region)0;
@@ -71,28 +66,6 @@ func setEnd(Block block, Operator rbrace) {
 			block.function.keyword.region.start,
 			block.region.end);
 	}
-}
-
-func createBlockList() -> BlockList {
-	var list = (BlockList)malloc(sizeof(BlockList));
-
-	list.size = 0;
-	list.maxSize = 8;
-	list.list = (Block[])malloc(8 * 8);
-
-	return list;
-}
-
-func addBlock(BlockList list, Block block) -> int {
-	list.list[list.size] = block;
-	list.size = list.size + 1;
-
-	if (list.size == list.maxSize) {
-		list.list = (Block[])realloc((ptr)list.list, 8 * list.maxSize, list.maxSize * 8 * 2);
-		list.maxSize = list.maxSize * 2;
-	}
-
-	return list.size - 1;
 }
 
 func findFunctionInBlock(Block block, str name) -> FunctionDefinition {

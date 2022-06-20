@@ -1,4 +1,5 @@
 import "../std/memory.lumina"
+import "../std/collections.lumina"
 
 import "position.lumina"
 import "name.lumina"
@@ -28,12 +29,6 @@ type ElseIf {
 	int id;
 }
 
-type ElseIfList {
-	int size;
-	int maxSize;
-	ElseIf[] list;
-}
-
 type If {
 	Region region;
 	Name keyword;
@@ -41,7 +36,7 @@ type If {
 	Operation condition;
 	Operator rparen;
 	Block block;
-	ElseIfList elseIfs;
+	Array<ElseIf> elseIfs;
 	Else elseObj;
 
 	int id;
@@ -75,27 +70,7 @@ func createElseIf(Name elseKeyword, Name ifKeyword, Operator lparen, Operation c
 	return elseIf;
 }
 
-func createElseIfList() -> ElseIfList {
-	var list = (ElseIfList)malloc(sizeof(ElseIfList));
-
-	list.size = 0;
-	list.maxSize = 8;
-	list.list = (ElseIf[])malloc(8 * 8);
-
-	return list;
-}
-
-func addElseIf(ElseIfList list, ElseIf elseIf) {
-	list.list[list.size] = elseIf;
-	list.size = list.size + 1;
-	
-	if (list.size == list.maxSize) {
-		list.list = (ElseIf[])realloc((ptr)list.list, list.maxSize * 8, 8 * list.maxSize * 2);
-		list.maxSize = list.maxSize * 2;
-	}
-}
-
-func createIf(Name keyword, Operator lparen, Operation condition, Operator rparen, Block block, ElseIfList elseIfs, Else elseObj, Position end, int id) -> If {
+func createIf(Name keyword, Operator lparen, Operation condition, Operator rparen, Block block, Array<ElseIf> elseIfs, Else elseObj, Position end, int id) -> If {
 	var ifStatement = (If)malloc(sizeof(If));
 
 	if (elseObj != (Else)0) {

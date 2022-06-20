@@ -1,5 +1,6 @@
 import "../std/memory.lumina"
 import "../std/string.lumina"
+import "../std/collections.lumina"
 
 import "name.lumina"
 import "position.lumina"
@@ -17,12 +18,6 @@ type Definition {
 	FunctionDefinition function;
 
 	TypeObj valueType;
-}
-
-type DefinitionList {
-	int size;
-	int maxSize;
-	Definition[] list;
 }
 
 func createDefinition() -> Definition {
@@ -65,27 +60,7 @@ func createDefinitionFromFunction(FunctionDefinition function) -> Definition {
 	return definition;
 }
 
-func createDefinitionList() -> DefinitionList {
-	var list = (DefinitionList)malloc(sizeof(DefinitionList));
-
-	list.size = 0;
-	list.maxSize = 8;
-	list.list = (Definition[])malloc(8 * 8);
-
-	return list;
-}
-
-func addDefinition(DefinitionList list, Definition definition) {
-	list.list[list.size] = definition;
-	list.size = list.size + 1;
-
-	if (list.size == list.maxSize) {
-		list.list = (Definition[])realloc((ptr)list.list, list.maxSize * 8, list.maxSize * 8 * 2);
-		list.maxSize = list.maxSize * 2;
-	}
-}
-
-func findDefinition(DefinitionList list, str name) -> Definition {
+func findDefinition(Array<Definition> list, str name) -> Definition {
 	var i = 0;
 	while (i < list.size) {
 		if (streq(list.list[i].name, name)) {

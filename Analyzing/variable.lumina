@@ -1,5 +1,6 @@
 import "../std/memory.lumina"
 import "../std/string.lumina"
+import "../std/collections.lumina"
 
 import "position.lumina"
 import "name.lumina"
@@ -33,12 +34,6 @@ type VariableDefinition {
 	Operator semicolon;
 
 	TypeObj variableType;
-}
-
-type VariableList {
-	int size;
-	int maxSize;
-	Variable[] list;
 }
 
 func createVariableDefinition(Name keyword, Name name, Operator equalSign, Operation value, Operator semicolon) -> VariableDefinition {
@@ -91,27 +86,7 @@ func createConstantFromDefinition(VariableDefinition definition) -> Variable {
 	return constant;
 }
 
-func createVariableList() -> VariableList {
-	var list = (VariableList)malloc(sizeof(VariableList));
-
-	list.size = 0;
-	list.maxSize = 8;
-	list.list = (Variable[])malloc(8 * 8);
-
-	return list;
-}
-
-func addVariable(VariableList list, Variable variable) {
-	list.list[list.size] = variable;
-	list.size = list.size + 1;
-
-	if (list.size == list.maxSize) {
-		list.list = (Variable[])realloc((ptr)list.list, list.maxSize * 8, list.maxSize * 8 * 2);
-		list.maxSize = list.maxSize * 2;
-	}
-}
-
-func findVariable(VariableList list, str name) -> Variable {
+func findVariable(Array<Variable> list, str name) -> Variable {
 	var i = 0;
 	while (i < list.size) {
 		if (streq(list.list[i].name, name)) {
@@ -122,7 +97,7 @@ func findVariable(VariableList list, str name) -> Variable {
 	return (Variable)0;
 }
 
-func getNumVariables(VariableList list) -> int {
+func getNumVariables(Array<Variable> list) -> int {
 	var sum = 0;
 	var i = 0;
 	while (i < list.size) {

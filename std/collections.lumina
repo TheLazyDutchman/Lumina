@@ -25,10 +25,23 @@ func addItem<T>(Array<T> array, T item) {
 		}
 
 		array.list = (T[])realloc((ptr)array.list, array.maxSize * 8, newSize * 8);
+		array.maxSize = newSize;
 	}
 
 	array.list[array.size] = item;
 	array.size = array.size + 1;
+}
+
+func extendArray<T>(Array<T> destination, Array<T> source) {
+	if (source == (Array<T>)0) {
+		return;
+	}
+
+	var i = 0;
+	while (i < source.size) {
+		addItem<T>(destination, getItem<T>(source, i));
+		i = i + 1;
+	}
 }
 
 func getItem<T>(Array<T> array, int index) -> T {

@@ -24,12 +24,6 @@ type Statement {
 	Block blockStatement;
 }
 
-type StatementList {
-	int size;
-	int maxSize;
-	Statement[] list;
-}
-
 func createStatement() -> Statement {
 	var statement = (Statement)malloc(sizeof(Statement));
 
@@ -126,24 +120,4 @@ func createBlockStatement(Block block, Region region) -> Statement {
 	statement.blockStatement = block;
 
 	return statement;
-}
-
-func createStatementList() -> StatementList {
-	var list = (StatementList)malloc(sizeof(StatementList));
-
-	list.size = 0;
-	list.maxSize = 8;
-	list.list = (Statement[])malloc(8 * 8);
-
-	return list;
-}
-
-func addStatement(StatementList list, Statement statement) {
-	list.list[list.size] = statement;
-	list.size = list.size + 1;
-
-	if (list.size == list.maxSize) {
-		list.list = (Statement[])realloc((ptr)list.list, list.maxSize * 8, 8 * list.maxSize * 2);
-		list.maxSize = list.maxSize * 2;
-	}
 }

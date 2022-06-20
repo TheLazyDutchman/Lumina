@@ -1,6 +1,7 @@
 import "../std/memory.lumina"
 import "../std/string.lumina"
 import "../std/io.lumina"
+import "../std/collections.lumina"
 
 import "position.lumina"
 import "name.lumina"
@@ -22,12 +23,6 @@ type Parameter {
 	TypeObj typeObj;
 }
 
-type ParameterList {
-	int size;
-	int maxSize;
-	Parameter[] list;
-}
-
 type ReturnType {
 	Region region;
 
@@ -43,24 +38,18 @@ type FunctionDefinition {
 	Name keyword;
 	Name name;
 
-	GenericList generics;
+	Array<Generic> generics;
 	GenericsDefinition genericsDefinition;
 
 	Operator lparen;
-	ParameterList parameters;
+	Array<Parameter> parameters;
 	Operator rparen;
 
 	ReturnType returnType;
 
 	Block block;
 
-	FunctionList variants;
-}
-
-type FunctionList {
-	int size;
-	int maxSize;
-	FunctionDefinition[] list;
+	Array<FunctionDefinition> variants;
 }
 
 type Return {
@@ -116,18 +105,8 @@ func copyParameter(Parameter original) -> Parameter {
 	return parameter;
 }
 
-func createParameterList() -> ParameterList {
-	var list = (ParameterList)malloc(sizeof(ParameterList));
-
-	list.size = 0;
-	list.maxSize = 8;
-	list.list = (Parameter[])malloc(8 * 8);
-
-	return list;
-}
-
-func copyParameterList(ParameterList original) -> ParameterList {
-	var list = (ParameterList)malloc(sizeof(ParameterList));
+func copyParameterArray(Array<Parameter> original) -> Array<Parameter> {
+	var list = (Array<Parameter>)malloc(sizeof(Array<Parameter>));
 
 	list.size = original.size;
 	list.maxSize = original.maxSize;
@@ -140,16 +119,6 @@ func copyParameterList(ParameterList original) -> ParameterList {
 	}
 
 	return list;
-}
-
-func addParameter(ParameterList list, Parameter parameter) {
-	list.list[list.size] = parameter;
-	list.size = list.size + 1;
-
-	if (list.size == list.maxSize) {
-		list.list = (Parameter[])realloc((ptr)list.list, 8 * list.maxSize, list.maxSize * 8 * 2);
-		list.maxSize = list.maxSize * 2;
-	}
 }
 
 func createReturnType(Operator rarrow, Operation typeObj) -> ReturnType {
@@ -186,7 +155,7 @@ func copyReturnType(ReturnType original) -> ReturnType {
 	return returnType;
 }
 
-func createFunctionDefinition(Name keyword, Name name, Operator lparen, GenericsDefinition genericsDefinition, ParameterList parameters, Operator rparen, ReturnType returnType) -> FunctionDefinition {
+func createFunctionDefinition(Name keyword, Name name, Operator lparen, GenericsDefinition genericsDefinition, Array<Parameter> parameters, Operator rparen, ReturnType returnType) -> FunctionDefinition {
 	var function = (FunctionDefinition)malloc(sizeof(FunctionDefinition));
 
 	function.region = (Region)0;
@@ -194,11 +163,11 @@ func createFunctionDefinition(Name keyword, Name name, Operator lparen, Generics
 	function.keyword = keyword;
 	function.name = name;
 
-	function.generics = createGenericList();
+	function.generics = createArray<Generic>();
 	function.genericsDefinition = genericsDefinition;
 	var i = 0;
 	while (i < genericsDefinition.generics.size) {
-		addGeneric(function.generics, createGenericFromDefinition(genericsDefinition.generics.list[i]));
+		addItem<Generic>(function.generics, createGenericFromDefinition(genericsDefinition.generics.list[i]));
 		i = i + 1;
 	}
 
@@ -208,12 +177,12 @@ func createFunctionDefinition(Name keyword, Name name, Operator lparen, Generics
 	function.returnType = returnType;
 	function.block = (Block)0;
 
-	function.variants = createFunctionList();
+	function.variants = createArray<FunctionDefinition>();
 
 	return function;
 }
 
-func createFunctionFromString(str value, ParameterList parameters, ReturnType returnType) -> FunctionDefinition {
+func createFunctionFromString(str value, Array<Parameter> parameters, ReturnType returnType) -> FunctionDefinition {
 	var function = (FunctionDefinition)malloc(sizeof(FunctionDefinition));
 
 	function.region = (Region)0;
@@ -225,28 +194,28 @@ func createFunctionFromString(str value, ParameterList parameters, ReturnType re
 	function.returnType = returnType;
 	function.block = (Block)0;
 
-	function.variants = createFunctionList();
+	function.variants = createArray<FunctionDefinition>();
 
 	return function;
 }
 
-func createNewFunctionVariant(FunctionDefinition original, TypeList generics) -> FunctionDefinition {
+func createNewFunctionVariant(FunctionDefinition original, Array<TypeObj> generics) -> FunctionDefinition {
 	var function = (FunctionDefinition)malloc(sizeof(FunctionDefinition));
 
 	function.region = original.region;
 	function.keyword = original.keyword;
 	function.name = original.name;
 
-	function.generics = createGenericList();
+	function.generics = createArray<Generic>();
 	function.genericsDefinition = original.genericsDefinition;
 	var i = 0;
 	while (i < generics.size) {
-		addGeneric(function.generics, createGenericFromType(generics.list[i]));
+		addItem<Generic>(function.generics, createGenericFromType(generics.list[i]));
 		i = i + 1;
 	}
 
 	function.lparen = original.lparen;
-	function.parameters = copyParameterList(original.parameters);
+	function.parameters = copyParameterArray(original.parameters);
 	i = 0;
 	while (i < function.parameters.size) {
 		var j = 0;
@@ -271,12 +240,12 @@ func createNewFunctionVariant(FunctionDefinition original, TypeList generics) ->
 	function.block = original.block;
 
 	function.variants = original.variants;
-	addFunction(function.variants, function);
+	addItem<FunctionDefinition>(function.variants, function);
 
 	return function;
 }
 
-func getVariantFunction(FunctionDefinition function, TypeList generics) -> FunctionDefinition {
+func getVariantFunction(FunctionDefinition function, Array<TypeObj> generics) -> FunctionDefinition {
 	if (function.generics.size != generics.size) {
 		print("expected ");
 		printi(function.generics.size);
@@ -303,27 +272,7 @@ func getVariantFunction(FunctionDefinition function, TypeList generics) -> Funct
 	return createNewFunctionVariant(function, generics);
 }
 
-func createFunctionList() -> FunctionList {
-	var list = (FunctionList)malloc(sizeof(FunctionList));
-
-	list.size = 0;
-	list.maxSize = 8;
-	list.list = (FunctionDefinition[])malloc(8 * 8);
-
-	return list;
-}
-
-func addFunction(FunctionList list, FunctionDefinition function) {
-	list.list[list.size] = function;
-	list.size = list.size + 1;
-
-	if (list.size == list.maxSize) {
-		list.list = (FunctionDefinition[])realloc((ptr)list.list, list.maxSize * 8, list.maxSize * 8 * 2);
-		list.maxSize = list.maxSize * 2;
-	}
-}
-
-func findFunction(FunctionList list, str name) -> FunctionDefinition {
+func findFunction(Array<FunctionDefinition> list, str name) -> FunctionDefinition {
 	var i = 0;
 	while (i < list.size) {
 		if (streq(list.list[i].name.name, name)) {
@@ -332,20 +281,6 @@ func findFunction(FunctionList list, str name) -> FunctionDefinition {
 		i = i + 1;
 	}
 	return (FunctionDefinition)0;
-}
-
-func extendFunctionList(FunctionList destination, FunctionList source) {
-	var i = 0;
-
-	if (source == (FunctionList)0) {
-		print("source was zero in 'extendFunctionList'\n");
-		return;
-	}
-
-	while (i < source.size) {
-		addFunction(destination, source.list[i]);
-		i = i + 1;
-	}
 }
 
 func createReturn(Name keyword, Operation expression, Operator semicolon) -> Return {
