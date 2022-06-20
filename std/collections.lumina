@@ -1,0 +1,53 @@
+import "memory.lumina"
+
+
+type Array<T> {
+	int size;
+	int maxSize;
+	T[] list;
+}
+
+func createArray<T>() -> Array<T> {
+	var array = (Array<T>)malloc(sizeof(Array<T>));
+
+	array.size = 0;
+	array.maxSize = 0;
+	array.list = (T[])0;
+
+	return array;
+}
+
+func addItem<T>(Array<T> array, T item) {
+	if (array.size == array.maxSize) {
+		var newSize = array.maxSize * 2;
+		if (newSize == 0) {
+			newSize = 8;
+		}
+
+		array.list = (T[])realloc((ptr)array.list, array.maxSize * 8, newSize * 8);
+		array.maxSize = newSize;
+	}
+
+	array.list[array.size] = item;
+	array.size = array.size + 1;
+}
+
+func extendArray<T>(Array<T> destination, Array<T> source) {
+	if (source == (Array<T>)0) {
+		return;
+	}
+
+	var i = 0;
+	while (i < source.size) {
+		addItem<T>(destination, getItem<T>(source, i));
+		i = i + 1;
+	}
+}
+
+func getItem<T>(Array<T> array, int index) -> T {
+	return array.list[index];
+}
+
+func setItem<T>(Array<T> array, int index, T item) {
+	array.list[index] = item;
+}

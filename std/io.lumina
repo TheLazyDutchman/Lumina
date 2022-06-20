@@ -12,7 +12,7 @@ func fprint(int fd, str string) -> int {
 	return fprintn(fd, string, length);
 }
 
-var STDOUT = 1;
+const STDOUT = 1;
 
 func printn(str string, int length) -> int {
 	return fprintn(STDOUT, string, length);

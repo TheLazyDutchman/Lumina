@@ -12,12 +12,6 @@ type Import {
 	String fileName;
 }
 
-type ImportList {
-	int size;
-	int maxSize;
-	Import[] list;
-}
-
 func createImport(Name keyword, String fileName) -> Import {
 	var importStatement = (Import)malloc(sizeof(Import));
 
@@ -26,25 +20,4 @@ func createImport(Name keyword, String fileName) -> Import {
 	importStatement.fileName = fileName;
 
 	return importStatement;
-}
-
-func createImportList() -> ImportList {
-	var list = (ImportList)malloc(sizeof(ImportList));
-
-	list.size = 0;
-	list.maxSize = 8;
-
-	list.list = (Import[])malloc(8 * 8);
-
-	return list;
-}
-
-func addImport(ImportList list, Import importObj) {
-	list.list[list.size] = importObj;
-	list.size = list.size + 1;
-
-	if (list.size == list.maxSize) {
-		list.list = (Import[])realloc((ptr)list.list, list.maxSize * 8, list.maxSize * 8 * 2);
-		list.maxSize = list.maxSize * 2;
-	}
 }

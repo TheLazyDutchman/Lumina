@@ -1,4 +1,5 @@
 import "../std/memory.lumina"
+import "../std/collections.lumina"
 
 import "position.lumina"
 import "operator.lumina"
@@ -28,12 +29,6 @@ type Operation {
 	Operation castType;
 
 	TypeObj operationType;
-}
-
-type OperationList {
-	int size;
-	int maxSize;
-	Operation[] list;
 }
 
 func createSizeOf(Name keyword, Operator lparen, Operation typeObj, Operator rparen) -> SizeOf {
@@ -151,37 +146,24 @@ func isVariable(Operation operation) -> bool {
 		if (operation.left == (Operation)0) {
 			return isVariable(operation.right);
 		}
+
+		return isVariable(operation.left);
+	}
+
+	if (isOperator(operation.operator, "<") &&
+		isOperator(operation.end, ">")) {
+		return isVariable(operation.left);
 	}
 
 	return (bool)0;
 }
 
-func createOperationList() -> OperationList {
-	var list = (OperationList)malloc(sizeof(OperationList));
-
-	list.size = 0;
-	list.maxSize = 8;
-	list.list = (Operation[])malloc(8 * 8);
-
-	return list;
-}
-
-func addOperation(OperationList list, Operation operation) {
-	list.list[list.size] = operation;
-	list.size = list.size + 1;
-
-	if (list.size == list.maxSize) {
-		list.list = (Operation[])realloc((ptr)list.list, list.maxSize * 8, list.maxSize * 8 * 2);
-		list.maxSize = list.maxSize * 2;
-	}
-}
-
-func getArguments(OperationList list, Operation operation) {
+func getArguments(Array<Operation> list, Operation operation) {
 	if (isOperator(operation.operator, ",")) {
 		getArguments(list, operation.left);
-		addOperation(list, operation.right);
+		addItem<Operation>(list, operation.right);
 		return;
 	}
 
-	addOperation(list, operation);
+	addItem<Operation>(list, operation);
 }

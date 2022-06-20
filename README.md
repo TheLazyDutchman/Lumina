@@ -46,6 +46,36 @@ Lumina has the following built-in types:
 
 These types are prone to change, as I do not like the amount of casting that is currently required.
 
+### Generics
+Lumina now supports generic types.
+
+They can be defined like this: 
+```Lumina
+type Array<T> {
+	int size;
+	int maxSize;
+	T[] list;
+}
+
+type grid<T> {
+	int width;
+	int height;
+	Array<Array<T>> grid;
+}
+```
+
+functions using the are defined like this:
+```Lumina
+func getItem<T>(Array<T> array, int index) -> T {
+	return array.list[index];
+}
+```
+
+the functions can be called like this:
+```Lumina
+getItem<Cat>(catArray, 3);
+```
+
 ### Casting
 To go from one type to another, you sometimes need to cast a value
 ```Lumina
@@ -92,3 +122,27 @@ func max(int a, int b) -> int {
 ```
 ## Standard Library
 The standard library is currently very prone to changes, therefore, it may take a while to create good documentation for it, if you want to see the functions that are defined currently, you can see them in the `std` directory. To use those functions, you will need to use `import` with a local path to the corresponding file in `std`.
+
+### Collections
+one of the things that can be found is a generic array type its usage is like this (for now)
+
+```Lumina
+//all occurences of T can be replaced with any type you want
+
+var array = createArray<T>(); // creates and initializes a new array object
+
+addItem<T>(array, item); // item being an object of type T
+
+var item = getItem<T>(array, 3); // get the item at index 3 (the 4th item)
+var item =  array.list[3]; // same as before
+
+setItem<T>(array, 3, item); // sets the array at index 3 to be item
+array.list[3] = item; // same as above
+
+
+var i = 0;
+while (i < array.size) { // current size of the array
+	doSomething(getItem<T>(array, i));
+	i = i + 1;
+}
+```
