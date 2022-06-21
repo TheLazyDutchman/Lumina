@@ -529,6 +529,11 @@ func writeSizeOf(Parser parser, SyntaxTree tree, Block block, int output, SizeOf
 	return register;
 }
 
+func writeNewOperation(Parser parser, SyntaxTree tree, Block block, int output, NewOperation newOperation, str register) -> str {
+	print(" can not compile 'new' operation yet\n");
+	return register;
+}
+
 func writeCall(Parser parser, SyntaxTree tree, Block block, int output, Operation call, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
 	var name = (str)0;
 
@@ -914,6 +919,10 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 
 	if (operation.sizeOf != (SizeOf)0) {
 		return writeSizeOf(parser, tree, block, output, operation.sizeOf, registerA.name);
+	}
+
+	if (operation.newOperation != (NewOperation)0) {
+		return writeNewOperation(parser, tree, block, output, operation.newOperation, registerA.name);
 	}
 
 	if (operation.operator == (Operator)0) {

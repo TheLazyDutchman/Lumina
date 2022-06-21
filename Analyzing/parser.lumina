@@ -376,6 +376,12 @@ func parseNew(Parser parser, SyntaxTree tree) -> Operation {
 	var keyword = consumeKeyword(parser, tree, KEYWORD_new);
 	var typeObj = parseType(parser, tree);
 
+	if (isOperator(typeObj.operator, "(") != (bool)1 ||
+		typeObj.right != (Operation)0 ||
+		isOperator(typeObj.end, ")") != (bool)1) {
+		printError(parser, typeObj.region.start, " expected 'new' operation to end with '()'\n");
+	}
+
 	var newOperation = createNewOperation(keyword, typeObj);
 	return createOperationFromNew(newOperation);
 }
@@ -1217,6 +1223,10 @@ func bindNamesInOperation(Parser parser, SyntaxTree tree, Operation operation, B
 		bindNamesInOperation(parser, tree, operation.castType, block);
 	}
 
+	if (operation.newOperation != (NewOperation)0) {
+		bindNamesInOperation(parser, tree, operation.newOperation.typeObj, block);
+	}
+
 	if (operation.value != (Value)0 && operation.value.identifier != (Identifier)0) {
 		bindIdentifier(parser, tree, block, operation.value.identifier);
 	}
@@ -1503,6 +1513,20 @@ func checkTypesInSizeOf(Parser parser, SyntaxTree tree, Block block, SizeOf size
 	return parser.int;
 }
 
+func checkTypesInNewOperation(Parser parser, SyntaxTree tree, Block block, NewOperation newOperation) -> TypeObj {
+	var typeType = checkTypesInOperation(parser, tree, block, newOperation.typeObj.left);
+	if (typeType != parser.Type) {
+		printError(parser, newOperation.typeObj.region.start, " can not create new object of something that is not a type\n");
+	}
+
+	var typeObj = getTypeFromOperation(parser, tree, block, newOperation.typeObj.left);
+	if (typeObj == (TypeObj)0) {
+		printError(parser, newOperation.typeObj.region.start, " can not find type with this name\n");
+	}
+
+	return typeObj;
+}
+
 func getTypeArrayFromOperation(Parser parser, SyntaxTree tree, Block block, Array<TypeObj> list, Operation operation) {
 	if (isOperator(operation.operator, ",")) {
 		getTypeArrayFromOperation(parser, tree, block, list, operation.left);
@@ -1688,6 +1712,11 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 	if (operation.sizeOf != (SizeOf)0) {
 		operation.operationType = parser.int;
 		return checkTypesInSizeOf(parser, tree, block, operation.sizeOf);
+	}
+
+	if (operation.newOperation != (NewOperation)0) {
+		operation.operationType = checkTypesInNewOperation(parser, tree, block, operation.newOperation);
+		return operation.operationType;
 	}
 
 	if (isOperator(operation.operator, "(") && operation.left != (Operation)0) {
