@@ -200,9 +200,56 @@ func writeTypeLiteral(int output, TypeObj typeObj) {
 	fprint(output, "\n");
 }
 
-func writeHeader(int output) {
-	fprint(output, "section .text\n");
-	fprint(output, "global _start\n");
+func writeExpandHeapBuiltin(int output) {
+	fprint(output, "__expand_heap__:\n");
+	fprint(output, "	mov rbx, 4096\n");
+	fprint(output, ".loop_condition:\n");
+	fprint(output, "	cmp rbx, rax\n");
+	fprint(output, "	jg .loop_end\n");
+
+	fprint(output, "	add rbx, 4096\n");
+	fprint(output, "	jmp .loop_condition\n");
+	fprint(output, ".loop_end:\n");
+
+	fprint(output, "	add [heapend], rbx\n");
+	fprint(output, "	mov rax, 12 ;; sysbrk\n");
+	fprint(output, "	mov rdi, [heapend]\n");
+	fprint(output, "	syscall\n");
+
+	fprint(output, "	ret\n\n");
+}
+
+func writeNewBuiltin(int output) {
+	fprint(output, "__new__:\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+	fprint(output, "	pop rax ;; type\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+
+	fprint(output, "	mov rax, [rax + 8] ;; size\n");
+	fprint(output, "	mov rbx, rax\n");
+	fprint(output, "	add rbx, [heapheader]\n");
+	fprint(output, "	cmp rbx, [heapend]\n");
+	fprint(output, "	jl .returnvalue\n");
+
+	fprint(output, "	xchg rsp, [datarsp]\n");
+	fprint(output, "	push rax\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+
+	fprint(output, "	call __expand_heap__\n");
+
+	fprint(output, "	xchg rsp, [datarsp]\n");
+	fprint(output, "	pop rbx\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+
+	fprint(output, ".returnvalue:\n");
+
+	fprint(output, "	mov rax, [heapheader]\n");
+	fprint(output, "	add [heapheader], rbx\n");
+
+	fprint(output, "	ret\n\n");
+}
+
+func writeSyscallBuiltin(int output) {
 	fprint(output, "	;; -- syscall builtin --\n");
 	fprint(output, "addr_func_syscall_0:\n");
 	fprint(output, "	xchg rsp, [datarsp]\n");
@@ -216,6 +263,15 @@ func writeHeader(int output) {
 	fprint(output, "	xchg rsp, [datarsp]\n");
 	fprint(output, "	syscall\n");
 	fprint(output, "	ret\n\n");
+}
+
+func writeHeader(int output) {
+	fprint(output, "section .text\n");
+	fprint(output, "global _start\n");
+
+	writeExpandHeapBuiltin(output);
+	writeNewBuiltin(output);
+	writeSyscallBuiltin(output);
 }
 
 func writeStart(int output) {
@@ -232,6 +288,13 @@ func writeStart(int output) {
 	fprint(output, "	push rbx\n");
 	fprint(output, "	xchg rsp, rax\n");
 	fprint(output, "	mov [datarsp], rax\n\n");
+
+	fprint(output, "	mov rax, 12 ;; sysbrk\n");
+	fprint(output, "	mov rdi, 0\n");
+	fprint(output, "	syscall\n");
+	fprint(output, "	mov [heapstart], rax\n");
+	fprint(output, "	mov [heapheader], rax\n");
+	fprint(output, "	mov [heapend], rax\n");
 }
 
 func writeFooter(int output, Array<str> strings, Array<TypeObj> types) {
@@ -240,6 +303,10 @@ func writeFooter(int output, Array<str> strings, Array<TypeObj> types) {
 	fprint(output, "	syscall\n\n");
 
 	fprint(output, "section .bss\n");
+
+	fprint(output, "	heapstart: resq 1\n");
+	fprint(output, "	heapheader: resq 1\n");
+	fprint(output, "	heapend: resq 1\n");
 
 	fprint(output, "	basestack: resq ");
 	fprinti(output, CALLSTACKSIZE);
@@ -529,9 +596,45 @@ func writeSizeOf(Parser parser, SyntaxTree tree, Block block, int output, SizeOf
 	return register;
 }
 
-func writeNewOperation(Parser parser, SyntaxTree tree, Block block, int output, NewOperation newOperation, str register) -> str {
-	print(" can not compile 'new' operation yet\n");
-	return register;
+func writeNewOperation(Parser parser, SyntaxTree tree, Block block, int output, Array<Register> registers, NewOperation newOperation, Register register) -> str {
+	var typeLiteral = getTypeFromOperation(parser, tree, block, newOperation.typeObj.left);
+
+	var i = 0;
+	while (i < registers.size) {
+		var reg = registers.list[i];
+		if (reg.used && reg != register) {
+		writePushData(output, reg);
+		reg.used = (bool)1; // writePush frees register, but in this case we just do that temporarily, because the function we are calling might use the same ones
+		}
+		i = i + 1;
+	}
+
+	fprint(output, "	mov ");
+	fprint(output, register.name);
+	fprint(output, ", type_");
+	fprint(output, typeLiteral.name);
+	fprint(output, "\n");
+	
+	writePushData(output, register);
+	register.used = (bool)1;
+
+	fprint(output, "	call __new__\n");
+	if (streq(register.name, "rax") != (bool)1) {
+		fprint(output, "	mov ");
+		fprint(output, register.name);
+		fprint(output, ", rax\n");
+	}
+
+	i = registers.size - 1;
+	while (i >= 0) {
+		var reg = registers.list[i];
+		if (reg.used && reg != register) {
+			writePopData(output, reg);
+		}
+		i = i - 1;
+	}
+
+	return register.name;
 }
 
 func writeCall(Parser parser, SyntaxTree tree, Block block, int output, Operation call, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
@@ -922,7 +1025,7 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	}
 
 	if (operation.newOperation != (NewOperation)0) {
-		return writeNewOperation(parser, tree, block, output, operation.newOperation, registerA.name);
+		return writeNewOperation(parser, tree, block, output, registers, operation.newOperation, registerA);
 	}
 
 	if (operation.operator == (Operator)0) {
