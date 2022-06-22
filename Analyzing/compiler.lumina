@@ -173,26 +173,43 @@ func writeStringLiteral(int output, str string, int id) {
 	fprint(output, "0x00\n");
 }
 
+func writeTypeName(int output, TypeObj typeObj) {
+	if (typeObj.name != (str)0) {
+		fprint(output, typeObj.name);
+		return;
+	}
+	
+	if (typeObj.listType == (TypeObj)0) {
+		print(" type obj has no name in 'writeTypeName'\n");
+		return;
+	}
+
+	writeTypeName(output, typeObj.listType);
+	fprint(output, "List");
+}
+
 func writeTypeLiteral(int output, TypeObj typeObj) {
 	fprint(output, "	type_");
-	fprint(output, typeObj.name);
+	writeTypeName(output, typeObj);
 	fprint(output, ": dq string_");
 	fprinti(output, typeObj.nameId);
+	fprint(output, ", ");
+	fprinti(output, typeObj.size);
 	fprint(output, ", ");
 	fprinti(output, typeObj.objectSize);
 	fprint(output, ", ");
 
-	if (typeObj.listOf != (TypeObj)0 && typeObj.listOf.name != (str)0) {
+	if (typeObj.listOf != (TypeObj)0 && typeObj.listOf.isGeneric != (bool)1) {
 		fprint(output, "type_");
-		fprint(output, typeObj.listOf.name);
+		writeTypeName(output, typeObj.listOf);
 		fprint(output, ", ");
 	} else {
 		fprint(output, "0, ");
 	}
 
-	if (typeObj.listType != (TypeObj)0 && typeObj.listType.name != (str)0) {
+	if (typeObj.listType != (TypeObj)0 && typeObj.listType.isGeneric != (bool)1) {
 		fprint(output, "type_");
-		fprint(output, typeObj.listType.name);
+		writeTypeName(output, typeObj.listType);
 	} else {
 		fprint(output, "0");
 	}
@@ -202,16 +219,16 @@ func writeTypeLiteral(int output, TypeObj typeObj) {
 
 func writeExpandHeapBuiltin(int output) {
 	fprint(output, "__expand_heap__:\n");
-	fprint(output, "	mov rbx, 4096\n");
+	fprint(output, "	mov rax, 4096\n");
 	fprint(output, ".loop_condition:\n");
-	fprint(output, "	cmp rbx, rax\n");
+	fprint(output, "	cmp rax, rbx\n");
 	fprint(output, "	jg .loop_end\n");
 
-	fprint(output, "	add rbx, 4096\n");
+	fprint(output, "	add rax, 4096\n");
 	fprint(output, "	jmp .loop_condition\n");
 	fprint(output, ".loop_end:\n");
 
-	fprint(output, "	add [heapend], rbx\n");
+	fprint(output, "	add [heapend], rax\n");
 	fprint(output, "	mov rax, 12 ;; sysbrk\n");
 	fprint(output, "	mov rdi, [heapend]\n");
 	fprint(output, "	syscall\n");
@@ -219,20 +236,15 @@ func writeExpandHeapBuiltin(int output) {
 	fprint(output, "	ret\n\n");
 }
 
-func writeNewBuiltin(int output) {
-	fprint(output, "__new__:\n");
-	fprint(output, "	xchg rsp, [datarsp]\n");
-	fprint(output, "	pop rax ;; type\n");
-	fprint(output, "	xchg rsp, [datarsp]\n");
-
-	fprint(output, "	mov rax, [rax + 8] ;; size\n");
-	fprint(output, "	mov rbx, rax\n");
-	fprint(output, "	add rbx, [heapheader]\n");
-	fprint(output, "	cmp rbx, [heapend]\n");
+func writeAllocateBuiltin(int output) {
+	fprint(output, "__allocate__:\n");
+	fprint(output, "	mov rax, rbx\n");
+	fprint(output, "	add rax, [heapheader]\n");
+	fprint(output, "	cmp rax, [heapend]\n");
 	fprint(output, "	jl .returnvalue\n");
 
 	fprint(output, "	xchg rsp, [datarsp]\n");
-	fprint(output, "	push rax\n");
+	fprint(output, "	push rbx\n");
 	fprint(output, "	xchg rsp, [datarsp]\n");
 
 	fprint(output, "	call __expand_heap__\n");
@@ -246,6 +258,34 @@ func writeNewBuiltin(int output) {
 	fprint(output, "	mov rax, [heapheader]\n");
 	fprint(output, "	add [heapheader], rbx\n");
 
+	fprint(output, "	ret\n\n");
+}
+
+func writeNewBuiltin(int output) {
+	fprint(output, "__new__:\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+	fprint(output, "	pop rax ;; type\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+
+	fprint(output, "	mov rbx, [rax + 8] ;; size\n");
+
+	fprint(output, "	call __allocate__\n");
+	fprint(output, "	ret\n\n");
+}
+
+func writeNewListBuiltin(int output) {
+	fprint(output, "__new_list__:\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+	fprint(output, "	pop rax ;; size\n");
+	fprint(output, "	pop rbx ;; type\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+
+	fprint(output, "	mov rcx, [rbx + 16] ;; item size\n");
+	fprint(output, "	mul rcx\n");
+
+	fprint(output, "	mov rcx, rbx\n");
+
+	fprint(output, "	call __allocate__\n");
 	fprint(output, "	ret\n\n");
 }
 
@@ -270,7 +310,9 @@ func writeHeader(int output) {
 	fprint(output, "global _start\n");
 
 	writeExpandHeapBuiltin(output);
+	writeAllocateBuiltin(output);
 	writeNewBuiltin(output);
+	writeNewListBuiltin(output);
 	writeSyscallBuiltin(output);
 }
 
@@ -596,7 +638,7 @@ func writeSizeOf(Parser parser, SyntaxTree tree, Block block, int output, SizeOf
 	return register;
 }
 
-func writeNewOperation(Parser parser, SyntaxTree tree, Block block, int output, Array<Register> registers, NewOperation newOperation, Register register) -> str {
+func writeNewOperation(Parser parser, SyntaxTree tree, Block block, int output, Array<Register> registers, NewOperation newOperation, Register register, Array<FunctionDefinition> functions) -> str {
 	var typeLiteral = getTypeFromOperation(parser, tree, block, newOperation.typeObj.left);
 
 	var i = 0;
@@ -612,13 +654,22 @@ func writeNewOperation(Parser parser, SyntaxTree tree, Block block, int output, 
 	fprint(output, "	mov ");
 	fprint(output, register.name);
 	fprint(output, ", type_");
-	fprint(output, typeLiteral.name);
+	writeTypeName(output, typeLiteral);
 	fprint(output, "\n");
 	
 	writePushData(output, register);
 	register.used = (bool)1;
 
-	fprint(output, "	call __new__\n");
+	if (typeLiteral.listType == (TypeObj)0) {
+		fprint(output, "	call __new__\n");
+	} else {
+		writeOperation(parser, tree, block, output, newOperation.typeObj.right, registers, register, (bool)1, functions); // list size
+		writePushData(output, register);
+		register.used = (bool)1;
+
+		fprint(output, "	call __new_list__\n");
+	}
+
 	if (streq(register.name, "rax") != (bool)1) {
 		fprint(output, "	mov ");
 		fprint(output, register.name);
@@ -1025,7 +1076,7 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	}
 
 	if (operation.newOperation != (NewOperation)0) {
-		return writeNewOperation(parser, tree, block, output, registers, operation.newOperation, registerA);
+		return writeNewOperation(parser, tree, block, output, registers, operation.newOperation, registerA, functions);
 	}
 
 	if (operation.operator == (Operator)0) {

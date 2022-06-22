@@ -129,7 +129,7 @@ func createParser() -> Parser {
 	parser.types = createArray<TypeObj>();
 	parser.int = createTypeFromString("int", 8);
 	parser.char = createTypeFromString("char", 1);
-	parser.str = createListType("str", parser.char);
+	parser.str = createListType(parser.types, "str", parser.char);
 	parser.bool = createTypeFromString("bool", 1);
 	parser.any = createTypeFromString("any", 8);
 	parser.ptr = createTypeFromString("ptr", 8);
@@ -143,7 +143,6 @@ func createParser() -> Parser {
 	addItem<TypeObj>(parser.types, parser.char);
 	parser.str.nameId = addUniqueString(parser.strings, parser.str.name);
 	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.str));
-	addItem<TypeObj>(parser.types, parser.str);
 	parser.bool.nameId = addUniqueString(parser.strings, parser.bool.name);
 	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.bool));
 	addItem<TypeObj>(parser.types, parser.bool);
@@ -160,11 +159,12 @@ func createParser() -> Parser {
 	parser.Type = createTypeFromString("Type", 8);
 	addItem<Property>(parser.Type.properties, createPropertyFromString("name", parser.str));
 	addItem<Property>(parser.Type.properties, createPropertyFromString("size", parser.int));
+	addItem<Property>(parser.Type.properties, createPropertyFromString("objectSize", parser.int));
 	addItem<Property>(parser.Type.properties, createPropertyFromString("listOf", parser.Type));
 	addItem<Property>(parser.Type.properties, createPropertyFromString("listType", parser.Type));
 
 	parser.Type.nameId = addUniqueString(parser.strings, parser.Type.name);
-	parser.Type.objectSize = 32;
+	parser.Type.objectSize = 40;
 	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.Type));
 	addItem<TypeObj>(parser.types, parser.Type);
 
@@ -184,7 +184,7 @@ func createParser() -> Parser {
 	addItem<FunctionDefinition>(parser.functions, parser.syscall);
 
 	parser.variables = createArray<Variable>();
-	parser.argv = createVariableFromString("argv", 0, 1, createListType((str)0, parser.str));
+	parser.argv = createVariableFromString("argv", 0, 1, createListType(parser.types, (str)0, parser.str));
 	parser.argc = createVariableFromString("argc", 0, 2, parser.int);
 	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.argv));
 	addItem<Variable>(parser.variables, parser.argv);
@@ -375,12 +375,6 @@ func parseSizeof(Parser parser, SyntaxTree tree) -> Operation {
 func parseNew(Parser parser, SyntaxTree tree) -> Operation {
 	var keyword = consumeKeyword(parser, tree, KEYWORD_new);
 	var typeObj = parseType(parser, tree);
-
-	if (isOperator(typeObj.operator, "(") != (bool)1 ||
-		typeObj.right != (Operation)0 ||
-		isOperator(typeObj.end, ")") != (bool)1) {
-		printError(parser, typeObj.region.start, " expected 'new' operation to end with '()'\n");
-	}
 
 	var newOperation = createNewOperation(keyword, typeObj);
 	return createOperationFromNew(newOperation);
@@ -992,7 +986,11 @@ func getTypeFromOperation(Parser parser, SyntaxTree tree, Block block, Operation
 			return (TypeObj)0;
 		}
 
-		return createListType((str)0, typeObj);
+		if (block != (Block)0) {
+			return createListType(block.types, (str)0, typeObj);
+		} else {
+			return createListType(tree.types, (str)0, typeObj);
+		}
 	}
 
 	if (isOperator(operation.operator, "<")) {
@@ -1522,6 +1520,19 @@ func checkTypesInNewOperation(Parser parser, SyntaxTree tree, Block block, NewOp
 	var typeObj = getTypeFromOperation(parser, tree, block, newOperation.typeObj.left);
 	if (typeObj == (TypeObj)0) {
 		printError(parser, newOperation.typeObj.region.start, " can not find type with this name\n");
+		return (TypeObj)0;
+	}
+
+	if (typeObj.listType != (TypeObj)0) {
+		if (checkTypesInOperation(parser, tree, block, newOperation.typeObj.right) != parser.int) {
+			printError(parser, newOperation.typeObj.region.start, " can not allocate an array of unknown length\n");
+		}
+	} else {
+		if (isOperator(newOperation.typeObj.operator, "(") != (bool)1 ||
+			newOperation.typeObj.right != (Operation)0 ||
+			isOperator(newOperation.typeObj.end, ")") != (bool)1) {
+			printError(parser, newOperation.typeObj.region.start, " expected 'new' operation to end with '()'\n");
+		}
 	}
 
 	return typeObj;

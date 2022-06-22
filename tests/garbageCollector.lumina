@@ -7,6 +7,8 @@ type User {
 	int age;
 }
 
+var users = new User[](2);
+
 var ilea = new User();
 
 ilea.name = "Ilea";
@@ -14,3 +16,19 @@ ilea.email = "ilea@spears.com";
 ilea.age = 20;
 
 print(ilea.name);
+print("\n");
+
+users[0] = ilea;
+
+var greg = new User();
+
+greg.name = "Greg";
+greg.email = "greg@gmail.com";
+greg.age = 26;
+
+users[1] = greg;
+
+print(users[0].name);
+print(", ");
+print(users[1].name);
+print("\n");
