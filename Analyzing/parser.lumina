@@ -1568,6 +1568,10 @@ func checkTypesInFunctionCall(Parser parser, SyntaxTree tree, Block block, Opera
 	if (call.left.value == (Value)0 && isOperator(call.left.operator, "<")) {
 		functionName = call.left.left.value.identifier;
 	} else {
+		if (call.left.value == (Value)0) {
+			return (TypeObj)0;
+		}
+
 		functionName = call.left.value.identifier;
 	}
 
