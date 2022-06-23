@@ -361,8 +361,6 @@ func createNewTypeVariant(Array<TypeObj> typeArray, TypeObj typeObj, Array<TypeO
 	newType.variants = typeObj.variants;
 	addItem<TypeObj>(typeObj.variants, newType);
 
-	newType.isGeneric = (bool)1;
-
 	return newType;
 }
 
