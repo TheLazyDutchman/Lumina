@@ -23,6 +23,10 @@ type NewOperation {
 	
 	Name keyword;
 	Operation typeObj;
+
+	Operator left;
+	Operation num;
+	Operator right;
 }
 
 type Operation {
@@ -52,13 +56,17 @@ func createSizeOf(Name keyword, Operator lparen, Operation typeObj, Operator rpa
 	return sizeOf;
 }
 
-func createNewOperation(Name keyword, Operation typeObj) -> NewOperation {
+func createNewOperation(Name keyword, Operation typeObj, Operator left, Operation num, Operator right) -> NewOperation {
 	var newOperation = (NewOperation)malloc(sizeof(NewOperation));
 
-	newOperation.region = createRegion(keyword.region.start, typeObj.region.end);
+	newOperation.region = createRegion(keyword.region.start, right.position);
 
 	newOperation.keyword = keyword;
 	newOperation.typeObj = typeObj;
+
+	newOperation.left = left;
+	newOperation.num = num;
+	newOperation.right = right;
 
 	return newOperation;
 }

@@ -32,3 +32,16 @@ print(users[0].name);
 print(", ");
 print(users[1].name);
 print("\n");
+
+
+type Vector<T> {
+	T x;
+	T y;
+}
+
+var vector = new Vector<int>();
+vector.x = 10;
+vector.y = 15;
+
+printi(vector.x);
+print("\n");

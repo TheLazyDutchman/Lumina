@@ -264,27 +264,34 @@ func consumeString(Parser parser, SyntaxTree tree) -> String {
 }
 
 func parseType(Parser parser, SyntaxTree tree) -> Operation {
-	var operation = parseExpression(parser, tree, PREC_index);
+	var operation = parseUnary(parser, tree);
 
-	if (isOperator(tree.lexer.current.operator, "<") != (bool)1) {
-		return operation;
+	if (isOperator(tree.lexer.current.operator, "<")) {
+		var lesser = consumeOperator(parser, tree, "<", (bool)0);
+
+		var generics = parseType(parser, tree);
+
+		while (isOperator(tree.lexer.current.operator, ",")) {
+			var comma = consumeOperator(parser, tree, ",", (bool)0);
+
+			var right = parseType(parser, tree);
+
+			generics = createOperation(generics, comma, right, (Operator)0);
+		}
+
+		var greater = consumeOperator(parser, tree, ">", (bool)0);
+
+		operation = createOperation(operation, lesser, generics, greater);
 	}
 
-	var lesser = consumeOperator(parser, tree, "<", (bool)0);
+	while (isOperator(tree.lexer.current.operator, "[")) {
+		var left = consumeOperator(parser, tree, "[", (bool)0);
+		var right = consumeOperator(parser, tree, "]", (bool)0);
 
-	var generics = parseType(parser, tree);
-
-	while (isOperator(tree.lexer.current.operator, ",")) {
-		var comma = consumeOperator(parser, tree, ",", (bool)0);
-
-		var right = parseType(parser, tree);
-
-		generics = createOperation(generics, comma, right, (Operator)0);
+		operation = createOperation(operation, left, (Operation)0, right);
 	}
 
-	var greater = consumeOperator(parser, tree, ">", (bool)0);
-
-	return createOperation(operation, lesser, generics, greater);
+	return operation;
 }
 
 func parsePropertyDefinition(Parser parser, SyntaxTree tree) -> PropertyDefinition {
@@ -376,7 +383,16 @@ func parseNew(Parser parser, SyntaxTree tree) -> Operation {
 	var keyword = consumeKeyword(parser, tree, KEYWORD_new);
 	var typeObj = parseType(parser, tree);
 
-	var newOperation = createNewOperation(keyword, typeObj);
+	var left = consumeOperator(parser, tree, "(", (bool)0);
+
+	var num = (Operation)0;
+	if (isOperator(tree.lexer.current.operator, ")") != (bool)1) {
+		num = parseExpression(parser, tree, PREC_expression);
+	}
+
+	var right = consumeOperator(parser, tree, ")", (bool)0);
+
+	var newOperation = createNewOperation(keyword, typeObj, left, num, right);
 	return createOperationFromNew(newOperation);
 }
 
@@ -1223,6 +1239,10 @@ func bindNamesInOperation(Parser parser, SyntaxTree tree, Operation operation, B
 
 	if (operation.newOperation != (NewOperation)0) {
 		bindNamesInOperation(parser, tree, operation.newOperation.typeObj, block);
+		
+		if (operation.newOperation.num != (Operation)0) {
+			bindNamesInOperation(parser, tree, operation.newOperation.num, block);
+		}
 	}
 
 	if (operation.value != (Value)0 && operation.value.identifier != (Identifier)0) {
@@ -1512,25 +1532,25 @@ func checkTypesInSizeOf(Parser parser, SyntaxTree tree, Block block, SizeOf size
 }
 
 func checkTypesInNewOperation(Parser parser, SyntaxTree tree, Block block, NewOperation newOperation) -> TypeObj {
-	var typeType = checkTypesInOperation(parser, tree, block, newOperation.typeObj.left);
+	var typeType = checkTypesInOperation(parser, tree, block, newOperation.typeObj);
 	if (typeType != parser.Type) {
 		printError(parser, newOperation.typeObj.region.start, " can not create new object of something that is not a type\n");
 	}
 
-	var typeObj = getTypeFromOperation(parser, tree, block, newOperation.typeObj.left);
+	var typeObj = getTypeFromOperation(parser, tree, block, newOperation.typeObj);
 	if (typeObj == (TypeObj)0) {
 		printError(parser, newOperation.typeObj.region.start, " can not find type with this name\n");
 		return (TypeObj)0;
 	}
 
 	if (typeObj.listType != (TypeObj)0) {
-		if (checkTypesInOperation(parser, tree, block, newOperation.typeObj.right) != parser.int) {
-			printError(parser, newOperation.typeObj.region.start, " can not allocate an array of unknown length\n");
+		if (checkTypesInOperation(parser, tree, block, newOperation.num) != parser.int) {
+			printError(parser, newOperation.num.region.start, " can not allocate an array of unknown length\n");
 		}
 	} else {
-		if (isOperator(newOperation.typeObj.operator, "(") != (bool)1 ||
-			newOperation.typeObj.right != (Operation)0 ||
-			isOperator(newOperation.typeObj.end, ")") != (bool)1) {
+		if (isOperator(newOperation.left, "(") != (bool)1 ||
+			newOperation.num != (Operation)0 ||
+			isOperator(newOperation.right, ")") != (bool)1) {
 			printError(parser, newOperation.typeObj.region.start, " expected 'new' operation to end with '()'\n");
 		}
 	}
