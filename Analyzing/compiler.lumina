@@ -189,6 +189,10 @@ func writeTypeName(int output, TypeObj typeObj) {
 }
 
 func writeTypeLiteral(int output, TypeObj typeObj) {
+	if (typeObj.isGeneric) {
+		return;
+	}
+
 	fprint(output, "	type_");
 	writeTypeName(output, typeObj);
 	fprint(output, ": dq string_");
@@ -199,7 +203,7 @@ func writeTypeLiteral(int output, TypeObj typeObj) {
 	fprinti(output, typeObj.objectSize);
 	fprint(output, ", ");
 
-	if (typeObj.listOf != (TypeObj)0 && typeObj.listOf.isGeneric != (bool)1) {
+	if (typeObj.listOf != (TypeObj)0) {
 		fprint(output, "type_");
 		writeTypeName(output, typeObj.listOf);
 		fprint(output, ", ");
@@ -207,7 +211,7 @@ func writeTypeLiteral(int output, TypeObj typeObj) {
 		fprint(output, "0, ");
 	}
 
-	if (typeObj.listType != (TypeObj)0 && typeObj.listType.isGeneric != (bool)1) {
+	if (typeObj.listType != (TypeObj)0) {
 		fprint(output, "type_");
 		writeTypeName(output, typeObj.listType);
 	} else {
@@ -365,6 +369,9 @@ func writeFooter(int output, Array<str> strings, Array<TypeObj> types) {
 		writeTypeLiteral(output, types.list[i]);
 		i = i + 1;
 	}
+
+	fprint(output, "	type_T: dq 0, 8, 8, type_TList, 0\n");
+	fprint(output, "	type_TList: dq 0, 8, 8, 0, type_T\n");
 
 	fprint(output, "\n\n");
 
@@ -654,7 +661,16 @@ func writeNewOperation(Parser parser, SyntaxTree tree, Block block, int output, 
 	fprint(output, "	mov ");
 	fprint(output, register.name);
 	fprint(output, ", type_");
-	writeTypeName(output, typeLiteral);
+
+	if (typeLiteral.isGeneric) {
+		fprint(output, "T");
+		if (typeLiteral.listType != (TypeObj)0) {
+			fprint(output, "List");
+		}
+	} else {
+		writeTypeName(output, typeLiteral);
+	}
+
 	fprint(output, "\n");
 	
 	writePushData(output, register);

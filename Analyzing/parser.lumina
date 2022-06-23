@@ -1019,7 +1019,11 @@ func getTypeFromOperation(Parser parser, SyntaxTree tree, Block block, Operation
 		var generics = createArray<TypeObj>();
 		getTypeArrayFromOperation(parser, tree, block, generics, operation.right);
 
-		return getVariantType(typeObj, generics);
+		if (block != (Block)0) {
+			return getVariantType(block.types, typeObj, generics);
+		} else {
+			return getVariantType(tree.types, typeObj, generics);
+		}
 	}
 
 	printError(parser, operation.operator.position, " can not get type object from this operator\n");
@@ -1612,7 +1616,11 @@ func checkTypesInFunctionCall(Parser parser, SyntaxTree tree, Block block, Opera
 		var generics = createArray<TypeObj>();
 		getTypeArrayFromOperation(parser, tree, block, generics, call.left.right);
 
-		function = getVariantFunction(function, generics);
+		if (block != (Block)0) {
+			function = getVariantFunction(block.types, function, generics);
+		} else {
+			function = getVariantFunction(tree.types, function, generics);
+		}
 	}
 
 	var argumentList = createArray<TypeObj>();

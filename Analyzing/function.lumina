@@ -199,7 +199,7 @@ func createFunctionFromString(str value, Array<Parameter> parameters, ReturnType
 	return function;
 }
 
-func createNewFunctionVariant(FunctionDefinition original, Array<TypeObj> generics) -> FunctionDefinition {
+func createNewFunctionVariant(Array<TypeObj> arrayType, FunctionDefinition original, Array<TypeObj> generics) -> FunctionDefinition {
 	var function = (FunctionDefinition)malloc(sizeof(FunctionDefinition));
 
 	function.region = original.region;
@@ -220,7 +220,7 @@ func createNewFunctionVariant(FunctionDefinition original, Array<TypeObj> generi
 	while (i < function.parameters.size) {
 		var j = 0;
 		while (j < generics.size) {
-			function.parameters.list[i].typeObj = applyGeneric(function.parameters.list[i].typeObj, original.generics.list[j].typeObj, generics.list[j]);
+			function.parameters.list[i].typeObj = applyGeneric(arrayType, function.parameters.list[i].typeObj, original.generics.list[j].typeObj, generics.list[j]);
 			j = j + 1;
 		}
 		i = i + 1;
@@ -232,7 +232,7 @@ func createNewFunctionVariant(FunctionDefinition original, Array<TypeObj> generi
 		function.returnType = copyReturnType(original.returnType);
 		i = 0;
 		while (i < generics.size) {
-			function.returnType.typeObj = applyGeneric(function.returnType.typeObj, original.generics.list[i].typeObj, generics.list[i]);
+			function.returnType.typeObj = applyGeneric(arrayType, function.returnType.typeObj, original.generics.list[i].typeObj, generics.list[i]);
 			i = i + 1;
 		}
 	}
@@ -245,7 +245,7 @@ func createNewFunctionVariant(FunctionDefinition original, Array<TypeObj> generi
 	return function;
 }
 
-func getVariantFunction(FunctionDefinition function, Array<TypeObj> generics) -> FunctionDefinition {
+func getVariantFunction(Array<TypeObj> arrayType, FunctionDefinition function, Array<TypeObj> generics) -> FunctionDefinition {
 	if (function.generics.size != generics.size) {
 		print("expected ");
 		printi(function.generics.size);
@@ -269,7 +269,7 @@ func getVariantFunction(FunctionDefinition function, Array<TypeObj> generics) ->
 		i = i + 1;
 	}
 
-	return createNewFunctionVariant(function, generics);
+	return createNewFunctionVariant(arrayType, function, generics);
 }
 
 func findFunction(Array<FunctionDefinition> list, str name) -> FunctionDefinition {

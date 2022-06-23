@@ -328,7 +328,7 @@ func createTypeFromString(str name, int size) -> TypeObj {
 	return typeObj;
 }
 
-func createNewTypeVariant(TypeObj typeObj, Array<TypeObj> newGenerics) -> TypeObj {
+func createNewTypeVariant(Array<TypeObj> typeArray, TypeObj typeObj, Array<TypeObj> newGenerics) -> TypeObj {
 	var newType = (TypeObj)malloc(sizeof(TypeObj));
 
 	newType.name = typeObj.name;
@@ -348,7 +348,7 @@ func createNewTypeVariant(TypeObj typeObj, Array<TypeObj> newGenerics) -> TypeOb
 	while (i < newType.properties.size) {
 		var j = 0;
 		while (j < typeObj.generics.size) {
-			newType.properties.list[i].propertyType = applyGeneric(newType.properties.list[i].propertyType, typeObj.generics.list[j].typeObj, newGenerics.list[j]);
+			newType.properties.list[i].propertyType = applyGeneric(typeArray, newType.properties.list[i].propertyType, typeObj.generics.list[j].typeObj, newGenerics.list[j]);
 			j = j + 1;
 		}
 		i = i + 1;
@@ -384,7 +384,7 @@ func createListType(Array<TypeObj> typeArray, str name, TypeObj typeObj) -> Type
 	return listType;
 }
 
-func getVariantType(TypeObj typeObj, Array<TypeObj> generics) -> TypeObj {
+func getVariantType(Array<TypeObj> typeArray, TypeObj typeObj, Array<TypeObj> generics) -> TypeObj {
 	if (typeObj.generics.size != generics.size) {
 		print("expected ");
 		printi(typeObj.generics.size);
@@ -412,10 +412,10 @@ func getVariantType(TypeObj typeObj, Array<TypeObj> generics) -> TypeObj {
 		i = i + 1;
 	}
 
-	return createNewTypeVariant(typeObj, generics);
+	return createNewTypeVariant(typeArray, typeObj, generics);
 }
 
-func applyGeneric(TypeObj value, TypeObj old, TypeObj newType) -> TypeObj {
+func applyGeneric(Array<TypeObj> typeArray, TypeObj value, TypeObj old, TypeObj newType) -> TypeObj {
 	if (value == old) { return newType; }
 	if (value == (TypeObj)0) {
 		return (TypeObj)0;
@@ -428,8 +428,7 @@ func applyGeneric(TypeObj value, TypeObj old, TypeObj newType) -> TypeObj {
 		}
 
 		if (newType.listOf == (TypeObj)0) {
-			createListType((Array<TypeObj>)0, (str)0, newType);
-			newType.listOf.isGeneric = (bool)1;
+			createListType(typeArray, (str)0, newType);
 		}
 
 		return newType.listOf; 
@@ -440,11 +439,11 @@ func applyGeneric(TypeObj value, TypeObj old, TypeObj newType) -> TypeObj {
 		var i = 0;
 		while (i < value.generics.size) {
 			var original = value.generics.list[i].typeObj;
-			addItem<TypeObj>(generics, applyGeneric(original, old, newType));
+			addItem<TypeObj>(generics, applyGeneric(typeArray, original, old, newType));
 			i = i + 1;
 		}
 
-		return getVariantType(value, generics);
+		return getVariantType(typeArray, value, generics);
 	}
 
 	return value;
