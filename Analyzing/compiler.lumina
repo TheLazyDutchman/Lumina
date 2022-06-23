@@ -244,6 +244,7 @@ func writeAllocateBuiltin(int output) {
 	fprint(output, "__allocate__:\n");
 	fprint(output, "	mov rax, rbx\n");
 	fprint(output, "	add rax, [heapheader]\n");
+	fprint(output, "	add rax, 8 ;; offset to stop unaligned values from going over the end of the heap\n");
 	fprint(output, "	cmp rax, [heapend]\n");
 	fprint(output, "	jl .returnvalue\n");
 
@@ -271,7 +272,7 @@ func writeNewBuiltin(int output) {
 	fprint(output, "	pop rax ;; type\n");
 	fprint(output, "	xchg rsp, [datarsp]\n");
 
-	fprint(output, "	mov rbx, [rax + 8] ;; size\n");
+	fprint(output, "	mov rbx, [rax + 16] ;; size\n");
 
 	fprint(output, "	call __allocate__\n");
 	fprint(output, "	ret\n\n");
@@ -287,7 +288,7 @@ func writeNewListBuiltin(int output) {
 	fprint(output, "	mov rcx, [rbx + 16] ;; item size\n");
 	fprint(output, "	mul rcx\n");
 
-	fprint(output, "	mov rcx, rbx\n");
+	fprint(output, "	mov rbx, rax\n");
 
 	fprint(output, "	call __allocate__\n");
 	fprint(output, "	ret\n\n");
