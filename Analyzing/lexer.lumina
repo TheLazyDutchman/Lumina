@@ -98,22 +98,6 @@ func createLexer(str fileName) -> Lexer {
 	return lexer;
 }
 
-func createToken() -> Token {
-	var token = new Token();
-
-	token.name = (Name)0;
-	token.string = (String)0;
-	token.character = (Character)0;
-	token.number = (Number)0;
-	token.operator = (Operator)0;
-	token.comment = (Comment)0;
-
-	token.isEOF = (bool)0;
-	token.isError = (bool)0;
-
-	return token;
-}
-
 func current(Lexer lexer) -> char {
 	return lexer.buffer[lexer.index];
 }
@@ -241,7 +225,7 @@ func lexOperator(Lexer lexer, Token token, WhiteSpace space) -> Token {
 }
 
 func nextToken(Lexer lexer) -> Token {
-	var token = createToken();
+	var token = new Token();
 
 	var space = (WhiteSpace)0;
 	if (isspace(current(lexer))) {

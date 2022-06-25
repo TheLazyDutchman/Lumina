@@ -19,21 +19,8 @@ type Definition {
 	TypeObj valueType;
 }
 
-func createDefinition() -> Definition {
-	var definition = new Definition();
-
-	definition.name = (str)0;
-	definition.typeObj = (TypeObj)0;
-	definition.variable = (Variable)0;
-	definition.function = (FunctionDefinition)0;
-
-	definition.valueType = (TypeObj)0;
-
-	return definition;
-}
-
 func createDefinitionFromType(TypeObj typeObj) -> Definition {
-	var definition = createDefinition();
+	var definition = new Definition();
 
 	definition.name = typeObj.name;
 	definition.typeObj = typeObj;
@@ -42,7 +29,7 @@ func createDefinitionFromType(TypeObj typeObj) -> Definition {
 }
 
 func createDefinitionFromVariable(Variable variable) -> Definition {
-	var definition = createDefinition();
+	var definition = new Definition();
 
 	definition.name = variable.name;
 	definition.variable = variable;
@@ -51,7 +38,7 @@ func createDefinitionFromVariable(Variable variable) -> Definition {
 }
 
 func createDefinitionFromFunction(FunctionDefinition function) -> Definition {
-	var definition = createDefinition();
+	var definition = new Definition();
 
 	definition.name = function.name.name;
 	definition.function = function;

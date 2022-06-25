@@ -257,6 +257,17 @@ func writeAllocateBuiltin(int output) {
 	fprint(output, "	mov rax, [heapheader]\n");
 	fprint(output, "	add [heapheader], rbx\n");
 
+	fprint(output, "	mov rcx, rax\n");
+	fprint(output, ".init_condition:\n");
+
+	fprint(output, "	cmp rcx, [heapheader]\n");
+	fprint(output, "	jg .return\n");
+	fprint(output, "	mov qword [rcx], 0 ;; zero-initialize allocated memory\n");
+	fprint(output, "	add rcx, 8\n");
+	fprint(output, "	jmp .init_condition\n");
+
+	fprint(output, ".return:\n");
+
 	fprint(output, "	ret\n\n");
 }
 

@@ -118,8 +118,6 @@ func createGenericFromString(str name) -> Generic {
 	generic.typeObj = createTypeFromString(name, 8);
 	generic.typeObj.isGeneric = (bool)1;
 
-	generic.definition = (GenericDefinition)0;
-
 	return generic;
 }
 
@@ -132,7 +130,6 @@ func createGenericFromType(TypeObj typeObj) -> Generic {
 
 	generic.name = typeObj.name;
 	generic.typeObj = typeObj;
-	generic.definition = (GenericDefinition)0;
 
 	return generic;
 }
@@ -207,8 +204,6 @@ func createTypeDefinition(Name keyword, Name name, Operator lbrace, GenericsDefi
 	typeDef.lbrace = lbrace;
 	typeDef.properties = properties;
 	typeDef.rbrace = rbrace;
-	typeDef.listOf = (TypeDefinition)0;
-	typeDef.arrayType = (TypeDefinition)0;
 
 	typeDef.region = createRegion(keyword.region.start, rbrace.position);
 
@@ -221,10 +216,7 @@ func createPropertyFromDefinition(PropertyDefinition definition) -> Property {
 	property.name = definition.name.name;
 	property.definition = definition;
 
-	property.typeName = (str)0; // TODO: find a way to get this type
-
 	property.offset = -1;
-	property.propertyType = (TypeObj)0;
 
 	return property;
 }
@@ -233,7 +225,6 @@ func createPropertyFromString(str name, TypeObj propertyType) -> Property {
 	var property = new Property();
 
 	property.name = name;
-	property.definition = (PropertyDefinition)0;
 	property.typeName = propertyType.name;
 
 	property.offset = -1;
@@ -294,13 +285,8 @@ func createTypeFromDefinition(TypeDefinition definition) -> TypeObj {
 		i = i + 1;
 	}
 	
-	typeObj.listOf = (TypeObj)0;
-	typeObj.listType = (TypeObj)0;
-
 	typeObj.variants = createArray<TypeObj>();
 	addItem<TypeObj>(typeObj.variants, typeObj);
-
-	typeObj.isGeneric = (bool)0;
 
 	return typeObj;
 }
@@ -309,20 +295,14 @@ func createTypeFromString(str name, int size) -> TypeObj {
 	var typeObj = new TypeObj();
 
 	typeObj.name = name;
-	typeObj.definition = (TypeDefinition)0;
 	typeObj.size = size;
 	typeObj.objectSize = size;
 
 	typeObj.generics = createArray<Generic>();
 	typeObj.properties = createArray<Property>();
 
-	typeObj.listOf = (TypeObj)0;
-	typeObj.listType = (TypeObj)0;
-
 	typeObj.variants = createArray<TypeObj>();
 	addItem<TypeObj>(typeObj.variants, typeObj);
-
-	typeObj.isGeneric = (bool)0;
 
 	return typeObj;
 }
@@ -353,9 +333,6 @@ func createNewTypeVariant(Array<TypeObj> typeArray, TypeObj typeObj, Array<TypeO
 		i = i + 1;
 	}
 
-
-	newType.listOf = (TypeObj)0;
-	newType.listType = (TypeObj)0;
 
 	newType.variants = typeObj.variants;
 	addItem<TypeObj>(typeObj.variants, newType);

@@ -42,7 +42,6 @@ func createName(Position start, Position end, WhiteSpace space) -> Name {
 	var name = new Name();
 
 	name.region = createRegion(start, end);
-	name.definitionRegion = (Region)0;
 	name.space = space;
 	name.keyword = -1;
 
@@ -66,9 +65,6 @@ func createName(Position start, Position end, WhiteSpace space) -> Name {
 func createNameFromString(str value) -> Name {
 	var name = new Name();
 
-	name.region = (Region)0;
-	name.definitionRegion = (Region)0;
-	name.space = (WhiteSpace)0;
 	name.keyword = -1;
 	name.name = value;
 

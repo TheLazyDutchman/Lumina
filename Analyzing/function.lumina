@@ -71,23 +71,16 @@ func createParameter(Operation parameterType, Name name, Operator comma) -> Para
 	parameter.parameterType = parameterType;
 	parameter.name = name;
 
-	parameter.typeObj = (TypeObj)0;
-
 	return parameter;
 }
 
 func createParameterFromString(TypeObj typeObj, str name) -> Parameter {
 	var parameter = new Parameter();
 
-	parameter.region = (Region)0;
-	parameter.parameterType = (Operation)0;
 	parameter.typeObj = typeObj;
 	if (name != (str)0) {
 		parameter.name = createNameFromString(name);
-	} else {
-		parameter.name = (Name)0;
 	}
-	parameter.comma = (Operator)0;
 
 	return parameter;
 }
@@ -134,10 +127,6 @@ func createReturnType(Operator rarrow, Operation typeObj) -> ReturnType {
 func createReturnTypeFromString(TypeObj typeObj) -> ReturnType {
 	var returnType = new ReturnType();
 
-	returnType.region = (Region)0;
-
-	returnType.rarrow = (Operator)0;
-	returnType.returnType = (Operation)0;
 	returnType.typeObj = typeObj;
 
 	return returnType;
@@ -157,8 +146,6 @@ func copyReturnType(ReturnType original) -> ReturnType {
 func createFunctionDefinition(Name keyword, Name name, Operator lparen, GenericsDefinition genericsDefinition, Array<Parameter> parameters, Operator rparen, ReturnType returnType) -> FunctionDefinition {
 	var function = new FunctionDefinition();
 
-	function.region = (Region)0;
-
 	function.keyword = keyword;
 	function.name = name;
 
@@ -174,7 +161,6 @@ func createFunctionDefinition(Name keyword, Name name, Operator lparen, Generics
 	function.parameters = parameters;
 	function.rparen = rparen;
 	function.returnType = returnType;
-	function.block = (Block)0;
 
 	function.variants = createArray<FunctionDefinition>();
 
@@ -184,14 +170,9 @@ func createFunctionDefinition(Name keyword, Name name, Operator lparen, Generics
 func createFunctionFromString(str value, Array<Parameter> parameters, ReturnType returnType) -> FunctionDefinition {
 	var function = new FunctionDefinition();
 
-	function.region = (Region)0;
-	function.keyword = (Name)0;
 	function.name = createNameFromString(value);
-	function.lparen = (Operator)0;
 	function.parameters = parameters;
-	function.rparen = (Operator)0;
 	function.returnType = returnType;
-	function.block = (Block)0;
 
 	function.variants = createArray<FunctionDefinition>();
 

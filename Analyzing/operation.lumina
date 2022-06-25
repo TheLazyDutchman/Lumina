@@ -82,11 +82,7 @@ func createOperation(Operation left, Operator operator, Operation right, Operato
 	operation.left = left;
 	operation.operator = operator;
 	operation.right = right;
-	operation.value = (Value)0;
 	operation.end = end;
-	operation.sizeOf = (SizeOf)0;
-	operation.castType = (Operation)0;
-	operation.newOperation = (NewOperation)0;
 
 	return operation;
 }
@@ -100,14 +96,9 @@ func createUnaryOperation(Operator operator, Operation right, Operator end) -> O
 		operation.region = createRegion(operator.position, end.position);
 	}
 
-	operation.left = (Operation)0;
 	operation.operator = operator;
 	operation.right = right;
-	operation.value = (Value)0;
 	operation.end = end;
-	operation.sizeOf = (SizeOf)0;
-	operation.castType = (Operation)0;
-	operation.newOperation = (NewOperation)0;
 
 	return operation;
 }
@@ -116,14 +107,7 @@ func createOperationFromValue(Value value) -> Operation {
 	var operation = new Operation();
 
 	operation.region = value.region;
-	operation.left = (Operation)0;
-	operation.operator = (Operator)0;
-	operation.right = (Operation)0;
 	operation.value = value;
-	operation.end = (Operator)0;
-	operation.sizeOf = (SizeOf)0;
-	operation.castType = (Operation)0;
-	operation.newOperation = (NewOperation)0;
 
 	return operation;
 }
@@ -133,12 +117,9 @@ func createTypeCast(Operator lparen, Operation castType, Operator rparen, Operat
 
 	operation.region = createRegion(lparen.position, castOperation.region.end);
 
-	operation.left = (Operation)0;
 	operation.operator = lparen;
 	operation.right = castOperation;
-	operation.value = (Value)0;
 	operation.end = rparen;
-	operation.sizeOf = (SizeOf)0;
 	operation.castType = castType;
 
 	return operation;
@@ -148,14 +129,7 @@ func createOperationFromSizeOf(SizeOf sizeOf) -> Operation {
 	var operation = new Operation();
 
 	operation.region = sizeOf.region;
-	operation.left = (Operation)0;
-	operation.operator = (Operator)0;
-	operation.right = (Operation)0;
-	operation.value = (Value)0;
-	operation.end = (Operator)0;
 	operation.sizeOf = sizeOf;
-	operation.castType = (Operation)0;
-	operation.newOperation = (NewOperation)0;
 
 	return operation;
 }
@@ -164,13 +138,6 @@ func createOperationFromNew(NewOperation newOperation) -> Operation {
 	var operation = new Operation();
 
 	operation.region = newOperation.region;
-	operation.left = (Operation)0;
-	operation.operator = (Operator)0;
-	operation.right = (Operation)0;
-	operation.value = (Value)0;
-	operation.end = (Operator)0;
-	operation.sizeOf = (SizeOf)0;
-	operation.castType = (Operation)0;
 	operation.newOperation = newOperation;
 
 	return operation;

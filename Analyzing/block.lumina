@@ -31,8 +31,6 @@ type Block {
 func createBlock(Operator lbrace, Array<Statement> statements, Array<Definition> definitions, Array<TypeObj> types, Array<FunctionDefinition> functions, Array<Variable> variables, Block outer, FunctionDefinition function) -> Block {
 	var block = new Block();
 
-	block.region = (Region)0;
-
 	block.lbrace = lbrace;
 	block.statements = statements;
 
@@ -40,7 +38,6 @@ func createBlock(Operator lbrace, Array<Statement> statements, Array<Definition>
 	block.types = types;
 	block.functions = functions;
 	block.variables = variables;
-	block.rbrace = (Operator)0;
 
 	block.outer = outer;
 

@@ -16,20 +16,8 @@ type Value {
 	String string;
 }
 
-func createValue() -> Value {
-	var value = new Value();
-
-	value.region = (Region)0;
-	value.identifier = (Identifier)0;
-	value.number = (Number)0;
-	value.character = (Character)0;
-	value.string = (String)0;
-
-	return value;
-}
-
 func createValueFromIdentifier(Identifier identifier) -> Value {
-	var value = createValue();
+	var value = new Value();
 
 	value.region = identifier.definition.region;
 	value.identifier = identifier;
@@ -41,7 +29,7 @@ func createValueFromNumber(Number number) -> Value {
 		print("expected number to not be null when creating value\n");
 	}
 
-	var value = createValue();
+	var value = new Value();
 
 	value.region = number.region;
 	value.number = number;
@@ -53,7 +41,7 @@ func createValueFromCharacter(Character character) -> Value {
 		print("expected character to not be null when creating value\n");
 	}
 
-	var value = createValue();
+	var value = new Value();
 
 	value.region = character.region;
 	value.character = character;
@@ -65,7 +53,7 @@ func createValueFromString(String string) -> Value {
 		print("expected string to not be null when creating value\n");
 	}
 
-	var value = createValue();
+	var value = new Value();
 
 	value.region = string.region;
 	value.string = string;

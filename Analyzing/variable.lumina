@@ -45,7 +45,6 @@ func createVariableDefinition(Name keyword, Name name, Operator equalSign, Opera
 	variable.equalSign = equalSign;
 	variable.value = value;
 	variable.semicolon = semicolon;
-	variable.variableType = (TypeObj)0;
 
 	return variable;
 }
@@ -54,15 +53,12 @@ func createVariableFromString(str name, int depth, int position, TypeObj variabl
 	var variable = new Variable();
 
 	variable.name = name;
-	variable.definition = (VariableDefinition)0;
 
 	variable.depth = depth;
 	variable.position = position;
 
 	variable.variableType = variableType;
 
-	variable.isConstant = (bool)0;
-	variable.isEvaluated = (bool)0;
 	variable.value = 0;
 
 	return variable;

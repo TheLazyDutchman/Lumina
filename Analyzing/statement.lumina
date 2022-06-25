@@ -22,25 +22,8 @@ type Statement {
 	Block blockStatement;
 }
 
-func createStatement() -> Statement {
-	var statement = new Statement();
-
-	statement.region = (Region)0;
-	statement.expression = (Expression)0;
-	statement.ifStatement = (If)0;
-	statement.whileStatement = (While)0;
-	statement.importStatement = (Import)0;
-	statement.variable = (Variable)0;
-	statement.function = (FunctionDefinition)0;
-	statement.returnStatement = (Return)0;
-	statement.typeStatement = (TypeObj)0;
-	statement.blockStatement = (Block)0;
-
-	return statement;
-}
-
 func createExpressionStatement(Expression expression) -> Statement {
-	var statement = createStatement();
+	var statement = new Statement();
 
 	statement.region = expression.region;
 	statement.expression = expression;
@@ -49,7 +32,7 @@ func createExpressionStatement(Expression expression) -> Statement {
 }
 
 func createIfStatement(If ifStatement) -> Statement {
-	var statement = createStatement();
+	var statement = new Statement();
 
 	statement.region = ifStatement.region;
 	statement.ifStatement = ifStatement;
@@ -58,7 +41,7 @@ func createIfStatement(If ifStatement) -> Statement {
 }
 
 func createWhileStatement(While whileStatement) -> Statement {
-	var statement = createStatement();
+	var statement = new Statement();
 
 	statement.region = whileStatement.region;
 	statement.whileStatement = whileStatement;
@@ -67,7 +50,7 @@ func createWhileStatement(While whileStatement) -> Statement {
 }
 
 func createImportStatement(Import importStatement) -> Statement {
-	var statement = createStatement();
+	var statement = new Statement();
 
 	statement.region = importStatement.region;
 	statement.importStatement = importStatement;
@@ -76,7 +59,7 @@ func createImportStatement(Import importStatement) -> Statement {
 }
 
 func createVariableStatement(Variable variable) -> Statement {
-	var statement = createStatement();
+	var statement = new Statement();
 
 	statement.region = variable.definition.region;
 	statement.variable = variable;
@@ -85,7 +68,7 @@ func createVariableStatement(Variable variable) -> Statement {
 }
 
 func createFunctionStatement(FunctionDefinition function) -> Statement {
-	var statement = createStatement();
+	var statement = new Statement();
 
 	statement.region = function.region;
 	statement.function = function;
@@ -94,7 +77,7 @@ func createFunctionStatement(FunctionDefinition function) -> Statement {
 }
 
 func createReturnStatement(Return returnStatement) -> Statement {
-	var statement = createStatement();
+	var statement = new Statement();
 
 	statement.region = returnStatement.region;
 	statement.returnStatement = returnStatement;
@@ -103,7 +86,7 @@ func createReturnStatement(Return returnStatement) -> Statement {
 }
 
 func createTypeStatement(TypeObj typeStatement) -> Statement {
-	var statement = createStatement();
+	var statement = new Statement();
 
 	statement.region = typeStatement.definition.region;
 	statement.typeStatement = typeStatement;
@@ -112,7 +95,7 @@ func createTypeStatement(TypeObj typeStatement) -> Statement {
 }
 
 func createBlockStatement(Block block, Region region) -> Statement {
-	var statement = createStatement();
+	var statement = new Statement();
 
 	statement.region = region;
 	statement.blockStatement = block;
