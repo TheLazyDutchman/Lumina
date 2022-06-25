@@ -1,4 +1,3 @@
-import "../std/memory.lumina"
 import "../std/string.lumina"
 import "../std/io.lumina"
 import "../std/collections.lumina"
@@ -61,7 +60,7 @@ type Return {
 }
 
 func createParameter(Operation parameterType, Name name, Operator comma) -> Parameter {
-	var parameter = (Parameter)malloc(sizeof(Parameter));
+	var parameter = new Parameter();
 
 	if (comma != (Operator)0) {
 		parameter.region = createRegion(parameterType.region.start, comma.position);
@@ -78,7 +77,7 @@ func createParameter(Operation parameterType, Name name, Operator comma) -> Para
 }
 
 func createParameterFromString(TypeObj typeObj, str name) -> Parameter {
-	var parameter = (Parameter)malloc(sizeof(Parameter));
+	var parameter = new Parameter();
 
 	parameter.region = (Region)0;
 	parameter.parameterType = (Operation)0;
@@ -94,7 +93,7 @@ func createParameterFromString(TypeObj typeObj, str name) -> Parameter {
 }
 
 func copyParameter(Parameter original) -> Parameter {
-	var parameter = (Parameter)malloc(sizeof(Parameter));
+	var parameter = new Parameter();
 
 	parameter.region = original.region;
 	parameter.parameterType = original.parameterType;
@@ -106,11 +105,11 @@ func copyParameter(Parameter original) -> Parameter {
 }
 
 func copyParameterArray(Array<Parameter> original) -> Array<Parameter> {
-	var list = (Array<Parameter>)malloc(sizeof(Array<Parameter>));
+	var list = new Array<Parameter>();
 
 	list.size = original.size;
 	list.maxSize = original.maxSize;
-	list.list = (Parameter[])malloc(8 * list.maxSize);
+	list.list = new Parameter[](list.maxSize);
 
 	var i = 0;
 	while (i < original.size) {
@@ -122,7 +121,7 @@ func copyParameterArray(Array<Parameter> original) -> Array<Parameter> {
 }
 
 func createReturnType(Operator rarrow, Operation typeObj) -> ReturnType {
-	var returnType = (ReturnType)malloc(sizeof(ReturnType));
+	var returnType = new ReturnType();
 
 	returnType.region = createRegion(rarrow.position, typeObj.region.end);
 	
@@ -133,7 +132,7 @@ func createReturnType(Operator rarrow, Operation typeObj) -> ReturnType {
 }
 
 func createReturnTypeFromString(TypeObj typeObj) -> ReturnType {
-	var returnType = (ReturnType)malloc(sizeof(ReturnType));
+	var returnType = new ReturnType();
 
 	returnType.region = (Region)0;
 
@@ -145,7 +144,7 @@ func createReturnTypeFromString(TypeObj typeObj) -> ReturnType {
 }
 
 func copyReturnType(ReturnType original) -> ReturnType {
-	var returnType = (ReturnType)malloc(sizeof(ReturnType));
+	var returnType = new ReturnType();
 
 	returnType.region = original.region;
 	returnType.rarrow = original.rarrow;
@@ -156,7 +155,7 @@ func copyReturnType(ReturnType original) -> ReturnType {
 }
 
 func createFunctionDefinition(Name keyword, Name name, Operator lparen, GenericsDefinition genericsDefinition, Array<Parameter> parameters, Operator rparen, ReturnType returnType) -> FunctionDefinition {
-	var function = (FunctionDefinition)malloc(sizeof(FunctionDefinition));
+	var function = new FunctionDefinition();
 
 	function.region = (Region)0;
 
@@ -183,7 +182,7 @@ func createFunctionDefinition(Name keyword, Name name, Operator lparen, Generics
 }
 
 func createFunctionFromString(str value, Array<Parameter> parameters, ReturnType returnType) -> FunctionDefinition {
-	var function = (FunctionDefinition)malloc(sizeof(FunctionDefinition));
+	var function = new FunctionDefinition();
 
 	function.region = (Region)0;
 	function.keyword = (Name)0;
@@ -200,7 +199,7 @@ func createFunctionFromString(str value, Array<Parameter> parameters, ReturnType
 }
 
 func createNewFunctionVariant(Array<TypeObj> arrayType, FunctionDefinition original, Array<TypeObj> generics) -> FunctionDefinition {
-	var function = (FunctionDefinition)malloc(sizeof(FunctionDefinition));
+	var function = new FunctionDefinition();
 
 	function.region = original.region;
 	function.keyword = original.keyword;
@@ -284,7 +283,7 @@ func findFunction(Array<FunctionDefinition> list, str name) -> FunctionDefinitio
 }
 
 func createReturn(Name keyword, Operation expression, Operator semicolon) -> Return {
-	var returnObj = (Return)malloc(sizeof(Return));
+	var returnObj = new Return();
 
 	returnObj.region = createRegion(keyword.region.start, semicolon.position);
 

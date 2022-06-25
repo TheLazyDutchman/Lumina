@@ -1,4 +1,3 @@
-import "../std/memory.lumina"
 import "../std/io.lumina"
 
 import "identifier.lumina"
@@ -18,7 +17,7 @@ type Value {
 }
 
 func createValue() -> Value {
-	var value = (Value)malloc(sizeof(Value));
+	var value = new Value();
 
 	value.region = (Region)0;
 	value.identifier = (Identifier)0;

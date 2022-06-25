@@ -1,5 +1,3 @@
-import "../std/memory.lumina"
-
 import "position.lumina"
 import "name.lumina"
 import "immediate.lumina"
@@ -13,7 +11,7 @@ type Import {
 }
 
 func createImport(Name keyword, String fileName) -> Import {
-	var importStatement = (Import)malloc(sizeof(Import));
+	var importStatement = new Import();
 
 	importStatement.region = createRegion(keyword.region.start, fileName.region.end);
 	importStatement.keyword = keyword;

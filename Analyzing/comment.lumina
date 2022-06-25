@@ -1,5 +1,3 @@
-import "../std/memory.lumina"
-
 import "position.lumina"
 import "whitespace.lumina"
 
@@ -10,7 +8,7 @@ type Comment {
 }
 
 func createComment(Position start, Position end, WhiteSpace space) -> Comment {
-	var comment = (Comment)malloc(sizeof(Comment));
+	var comment = new Comment();
 
 	comment.space = space;
 	comment.region = createRegion(start, end);

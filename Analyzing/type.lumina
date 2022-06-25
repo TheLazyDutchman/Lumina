@@ -1,5 +1,4 @@
 import "../std/string.lumina"
-import "../std/memory.lumina"
 import "../std/io.lumina"
 import "../std/collections.lumina"
 
@@ -90,7 +89,7 @@ func createPropertyDefinition(Operation propertyType, Name name, Operator semico
 		print("expected ';' in property\n");
 	}
 
-	var property = (PropertyDefinition)malloc(sizeof(PropertyDefinition));
+	var property = new PropertyDefinition();
 
 	property.propertyType = propertyType;
 	property.name = name;
@@ -113,7 +112,7 @@ func findProperty(Array<Property> list, str name) -> Property {
 }
 
 func createGenericFromString(str name) -> Generic {
-	var generic = (Generic)malloc(sizeof(Generic));
+	var generic = new Generic();
 
 	generic.name = name;
 	generic.typeObj = createTypeFromString(name, 8);
@@ -129,7 +128,7 @@ func createGenericFromType(TypeObj typeObj) -> Generic {
 		return (Generic)0;
 	}
 
-	var generic = (Generic)malloc(sizeof(Generic));
+	var generic = new Generic();
 
 	generic.name = typeObj.name;
 	generic.typeObj = typeObj;
@@ -158,7 +157,7 @@ func findGeneric(Array<Generic> list, str name) -> Generic {
 }
 
 func createGenericDefinition(Operator comma, Name name) -> GenericDefinition {
-	var generic = (GenericDefinition)malloc(sizeof(GenericDefinition));
+	var generic = new GenericDefinition();
 
 	generic.comma = comma;
 	generic.name = name;
@@ -173,7 +172,7 @@ func createGenericDefinition(Operator comma, Name name) -> GenericDefinition {
 }
 
 func createGenericsDefinition(Operator lesser, Array<GenericDefinition> generics, Operator greater) -> GenericsDefinition {
-	var definition = (GenericsDefinition)malloc(sizeof(GenericsDefinition));
+	var definition = new GenericsDefinition();
 
 	if (lesser != (Operator)0 && greater != (Operator)0) {
 		definition.region = createRegion(lesser.position, greater.position);
@@ -187,7 +186,7 @@ func createGenericsDefinition(Operator lesser, Array<GenericDefinition> generics
 }
 
 func createTypeDefinition(Name keyword, Name name, Operator lbrace, GenericsDefinition generics, Array<PropertyDefinition> properties, Operator rbrace) -> TypeDefinition {
-	var typeDef = (TypeDefinition)malloc(sizeof(TypeDefinition));
+	var typeDef = new TypeDefinition();
 
 	if (isIdentifier(name) != (bool)1) {
 		print("expected type name to be an identifier\n");
@@ -217,7 +216,7 @@ func createTypeDefinition(Name keyword, Name name, Operator lbrace, GenericsDefi
 }
 
 func createPropertyFromDefinition(PropertyDefinition definition) -> Property {
-	var property = (Property)malloc(sizeof(Property));
+	var property = new Property();
 
 	property.name = definition.name.name;
 	property.definition = definition;
@@ -231,7 +230,7 @@ func createPropertyFromDefinition(PropertyDefinition definition) -> Property {
 }
 
 func createPropertyFromString(str name, TypeObj propertyType) -> Property {
-	var property = (Property)malloc(sizeof(Property));
+	var property = new Property();
 
 	property.name = name;
 	property.definition = (PropertyDefinition)0;
@@ -244,7 +243,7 @@ func createPropertyFromString(str name, TypeObj propertyType) -> Property {
 }
 
 func copyProperty(Property original) -> Property {
-	var property = (Property)malloc(sizeof(Property));
+	var property = new Property();
 
 	property.name = original.name;
 	property.definition = original.definition;
@@ -257,11 +256,11 @@ func copyProperty(Property original) -> Property {
 }
 
 func copyPropertyArray(Array<Property> original) -> Array<Property> {
-	var list = (Array<Property>)malloc(sizeof(Array<Property>));
+	var list = new Array<Property>();
 
 	list.size = original.size;
 	list.maxSize = original.maxSize;
-	list.list = (Property[])malloc(8 * list.maxSize);
+	list.list = new Property[](list.maxSize);
 
 	var i = 0;
 	while (i < original.size) {
@@ -273,7 +272,7 @@ func copyPropertyArray(Array<Property> original) -> Array<Property> {
 }
 
 func createTypeFromDefinition(TypeDefinition definition) -> TypeObj {
-	var typeObj = (TypeObj)malloc(sizeof(TypeObj));
+	var typeObj = new TypeObj();
 
 	typeObj.name = definition.name.name;
 	typeObj.definition = definition;
@@ -307,7 +306,7 @@ func createTypeFromDefinition(TypeDefinition definition) -> TypeObj {
 }
 
 func createTypeFromString(str name, int size) -> TypeObj {
-	var typeObj = (TypeObj)malloc(sizeof(TypeObj));
+	var typeObj = new TypeObj();
 
 	typeObj.name = name;
 	typeObj.definition = (TypeDefinition)0;
@@ -329,7 +328,7 @@ func createTypeFromString(str name, int size) -> TypeObj {
 }
 
 func createNewTypeVariant(Array<TypeObj> typeArray, TypeObj typeObj, Array<TypeObj> newGenerics) -> TypeObj {
-	var newType = (TypeObj)malloc(sizeof(TypeObj));
+	var newType = new TypeObj();
 
 	newType.name = typeObj.name;
 	newType.definition = typeObj.definition;

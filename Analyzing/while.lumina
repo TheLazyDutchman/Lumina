@@ -1,5 +1,3 @@
-import "../std/memory.lumina"
-
 import "position.lumina"
 import "operator.lumina"
 import "operation.lumina"
@@ -21,7 +19,7 @@ type While {
 }
 
 func createWhile (Name keyword, Operator lparen, Operation condition, Operator rparen, Block block, Position end, int id) -> While {
-	var whileStatement = (While)malloc(sizeof(While));
+	var whileStatement = new While();
 
 	whileStatement.region = createRegion(keyword.region.start, end);
 

@@ -1,5 +1,4 @@
 import "../std/io.lumina"
-import "../std/memory.lumina"
 
 
 type Position {
@@ -17,7 +16,7 @@ type Region {
 }
 
 func createPosition(str file, str buffer, int index, int line, int column) -> Position {
-	var pos = (Position)malloc(sizeof(Position));
+	var pos = new Position();
 
 	pos.file = file;
 	pos.buffer = buffer;
@@ -38,7 +37,7 @@ func printPosition(Position pos) {
 }
 
 func createRegion(Position start, Position end) -> Region {
-	var region = (Region)malloc(sizeof(Region));
+	var region = new Region();
 
 	region.file = start.file;
 	region.start = start;

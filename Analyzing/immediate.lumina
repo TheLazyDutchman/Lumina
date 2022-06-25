@@ -1,4 +1,3 @@
-import "../std/memory.lumina"
 import "../std/string.lumina"
 import "../std/collections.lumina"
 
@@ -27,7 +26,7 @@ type Number {
 }
 
 func createString(Position start, Position end, WhiteSpace space) -> String {
-	var string = (String)malloc(sizeof(String));
+	var string = new String();
 
 	string.region = createRegion(start, end);
 	string.space = space;
@@ -43,7 +42,7 @@ func createString(Position start, Position end, WhiteSpace space) -> String {
 }
 
 func createCharacter(Position start, Position end, WhiteSpace space) -> Character {
-	var character = (Character)malloc(sizeof(Character));
+	var character = new Character();
 
 	character.region = createRegion(start, end);
 	character.space = space;
@@ -54,7 +53,7 @@ func createCharacter(Position start, Position end, WhiteSpace space) -> Characte
 }
 
 func createNumber(Position start, Position end, WhiteSpace space) -> Number {
-	var number = (Number)malloc(sizeof(Number));
+	var number = new Number();
 
 	number.region = createRegion(start, end);
 	number.space = space;

@@ -1,5 +1,3 @@
-import "../std/memory.lumina"
-
 import "position.lumina"
 import "expression.lumina"
 import "if.lumina"
@@ -25,7 +23,7 @@ type Statement {
 }
 
 func createStatement() -> Statement {
-	var statement = (Statement)malloc(sizeof(Statement));
+	var statement = new Statement();
 
 	statement.region = (Region)0;
 	statement.expression = (Expression)0;

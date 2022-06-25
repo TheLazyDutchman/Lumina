@@ -1,7 +1,6 @@
 import "../std/path.lumina"
 import "../std/io.lumina"
 import "../std/string.lumina"
-import "../std/memory.lumina"
 import "../std/syscalls.lumina"
 import "../std/collections.lumina"
 
@@ -75,7 +74,7 @@ type Parser {
 }
 
 func createSyntaxTree(str fileName, int numAnds, int numOrs) -> SyntaxTree {
-	var tree = (SyntaxTree)malloc(sizeof(SyntaxTree));
+	var tree = new SyntaxTree();
 
 	tree.fileName = fileName;
 	tree.blocks = createArray<Block>();
@@ -118,7 +117,7 @@ func getSyntaxTreeIndex(Array<SyntaxTree> list, SyntaxTree tree) -> int {
 }
 
 func createParser() -> Parser {
-	var parser = (Parser)malloc(sizeof(Parser));
+	var parser = new Parser();
 
 	parser.files = createArray<SyntaxTree>();
 
@@ -847,7 +846,7 @@ func parseImports(Parser parser, SyntaxTree tree) {
 		return;
 	}
 
-	tree.importTrees = (SyntaxTree[])malloc(8 * tree.imports.size);
+	tree.importTrees = new SyntaxTree[](tree.imports.size);
 
 	var i = 0;
 	while (i < tree.imports.size) {

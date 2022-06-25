@@ -1,4 +1,3 @@
-import "../std/memory.lumina"
 import "../std/string.lumina"
 import "../std/collections.lumina"
 
@@ -37,7 +36,7 @@ type VariableDefinition {
 }
 
 func createVariableDefinition(Name keyword, Name name, Operator equalSign, Operation value, Operator semicolon) -> VariableDefinition {
-	var variable = (VariableDefinition)malloc(sizeof(VariableDefinition));
+	var variable = new VariableDefinition();
 
 	variable.region = createRegion(keyword.region.start, semicolon.position);
 
@@ -52,7 +51,7 @@ func createVariableDefinition(Name keyword, Name name, Operator equalSign, Opera
 }
 
 func createVariableFromString(str name, int depth, int position, TypeObj variableType) -> Variable {
-	var variable = (Variable)malloc(sizeof(Variable));
+	var variable = new Variable();
 
 	variable.name = name;
 	variable.definition = (VariableDefinition)0;

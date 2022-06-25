@@ -1,6 +1,5 @@
 import "../std/io.lumina"
 import "../std/syscalls.lumina"
-import "../std/memory.lumina"
 import "../std/string.lumina"
 import "../std/path.lumina"
 
@@ -39,7 +38,7 @@ const CALLSTACKSIZE = 2048;
 const DATASTACKSIZE = 40960;
 
 func createRegister(str name) -> Register {
-	var reg = (Register)malloc(sizeof(Register));
+	var reg = new Register();
 
 	reg.name = name;
 	reg.used = (bool)0;
@@ -117,12 +116,7 @@ func printEscapedCharacter(int output, char chr) {
 		return;
 	}
 
-	var charString = (str)malloc(5);
-
-	if ((int)charString + 5 > (int)curEnd) {
-		print("malloc returned an invalid pointer at 'printEscapedCharacter'\n");
-		return;
-	}
+	var charString = new str(5);
 
 	charString[0] = '0';
 	charString[1] = 'x';
@@ -1641,7 +1635,7 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 
 	writeFooter(output, parser.strings, types);
 
-	var nasmDebugArgs = (str[])malloc(8 * 8); // ptr size is 8
+	var nasmDebugArgs = new str[](8);
 	nasmDebugArgs[0] = "nasm";
 	nasmDebugArgs[1] = "-f";
 	nasmDebugArgs[2] = "elf64";
@@ -1651,7 +1645,7 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 	nasmDebugArgs[6] = outputName;
 	nasmDebugArgs[7] = (str)0;
 
-	var nasmArgs = (str[])malloc(8 * 5); // ptr size is 8
+	var nasmArgs = new str[](5);
 	nasmArgs[0] = "nasm";
 	nasmArgs[1] = "-f";
 	nasmArgs[2] = "elf64";
@@ -1665,7 +1659,7 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 		nasm_pid = createChild("nasm", nasmArgs);
 	}
 
-	var nasmStatus = (int[])malloc(8); // pointer to int
+	var nasmStatus = new int[](1); // pointer to int
 	if (wait4(nasm_pid, nasmStatus, 0, (ptr)0) < 0) {
 		print("[ERROR] wait4 failed\n");
 		exit(1);
@@ -1687,14 +1681,14 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 	filePath.extension = (str)0;
 	var executableName = getFullPathString(filePath);
 
-	var linkerArgs = (str[])malloc(8 * 5);
+	var linkerArgs = new str[](5);
 	linkerArgs[0] = "ld";
 	linkerArgs[1] = "-o";
 	linkerArgs[2] = executableName;
 	linkerArgs[3] = objectName;
 	linkerArgs[4] = (str)0;
 
-	var linkerStatus = (int[])malloc(8); // pointer to int
+	var linkerStatus = new int[](1); // pointer to int
 	var linker_pid = createChild("ld", linkerArgs);
 
 	if (wait4(linker_pid, linkerStatus, 0, (ptr)0) < 0) {

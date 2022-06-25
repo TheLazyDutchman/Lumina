@@ -1,5 +1,3 @@
-import "memory.lumina"
-
 func strlen(str string) -> int{
 	var i = 0;
 	while (string[i] > '\0') {
@@ -65,8 +63,7 @@ func strncpy(str src, str dst, int count) {
 }
 
 func strndup(str s, int count) -> str {
-	var value = (str)malloc(count + 20); // adding 20 instead of 1 because otherwise we get a segfault
-	//TODO: find where this actually goes wrong, propable malloc?
+	var value = new str(count + 1);
 
 	var i = 0;
 	while (i < count) {
@@ -101,7 +98,7 @@ func isspace(char c) -> bool {
 }
 
 func intToString(int number) -> str {
-	var buffer = (str)malloc(22); //enough size for any number
+	var buffer = new str(22); //enough size for any number
 	var isNegative = number < 0;
 	if (isNegative) {
 		number = -number;

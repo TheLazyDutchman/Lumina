@@ -1,6 +1,3 @@
-import "memory.lumina"
-
-
 type Array<T> {
 	int size;
 	int maxSize;
@@ -8,7 +5,7 @@ type Array<T> {
 }
 
 func createArray<T>() -> Array<T> {
-	var array = (Array<T>)malloc(sizeof(Array<T>));
+	var array = new Array<T>();
 
 	array.size = 0;
 	array.maxSize = 0;
@@ -24,7 +21,14 @@ func addItem<T>(Array<T> array, T item) {
 			newSize = 8;
 		}
 
-		array.list = (T[])realloc((ptr)array.list, array.maxSize * 8, newSize * 8);
+		var newList = new T[](newSize);
+		var i = 0;
+		while (i < array.maxSize) {
+			newList[i] = array.list[i];
+			i = i + 1;
+		}
+
+		array.list = newList;
 		array.maxSize = newSize;
 	}
 

@@ -1,4 +1,3 @@
-import "../std/memory.lumina"
 import "../std/collections.lumina"
 
 import "position.lumina"
@@ -44,7 +43,7 @@ type Operation {
 }
 
 func createSizeOf(Name keyword, Operator lparen, Operation typeObj, Operator rparen) -> SizeOf {
-	var sizeOf = (SizeOf)malloc(sizeof(SizeOf));
+	var sizeOf = new SizeOf();
 
 	sizeOf.region = createRegion(keyword.region.start, rparen.position);
 
@@ -57,7 +56,7 @@ func createSizeOf(Name keyword, Operator lparen, Operation typeObj, Operator rpa
 }
 
 func createNewOperation(Name keyword, Operation typeObj, Operator left, Operation num, Operator right) -> NewOperation {
-	var newOperation = (NewOperation)malloc(sizeof(NewOperation));
+	var newOperation = new NewOperation();
 
 	newOperation.region = createRegion(keyword.region.start, right.position);
 
@@ -72,7 +71,7 @@ func createNewOperation(Name keyword, Operation typeObj, Operator left, Operatio
 }
 
 func createOperation(Operation left, Operator operator, Operation right, Operator end) -> Operation {
-	var operation = (Operation)malloc(sizeof(Operation));
+	var operation = new Operation();
 
 	if (end == (Operator)0) {
 		operation.region = createRegion(left.region.start, right.region.end);
@@ -93,7 +92,7 @@ func createOperation(Operation left, Operator operator, Operation right, Operato
 }
 
 func createUnaryOperation(Operator operator, Operation right, Operator end) -> Operation {
-	var operation = (Operation)malloc(sizeof(Operation));
+	var operation = new Operation();
 
 	if (end == (Operator)0) {
 		operation.region = createRegion(operator.position, right.region.end);
@@ -114,7 +113,7 @@ func createUnaryOperation(Operator operator, Operation right, Operator end) -> O
 }
 
 func createOperationFromValue(Value value) -> Operation {
-	var operation = (Operation)malloc(sizeof(Operation));
+	var operation = new Operation();
 
 	operation.region = value.region;
 	operation.left = (Operation)0;
@@ -130,7 +129,7 @@ func createOperationFromValue(Value value) -> Operation {
 }
 
 func createTypeCast(Operator lparen, Operation castType, Operator rparen, Operation castOperation) -> Operation {
-	var operation = (Operation)malloc(sizeof(Operation));
+	var operation = new Operation();
 
 	operation.region = createRegion(lparen.position, castOperation.region.end);
 
@@ -146,7 +145,7 @@ func createTypeCast(Operator lparen, Operation castType, Operator rparen, Operat
 }
 
 func createOperationFromSizeOf(SizeOf sizeOf) -> Operation {
-	var operation = (Operation)malloc(sizeof(Operation));
+	var operation = new Operation();
 
 	operation.region = sizeOf.region;
 	operation.left = (Operation)0;
@@ -162,7 +161,7 @@ func createOperationFromSizeOf(SizeOf sizeOf) -> Operation {
 }
 
 func createOperationFromNew(NewOperation newOperation) -> Operation {
-	var operation = (Operation)malloc(sizeof(Operation));
+	var operation = new Operation();
 
 	operation.region = newOperation.region;
 	operation.left = (Operation)0;

@@ -1,4 +1,3 @@
-import "memory.lumina"
 import "syscalls.lumina"
 import "string.lumina"
 import "environment.lumina"
@@ -26,8 +25,6 @@ func fprinti(int file, int number) {
 	var buffer = intToString(number);
 
 	fprint(file, buffer);
-
-	free((ptr)buffer);
 }
 
 func printi(int number) {
@@ -37,13 +34,13 @@ func printi(int number) {
 func execvp(str fileName, str[] args) -> int {
 	var path = getEnvironmentVariable("PATH");
 	var numPaths = countchr(path, ':') + 3;
-	var paths = (str[])malloc(numPaths * 8); // ptr size is 8
+	var paths = new str[](numPaths); // ptr size is 8
 
 	var index = strindex(path, ':');
 	var i = 1;
 
 	var cwdLength = 64;
-	var cwd = (str)malloc(cwdLength);
+	var cwd = new str(cwdLength);
 	var code = getcwd(cwd, cwdLength);
 	while (code < 0) {
 		if (code != -34) { 
@@ -53,7 +50,7 @@ func execvp(str fileName, str[] args) -> int {
 		}
 
 		cwdLength = cwdLength * 2;
-		cwd = (str)realloc((ptr)cwd, strlen(cwd), cwdLength);
+		cwd = new str(cwdLength);
 		code = getcwd(cwd, cwdLength);
 	}
 
@@ -97,7 +94,8 @@ func execvp(str fileName, str[] args) -> int {
 
 			length = length + strlen(fileName);
 
-			var buffer = (str)malloc(length + 1);
+			var buffer = new str(length + 1);
+
 			var fullPath = buffer;
 
 			strncpy(dir, buffer, strlen(dir));
@@ -118,8 +116,6 @@ func execvp(str fileName, str[] args) -> int {
 		i = i + 1;
 		dir = paths[i];
 	}
-
-	free((ptr)cwd);
 
 	return -2;
 }

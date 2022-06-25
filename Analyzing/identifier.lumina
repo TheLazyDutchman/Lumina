@@ -1,4 +1,3 @@
-import "../std/memory.lumina"
 import "../std/io.lumina"
 
 import "name.lumina"
@@ -21,7 +20,7 @@ func createIdentifierFromName(Name name) -> Identifier {
 		return (Identifier)0;
 	}
 
-	var identifier = (Identifier)malloc(sizeof(Identifier));
+	var identifier = new Identifier();
 
 	identifier.name = name.name;
 	identifier.definition = name;
