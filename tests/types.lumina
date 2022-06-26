@@ -3,22 +3,18 @@ type StringView {
 	int length;
 }
 
-var SYS_brk = 12;
 
-var start = syscall(SYS_brk, 0, 0, 0, 0, 0, 0);
-syscall(SYS_brk, (int)start + 16, 0, 0, 0, 0, 0); // allocate 16 bytes
-
-var string = (StringView)start;
+var string = new StringView();
 string.value = "Hello, World!\n";
 string.length = 14;
 
 var SYS_write = 1;
 var STDOUT = 1;
-syscall(SYS_write, STDOUT, string.value, string.length, 0, 0, 0);
+syscall(SYS_write, STDOUT, toPtr(string.value), string.length, 0, 0, 0);
 
 string.value[5] = '.';
 string.length = 2 + 6 * 2;
-syscall(SYS_write, STDOUT, string.value, string.length, 0, 0, 0);
+syscall(SYS_write, STDOUT, toPtr(string.value), string.length, 0, 0, 0);
 
 func strlen(str string) -> int {
 	var i = 0;
@@ -29,4 +25,4 @@ func strlen(str string) -> int {
 }
 
 string.length = strlen(string.value);
-syscall(SYS_write, STDOUT, string.value, string.length, 0, 0, 0);
+syscall(SYS_write, STDOUT, toPtr(string.value), string.length, 0, 0, 0);
