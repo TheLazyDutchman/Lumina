@@ -60,8 +60,10 @@ type Parser {
 	FunctionDefinition syscall;
 
 	Array<Variable> variables;
+	Variable heapstart;
 	Variable argc;
 	Variable argv;
+	Variable envp;
 
 	int numIfs;
 	int numWhiles;
@@ -183,12 +185,18 @@ func createParser() -> Parser {
 	addItem<FunctionDefinition>(parser.functions, parser.syscall);
 
 	parser.variables = createArray<Variable>();
-	parser.argv = createVariableFromString("argv", 0, 1, createListType(parser.types, (str)0, parser.str));
+	parser.heapstart = createVariableFromString("heapstart", 0, 1, parser.int);
 	parser.argc = createVariableFromString("argc", 0, 2, parser.int);
+	parser.argv = createVariableFromString("argv", 0, 3, createListType(parser.types, (str)0, parser.str));
+	parser.envp = createVariableFromString("envp", 0, 4, createListType(parser.types, (str)0, parser.str));
+	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.heapstart));
+	addItem<Variable>(parser.variables, parser.heapstart);
 	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.argv));
 	addItem<Variable>(parser.variables, parser.argv);
 	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.argc));
 	addItem<Variable>(parser.variables, parser.argc);
+	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.envp));
+	addItem<Variable>(parser.variables, parser.envp);
 
 	parser.numIfs = 0;
 	parser.numWhiles = 0;
@@ -900,10 +908,6 @@ func findFunctionInParser(Parser parser, SyntaxTree tree, Block block, str name)
 	}
 
 	if (function == (FunctionDefinition)0) {
-		function = findFunction(tree.functions, name);
-	}
-
-	if (function == (FunctionDefinition)0) {
 		function = findFunction(parser.functions, name);
 	}
 
@@ -911,6 +915,10 @@ func findFunctionInParser(Parser parser, SyntaxTree tree, Block block, str name)
 	while (i < tree.imports.size && function == (FunctionDefinition)0) {
 		function = findFunction(tree.importTrees[i].functions, name);
 		i = i + 1;
+	}
+
+	if (function == (FunctionDefinition)0) {
+		function = findFunction(tree.functions, name);
 	}
 
 	return function;
@@ -949,10 +957,6 @@ func findTypeInParser(Parser parser, SyntaxTree tree, Block block, str name) -> 
 	}
 
 	if (typeDef == (TypeObj)0) {
-		typeDef = findType(tree.types, name);
-	}
-
-	if (typeDef == (TypeObj)0) {
 		typeDef = findType(parser.types, name);
 	}
 
@@ -960,6 +964,10 @@ func findTypeInParser(Parser parser, SyntaxTree tree, Block block, str name) -> 
 	while (i < tree.imports.size && typeDef == (TypeObj)0) {
 		typeDef = findType(tree.importTrees[i].types, name);
 		i = i + 1;
+	}
+
+	if (typeDef == (TypeObj)0) {
+		typeDef = findType(tree.types, name);
 	}
 
 	return typeDef;
@@ -1126,10 +1134,6 @@ func findVariableInParser(Parser parser, SyntaxTree tree, Block block, str name)
 	}
 
 	if (variable == (Variable)0) {
-		variable = findVariable(tree.variables, name);
-	}
-
-	if (variable == (Variable)0) {
 		variable = findVariable(parser.variables, name);
 	}
 
@@ -1137,6 +1141,10 @@ func findVariableInParser(Parser parser, SyntaxTree tree, Block block, str name)
 	while (i < tree.imports.size && variable == (Variable)0) {
 		variable = findVariable(tree.importTrees[i].variables, name);
 		i = i + 1;
+	}
+
+	if (variable == (Variable)0) {
+		variable = findVariable(tree.variables, name);
 	}
 
 	return variable;
@@ -1346,7 +1354,7 @@ func bindNamesInTypeDefinition(Parser parser, SyntaxTree tree, TypeObj typeObj, 
 
 func bindNamesInVariable(Parser parser, SyntaxTree tree, Variable variable, Block block) {
 	var foundVariable = findVariableInParser(parser, tree, block, variable.name);
-	if (foundVariable != (Variable)0 && foundVariable.depth != variable.depth && foundVariable != variable) {
+	if (foundVariable != (Variable)0 && foundVariable.depth == variable.depth && foundVariable != variable) {
 		printError(parser, variable.definition.name.region.start, " a variable with this name already exists\n");
 	}
 
@@ -1448,12 +1456,6 @@ func checkTypesInTypeIdentifier(Parser parser, SyntaxTree tree, Block block, Ide
 	printError(parser, identifier.definition.region.start, " can not find variable '");
 	print(identifier.name);
 	print("'\n");
-	return (TypeObj)0;
-
-	var typeObj = findTypeInParser(parser, tree, block, identifier.name);
-
-
-
 	return (TypeObj)0;
 }
 

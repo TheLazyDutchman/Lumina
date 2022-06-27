@@ -328,18 +328,6 @@ func writeHeader(int output) {
 
 func writeStart(int output) {
 	fprint(output, "_start:\n");
-	fprint(output, "	lea rax, [datastack + ");
-	fprinti(output, DATASTACKSIZE);
-	fprint(output, "]\n");
-	fprint(output, "	mov [basestack], rax\n");
-	fprint(output, "	xchg rsp, rax\n");
-	fprint(output, "	add rax, 8\n");
-	fprint(output, "	push rax\n");
-	fprint(output, "	sub rax, 8\n");
-	fprint(output, "	mov rbx, [rax]\n");
-	fprint(output, "	push rbx\n");
-	fprint(output, "	xchg rsp, rax\n");
-	fprint(output, "	mov [datarsp], rax\n\n");
 
 	fprint(output, "	mov rax, 12 ;; sysbrk\n");
 	fprint(output, "	mov rdi, 0\n");
@@ -347,6 +335,36 @@ func writeStart(int output) {
 	fprint(output, "	mov [heapstart], rax\n");
 	fprint(output, "	mov [heapheader], rax\n");
 	fprint(output, "	mov [heapend], rax\n");
+
+	fprint(output, "	lea rax, [datastack + ");
+	fprinti(output, DATASTACKSIZE);
+	fprint(output, "]\n");
+
+	fprint(output, "	mov [basestack], rax\n");
+	fprint(output, "	xchg rsp, rax\n");
+
+	fprint(output, "	push qword [heapstart]\n");
+
+	fprint(output, "	mov rbx, [rax]\n");
+	fprint(output, "	push rbx;; argc\n");
+
+	fprint(output, "	mov rbx, rax\n");
+	fprint(output, "	add rbx, 8\n");
+	fprint(output, "	push rbx;; argv\n");
+
+	fprint(output, ".argv_condition:\n");
+	fprint(output, "	mov rcx, [rbx]\n");
+	fprint(output, "	cmp rcx, 0\n");
+	fprint(output, "	je .argv_end\n");
+	fprint(output, "	add rbx, 8\n");
+	fprint(output, "	jmp .argv_condition\n");
+	fprint(output, ".argv_end:\n");
+
+	fprint(output, "	add rbx, 8\n");
+	fprint(output, "	push rbx;; envp\n");
+
+	fprint(output, "	xchg rsp, rax\n");
+	fprint(output, "	mov [datarsp], rax\n\n");
 }
 
 func writeFooter(int output, Array<str> strings, Array<TypeObj> types) {
