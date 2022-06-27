@@ -62,7 +62,6 @@ type Parser {
 	Array<Variable> variables;
 	Variable argc;
 	Variable argv;
-	Variable envp;
 
 	int numIfs;
 	int numWhiles;
@@ -184,15 +183,12 @@ func createParser() -> Parser {
 	addItem<FunctionDefinition>(parser.functions, parser.syscall);
 
 	parser.variables = createArray<Variable>();
-	parser.argc = createVariableFromString("argc", 0, 1, parser.int);
-	parser.argv = createVariableFromString("argv", 0, 2, createListType(parser.types, (str)0, parser.str));
-	parser.envp = createVariableFromString("envp", 0, 3, createListType(parser.types, (str)0, parser.str));
-	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.argc));
-	addItem<Variable>(parser.variables, parser.argc);
+	parser.argv = createVariableFromString("argv", 0, 1, createListType(parser.types, (str)0, parser.str));
+	parser.argc = createVariableFromString("argc", 0, 2, parser.int);
 	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.argv));
 	addItem<Variable>(parser.variables, parser.argv);
-	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.envp));
-	addItem<Variable>(parser.variables, parser.envp);
+	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.argc));
+	addItem<Variable>(parser.variables, parser.argc);
 
 	parser.numIfs = 0;
 	parser.numWhiles = 0;
@@ -1130,6 +1126,10 @@ func findVariableInParser(Parser parser, SyntaxTree tree, Block block, str name)
 	}
 
 	if (variable == (Variable)0) {
+		variable = findVariable(tree.variables, name);
+	}
+
+	if (variable == (Variable)0) {
 		variable = findVariable(parser.variables, name);
 	}
 
@@ -1137,10 +1137,6 @@ func findVariableInParser(Parser parser, SyntaxTree tree, Block block, str name)
 	while (i < tree.imports.size && variable == (Variable)0) {
 		variable = findVariable(tree.importTrees[i].variables, name);
 		i = i + 1;
-	}
-
-	if (variable == (Variable)0) {
-		variable = findVariable(tree.variables, name);
 	}
 
 	return variable;
@@ -1350,7 +1346,7 @@ func bindNamesInTypeDefinition(Parser parser, SyntaxTree tree, TypeObj typeObj, 
 
 func bindNamesInVariable(Parser parser, SyntaxTree tree, Variable variable, Block block) {
 	var foundVariable = findVariableInParser(parser, tree, block, variable.name);
-	if (foundVariable != (Variable)0 && foundVariable.depth == variable.depth && foundVariable != variable) {
+	if (foundVariable != (Variable)0 && foundVariable.depth != variable.depth && foundVariable != variable) {
 		printError(parser, variable.definition.name.region.start, " a variable with this name already exists\n");
 	}
 
@@ -1452,6 +1448,12 @@ func checkTypesInTypeIdentifier(Parser parser, SyntaxTree tree, Block block, Ide
 	printError(parser, identifier.definition.region.start, " can not find variable '");
 	print(identifier.name);
 	print("'\n");
+	return (TypeObj)0;
+
+	var typeObj = findTypeInParser(parser, tree, block, identifier.name);
+
+
+
 	return (TypeObj)0;
 }
 
