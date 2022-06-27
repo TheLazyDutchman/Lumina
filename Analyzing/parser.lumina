@@ -52,7 +52,6 @@ type Parser {
 	TypeObj str;
 	TypeObj bool;
 	TypeObj any;
-	TypeObj ptr;
 	TypeObj null;
 	TypeObj Type;
 
@@ -133,7 +132,6 @@ func createParser() -> Parser {
 	parser.str = createListType(parser.types, "str", parser.char);
 	parser.bool = createTypeFromString("bool", 1);
 	parser.any = createTypeFromString("any", 8);
-	parser.ptr = createTypeFromString("ptr", 8);
 	parser.null = createTypeFromString("null", 8);
 
 	parser.int.nameId = addUniqueString(parser.strings, parser.int.name);
@@ -150,9 +148,6 @@ func createParser() -> Parser {
 	parser.any.nameId = addUniqueString(parser.strings, parser.any.name);
 	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.any));
 	addItem<TypeObj>(parser.types, parser.any);
-	parser.ptr.nameId = addUniqueString(parser.strings, parser.ptr.name);
-	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.ptr));
-	addItem<TypeObj>(parser.types, parser.ptr);
 	parser.null.nameId = addUniqueString(parser.strings, parser.null.name);
 	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.null));
 	addItem<TypeObj>(parser.types, parser.null);
@@ -1665,6 +1660,10 @@ func checkTypesInFunctionCall(Parser parser, SyntaxTree tree, Block block, Opera
 			typesMatching = (bool)0;
 		}
 		i = i + 1;
+	}
+
+	if (expectedList.size != argumentList.size) {
+		typesMatching = (bool)0;
 	}
 
 	if (typesMatching != (bool)1) {

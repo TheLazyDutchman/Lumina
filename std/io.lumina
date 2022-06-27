@@ -3,7 +3,7 @@ import "string.lumina"
 import "environment.lumina"
 
 func fprintn(int fd, str string, int length) -> int {
-	return write(fd, (ptr)string, length);
+	return write(fd, string, length);
 }
 
 func fprint(int fd, str string) -> int {

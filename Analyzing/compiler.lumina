@@ -1689,7 +1689,7 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 	}
 
 	var nasmStatus = new int[](1); // pointer to int
-	if (wait4(nasm_pid, nasmStatus, 0, (ptr)0) < 0) {
+	if (wait4(nasm_pid, nasmStatus, 0) < 0) {
 		print("[ERROR] wait4 failed\n");
 		exit(1);
 	}
@@ -1720,7 +1720,7 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 	var linkerStatus = new int[](1); // pointer to int
 	var linker_pid = createChild("ld", linkerArgs);
 
-	if (wait4(linker_pid, linkerStatus, 0, (ptr)0) < 0) {
+	if (wait4(linker_pid, linkerStatus, 0) < 0) {
 		print("[ERROR] wait4 failed\n");
 		exit(1);
 	}
