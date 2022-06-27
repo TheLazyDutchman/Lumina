@@ -58,7 +58,6 @@ type Parser {
 
 	Array<FunctionDefinition> functions;
 	FunctionDefinition syscall;
-	FunctionDefinition toPtr;
 
 	Array<Variable> variables;
 	Variable argc;
@@ -182,14 +181,6 @@ func createParser() -> Parser {
 	parser.syscall = createFunctionFromString("syscall", syscallParameters, syscallReturnType);
 	addItem<Definition>(parser.definitions, createDefinitionFromFunction(parser.syscall));
 	addItem<FunctionDefinition>(parser.functions, parser.syscall);
-
-	var toPtrParameters = createArray<Parameter>();
-	addItem<Parameter>(toPtrParameters, createParameterFromString(parser.str, (str)0));
-
-	var toPtrReturnType = createReturnTypeFromString(parser.ptr);
-	parser.toPtr = createFunctionFromString("toPtr", toPtrParameters, toPtrReturnType);
-	addItem<Definition>(parser.definitions, createDefinitionFromFunction(parser.toPtr));
-	addItem<FunctionDefinition>(parser.functions, parser.toPtr);
 
 	parser.variables = createArray<Variable>();
 	parser.argv = createVariableFromString("argv", 0, 1, createListType(parser.types, (str)0, parser.str));

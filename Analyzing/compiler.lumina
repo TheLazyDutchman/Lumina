@@ -229,7 +229,6 @@ func writeExpandHeapBuiltin(int output) {
 	fprint(output, "	add [heapend], rax\n");
 	fprint(output, "	mov rax, 12 ;; sysbrk\n");
 	fprint(output, "	mov rdi, [heapend]\n");
-	fprint(output, "	add rdi, [heapstart]\n");
 	fprint(output, "	syscall\n");
 
 	fprint(output, "	ret\n\n");
@@ -259,12 +258,9 @@ func writeAllocateBuiltin(int output) {
 	fprint(output, "	add [heapheader], rbx\n");
 
 	fprint(output, "	mov rcx, rax\n");
-	fprint(output, "	add rcx, [heapstart]\n");
-	fprint(output, "	mov rbx, [heapheader]\n");
-	fprint(output, "	add rbx, [heapstart]\n");
 	fprint(output, ".init_condition:\n");
 
-	fprint(output, "	cmp rcx, rbx\n");
+	fprint(output, "	cmp rcx, [heapheader]\n");
 	fprint(output, "	jg .return\n");
 	fprint(output, "	mov qword [rcx], 0 ;; zero-initialize allocated memory\n");
 	fprint(output, "	add rcx, 8\n");
@@ -319,16 +315,6 @@ func writeSyscallBuiltin(int output) {
 	fprint(output, "	ret\n\n");
 }
 
-func writeToPtrBuiltin(int output) {
-	fprint(output, "	;; -- toPtr builtin --\n");
-	fprint(output, "addr_func_toPtr_1:\n");
-	fprint(output, "	xchg rsp, [datarsp]\n");
-	fprint(output, "	pop rax\n");
-	fprint(output, "	xchg rsp, [datarsp]\n");
-	fprint(output, "	add rax, [heapstart]\n");
-	fprint(output, "	ret\n\n");
-}
-
 func writeHeader(int output) {
 	fprint(output, "section .text\n");
 	fprint(output, "global _start\n");
@@ -338,7 +324,6 @@ func writeHeader(int output) {
 	writeNewBuiltin(output);
 	writeNewListBuiltin(output);
 	writeSyscallBuiltin(output);
-	writeToPtrBuiltin(output);
 }
 
 func writeStart(int output) {
@@ -360,8 +345,8 @@ func writeStart(int output) {
 	fprint(output, "	mov rdi, 0\n");
 	fprint(output, "	syscall\n");
 	fprint(output, "	mov [heapstart], rax\n");
-	fprint(output, "	mov qword [heapheader], 0\n");
-	fprint(output, "	mov qword [heapend], 0\n");
+	fprint(output, "	mov [heapheader], rax\n");
+	fprint(output, "	mov [heapend], rax\n");
 }
 
 func writeFooter(int output, Array<str> strings, Array<TypeObj> types) {
@@ -492,10 +477,6 @@ func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Id
 }
 
 func writeIndex(int output, int size, Register registerA, Register registerB, bool getValue) -> str {
-	fprint(output, "	add ");
-	fprint(output, registerA.name);
-	fprint(output, ", [heapstart]\n");
-
 	fprint(output, "	lea ");
 	fprint(output, registerA.name);
 	fprint(output, ", [");
@@ -547,10 +528,6 @@ func writeValue(Parser parser, SyntaxTree tree, Block block, int output, Value v
 		fprint(output, ", string_");
 		fprinti(output, id);
 		fprint(output, " ;; string\n");
-
-		fprint(output, "	sub ");
-		fprint(output, register);
-		fprint(output, ", [heapstart] ;; heap offset\n");
 	} else if (value.identifier != (Identifier)0) {
 		writeIdentifier(parser, tree, block, output, value.identifier, register, getValue);
 	}
@@ -947,17 +924,9 @@ func writeProperty(Parser parser, SyntaxTree tree, Block block, int output, Oper
 	var offset = getPropertyOffset(parser, tree, block, typeObj, propertyName.name);
 	
 	if (getValue) {
-		var heapRegister = getRegister(registers);
-
-		fprint(output, "	mov ");
-		fprint(output, heapRegister.name);
-		fprint(output, ", [heapstart]\n");
-
 		fprint(output, "	mov ");
 		fprint(output, register.name);
 		fprint(output, ", [");
-		fprint(output, heapRegister.name);
-		fprint(output, " + ");
 		fprint(output, register.name);
 
 		if (offset != 0) {
@@ -978,8 +947,6 @@ func writeProperty(Parser parser, SyntaxTree tree, Block block, int output, Oper
 			fprinti(output, mask);
 			fprint(output, " ;; mask\n");
 		}
-
-		heapRegister.used = (bool)0;
 	} else if (offset != 0) {
 		fprint(output, "	add ");
 		fprint(output, register.name);
@@ -1039,10 +1006,6 @@ func writeAssignment(Parser parser, SyntaxTree tree, Block block, int output, Op
 		}
 
 		var size = propertyType.size;
-
-		fprint(output, "	add ");
-		fprint(output, register.name);
-		fprint(output, ", [heapstart]\n");
 
 		var movWord = "mov";
 		if (size != 8) {
