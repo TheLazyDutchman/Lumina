@@ -1,8 +1,6 @@
 import "string.lumina"
 
 
-var envp = (str[])((int)argv + (8 * (1 + argc)));
-
 func getEnvironmentVariable(str name) -> str {
 	var i = 0;
 	var nameLen = strlen(name);
