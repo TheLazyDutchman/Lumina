@@ -334,11 +334,16 @@ func writeStart(int output) {
 	fprint(output, "_start:\n");
 
 	fprint(output, "	mov rax, 12 ;; sysbrk\n");
-	fprint(output, "	mov rdi, 0\n");
+	fprint(output, "	mov rdi, 0 ;; find start of heap\n");
 	fprint(output, "	syscall\n");
 	fprint(output, "	mov [heapstart], rax\n");
-	fprint(output, "	mov qword [heapheader], 0\n");
-	fprint(output, "	mov qword [heapend], 0\n");
+	fprint(output, "	mov qword [heapheader], 4096\n");
+	fprint(output, "	mov qword [heapend], 4096\n");
+
+	fprint(output, "	mov rax, 12 ;; sysbrk\n");
+	fprint(output, "	mov rdi, [heapstart]\n");
+	fprint(output, "	add rdi, [heapend]\n");
+	fprint(output, "	syscall ;; allocate 1 page of null space\n");
 
 	fprint(output, "	lea rax, [datastack + ");
 	fprinti(output, DATASTACKSIZE);
@@ -1012,6 +1017,8 @@ func writeAssignment(Parser parser, SyntaxTree tree, Block block, int output, Op
 	writeOperation(parser, tree, block, output, operation.left, registers, register, (bool)0, functions);
 
 	var valueRegister = getRegister(registers);
+	var comparisonRegister = getRegister(registers);
+
 	writeOperation(parser, tree, block, output, operation.right, registers, valueRegister, (bool)1, functions);
 
 	if (isOperator(operation.left.operator, "[")) {
@@ -1038,6 +1045,29 @@ func writeAssignment(Parser parser, SyntaxTree tree, Block block, int output, Op
 
 			movWord = "add";
 		}
+
+		fprint(output, "	mov ");
+		fprint(output, comparisonRegister.name);
+		fprint(output, ", [heapstart]\n");
+		fprint(output, "	add ");
+		fprint(output, comparisonRegister.name);
+		fprint(output, ", 4096\n");
+
+		fprint(output, "	cmp ");
+		fprint(output, register.name);
+		fprint(output, ", ");
+		fprint(output, comparisonRegister.name);
+		fprint(output, "\n");
+
+		fprint(output, "	mov ");
+		fprint(output, comparisonRegister.name);
+		fprint(output, ", 0\n");
+
+		fprint(output, "	cmovl ");
+		fprint(output, valueRegister.name);
+		fprint(output, ", ");
+		fprint(output, comparisonRegister.name);
+		fprint(output, "\n");
 
 		fprint(output, "	");
 		fprint(output, movWord);
@@ -1071,6 +1101,29 @@ func writeAssignment(Parser parser, SyntaxTree tree, Block block, int output, Op
 			movWord = "add";
 		}
 
+		fprint(output, "	mov ");
+		fprint(output, comparisonRegister.name);
+		fprint(output, ", [heapstart]\n");
+		fprint(output, "	add ");
+		fprint(output, comparisonRegister.name);
+		fprint(output, ", 4096\n");
+
+		fprint(output, "	cmp ");
+		fprint(output, register.name);
+		fprint(output, ", ");
+		fprint(output, comparisonRegister.name);
+		fprint(output, "\n");
+
+		fprint(output, "	mov ");
+		fprint(output, comparisonRegister.name);
+		fprint(output, ", 0\n");
+
+		fprint(output, "	cmovl ");
+		fprint(output, valueRegister.name);
+		fprint(output, ", ");
+		fprint(output, comparisonRegister.name);
+		fprint(output, "\n");
+
 		fprint(output, "	");
 		fprint(output, movWord);
 		fprint(output, " [");
@@ -1090,6 +1143,7 @@ func writeAssignment(Parser parser, SyntaxTree tree, Block block, int output, Op
 	}
 
 	valueRegister.used = (bool)0;
+	comparisonRegister.used = (bool)0;
 	return register.name;
 }
 

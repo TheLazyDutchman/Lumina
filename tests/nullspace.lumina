@@ -1,0 +1,28 @@
+import "../std/io.lumina"
+import "../std/string.lumina"
+
+
+type StringView {
+	str value;
+	int length;
+}
+
+var string = (str)0;
+var view = (StringView)0;
+var length = strlen(string);
+
+print("null string length: ");
+printi(length);
+print("\n");
+
+string[0] = 'a';
+length = strlen(string);
+
+print("null string length after assignment: ");
+printi(length);
+print("\n");
+
+view.value = "Hello, World!\n";
+print("value of after assignment: '");
+print(view.value);
+print("'\n");
