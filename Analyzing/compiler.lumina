@@ -282,8 +282,26 @@ func writeNewBuiltin(int output) {
 	fprint(output, "	xchg rsp, [datarsp]\n");
 
 	fprint(output, "	mov rbx, [rax + 16] ;; size\n");
+	fprint(output, "	add rbx, 16 ;; header size\n");
+
+	fprint(output, "	xchg rsp, [datarsp]\n");
+	fprint(output, "	push rax ;; type\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
 
 	fprint(output, "	call __allocate__\n");
+
+	fprint(output, "	xchg rsp, [datarsp]\n");
+	fprint(output, "	pop rbx ;; type\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+
+	fprint(output, "	mov rcx, rax\n");
+	fprint(output, "	add rcx, [heapstart]\n");
+	fprint(output, "	add rax, 16\n");
+
+	fprint(output, "	add rcx, 8\n");
+	fprint(output, "	mov [rcx], rbx\n");
+	fprint(output, "	add rcx, 8\n");
+
 	fprint(output, "	ret\n\n");
 }
 
@@ -292,14 +310,36 @@ func writeNewListBuiltin(int output) {
 	fprint(output, "	xchg rsp, [datarsp]\n");
 	fprint(output, "	pop rax ;; size\n");
 	fprint(output, "	pop rbx ;; type\n");
+	fprint(output, "	push rax\n");
 	fprint(output, "	xchg rsp, [datarsp]\n");
 
 	fprint(output, "	mov rcx, [rbx + 16] ;; item size\n");
 	fprint(output, "	mul rcx\n");
 
+	fprint(output, "	xchg rsp, [datarsp]\n");
+	fprint(output, "	push rbx ;; type\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+
 	fprint(output, "	mov rbx, rax\n");
+	fprint(output, "	add rbx, 24 ;; header size\n");
 
 	fprint(output, "	call __allocate__\n");
+
+	fprint(output, "	xchg rsp, [datarsp]\n");
+	fprint(output, "	pop rbx ;; type\n");
+	fprint(output, "	pop rcx ;; size\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+
+	fprint(output, "	mov r8, rax\n");
+	fprint(output, "	add r8, [heapstart]\n");
+	fprint(output, "	add rax, 24\n");
+
+	fprint(output, "	add r8, 8\n");
+	fprint(output, "	mov [r8], rcx\n");
+	fprint(output, "	add r8, 8\n");
+	fprint(output, "	mov [r8], rbx\n");
+	fprint(output, "	add r8, 8\n");
+
 	fprint(output, "	ret\n\n");
 }
 
