@@ -138,16 +138,40 @@ type iovec {
 }
 
 
+func topointer<T>(T value) -> T {
+	if (value == (T)0) { return value; }
+	return (T)((int)value + heapstart);
+}
+
+func listtopointer<T>(T[] list) -> T[] {
+	if (list == (T[])0) { return list; }
+
+	var i = 0;
+	while (list[i] != (T)0) {
+		i = i + 1;
+	}
+
+	var newlist = new T[](i);
+	i = 0;
+	while (list[i] != (T)0) {
+		newlist[i] = topointer<T>(list[i]);
+		i = i + 1;
+	}
+
+	return topointer<T[]>(newlist);
+}
+
+
 func read(int fd, str buf, int count) -> int {
-	return (int)syscall(SYSREAD, fd, buf, count, 0, 0, 0);
+	return (int)syscall(SYSREAD, fd, topointer<str>(buf), count, 0, 0, 0);
 }
 
 func write(int fd, str buf, int count) -> int {
-	return (int)syscall(SYSWRITE, fd, buf, count, 0, 0, 0);
+	return (int)syscall(SYSWRITE, fd, topointer<str>(buf), count, 0, 0, 0);
 }
 
 func open(str filename, int flags, int mode) -> int {
-	return (int)syscall(SYSOPEN, filename, flags, mode, 0, 0, 0);
+	return (int)syscall(SYSOPEN, topointer<str>(filename), flags, mode, 0, 0, 0);
 }
 
 func close(int fd) -> int {
@@ -206,23 +230,23 @@ func ioctl(int fd, int cmd, int arg) -> int {
 }
 
 func pread64(int fd, str buf, int count, int pos) -> int {
-	return (int)syscall(SYSPREAD64, fd, buf, count, pos, 0, 0);
+	return (int)syscall(SYSPREAD64, fd, topointer<str>(buf), count, pos, 0, 0);
 }
 
 func pwrite64(int fd, str buf, int count, int pos) -> int {
-	return (int)syscall(SYSPWRITE64, fd, buf, count, pos, 0, 0);
+	return (int)syscall(SYSPWRITE64, fd, topointer<str>(buf), count, pos, 0, 0);
 }
 
 func readv(int fd, iovec[] vecs, int vlen) -> int {
-	return (int)syscall(SYSREADV, fd, vecs, vlen, 0, 0, 0);
+	return (int)syscall(SYSREADV, fd, listtopointer<iovec>(vecs), vlen, 0, 0, 0);
 }
 
 func writev(int fd, iovec[] vecs, int vlen) -> int {
-	return (int)syscall(SYSWRITEV, fd, vecs, vlen, 0, 0, 0);
+	return (int)syscall(SYSWRITEV, fd, listtopointer<iovec>(vecs), vlen, 0, 0, 0);
 }
 
 func access(str filename, int mode) -> int {
-	return (int)syscall(SYSACCESS, filename, mode, 0, 0, 0, 0);
+	return (int)syscall(SYSACCESS, topointer<str>(filename), mode, 0, 0, 0, 0);
 }
 
 func pipe(int filedes) -> int {
@@ -375,8 +399,8 @@ func vfork() -> int {
 	return (int)syscall(SYSVFORK, 0, 0, 0, 0, 0, 0);
 }
 
-func execve(str fileName, str[] argv, str[] envp) -> int {
-	return (int)syscall(SYSEXECVE, fileName, argv, envp, 0, 0, 0);
+func execve(str filename, str[] argv, str[] envp) -> int {
+	return (int)syscall(SYSEXECVE, topointer<str>(filename), listtopointer<str>(argv), listtopointer<str>(envp), 0, 0, 0);
 }
 
 func exit(int error_code) -> int {
@@ -389,7 +413,7 @@ func exit(int error_code) -> int {
 //}
 
 func wait4(int pid, int[] wstatus, int options) -> int { // int[] here is a wierd way of getting a pointer to an integer
-	return (int)syscall(SYSWAIT4, pid, wstatus, options, 0, 0, 0);
+	return (int)syscall(SYSWAIT4, pid, listtopointer<int>(wstatus), options, 0, 0, 0);
 }
 
 func kill() -> int {
@@ -461,7 +485,7 @@ func getdents() -> int {
 }
 
 func getcwd(str buf, int size) -> int {
-	return (int)syscall(SYSGETCWD, buf, size, 0, 0, 0, 0);
+	return (int)syscall(SYSGETCWD, topointer<str>(buf), size, 0, 0, 0, 0);
 }
 
 func chdir() -> int {
@@ -669,6 +693,6 @@ func rt_sigqueueinfo() -> int {
 //}
 
 
-func openat(int dir_fd, str fileName, int flags, int mode) -> int {
-	return (int)syscall(SYSOPENAT, dir_fd, fileName, flags, mode, 0, 0);
+func openat(int dir_fd, str filename, int flags, int mode) -> int {
+	return (int)syscall(SYSOPENAT, dir_fd, topointer<str>(filename), flags, mode, 0, 0);
 }
