@@ -346,6 +346,7 @@ func createListType(Array<TypeObj> typeArray, str name, TypeObj typeObj) -> Type
 	}
 
 	var listType = createTypeFromString(name, 8);
+	listType.objectSize = typeObj.size;
 	listType.listType = typeObj;
 	listType.isGeneric = typeObj.isGeneric;
 

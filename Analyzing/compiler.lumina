@@ -215,62 +215,197 @@ func writeTypeLiteral(int output, TypeObj typeObj) {
 	fprint(output, "\n");
 }
 
-func writeExpandHeapBuiltin(int output) {
-	fprint(output, "__expand_heap__:\n");
-	fprint(output, "	mov rax, 4096\n");
-	fprint(output, ".loop_condition:\n");
-	fprint(output, "	cmp rax, rbx\n");
-	fprint(output, "	jg .loop_end\n");
+func writeFindBlockBuiltin(int output) {
+	fprint(output, "__find_block__:\n");
 
-	fprint(output, "	add rax, 4096\n");
+	fprint(output, "	;; finds the first memory block after a given pointer\n");
+	fprint(output, "	;; or null if there are none\n\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+	fprint(output, "	pop rbx ;; pointer\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+
+	fprint(output, "	mov rcx, [lastblock]\n");
+	fprint(output, "	mov rax, 0\n");
+
+	fprint(output, ".loop_condition:\n");
+	fprint(output, "	cmp rcx, rbx\n");
+	fprint(output, "	jl .loop_end\n");
+
+	fprint(output, "	mov rax, rcx\n");
+	fprint(output, "	mov rcx, [rcx] ;; last block\n");
 	fprint(output, "	jmp .loop_condition\n");
 	fprint(output, ".loop_end:\n");
 
-	fprint(output, "	add [heapend], rax\n");
+	fprint(output, "	ret\n\n");
+}
+
+func writeGetBlockBuiltin(int output) {
+	fprint(output, "__get_block__:\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+	fprint(output, "	pop rbx ;; size\n");
+	fprint(output, "	add rbx, 24 ;; block header\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+
+	fprint(output, "	mov rax, [lastblock]\n");
+	fprint(output, "	mov r8, 0\n");
+	fprint(output, "	mov rcx, 1\n");
+
+	fprint(output, ".loop_condition:\n");
+	fprint(output, "	cmp rcx, 0\n");
+	fprint(output, "	je .loop_end\n");
+
+	fprint(output, "	cmp [rax + 16], rbx\n");
+	fprint(output, "	cmovl rax, [rax]\n");
+	fprint(output, "	cmovge rcx, r8\n");
+
+	fprint(output, "	cmp rax, 0\n");
+	fprint(output, "	cmove rcx, r8\n");
+
+	fprint(output, "	jmp .loop_condition\n");
+
+	fprint(output, ".loop_end:\n");
+
+	fprint(output, "	ret\n\n");
+}
+
+func writeCreateBlockBuiltin(int output) {
+	fprint(output, "__create_block__:\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+	fprint(output, "	pop rbx ;; size\n");
+	fprint(output, "	pop rcx ;; pointer\n");
+
+	fprint(output, "	;; store values\n");
+	fprint(output, "	push rbx\n");
+	fprint(output, "	push rcx\n");
+	fprint(output, "	;; push arguments\n");
+	fprint(output, "	push rcx\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+
+	fprint(output, "	call __find_block__\n");
+
+	fprint(output, "	xchg rsp, [datarsp]\n");
+	fprint(output, "	pop rcx ;; pointer\n");
+	fprint(output, "	pop rbx ;; size\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+
+	fprint(output, "	;; set block before this one\n");
+	fprint(output, "	cmp rax, 0\n");
+	fprint(output, "	cmove r8, [lastblock]\n");
+	fprint(output, "	cmovg r8, [rax]\n");
+
+	fprint(output, "	mov r9, r8\n");
+	fprint(output, "	add r9, [r8 + 16] ;; size\n");
+	fprint(output, "	cmp r9, rcx\n");
+	fprint(output, "	jne .joined_before\n");
+
+	fprint(output, "	add [r8 + 16], rbx\n");
+	fprint(output, "	mov rax, r8\n");
+	fprint(output, "	ret\n");
+	fprint(output, ".joined_before:\n");
+
+	fprint(output, "	mov r9, rcx\n");
+	fprint(output, "	add r9, rbx\n");
+	fprint(output, "	cmp r9, rax\n");
+	fprint(output, "	jne .joined_after\n");
+
+	fprint(output, "	add rbx, [rax + 16]\n");
+	fprint(output, "	mov [rcx + 16], rbx\n");
+	fprint(output, "	mov rax, [rax + 8]\n");
+	fprint(output, ".joined_after:\n");
+
+	fprint(output, "	mov [rcx], r8\n");
+	fprint(output, "	mov [rcx + 8], rax\n");
+
+	fprint(output, "	mov r9, r8\n");
+	fprint(output, "	cmp r8, 0\n");
+	fprint(output, "	cmovg r9, [heapstart]\n");
+	fprint(output, "	cmovg r8, rcx\n");
+	fprint(output, "	add r9, 8\n");
+	fprint(output, "	mov [r9], r8\n");
+
+	fprint(output, "	cmp rax, 0\n");
+	fprint(output, "	cmove rax, [lastblock]\n");
+	fprint(output, "	mov [rax], rcx\n");
+
+	fprint(output, "	mov rax, rcx\n");
+	fprint(output, "	ret\n\n");
+}
+
+func writeExpandHeapBuiltin(int output) {
+	fprint(output, "__expand_heap__:\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+	fprint(output, "	pop rbx ;; size\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+
+	fprint(output, "	mov r8, 4096\n");
+	fprint(output, ".loop_condition:\n");
+	fprint(output, "	cmp r8, rbx\n");
+	fprint(output, "	jg .loop_end\n");
+
+	fprint(output, "	add r8, 4096\n");
+	fprint(output, "	jmp .loop_condition\n");
+	fprint(output, ".loop_end:\n");
+
+	fprint(output, "	mov rbx, [heapend]\n");
+
 	fprint(output, "	mov rax, 12 ;; sysbrk\n");
-	fprint(output, "	mov rdi, [heapend]\n");
-	fprint(output, "	add rdi, [heapstart]\n");
+	fprint(output, "	mov rdi, rbx\n");
+	fprint(output, "	add rdi, r8\n");
+	fprint(output, "	mov [heapend], rdi\n");
 	fprint(output, "	syscall\n");
+
+	fprint(output, "	sub rbx, 8\n");
+	fprint(output, "	mov r9, [lastblock]\n");
+	fprint(output, "	mov [rbx], r9\n");
+	fprint(output, "	mov [rbx + 16], r8\n");
+	fprint(output, "	mov [lastblock], rbx\n");
 
 	fprint(output, "	ret\n\n");
 }
 
 func writeAllocateBuiltin(int output) {
 	fprint(output, "__allocate__:\n");
-	fprint(output, "	mov rax, rbx\n");
-	fprint(output, "	add rax, [heapheader]\n");
-	fprint(output, "	add rax, 8 ;; offset to stop unaligned values from going over the end of the heap\n");
-	fprint(output, "	cmp rax, [heapend]\n");
-	fprint(output, "	jl .returnvalue\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+	fprint(output, "	pop rbx ;; size\n");
+	fprint(output, "	push rbx\n");
+	fprint(output, "	push rbx\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+
+	fprint(output, "	call __get_block__\n");
+
+	fprint(output, "	cmp rax, 0\n");
+	fprint(output, "	jg .setup\n");
 
 	fprint(output, "	xchg rsp, [datarsp]\n");
+	fprint(output, "	push rbx\n");
 	fprint(output, "	push rbx\n");
 	fprint(output, "	xchg rsp, [datarsp]\n");
 
 	fprint(output, "	call __expand_heap__\n");
+	fprint(output, "	call __get_block__\n");
+
+	fprint(output, ".setup:\n");
 
 	fprint(output, "	xchg rsp, [datarsp]\n");
 	fprint(output, "	pop rbx\n");
 	fprint(output, "	xchg rsp, [datarsp]\n");
 
-	fprint(output, ".returnvalue:\n");
-
-	fprint(output, "	mov rax, [heapheader]\n");
-	fprint(output, "	add [heapheader], rbx\n");
+	fprint(output, "	sub [rax + 16], rbx\n");
+	fprint(output, "	add rax, [rax + 16] ;; block size\n");
+	fprint(output, "	mov r8, rax\n");
 
 	fprint(output, "	mov rcx, rax\n");
-	fprint(output, "	add rcx, [heapstart]\n");
-	fprint(output, "	mov rbx, [heapheader]\n");
-	fprint(output, "	add rbx, [heapstart]\n");
-	fprint(output, ".init_condition:\n");
 
-	fprint(output, "	cmp rcx, rbx\n");
+	fprint(output, ".init_condition:\n");
+	fprint(output, "	cmp rcx, r8\n");
 	fprint(output, "	jg .return\n");
 	fprint(output, "	mov qword [rcx], 0 ;; zero-initialize allocated memory\n");
 	fprint(output, "	add rcx, 8\n");
 	fprint(output, "	jmp .init_condition\n");
 
 	fprint(output, ".return:\n");
+
+	fprint(output, "	sub rax, [heapstart]\n");
 
 	fprint(output, "	ret\n\n");
 }
@@ -286,6 +421,8 @@ func writeNewBuiltin(int output) {
 
 	fprint(output, "	xchg rsp, [datarsp]\n");
 	fprint(output, "	push rax ;; type\n");
+
+	fprint(output, "	push rbx\n");
 	fprint(output, "	xchg rsp, [datarsp]\n");
 
 	fprint(output, "	call __allocate__\n");
@@ -298,9 +435,7 @@ func writeNewBuiltin(int output) {
 	fprint(output, "	add rcx, [heapstart]\n");
 	fprint(output, "	add rax, 16\n");
 
-	fprint(output, "	add rcx, 8\n");
-	fprint(output, "	mov [rcx], rbx\n");
-	fprint(output, "	add rcx, 8\n");
+	fprint(output, "	mov [rcx + 8], rbx\n");
 
 	fprint(output, "	ret\n\n");
 }
@@ -323,6 +458,10 @@ func writeNewListBuiltin(int output) {
 	fprint(output, "	mov rbx, rax\n");
 	fprint(output, "	add rbx, 24 ;; header size\n");
 
+	fprint(output, "	xchg rsp, [datarsp]\n");
+	fprint(output, "	push rbx ;; size\n");
+	fprint(output, "	xchg rsp, [datarsp]\n");
+
 	fprint(output, "	call __allocate__\n");
 
 	fprint(output, "	xchg rsp, [datarsp]\n");
@@ -334,11 +473,8 @@ func writeNewListBuiltin(int output) {
 	fprint(output, "	add r8, [heapstart]\n");
 	fprint(output, "	add rax, 24\n");
 
-	fprint(output, "	add r8, 8\n");
-	fprint(output, "	mov [r8], rcx\n");
-	fprint(output, "	add r8, 8\n");
-	fprint(output, "	mov [r8], rbx\n");
-	fprint(output, "	add r8, 8\n");
+	fprint(output, "	mov [r8 + 8], rcx\n");
+	fprint(output, "	mov [r8 + 16], rbx\n");
 
 	fprint(output, "	ret\n\n");
 }
@@ -363,6 +499,9 @@ func writeHeader(int output) {
 	fprint(output, "section .text\n");
 	fprint(output, "global _start\n");
 
+	writeFindBlockBuiltin(output);
+	writeGetBlockBuiltin(output);
+	writeCreateBlockBuiltin(output);
 	writeExpandHeapBuiltin(output);
 	writeAllocateBuiltin(output);
 	writeNewBuiltin(output);
@@ -377,13 +516,20 @@ func writeStart(int output) {
 	fprint(output, "	mov rdi, 0 ;; find start of heap\n");
 	fprint(output, "	syscall\n");
 	fprint(output, "	mov [heapstart], rax\n");
-	fprint(output, "	mov qword [heapheader], 4096\n");
-	fprint(output, "	mov qword [heapend], 4096\n");
 
 	fprint(output, "	mov rax, 12 ;; sysbrk\n");
 	fprint(output, "	mov rdi, [heapstart]\n");
-	fprint(output, "	add rdi, [heapend]\n");
-	fprint(output, "	syscall ;; allocate 1 page of null space\n");
+	fprint(output, "	add rdi, 8192\n");
+	fprint(output, "	mov [heapend], rdi\n");
+
+	fprint(output, "	syscall ;; allocate 1 page of null space and a first memory block of 1 pagesize\n");
+
+	fprint(output, "	mov rax, [heapstart]\n");
+	fprint(output, "	add rax, 4096\n");
+	fprint(output, "	mov qword [rax], 0\n");
+	fprint(output, "	mov qword [rax + 8], 0\n");
+	fprint(output, "	mov qword [rax + 16], 4096 - 8\n");
+	fprint(output, "	mov [lastblock], rax\n");
 
 	fprint(output, "	lea rax, [datastack + ");
 	fprinti(output, DATASTACKSIZE);
@@ -440,8 +586,8 @@ func writeFooter(int output, Array<str> strings, Array<TypeObj> types) {
 	fprint(output, "section .bss\n");
 
 	fprint(output, "	heapstart: resq 1\n");
-	fprint(output, "	heapheader: resq 1\n");
 	fprint(output, "	heapend: resq 1\n");
+	fprint(output, "	lastblock: resq 1\n");
 
 	fprint(output, "	basestack: resq ");
 	fprinti(output, CALLSTACKSIZE);
@@ -1086,9 +1232,18 @@ func writeAssignment(Parser parser, SyntaxTree tree, Block block, int output, Op
 			movWord = "add";
 		}
 
+		fprint(output, "	cmp ");
+		fprint(output, register.name);
+		fprint(output, ", [heapstart]\n");
+
 		fprint(output, "	mov ");
 		fprint(output, comparisonRegister.name);
+		fprint(output, ", 0\n");
+
+		fprint(output, "	cmovge ");
+		fprint(output, comparisonRegister.name);
 		fprint(output, ", [heapstart]\n");
+
 		fprint(output, "	add ");
 		fprint(output, comparisonRegister.name);
 		fprint(output, ", 4096\n");
