@@ -182,6 +182,48 @@ func writeTypeName(int output, TypeObj typeObj) {
 	fprint(output, "List");
 }
 
+func writeTypeProperties(int output, TypeObj typeObj) {
+	fprint(output, "	properties_");
+	writeTypeName(output, typeObj);
+	fprint(output, ": dq ");
+
+	var i = 0;
+	while (i < typeObj.properties.size) {
+		var property = typeObj.properties.list[i];
+
+		fprint(output, "property_");
+		writeTypeName(output, typeObj);
+		fprint(output, "_");
+		fprint(output, property.name);
+		fprint(output, ", ");
+
+		i = i + 1;
+	}
+
+	fprint(output, "0\n");
+
+	i = 0;
+	while (i < typeObj.properties.size) {
+		var property = typeObj.properties.list[i];
+
+		fprint(output, "	property_");
+		writeTypeName(output, typeObj);
+		fprint(output, "_");
+		fprint(output, property.name);
+		fprint(output, ": dq string_");
+		fprinti(output, property.nameId);
+		fprint(output, ", ");
+		fprinti(output, property.offset);
+		fprint(output, ", type_");
+		writeTypeName(output, property.propertyType);
+		fprint(output, "\n");
+
+		i = i + 1;
+	}
+
+	fprint(output, "\n");
+}
+
 func writeTypeLiteral(int output, TypeObj typeObj) {
 	if (typeObj.isGeneric) {
 		return;
@@ -195,6 +237,8 @@ func writeTypeLiteral(int output, TypeObj typeObj) {
 	fprinti(output, typeObj.size);
 	fprint(output, ", ");
 	fprinti(output, typeObj.objectSize);
+	fprint(output, ", properties_");
+	writeTypeName(output, typeObj);
 	fprint(output, ", ");
 
 	if (typeObj.listOf != (TypeObj)0) {
@@ -213,6 +257,8 @@ func writeTypeLiteral(int output, TypeObj typeObj) {
 	}
 
 	fprint(output, "\n");
+
+	writeTypeProperties(output, typeObj);
 }
 
 func writeFindBlockBuiltin(int output) {
@@ -646,29 +692,22 @@ func writeConstant(Parser parser, int output, Variable constant, str register) -
 }
 
 func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Identifier identifier, str register, bool getValue) -> str {
-	var variable = (Variable)0;
-	if (block != (Block)0) {
-		variable = findVariableInBlock(parser, tree, block, identifier.name);
-	}
-
+	var variable = findVariableInParser(parser, tree, block, identifier.name);
 	if (variable == (Variable)0) {
-		variable = findVariable(tree.variables, identifier.name);
-	}
+		var typeObj = findTypeInParser(parser, tree, block, identifier.name);
 
-	var i = 0;
-	while (i < tree.imports.size && variable == (Variable)0) {
-		variable = findVariable(tree.importTrees[i].variables, identifier.name);
-		i = i + 1;
-	}
+		if (typeObj == (TypeObj)0) {
+			printError(parser, identifier.definition.region.start, " can not find variable\n");
+			return register;
+		}
 
-	if (variable == (Variable)0) {
-		variable = findVariable(parser.variables, identifier.name);
-	}
+		fprint(output, "	mov ");
+		fprint(output, register);
+		fprint(output, ", type_");
+		writeTypeName(output, typeObj);
+		fprint(output, "\n");
 
-	if (variable == (Variable)0) {
-		printPosition(identifier.definition.region.start);
-		print(" can not find variable\n");
-		return (str)0;
+		return register;
 	}
 
 	if (variable.isConstant) {
@@ -705,10 +744,12 @@ func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Id
 	return register;
 }
 
-func writeIndex(int output, int size, Register registerA, Register registerB, bool getValue) -> str {
-	fprint(output, "	add ");
-	fprint(output, registerA.name);
-	fprint(output, ", [heapstart] ;; heap offset\n");
+func writeIndex(int output, int size, Register registerA, Register registerB, bool getValue, bool addOffset) -> str {
+	if (addOffset) {
+		fprint(output, "	add ");
+		fprint(output, registerA.name);
+		fprint(output, ", [heapstart] ;; heap offset\n");
+	}
 
 	fprint(output, "	lea ");
 	fprint(output, registerA.name);
@@ -877,12 +918,10 @@ func writeSizeOf(Parser parser, SyntaxTree tree, Block block, int output, SizeOf
 		return register;
 	}
 
-	var size = getSizeFromType(parser, tree, block, typeObj);
-
 	fprint(output, "	mov ");
 	fprint(output, register);
 	fprint(output, ", ");
-	fprinti(output, size);
+	fprinti(output, typeObj.objectSize);
 	fprint(output, " ;; type size\n");
 
 	return register;
@@ -1123,7 +1162,7 @@ func writeShift(Parser parser, SyntaxTree tree, Block block, int output, str shi
 	return register.name;
 }
 
-func writeProperty(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register register, bool getValue, Array<FunctionDefinition> functions) -> str {
+func writeProperty(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register register, bool getValue, bool addOffset, Array<FunctionDefinition> functions) -> str {
 	var typeObj = operation.left.operationType;
 
 	if (typeObj == (TypeObj)0) {
@@ -1132,22 +1171,7 @@ func writeProperty(Parser parser, SyntaxTree tree, Block block, int output, Oper
 		return register.name;
 	}
 
-	if (typeObj == parser.Type) {
-		var typeLiteral = getTypeFromOperation(parser, tree, block, operation.left);
-		if (typeLiteral.name == (str)0) {
-			printPosition(operation.region.start);
-			print(" cannot access runtime type of undefined type\n");
-			return register.name;
-		}
-
-		fprint(output, "	mov ");
-		fprint(output, register.name);
-		fprint(output, ", type_");
-		fprint(output, typeLiteral.name);
-		fprint(output, "\n");
-	} else {
-		writeOperation(parser, tree, block, output, operation.left, registers, register, (bool)1, functions);
-	}
+	writeOperation(parser, tree, block, output, operation.left, registers, register, (bool)1, functions);
 
 	var propertyName = operation.right.value.identifier;
 	var propertyType = operation.operationType;
@@ -1158,11 +1182,13 @@ func writeProperty(Parser parser, SyntaxTree tree, Block block, int output, Oper
 		return register.name;
 	}
 
-	var offset = getPropertyOffset(parser, tree, block, typeObj, propertyName.name);
+	var offset = findProperty(typeObj.properties, propertyName.name).offset;
 
-	fprint(output, "	add ");
-	fprint(output, register.name);
-	fprint(output, ", [heapstart] ;; heap offset\n");
+	if (addOffset) {
+		fprint(output, "	add ");
+		fprint(output, register.name);
+		fprint(output, ", [heapstart] ;; heap offset\n");
+	}
 	
 	if (getValue) {
 		fprint(output, "	mov ");
@@ -1187,6 +1213,12 @@ func writeProperty(Parser parser, SyntaxTree tree, Block block, int output, Oper
 			fprint(output, ", ");
 			fprinti(output, mask);
 			fprint(output, " ;; mask\n");
+		}
+
+		if ((typeObj == parser.Type || typeObj == parser.TypeProperty) && propertyType == parser.str) {
+			fprint(output, "	sub ");
+			fprint(output, register.name);
+			fprint(output, ", [heapstart]\n");
 		}
 	} else if (offset != 0) {
 		fprint(output, "	add ");
@@ -1376,6 +1408,22 @@ func writeOr(Parser parser, SyntaxTree tree, Block block, int output, Operation 
 	return register.name;
 }
 
+func writeListType(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
+	writeOperation(parser, tree, block, output, operation.left, registers, register, (bool)1, functions);
+
+	var offset = findProperty(parser.Type.properties, "listOf").offset;
+
+	fprint(output, "	mov ");
+	fprint(output, register.name);
+	fprint(output, ", [");
+	fprint(output, register.name);
+	fprint(output, " + ");
+	fprinti(output, offset);
+	fprint(output, "] ;; get list type\n");
+
+	return register.name;
+}
+
 func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register registerA, bool getValue, Array<FunctionDefinition> functions) -> str {
 	if (operation == (Operation)0) {
 		print("operation is null\n");
@@ -1426,7 +1474,9 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	}
 
 	if (isOperator(operation.operator, ".")) {
-		return writeProperty(parser, tree, block, output, operation, registers, registerA, getValue, functions);
+		var typeObj = operation.left.operationType;
+		var addOffset = (typeObj != parser.Type && typeObj != parser.TypeProperty);
+		return writeProperty(parser, tree, block, output, operation, registers, registerA, getValue, addOffset, functions);
 	}
 
 	if (isOperator(operation.operator, "&&")) {
@@ -1443,6 +1493,10 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 
 	if (isOperator(operation.operator, ">>")) {
 		return writeShift(parser, tree, block, output, "shr", operation, registers, registerA, functions);
+	}
+
+	if (isOperator(operation.operator, "[") && operation.right == (Operation)0) {
+		return writeListType(parser, tree, block, output, operation, registers, registerA, functions);
 	}
 
 	var registerB = getRegister(registers);
@@ -1472,7 +1526,9 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 			return registerA.name;
 		}
 
-		return writeIndex(output, typeObj.size, registerA, registerB, getValue);
+		var addOffset = (typeObj != parser.TypeProperty && typeObj != parser.Type);
+
+		return writeIndex(output, typeObj.size, registerA, registerB, getValue, addOffset);
 	} else if (isOperator(operation.operator, "+")) {
 		operationString = "add";
 	} else if (isOperator(operation.operator, "-")) {

@@ -1,5 +1,11 @@
 import "../std/io.lumina"
 
+
+type Point {
+	int x;
+	int y;
+}
+
 print("int name: ");
 print(int.name);
 print("\n");
@@ -10,4 +16,28 @@ print("\n");
 
 print("bool size: ");
 printi(bool.size);
+print("\n\n");
+
+func printProperties(Type typeObj) {
+	var i = 0;
+	while (typeObj.properties[i] != (TypeProperty)0) {
+		var property = typeObj.properties[i];
+		print("property: ");
+		print(property.name);
+		print(", offset: ");
+		printi(property.offset);
+		print("\n");
+		i = i + 1;
+	}
+}
+
+print("properties of 'Type':\n");
+printProperties(Type);
 print("\n");
+
+print("properties of 'TypeProperty':\n");
+printProperties(TypeProperty);
+print("\n");
+
+print("properties of 'Point':\n");
+printProperties(Point);

@@ -11,6 +11,7 @@ import "whitespace.lumina"
 
 type Property {
 	str name;
+	int nameId;
 	PropertyDefinition definition;
 	str typeName;
 
@@ -221,13 +222,13 @@ func createPropertyFromDefinition(PropertyDefinition definition) -> Property {
 	return property;
 }
 
-func createPropertyFromString(str name, TypeObj propertyType) -> Property {
+func createPropertyFromString(str name, TypeObj propertyType, int offset) -> Property {
 	var property = new Property();
 
 	property.name = name;
 	property.typeName = propertyType.name;
 
-	property.offset = -1;
+	property.offset = offset;
 	property.propertyType = propertyType;
 
 	return property;

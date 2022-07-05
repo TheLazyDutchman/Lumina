@@ -54,6 +54,7 @@ type Parser {
 	TypeObj any;
 	TypeObj null;
 	TypeObj Type;
+	TypeObj TypeProperty;
 
 	Array<FunctionDefinition> functions;
 	FunctionDefinition syscall;
@@ -153,21 +154,47 @@ func createParser() -> Parser {
 	addItem<TypeObj>(parser.types, parser.null);
 
 	parser.Type = createTypeFromString("Type", 8);
-	addItem<Property>(parser.Type.properties, createPropertyFromString("name", parser.str));
-	addItem<Property>(parser.Type.properties, createPropertyFromString("size", parser.int));
-	addItem<Property>(parser.Type.properties, createPropertyFromString("objectSize", parser.int));
-	addItem<Property>(parser.Type.properties, createPropertyFromString("listOf", parser.Type));
-	addItem<Property>(parser.Type.properties, createPropertyFromString("listType", parser.Type));
+	parser.TypeProperty = createTypeFromString("TypeProperty", 8);
+
+	addItem<Property>(parser.Type.properties, createPropertyFromString("name", parser.str, 0));
+	addItem<Property>(parser.Type.properties, createPropertyFromString("size", parser.int, 8));
+	addItem<Property>(parser.Type.properties, createPropertyFromString("objectSize", parser.int, 16));
+	addItem<Property>(parser.Type.properties, createPropertyFromString("properties", createListType(parser.types, (str)0, parser.TypeProperty), 24));
+	addItem<Property>(parser.Type.properties, createPropertyFromString("listOf", parser.Type, 32));
+	addItem<Property>(parser.Type.properties, createPropertyFromString("listType", parser.Type, 40));
+
+	var i = 0;
+	while (i < parser.Type.properties.size) {
+		var property = parser.Type.properties.list[i];
+		property.nameId = addUniqueString(parser.strings, property.name);
+		i = i + 1;
+	}
+
+	addItem<Property>(parser.TypeProperty.properties, createPropertyFromString("name", parser.str, 0));
+	addItem<Property>(parser.TypeProperty.properties, createPropertyFromString("offset", parser.int, 8));
+	addItem<Property>(parser.TypeProperty.properties, createPropertyFromString("__type__", parser.Type, 16));
+
+	i = 0;
+	while (i < parser.TypeProperty.properties.size) {
+		var property = parser.TypeProperty.properties.list[i];
+		property.nameId = addUniqueString(parser.strings, property.name);
+		i = i + 1;
+	}
 
 	parser.Type.nameId = addUniqueString(parser.strings, parser.Type.name);
-	parser.Type.objectSize = 40;
+	parser.Type.objectSize = 48;
 	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.Type));
 	addItem<TypeObj>(parser.types, parser.Type);
+
+	parser.TypeProperty.nameId = addUniqueString(parser.strings, parser.TypeProperty.name);
+	parser.TypeProperty.objectSize = 24;
+	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.TypeProperty));
+	addItem<TypeObj>(parser.types, parser.TypeProperty);
 
 	parser.functions = createArray<FunctionDefinition>();
 	var syscallParameters = createArray<Parameter>();
 
-	var i = 0;
+	i = 0;
 	while (i < 7) {
 		addItem<Parameter>(syscallParameters, createParameterFromString(parser.any, (str)0));
 		i = i + 1;
@@ -794,6 +821,13 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, Array<Definitio
 		var typeObj = createTypeFromDefinition(typeDefinition);
 		typeObj.nameId = addUniqueString(parser.strings, typeObj.name);
 
+		var i = 0;
+		while (i < typeObj.properties.size) {
+			var property = typeObj.properties.list[i];
+			property.nameId = addUniqueString(parser.strings, property.name);
+			i = i + 1;
+		}
+
 		addItem<Definition>(definitionList, createDefinitionFromType(typeObj));
 		addItem<TypeObj>(typeList, typeObj);
 
@@ -1032,60 +1066,29 @@ func getTypeFromOperation(Parser parser, SyntaxTree tree, Block block, Operation
 	return (TypeObj)0;
 }
 
-func getSizeFromType(Parser parser, SyntaxTree tree, Block block, TypeObj typeObj) -> int {
-	if (typeObj == (TypeObj)0) {
-		print("type obj is null in 'getSizeFromType'\n");
-		exit(1);
-		return 0;
-	}
-
-	if (typeObj.properties.size == 0 || typeObj.listType != (TypeObj)0) {
-		return typeObj.size;
-	}
-
-	var sum = 0;
-	var i = 0;
-	while (i < typeObj.properties.size) {
-		var property = typeObj.properties.list[i];
-		var propertyType = getTypeFromOperation(parser, tree, block, property.definition.propertyType);
-
-		if (propertyType == (TypeObj)0) {
-			printError(parser, typeObj.definition.properties.list[i].region.start, " property type is null in 'getSizeFromType' in file: '");
-			print(tree.fileName);
-			print("'\n");
-			return 0;
-		}
-
-		sum = sum + propertyType.size;
-		i = i + 1;
-	}
-
-	return sum;
-}
-
-func getPropertyOffset(Parser parser, SyntaxTree tree, Block block, TypeObj typeObj, str propertyName) -> int {
-	var sum = 0;
-	var i = 0;
-	while (i < typeObj.properties.size) {
-		var property = typeObj.properties.list[i];
-		if (streq(property.name, propertyName)) {
-			return sum;
-		}
-
-		if (property.propertyType == (TypeObj)0) {
-			printError(parser, property.definition.region.start, " property type is null in 'getPropertyDefinitionOffset' in file: '");
-			print(tree.fileName);
-			print("'\n");
-			return 0;
-		}
-
-		sum = sum + property.propertyType.size;
-		i = i + 1;
-	}
-
-	return -1;
-}
-
+//func getPropertyOffset(Parser parser, SyntaxTree tree, Block block, TypeObj typeObj, str propertyName) -> int {
+//	var sum = 0;
+//	var i = 0;
+//	while (i < typeObj.properties.size) {
+//		var property = typeObj.properties.list[i];
+//		if (streq(property.name, propertyName)) {
+//			return sum;
+//		}
+//
+//		if (property.propertyType == (TypeObj)0) {
+//			printError(parser, property.definition.region.start, " property type is null in 'getPropertyDefinitionOffset' in file: '");
+//			print(tree.fileName);
+//			print("'\n");
+//			return 0;
+//		}
+//
+//		sum = sum + property.propertyType.size;
+//		i = i + 1;
+//	}
+//
+//	return -1;
+//}
+//
 func createVariableFromParameter(Parser parser, SyntaxTree tree, Block block, Parameter parameter, int position) -> Variable {
 	var parameterType = parameter.typeObj;
 	if (parameterType == (TypeObj)0) {
@@ -1339,12 +1342,19 @@ func bindNamesInTypeDefinition(Parser parser, SyntaxTree tree, TypeObj typeObj, 
 	}
 
 	var i = 0;
+	var sum = 0;
 	while (i < typeObj.properties.size) {
-		bindTypeNamesInOperation(parser, tree, typeObj.properties.list[i].definition.propertyType, typeObj.generics, block);
+		var property = typeObj.properties.list[i];
+		bindTypeNamesInOperation(parser, tree, property.definition.propertyType, typeObj.generics, block);
 
-		typeObj.properties.list[i].propertyType = getTypeFromOperation(parser, tree, block, typeObj.properties.list[i].definition.propertyType);
+		property.propertyType = getTypeFromOperation(parser, tree, block, property.definition.propertyType);
+
+		property.offset = sum;
+		sum = sum + property.propertyType.size;
 		i = i + 1;
 	}
+
+	typeObj.objectSize = sum;
 }
 
 func bindNamesInVariable(Parser parser, SyntaxTree tree, Variable variable, Block block) {
@@ -1386,7 +1396,6 @@ func bindNamesInStatementArray(Parser parser, SyntaxTree tree, Array<Statement> 
 			bindNamesInFunctionDefinition(parser, tree, statement.function, block);
 		} else if (statement.typeStatement != (TypeObj)0) {
 			bindNamesInTypeDefinition(parser, tree, statement.typeStatement, block);
-			statement.typeStatement.objectSize = getSizeFromType(parser, tree, block, statement.typeStatement);
 		} else if (statement.returnStatement != (Return)0) {
 			bindNamesInReturn(parser, tree, statement.returnStatement, block);
 		}
