@@ -1,219 +1,168 @@
+import "../std/syscalls.lumina"
+
+
 var numbers = "0123456789";
 var SYS_write = 1;
 var STDOUT = 1;
 
-syscall(
-	SYS_write,
+write(
 	STDOUT,
 	numbers,
-	1 + (int)(0 == 0),
-	0,
-	0,
-	0
+	1 + (int)(0 == 0)
 );
 
-syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+write(STDOUT, "\n", 1);
 
-syscall(
-	SYS_write,
+write(
 	STDOUT,
 	numbers,
-	1 + (int)(1 == 0),
-	0,
-	0,
-	0
+	1 + (int)(1 == 0)
 );
 
-syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+write(STDOUT, "\n", 1);
 
-syscall(
-	SYS_write,
+write(
 	STDOUT,
 	numbers,
-	1 + (int)(0 == 1),
-	0,
-	0,
-	0
+	1 + (int)(0 == 1)
 );
 
-syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+write(STDOUT, "\n", 1);
 
-syscall(
-	SYS_write,
+write(
 	STDOUT,
 	numbers,
-	1 + (int)(0 <= 0),
-	0,
-	0,
-	0
+	1 + (int)(0 <= 0)
 );
 
-syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+write(STDOUT, "\n", 1);
 
-syscall(
-	SYS_write,
+write(
 	STDOUT,
 	numbers,
-	1 + (int)(1 <= 0),
-	0,
-	0,
-	0
+	1 + (int)(1 <= 0)
 );
 
-syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+write(STDOUT, "\n", 1);
 
-syscall(
-	SYS_write,
+write(
 	STDOUT,
 	numbers,
-	1 + (int)(0 <= 1),
-	0,
-	0,
-	0
+	1 + (int)(0 <= 1)
 );
 
-syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+write(STDOUT, "\n", 1);
 
-syscall(
-	SYS_write,
+write(
 	STDOUT,
 	numbers,
-	1 + (int)(0 >= 0),
-	0,
-	0,
-	0
+	1 + (int)(0 >= 0)
 );
 
-syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+write(STDOUT, "\n", 1);
 
-syscall(
-	SYS_write,
+write(
 	STDOUT,
 	numbers,
-	1 + (int)(1 >= 0),
-	0,
-	0,
-	0
+	1 + (int)(1 >= 0)
 );
 
-syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+write(STDOUT, "\n", 1);
 
-syscall(
-	SYS_write,
+write(
 	STDOUT,
 	numbers,
-	1 + (int)(0 >= 1),
-	0,
-	0,
-	0
+	1 + (int)(0 >= 1)
 );
 
-syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+write(STDOUT, "\n", 1);
 
-syscall(
-	SYS_write,
+write(
 	STDOUT,
 	numbers,
-	1 + (int)(0 != 0),
-	0,
-	0,
-	0
+	1 + (int)(0 != 0)
 );
 
-syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+write(STDOUT, "\n", 1);
 
-syscall(
-	SYS_write,
+write(
 	STDOUT,
 	numbers,
-	1 + (int)(1 != 0),
-	0,
-	0,
-	0
+	1 + (int)(1 != 0)
 );
 
-syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+write(STDOUT, "\n", 1);
 
-syscall(
-	SYS_write,
+write(
 	STDOUT,
 	numbers,
-	1 + (int)(0 != 1),
-	0,
-	0,
-	0
+	1 + (int)(0 != 1)
 );
 
-syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+write(STDOUT, "\n", 1);
 
-syscall(
-	SYS_write,
+write(
 	STDOUT,
 	numbers,
-	1 + (int)(0 < 0),
-	0,
-	0,
-	0
+	1 + (int)(0 < 0)
 );
 
-syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+write(STDOUT, "\n", 1);
 
-syscall(
-	SYS_write,
+write(
 	STDOUT,
 	numbers,
-	1 + (int)(1 < 0),
-	0,
-	0,
-	0
+	1 + (int)(1 < 0)
 );
 
-syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+write(STDOUT, "\n", 1);
 
-syscall(
-	SYS_write,
+write(
 	STDOUT,
 	numbers,
-	1 + (int)(0 < 1),
-	0,
-	0,
-	0
+	1 + (int)(0 < 1)
 );
 
-syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+write(STDOUT, "\n", 1);
 
-syscall(
-	SYS_write,
+write(
 	STDOUT,
 	numbers,
-	1 + (int)(0 > 0),
-	0,
-	0,
-	0
+	1 + (int)(0 > 0)
 );
 
-syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+write(STDOUT, "\n", 1);
 
-syscall(
-	SYS_write,
+write(
 	STDOUT,
 	numbers,
-	1 + (int)(1 > 0),
-	0,
-	0,
-	0
+	1 + (int)(1 > 0)
 );
 
-syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+write(STDOUT, "\n", 1);
 
-syscall(
-	SYS_write,
+write(
 	STDOUT,
 	numbers,
-	1 + (int)(0 > 1),
-	0,
-	0,
-	0
+	1 + (int)(0 > 1)
 );
 
-syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+write(STDOUT, "\n", 1);
+
+write(STDOUT, "\n", 1);
+
+write(
+	STDOUT,
+	numbers,
+	1 + (int)(!(bool)0)
+);
+
+write(STDOUT, "\n", 1);
+
+write(
+	STDOUT,
+	numbers,
+	1 + (int)(!(bool)1)
+);
+
+write(STDOUT, "\n", 1);

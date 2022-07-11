@@ -398,6 +398,18 @@ func parseNegative(Parser parser, SyntaxTree tree) -> Operation {
 	return createUnaryOperation(operator, operation, (Operator)0);
 }
 
+func parseLogicNot(Parser parser, SyntaxTree tree) -> Operation {
+	var operator = consumeOperator(parser, tree, "!", (bool)0);
+	var operation = parseUnary(parser, tree);
+	return createUnaryOperation(operator, operation, (Operator)0);
+}
+
+func parseBitwiseNot(Parser parser, SyntaxTree tree) -> Operation {
+	var operator = consumeOperator(parser, tree, "~", (bool)0);
+	var operation = parseUnary(parser, tree);
+	return createUnaryOperation(operator, operation, (Operator)0);
+}
+
 func parseSizeof(Parser parser, SyntaxTree tree) -> Operation {
 	var keyword = consumeKeyword(parser, tree, KEYWORD_sizeof);
 	var lparen = consumeOperator(parser, tree, "(", (bool)0);
@@ -458,6 +470,14 @@ func parseUnary(Parser parser, SyntaxTree tree) -> Operation {
 
 	if (isOperator(tree.lexer.current.operator, "(")) {
 		return parseGroup(parser, tree);
+	}
+
+	if (isOperator(tree.lexer.current.operator, "!")) {
+		return parseLogicNot(parser, tree);
+	}
+
+	if (isOperator(tree.lexer.current.operator, "~")) {
+		return parseBitwiseNot(parser, tree);
 	}
 
 	if (tree.lexer.current.operator == (Operator)0) {
@@ -1420,7 +1440,7 @@ func bindNames(Parser parser, str fileName) {
 }
 
 func compareTypes(Parser parser, TypeObj a, TypeObj b) -> bool {
-	return a == b || b == parser.any;
+	return a == b || b == parser.any || a == (TypeObj)0;
 }
 
 func checkTypesInTypeIdentifier(Parser parser, SyntaxTree tree, Block block, Identifier identifier, Array<Generic> generics) -> TypeObj {
@@ -1778,6 +1798,28 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 		return parser.int;
 	}
 
+	if (isOperator(operation.operator, "!") && operation.left == (Operation)0) {
+		var rightType = checkTypesInOperation(parser, tree, block, operation.right);
+
+		if (rightType != parser.bool) {
+			printError(parser, operation.right.region.start, " expected type 'bool' for the unary '!' operation\n");
+		}
+
+		operation.operationType = parser.bool;
+		return parser.bool;
+	}
+
+	if (isOperator(operation.operator, "~") && operation.left == (Operation)0) {
+		var rightType = checkTypesInOperation(parser, tree, block, operation.right);
+
+		if (rightType != parser.int) {
+			printError(parser, operation.right.region.start, " expected type 'int' for the unary '~' operation\n");
+		}
+
+		operation.operationType = parser.int;
+		return parser.int;
+	}
+
 	if (isOperator(operation.operator, "[") && operation.right == (Operation)0) {
 		var leftType = checkTypesInOperation(parser, tree, block, operation.left);
 
@@ -1913,6 +1955,8 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 
 		return (TypeObj)0;
 	} else if (isOperator(operation.operator, "*") ||
+			isOperator(operation.operator, "/") ||
+			isOperator(operation.operator, "%") ||
 			isOperator(operation.operator, "&") ||
 			isOperator(operation.operator, "|") ||
 			isOperator(operation.operator, "<<") ||

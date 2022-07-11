@@ -1295,6 +1295,34 @@ func writeNegative(Parser parser, SyntaxTree tree, Block block, int output, Oper
 	return register.name;
 }
 
+func writeLogicNot(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
+	var rightRegister = getRegister(registers);
+
+	writeOperation(parser, tree, block, output, operation.right, registers, rightRegister, (bool)1, functions);
+
+	fprint(output, "	mov ");
+	fprint(output, register.name);
+	fprint(output, ", 1\n");
+
+	fprint(output, "	sub ");
+	fprint(output, register.name);
+	fprint(output, ", ");
+	fprint(output, rightRegister.name);
+	fprint(output, " ;; logical not\n");
+
+	return register.name;
+}
+
+func writeBitwiseNot(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
+	writeOperation(parser, tree, block, output, operation.right, registers, register, (bool)1, functions);
+
+	fprint(output, "	not ");
+	fprint(output, register.name);
+	fprint(output, " ;; bitwise not\n");
+
+	return register.name;
+}
+
 func writeMultiplication(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
 	var rax = findRegister(registers, "rax");
 
@@ -1338,6 +1366,116 @@ func writeMultiplication(Parser parser, SyntaxTree tree, Block block, int output
 	if (register != registerB && register != rax) {
 		writePopData(output, rax);
 		rax.used = (bool)1;
+	}
+
+	return register.name;
+}
+
+func writeDivision(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
+	var rax = findRegister(registers, "rax");
+	var pushedRax = (bool)0;
+	if (rax.used && register != rax) {
+		pushedRax = (bool)1;
+		writePushData(output, rax);
+	}
+	rax.used = (bool)1;
+
+	var rdx = findRegister(registers, "rax");
+	var pushedRdx = (bool)0;
+	if (rdx.used && register != rax) {
+		pushedRdx = (bool)1;
+		writePushData(output, rdx);
+	}
+	rdx.used = (bool)1;
+
+	var rightRegister = register;
+	if (register == rax || register == rdx) {
+		rightRegister = getRegister(registers);
+	}
+
+	writeOperation(parser, tree, block, output, operation.left, registers, rax, (bool)1, functions);
+	writeOperation(parser, tree, block, output, operation.right, registers, rightRegister, (bool)1, functions);
+
+	fprint(output, "	mov rdx, 0 ;; clear dividend\n");
+	fprint(output, "	div ");
+	fprint(output, rightRegister.name);
+	fprint(output, " ;; division\n");
+
+	if (register != rax) {
+		fprint(output, "	mov ");
+		fprint(output, register.name);
+		fprint(output, ", rax\n");
+
+		rax.used = (bool)0;
+	}
+
+	if (rightRegister != register) {
+		rightRegister.used = (bool)0;
+	}
+
+	if (pushedRax) {
+		writePopData(output, rax);
+	}
+
+	if (pushedRdx) {
+		writePopData(output, rdx);
+	} else {
+		rdx.used = (bool)0;
+	}
+
+	return register.name;
+}
+
+func writeModulo(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
+	var rax = findRegister(registers, "rax");
+	var pushedRax = (bool)0;
+	if (rax.used && register != rax) {
+		pushedRax = (bool)1;
+		writePushData(output, rax);
+	}
+	rax.used = (bool)1;
+
+	var rdx = findRegister(registers, "rax");
+	var pushedRdx = (bool)0;
+	if (rdx.used && register != rax) {
+		pushedRdx = (bool)1;
+		writePushData(output, rdx);
+	}
+	rdx.used = (bool)1;
+
+	var rightRegister = register;
+	if (register == rax || register == rdx) {
+		rightRegister = getRegister(registers);
+	}
+
+	writeOperation(parser, tree, block, output, operation.left, registers, rax, (bool)1, functions);
+	writeOperation(parser, tree, block, output, operation.right, registers, rightRegister, (bool)1, functions);
+
+	fprint(output, "	mov rdx, 0 ;; clear dividend\n");
+	fprint(output, "	div ");
+	fprint(output, rightRegister.name);
+	fprint(output, " ;; division\n");
+
+	if (register != rdx) {
+		fprint(output, "	mov ");
+		fprint(output, register.name);
+		fprint(output, ", rdx\n");
+
+		rdx.used = (bool)0;
+	}
+
+	if (rightRegister != register) {
+		rightRegister.used = (bool)0;
+	}
+
+	if (pushedRax) {
+		writePopData(output, rax);
+	} else {
+		rax.used = (bool)0;
+	}
+
+	if (pushedRdx) {
+		writePopData(output, rdx);
 	}
 
 	return register.name;
@@ -1711,8 +1849,24 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 		return writeNegative(parser, tree, block, output, operation, registers, registerA, functions);
 	}
 
+	if (isOperator(operation.operator, "!") && operation.left == (Operation)0) {
+		return writeLogicNot(parser, tree, block, output, operation, registers, registerA, functions);
+	}
+
+	if (isOperator(operation.operator, "~") && operation.left == (Operation)0) {
+		return writeBitwiseNot(parser, tree, block, output, operation, registers, registerA, functions);
+	}
+
 	if (isOperator(operation.operator, "*")) {
 		return writeMultiplication(parser, tree, block, output, operation, registers, registerA, functions);
+	}
+
+	if (isOperator(operation.operator, "/")) {
+		return writeDivision(parser, tree, block, output, operation, registers, registerA, functions);
+	}
+
+	if (isOperator(operation.operator, "%")) {
+		return writeModulo(parser, tree, block, output, operation, registers, registerA, functions);
 	}
 
 	if (isOperator(operation.operator, "=")) {

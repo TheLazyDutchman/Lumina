@@ -1,15 +1,27 @@
+import "../std/syscalls.lumina"
+
+
 var SYS_write = 1;
 var STDOUT = 1;
 var numbers = "123456789";
 
-syscall(SYS_write, STDOUT, numbers, 1 << 3, 0, 0, 0);
-syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+write(STDOUT, numbers, 1 << 3);
+write(STDOUT, "\n", 1);
 
-syscall(SYS_write, STDOUT, numbers, 3 << 1, 0, 0, 0);
-syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+write(STDOUT, numbers, 3 << 1);
+write(STDOUT, "\n", 1);
 
-syscall(SYS_write, STDOUT, numbers, 4 >> 1, 0, 0, 0);
-syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+write(STDOUT, numbers, 4 >> 1);
+write(STDOUT, "\n", 1);
 
-syscall(SYS_write, STDOUT, numbers, 5 >> 1, 0, 0, 0);
-syscall(SYS_write, STDOUT, "\n", 1, 0, 0, 0);
+write(STDOUT, numbers, 5 >> 1);
+write(STDOUT, "\n", 1);
+
+write(STDOUT, numbers, 1 | 2);
+write(STDOUT, "\n", 1);
+
+write(STDOUT, numbers, 3 & 2);
+write(STDOUT, "\n", 1);
+
+write(STDOUT, numbers, (~10) & ((1 << 4) - 1));
+write(STDOUT, "\n", 1);
