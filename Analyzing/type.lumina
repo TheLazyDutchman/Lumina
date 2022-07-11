@@ -41,6 +41,9 @@ type TypeObj {
 
 	Array<TypeObj> variants;
 	bool isGeneric;
+
+	int depth;
+	int position;
 }
 
 type PropertyDefinition {
@@ -112,12 +115,14 @@ func findProperty(Array<Property> list, str name) -> Property {
 	return (Property)0;
 }
 
-func createGenericFromString(str name) -> Generic {
+func createGenericFromString(str name, int depth, int position) -> Generic {
 	var generic = new Generic();
 
 	generic.name = name;
 	generic.typeObj = createTypeFromString(name, 8);
 	generic.typeObj.isGeneric = (bool)1;
+	generic.typeObj.depth = depth;
+	generic.typeObj.position = position;
 
 	return generic;
 }
@@ -135,8 +140,8 @@ func createGenericFromType(TypeObj typeObj) -> Generic {
 	return generic;
 }
 
-func createGenericFromDefinition(GenericDefinition definition) -> Generic {
-	var generic = createGenericFromString(definition.name.name);
+func createGenericFromDefinition(GenericDefinition definition, int depth, int position) -> Generic {
+	var generic = createGenericFromString(definition.name.name, depth, position);
 
 	generic.definition = definition;
 
@@ -274,7 +279,7 @@ func createTypeFromDefinition(TypeDefinition definition) -> TypeObj {
 
 	var i = 0;
 	while (i < definition.generics.generics.size) {
-		addItem<Generic>(typeObj.generics, createGenericFromDefinition(definition.generics.generics.list[i]));
+		addItem<Generic>(typeObj.generics, createGenericFromDefinition(definition.generics.generics.list[i], 0, i));
 		i = i + 1;
 	}
 

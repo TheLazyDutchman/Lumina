@@ -1,4 +1,5 @@
 import "../std/io.lumina"
+import "../std/collections.lumina"
 
 
 type Point {
@@ -41,3 +42,35 @@ print("\n");
 
 print("properties of 'Point':\n");
 printProperties(Point);
+print("\n");
+
+var string = new Array<char>();
+
+addItem<char>(string, 'H');
+addItem<char>(string, 'e');
+addItem<char>(string, 'l');
+addItem<char>(string, 'l');
+addItem<char>(string, 'o');
+
+print(string.list);
+print("\n");
+
+addItem<char>(string, ',');
+addItem<char>(string, ' ');
+addItem<char>(string, 'w');
+addItem<char>(string, 'o');
+addItem<char>(string, 'r');
+addItem<char>(string, 'l');
+addItem<char>(string, 'd');
+addItem<char>(string, '!');
+addItem<char>(string, '\n');
+
+print(string.list);
+
+setItem<char>(string, 5, '.');
+
+print(string.list);
+
+setItem<char>(string, 5, getItem<char>(string, 6));
+
+print(string.list);

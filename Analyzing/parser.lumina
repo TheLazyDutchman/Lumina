@@ -14,7 +14,6 @@ import "statement.lumina"
 import "operation.lumina"
 import "operator.lumina"
 import "value.lumina"
-import "immediate.lumina"
 import "if.lumina"
 import "while.lumina"
 import "whitespace.lumina"
@@ -22,6 +21,7 @@ import "name.lumina"
 import "identifier.lumina"
 import "position.lumina"
 import "import.lumina"
+import "immediate.lumina"
 import "comment.lumina"
 import "definition.lumina"
 
@@ -727,7 +727,12 @@ func parseFunctionDefinition(Parser parser, SyntaxTree tree, Block outer, Array<
 		returnType = parseReturnType(parser, tree);
 	}
 
-	var function = createFunctionDefinition(keyword, name, lparen, generics, parameters, rparen, returnType);
+	var depth = 1;
+	if (outer != (Block)0) {
+		depth = outer.depth + 1;
+	}
+
+	var function = createFunctionDefinition(keyword, name, lparen, generics, parameters, rparen, returnType, depth);
 
 	var block = parseBlock(parser, tree, outer, function, importList);
 	function.block = block;
@@ -783,6 +788,7 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, Array<Definitio
 
 			if (outerBlock.function != (FunctionDefinition)0) {
 				size = size + outerBlock.function.parameters.size + 1;
+				size = size + outerBlock.function.generics.size;
 			}
 		}
 
@@ -856,6 +862,11 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, Array<Definitio
 }
 
 func parse(Parser parser, str fileName, str outerName) -> SyntaxTree {
+	if (fileName == (str)0) {
+		print("parse function got no file name\n");
+		exit(1);
+	}
+
 	if (outerName != (str)0) {
 		var filePath = getLocalFilePath(outerName, fileName);
 		fileName = getFullPathString(filePath);
@@ -1066,29 +1077,6 @@ func getTypeFromOperation(Parser parser, SyntaxTree tree, Block block, Operation
 	return (TypeObj)0;
 }
 
-//func getPropertyOffset(Parser parser, SyntaxTree tree, Block block, TypeObj typeObj, str propertyName) -> int {
-//	var sum = 0;
-//	var i = 0;
-//	while (i < typeObj.properties.size) {
-//		var property = typeObj.properties.list[i];
-//		if (streq(property.name, propertyName)) {
-//			return sum;
-//		}
-//
-//		if (property.propertyType == (TypeObj)0) {
-//			printError(parser, property.definition.region.start, " property type is null in 'getPropertyDefinitionOffset' in file: '");
-//			print(tree.fileName);
-//			print("'\n");
-//			return 0;
-//		}
-//
-//		sum = sum + property.propertyType.size;
-//		i = i + 1;
-//	}
-//
-//	return -1;
-//}
-//
 func createVariableFromParameter(Parser parser, SyntaxTree tree, Block block, Parameter parameter, int position) -> Variable {
 	var parameterType = parameter.typeObj;
 	if (parameterType == (TypeObj)0) {
@@ -1102,7 +1090,7 @@ func findVariableInParameters(Parser parser, SyntaxTree tree, Block block, Funct
 	var i = 0;
 	while (i < function.parameters.size) {
 		if (streq(function.parameters.list[i].name.name, name)) {
-			return createVariableFromParameter(parser, tree, block, function.parameters.list[i], i);
+			return createVariableFromParameter(parser, tree, block, function.parameters.list[i], i + function.generics.size);
 		}
 		i = i + 1;
 	}

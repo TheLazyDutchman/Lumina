@@ -143,7 +143,7 @@ func copyReturnType(ReturnType original) -> ReturnType {
 	return returnType;
 }
 
-func createFunctionDefinition(Name keyword, Name name, Operator lparen, GenericsDefinition genericsDefinition, Array<Parameter> parameters, Operator rparen, ReturnType returnType) -> FunctionDefinition {
+func createFunctionDefinition(Name keyword, Name name, Operator lparen, GenericsDefinition genericsDefinition, Array<Parameter> parameters, Operator rparen, ReturnType returnType, int depth) -> FunctionDefinition {
 	var function = new FunctionDefinition();
 
 	function.keyword = keyword;
@@ -153,7 +153,7 @@ func createFunctionDefinition(Name keyword, Name name, Operator lparen, Generics
 	function.genericsDefinition = genericsDefinition;
 	var i = 0;
 	while (i < genericsDefinition.generics.size) {
-		addItem<Generic>(function.generics, createGenericFromDefinition(genericsDefinition.generics.list[i]));
+		addItem<Generic>(function.generics, createGenericFromDefinition(genericsDefinition.generics.list[i], depth, i));
 		i = i + 1;
 	}
 
@@ -173,6 +173,8 @@ func createFunctionFromString(str value, Array<Parameter> parameters, ReturnType
 	function.name = createNameFromString(value);
 	function.parameters = parameters;
 	function.returnType = returnType;
+
+	function.generics = createArray<Generic>();
 
 	function.variants = createArray<FunctionDefinition>();
 
