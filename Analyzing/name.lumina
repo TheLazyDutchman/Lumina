@@ -73,7 +73,7 @@ func createNameFromString(str value) -> Name {
 
 func isKeyword(Name name, int keywordId) -> bool {
 	if (name == (Name)0) {
-		return (bool)0;
+		return false;
 	}
 
 	return name.keyword == keywordId;
@@ -81,7 +81,7 @@ func isKeyword(Name name, int keywordId) -> bool {
 
 func isIdentifier(Name name) -> bool {
 	if (name == (Name)0) {
-		return (bool)0;
+		return false;
 	}
 
 	return name.keyword == -1;

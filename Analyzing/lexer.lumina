@@ -233,7 +233,7 @@ func nextToken(Lexer lexer) -> Token {
 	}
 
 	if (current(lexer) == '\0') {
-		token.isEOF = (bool)1;
+		token.isEOF = true;
 		return token;
 	}
 
@@ -264,7 +264,7 @@ func nextToken(Lexer lexer) -> Token {
 		print(operatorToken.operator.name);
 		print("'\n");
 
-		token.isError = (bool)1;
+		token.isError = true;
 		return token;
 	} else {
 		return operatorToken;

@@ -85,11 +85,11 @@ func execvp(str fileName, str[] args) -> int {
 		var file_fd = openat(dir_fd, fileName, 2097152, 0);
 		if (file_fd > 0) {
 			var length = strlen(dir);
-			var hasNoSlash = (bool)0;
+			var hasNoSlash = false;
 
 			if (dir[length] != '/') {
 				length = length + 1;
-				hasNoSlash = (bool)1;
+				hasNoSlash = true;
 			}
 
 			length = length + strlen(fileName);

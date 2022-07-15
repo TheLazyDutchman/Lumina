@@ -14,7 +14,7 @@ type Identifier {
 }
 
 func createIdentifierFromName(Name name) -> Identifier {
-	if (isIdentifier(name) != (bool)1) {
+	if (isIdentifier(name) != true) {
 		printPosition(name.region.start);
 		print(" expected an identifier\n");
 		return (Identifier)0;

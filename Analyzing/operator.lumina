@@ -103,12 +103,12 @@ func createOperator(Position position, WhiteSpace space) -> Operator {
 
 func isOperator(Operator operator, str name) -> bool {
 	if (operator == (Operator)0) {
-		return (bool)0;
+		return false;
 	}
 
-	if (streq(operator.name, name) != (bool)1) {
-		return (bool)0;
+	if (streq(operator.name, name) != true) {
+		return false;
 	}
 
-	return (bool)1;
+	return true;
 }

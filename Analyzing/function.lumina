@@ -241,10 +241,10 @@ func getVariantFunction(Array<TypeObj> arrayType, FunctionDefinition function, A
 	while (i < function.variants.size) {
 		var variant = function.variants.list[i];
 		var j = 0;
-		var isEqual = (bool)1;
+		var isEqual = true;
 		while (j < generics.size) {
 			if (variant.generics.list[j] == (Generic)0 || variant.generics.list[j].typeObj != generics.list[j]) {
-				isEqual = (bool)0;
+				isEqual = false;
 			}
 			j = j + 1;
 		}

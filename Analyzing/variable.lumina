@@ -75,8 +75,8 @@ func createVariableFromDefinition(VariableDefinition definition, int depth, int 
 func createConstantFromString(str name, TypeObj constantType, int value) -> Variable {
 	var constant = createVariableFromString(name, 0, 0, constantType);
 
-	constant.isConstant = (bool)1;
-	constant.isEvaluated = (bool)1;
+	constant.isConstant = true;
+	constant.isEvaluated = true;
 	constant.value = value;
 
 	return constant;
@@ -85,7 +85,7 @@ func createConstantFromString(str name, TypeObj constantType, int value) -> Vari
 func createConstantFromDefinition(VariableDefinition definition) -> Variable {
 	var constant = createVariableFromString(definition.name.name, 0, 0, definition.variableType);
 
-	constant.isConstant = (bool)1;
+	constant.isConstant = true;
 	constant.definition = definition;
 
 	return constant;
@@ -106,7 +106,7 @@ func getNumVariables(Array<Variable> list) -> int {
 	var sum = 0;
 	var i = 0;
 	while (i < list.size) {
-		if (list.list[i].isConstant != (bool)1) {
+		if (list.list[i].isConstant != true) {
 			sum = sum + 1;
 		}
 		i = i + 1;

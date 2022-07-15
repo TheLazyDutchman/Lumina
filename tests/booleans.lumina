@@ -154,7 +154,7 @@ write(STDOUT, "\n", 1);
 write(
 	STDOUT,
 	numbers,
-	1 + (int)(!(bool)0)
+	1 + (int)(!false)
 );
 
 write(STDOUT, "\n", 1);
@@ -162,7 +162,7 @@ write(STDOUT, "\n", 1);
 write(
 	STDOUT,
 	numbers,
-	1 + (int)(!(bool)1)
+	1 + (int)(!true)
 );
 
 write(STDOUT, "\n", 1);

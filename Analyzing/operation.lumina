@@ -145,7 +145,7 @@ func createOperationFromNew(NewOperation newOperation) -> Operation {
 
 func isVariable(Operation operation) -> bool {
 	if (isName(operation.value)) {
-		return (bool)1;
+		return true;
 	}
 
 	if (isOperator(operation.operator, ".")) {
@@ -169,7 +169,7 @@ func isVariable(Operation operation) -> bool {
 		return isVariable(operation.left);
 	}
 
-	return (bool)0;
+	return false;
 }
 
 func getArguments(Array<Operation> list, Operation operation) {

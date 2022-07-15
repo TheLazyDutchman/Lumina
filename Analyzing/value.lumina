@@ -62,7 +62,7 @@ func createValueFromString(String string) -> Value {
 
 func isName(Value value) -> bool {
 	if (value == (Value)0) {
-		return (bool)0;
+		return false;
 	}
 
 	return value.identifier != (Identifier)0;

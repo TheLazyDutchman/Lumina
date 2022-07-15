@@ -8,9 +8,9 @@ type Path {
 
 
 func _is_outer(str s) -> bool {
-	if (s[0] != '.') { return (bool)0; }
-	if (s[1] != '.') { return (bool)0; }
-	return (bool)1;
+	if (s[0] != '.') { return false; }
+	if (s[1] != '.') { return false; }
+	return true;
 }
 
 func getPathFromString(str file) -> Path {
@@ -24,7 +24,7 @@ func getPathFromString(str file) -> Path {
 	var index = strindex(file, '/');
 	var currentDepth = 0;
 
-	if (name[0] == '.' && _is_outer(name) == (bool)0) {
+	if (name[0] == '.' && _is_outer(name) == false) {
 		depth = depth - 1;
 		name = (str)((int)name + index);
 		index = strindex(name, '/');
@@ -33,7 +33,7 @@ func getPathFromString(str file) -> Path {
 	while (currentDepth < depth) {
 		if (_is_outer(name) && 
 			currentDepth > 0 &&
-			_is_outer(path.folders[currentDepth - 1]) == (bool)0) {
+			_is_outer(path.folders[currentDepth - 1]) == false) {
 			currentDepth = currentDepth - 1;
 			depth = depth - 2;
 
@@ -76,7 +76,7 @@ func getLocalFilePath(str outerFile, str file) -> Path {
 	var index = strindex(outerFile, '/');
 	var currentDepth = 0;
 
-	if (name[0] == '.' && _is_outer(name) == (bool)0) {
+	if (name[0] == '.' && _is_outer(name) == false) {
 		outerDepth = outerDepth - 1;
 		depth = depth - 1;
 		name = (str)((int)name + index);
@@ -86,7 +86,7 @@ func getLocalFilePath(str outerFile, str file) -> Path {
 	while (currentDepth < outerDepth) {
 		if (_is_outer(name) && 
 			currentDepth > 0 &&
-			_is_outer(path.folders[currentDepth - 1]) == (bool)0) {
+			_is_outer(path.folders[currentDepth - 1]) == false) {
 			currentDepth = currentDepth - 1;
 			outerDepth = outerDepth - 2;
 			depth = depth - 2;
@@ -106,7 +106,7 @@ func getLocalFilePath(str outerFile, str file) -> Path {
 
 	index = strindex(file, '/');
 	
-	if (name[0] == '.' && _is_outer(name) == (bool)0) {
+	if (name[0] == '.' && _is_outer(name) == false) {
 		depth = depth - 1;
 		name = (str)((int)name + index);
 		index = strindex(name, '/');
@@ -115,7 +115,7 @@ func getLocalFilePath(str outerFile, str file) -> Path {
 	while (currentDepth < depth) {
 		if (_is_outer(name) &&
 			currentDepth > 0 &&
-			_is_outer(path.folders[currentDepth - 1]) == (bool)0) {
+			_is_outer(path.folders[currentDepth - 1]) == false) {
 			currentDepth = currentDepth - 1;
 			depth = depth - 2;
 
@@ -154,10 +154,10 @@ func getFullPathString(Path path) -> str {
 		i = i + 1;
 	}
 
-	var isLocal = (bool)0;
+	var isLocal = false;
 
 	if (len == 0) {
-		isLocal = (bool)1;
+		isLocal = true;
 		len = 2;
 	}
 
