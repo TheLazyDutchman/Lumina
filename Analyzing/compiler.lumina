@@ -60,7 +60,7 @@ func findRegister(Array<Register> list, str name) -> Register {
 func getRegister(Array<Register> list) -> Register {
 	var i = 0;
 	while (i < list.size) {
-		if (list.list[i].used != true) {
+		if (!list.list[i].used) {
 			list.list[i].used = true;
 			return list.list[i];
 		}
@@ -664,7 +664,7 @@ func writeFooter(int output, Array<str> strings, Array<TypeObj> types) {
 }
 
 func writeConstant(Parser parser, int output, Variable constant, str register) -> str {
-	if (constant.isEvaluated != true) {
+	if (!constant.isEvaluated) {
 		evaluateConstant(parser, constant);
 	}
 
@@ -1197,7 +1197,7 @@ func writeNewOperation(Parser parser, SyntaxTree tree, Block block, int output, 
 		fprint(output, "	call __new_list__\n");
 	}
 
-	if (streq(register.name, "rax") != true) {
+	if (!streq(register.name, "rax")) {
 		fprint(output, "	mov ");
 		fprint(output, register.name);
 		fprint(output, ", rax\n");
@@ -1268,7 +1268,7 @@ func writeCall(Parser parser, SyntaxTree tree, Block block, int output, Operatio
 	fprinti(output, id);
 	fprint(output, "\n");
 
-	if (streq(register.name, "rax") != true) {
+	if (!streq(register.name, "rax")) {
 		fprint(output, "	mov ");
 		fprint(output, register.name);
 		fprint(output, ", rax ;; return value\n");
@@ -1969,7 +1969,7 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 }
 
 func writeVariable(Parser parser, SyntaxTree tree, Block block, int output, Variable variable, Array<Register> registers, Array<FunctionDefinition> functions) {
-	if (variable.isConstant == false) {
+	if (!variable.isConstant) {
 		var register = getRegister(registers);
 		writeOperation(parser, tree, block, output, variable.definition.value, registers, register, true, functions);
 		writePushData(output, register);

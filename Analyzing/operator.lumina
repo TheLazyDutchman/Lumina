@@ -56,7 +56,7 @@ addItem<OperatorType>(operatorList, createOperatorType(">=", PREC_comparison));
 addItem<OperatorType>(operatorList, createOperatorType("==", PREC_comparison));
 addItem<OperatorType>(operatorList, createOperatorType("<", PREC_comparison));
 addItem<OperatorType>(operatorList, createOperatorType(">", PREC_comparison));
-addItem<OperatorType>(operatorList, createOperatorType("!", PREC_comparison));
+addItem<OperatorType>(operatorList, createOperatorType("!", PREC_bitwise));
 addItem<OperatorType>(operatorList, createOperatorType("=", PREC_assignment));
 addItem<OperatorType>(operatorList, createOperatorType("+", PREC_term));
 addItem<OperatorType>(operatorList, createOperatorType("-", PREC_term));

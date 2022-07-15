@@ -85,11 +85,11 @@ type TypeDefinition {
 }
 
 func createPropertyDefinition(Operation propertyType, Name name, Operator semicolon) -> PropertyDefinition {
-	if (isIdentifier(name) != true) {
+	if (!isIdentifier(name)) {
 		print("expected property name to be an identifier\n");
 	}
 
-	if (streq(semicolon.name, ";") == false) {
+	if (!streq(semicolon.name, ";")) {
 		print("expected ';' in property\n");
 	}
 
@@ -191,15 +191,15 @@ func createGenericsDefinition(Operator lesser, Array<GenericDefinition> generics
 func createTypeDefinition(Name keyword, Name name, Operator lbrace, GenericsDefinition generics, Array<PropertyDefinition> properties, Operator rbrace) -> TypeDefinition {
 	var typeDef = new TypeDefinition();
 
-	if (isIdentifier(name) != true) {
+	if (!isIdentifier(name)) {
 		print("expected type name to be an identifier\n");
 	}
 
-	if (isOperator(lbrace, "{") != true) {
+	if (!isOperator(lbrace, "{")) {
 		print("expected '{' after type name\n");
 	}
 
-	if (isOperator(rbrace, "}") != true) {
+	if (!isOperator(rbrace, "}")) {
 		print("expected '}' after type definition\n");
 	}
 

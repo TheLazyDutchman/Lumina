@@ -256,7 +256,7 @@ func consumeOperator(Parser parser, SyntaxTree tree, str operator, bool ignoreEr
 		return value;
 	}
 
-	if (ignoreError != true) {
+	if (!ignoreError) {
 		printError(parser, createPositionFromLexer(tree.lexer), " did not find operator: '");
 		print(operator);
 		print("'\n");
@@ -347,7 +347,7 @@ func parsePropertyDefinition(Parser parser, SyntaxTree tree) -> PropertyDefiniti
 func parseGenerics(Parser parser, SyntaxTree tree) -> GenericsDefinition {
 	var generics = createArray<GenericDefinition>();
 
-	if (isOperator(tree.lexer.current.operator, "<") != true) {
+	if (!isOperator(tree.lexer.current.operator, "<")) {
 		return createGenericsDefinition((Operator)0, generics, (Operator)0);
 	}
 
@@ -356,7 +356,7 @@ func parseGenerics(Parser parser, SyntaxTree tree) -> GenericsDefinition {
 	var generic = consumeIdentifier(parser, tree);
 	addItem<GenericDefinition>(generics, createGenericDefinition((Operator)0, generic));
 
-	while (isOperator(tree.lexer.current.operator, ">") != true) {
+	while (!isOperator(tree.lexer.current.operator, ">")) {
 		var comma = consumeOperator(parser, tree, ",", false);
 		generic = consumeIdentifier(parser, tree);
 		addItem<GenericDefinition>(generics, createGenericDefinition(comma, generic));
@@ -377,7 +377,7 @@ func parseTypeDefinition(Parser parser, SyntaxTree tree) -> TypeDefinition {
 	var lbrace = consumeOperator(parser, tree, "{", false);
 
 	var properties = createArray<PropertyDefinition>();
-	while (isOperator(tree.lexer.current.operator, "}") != true) {
+	while (!isOperator(tree.lexer.current.operator, "}")) {
 		var property = parsePropertyDefinition(parser, tree);
 		addItem<PropertyDefinition>(properties, property);
 	}
@@ -411,13 +411,13 @@ func parseNegative(Parser parser, SyntaxTree tree) -> Operation {
 
 func parseLogicNot(Parser parser, SyntaxTree tree) -> Operation {
 	var operator = consumeOperator(parser, tree, "!", false);
-	var operation = parseUnary(parser, tree);
+	var operation = parseExpression(parser, tree, operator.precedence);
 	return createUnaryOperation(operator, operation, (Operator)0);
 }
 
 func parseBitwiseNot(Parser parser, SyntaxTree tree) -> Operation {
 	var operator = consumeOperator(parser, tree, "~", false);
-	var operation = parseUnary(parser, tree);
+	var operation = parseExpression(parser, tree, operator.precedence);
 	return createUnaryOperation(operator, operation, (Operator)0);
 }
 
@@ -438,7 +438,7 @@ func parseNew(Parser parser, SyntaxTree tree) -> Operation {
 	var left = consumeOperator(parser, tree, "(", false);
 
 	var num = (Operation)0;
-	if (isOperator(tree.lexer.current.operator, ")") != true) {
+	if (!isOperator(tree.lexer.current.operator, ")")) {
 		num = parseExpression(parser, tree, PREC_expression);
 	}
 
@@ -653,7 +653,7 @@ func parseBlock(Parser parser, SyntaxTree tree, Block outer, FunctionDefinition 
 		block.depth = block.depth + 1;
 	}
 
-	while (isOperator(tree.lexer.current.operator, "}") != true || tree.lexer.current.isEOF) {
+	while (!isOperator(tree.lexer.current.operator, "}") || tree.lexer.current.isEOF) {
 		var statement = parseStatement(parser, tree, block, definitionList, typeList, functionList, variableList, importList);
 		addItem<Statement>(statementList, statement);
 	}
@@ -910,7 +910,7 @@ func parse(Parser parser, str fileName, str outerName) -> SyntaxTree {
 
 	tree = createSyntaxTree(fileName, parser.numAnds, parser.numOrs);
 
-	while (tree.lexer.current.isEOF != true) {
+	while (!tree.lexer.current.isEOF) {
 		var statement = parseStatement(parser, tree, (Block)0, tree.definitions, tree.types, tree.functions, tree.variables, tree.imports);
 		addItem<Statement>(tree.statements, statement);
 	}
@@ -1252,7 +1252,7 @@ func bindNamesInOperation(Parser parser, SyntaxTree tree, Operation operation, B
 	}
 
 	if (operation.right != (Operation)0) {
-		if (operation.operator == (Operator)0 || isOperator(operation.operator, ".") != true) {
+		if (operation.operator == (Operator)0 || !isOperator(operation.operator, ".")) {
 			bindNamesInOperation(parser, tree, operation.right, block);
 		}
 	}
@@ -1283,7 +1283,7 @@ func bindTypeNamesInOperation(Parser parser, SyntaxTree tree, Operation operatio
 		bindTypeNamesInOperation(parser, tree, operation.left, generics, block);
 	}
 
-	if (operation.right != (Operation)0 && isOperator(operation.operator, ".") != true) {
+	if (operation.right != (Operation)0 && !isOperator(operation.operator, ".")) {
 		bindTypeNamesInOperation(parser, tree, operation.right, generics, block);
 	}
 
@@ -1570,9 +1570,9 @@ func checkTypesInNewOperation(Parser parser, SyntaxTree tree, Block block, NewOp
 			printError(parser, newOperation.num.region.start, " can not allocate an array of unknown length\n");
 		}
 	} else {
-		if (isOperator(newOperation.left, "(") != true ||
+		if (!isOperator(newOperation.left, "(") ||
 			newOperation.num != (Operation)0 ||
-			isOperator(newOperation.right, ")") != true) {
+			!isOperator(newOperation.right, ")")) {
 			printError(parser, newOperation.typeObj.region.start, " expected 'new' operation to end with '()'\n");
 		}
 	}
@@ -1688,7 +1688,7 @@ func checkTypesInFunctionCall(Parser parser, SyntaxTree tree, Block block, Opera
 		typesMatching = false;
 	}
 
-	if (typesMatching != true) {
+	if (!typesMatching) {
 		printError(parser, call.operator.position, " arguments do not match\n");
 		print("[NOTE] expected: ");
 		printTypeArray(expectedList);
@@ -1716,7 +1716,7 @@ func checkTypesInFunctionCall(Parser parser, SyntaxTree tree, Block block, Opera
 }
 
 func checkTypesInProperty(Parser parser, SyntaxTree tree, Block block, Operation operation) -> TypeObj {
-	if (isVariable(operation.left) != true) {
+	if (!isVariable(operation.left)) {
 		printError(parser, operation.operator.position, " can not read a property from a value that is not a variable\n");
 		return (TypeObj)0;
 	}
@@ -1859,7 +1859,7 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 		rightType = checkTypesInOperation(parser, tree, block, operation.right);
 	}
 
-	if (((TypeObj)0 == leftType || rightType == (TypeObj)0) && isOperator(operation.operator, "(") != true) {
+	if (((TypeObj)0 == leftType || rightType == (TypeObj)0) && !isOperator(operation.operator, "(")) {
 		return (TypeObj)0;
 	}
 
@@ -1880,7 +1880,7 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 		operation.operationType = parser.bool;
 		return parser.bool;
 	} else if (isOperator(operation.operator, "[")) {
-		if (isVariable(operation.left) != true) {
+		if (!isVariable(operation.left)) {
 			printError(parser, operation.operator.position, " can not index from a value that is not a variable\n");
 			return (TypeObj)0;
 		}
@@ -1991,7 +1991,7 @@ func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operatio
 		operation.operationType = typeObj;
 		return typeObj;
 	} else if (isOperator(operation.operator, "=")) {
-		if (isVariable(operation.left) != true) {
+		if (!isVariable(operation.left)) {
 			printError(parser, operation.operator.position, " can not assign a value to a constant\n");
 			return (TypeObj)0;
 		}
