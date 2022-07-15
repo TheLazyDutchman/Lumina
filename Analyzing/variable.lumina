@@ -72,6 +72,16 @@ func createVariableFromDefinition(VariableDefinition definition, int depth, int 
 	return variable;
 }
 
+func createConstantFromString(str name, TypeObj constantType, int value) -> Variable {
+	var constant = createVariableFromString(name, 0, 0, constantType);
+
+	constant.isConstant = (bool)1;
+	constant.isEvaluated = (bool)1;
+	constant.value = value;
+
+	return constant;
+}
+
 func createConstantFromDefinition(VariableDefinition definition) -> Variable {
 	var constant = createVariableFromString(definition.name.name, 0, 0, definition.variableType);
 

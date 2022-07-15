@@ -65,6 +65,10 @@ type Parser {
 	Variable argv;
 	Variable envp;
 
+	// boolean constants
+	Variable false;
+	Variable true;
+
 	int numIfs;
 	int numWhiles;
 	int numAnds;
@@ -219,6 +223,13 @@ func createParser() -> Parser {
 	addItem<Variable>(parser.variables, parser.argc);
 	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.envp));
 	addItem<Variable>(parser.variables, parser.envp);
+
+	parser.false = createConstantFromString("false", parser.bool, 0);
+	parser.true = createConstantFromString("true", parser.bool, 1);
+	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.false));
+	addItem<Variable>(parser.variables, parser.false);
+	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.true));
+	addItem<Variable>(parser.variables, parser.true);
 
 	parser.numIfs = 0;
 	parser.numWhiles = 0;
@@ -1465,9 +1476,6 @@ func checkTypesInTypeIdentifier(Parser parser, SyntaxTree tree, Block block, Ide
 		return parser.Type;
 	}
 
-	printError(parser, identifier.definition.region.start, " can not find variable '");
-	print(identifier.name);
-	print("'\n");
 	return (TypeObj)0;
 }
 
@@ -1498,9 +1506,6 @@ func checkTypesInName(Parser parser, SyntaxTree tree, Block block, Name name) ->
 			return parser.Type;
 		}
 
-		printError(parser, name.region.start, " can not find variable '");
-		print(name.name);
-		print("'\n");
 		return (TypeObj)0;
 	}
 
@@ -2028,7 +2033,7 @@ func checkTypesInExpression(Parser parser, SyntaxTree tree, Block block, Express
 func checkTypesInIf(Parser parser, SyntaxTree tree, Block block, If ifStatement) {
 	var conditionType = checkTypesInOperation(parser, tree, block, ifStatement.condition);
 
-	if (conditionType != parser.bool) {
+	if (!(compareTypes(parser, conditionType, parser.bool))) {
 		printError(parser, ifStatement.region.start, " expected if condition to be of type boolean\n");
 	}
 
@@ -2036,7 +2041,7 @@ func checkTypesInIf(Parser parser, SyntaxTree tree, Block block, If ifStatement)
 	while (i < ifStatement.elseIfs.size) {
 		var conditionType = checkTypesInOperation(parser, tree, block, ifStatement.elseIfs.list[i].condition);
 
-		if (conditionType != parser.bool) {
+		if (!(compareTypes(parser, conditionType, parser.bool))) {
 			printError(parser, ifStatement.elseIfs.list[i].region.start, " expected else if condition to be of type boolean\n");
 		}
 		i = i + 1;
@@ -2046,7 +2051,7 @@ func checkTypesInIf(Parser parser, SyntaxTree tree, Block block, If ifStatement)
 func checkTypesInWhile(Parser parser, SyntaxTree tree, Block block, While whileStatement) {
 	var conditionType = checkTypesInOperation(parser, tree, block, whileStatement.condition);
 
-	if (conditionType != parser.bool) {
+	if (!(compareTypes(parser, conditionType, parser.bool))) {
 		printError(parser, whileStatement.region.start, " expected while condition to be of type boolean\n");
 	}
 }

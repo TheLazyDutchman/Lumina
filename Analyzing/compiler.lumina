@@ -679,6 +679,8 @@ func writeConstant(Parser parser, int output, Variable constant, str register) -
 	} else if (constant.variableType == parser.str) {
 		fprint(output, "string_");
 		fprinti(output, constant.value);
+	} else if (constant.variableType == parser.bool) {
+		fprinti(output, constant.value);
 	} else {
 		printPosition(constant.definition.value.region.start);
 		print(" do not support type '");
@@ -697,7 +699,6 @@ func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Id
 		var typeObj = findTypeInParser(parser, tree, block, identifier.name);
 
 		if (typeObj == (TypeObj)0) {
-			printError(parser, identifier.definition.region.start, " can not find variable\n");
 			return register;
 		}
 
@@ -1309,6 +1310,8 @@ func writeLogicNot(Parser parser, SyntaxTree tree, Block block, int output, Oper
 	fprint(output, ", ");
 	fprint(output, rightRegister.name);
 	fprint(output, " ;; logical not\n");
+
+	rightRegister.used = (bool)0;
 
 	return register.name;
 }
