@@ -1,0 +1,18 @@
+import "../std/path.lumina"
+import "../std/io.lumina"
+
+
+var path = getPathFromString("../std/path.lumina");
+print(getFullPathString(path));
+print("\n");
+
+
+path = getPathFromString("somefolder/../../outer/outerfile.txt");
+print(getFullPathString(path));
+print("\n");
+
+
+path = getLocalFilePath("../std/hello.test", 
+		"test/bonjour.test");
+print(getFullPathString(path));
+print("\n");

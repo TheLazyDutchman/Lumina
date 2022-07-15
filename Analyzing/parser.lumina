@@ -1624,9 +1624,6 @@ func checkTypesInFunctionCall(Parser parser, SyntaxTree tree, Block block, Opera
 	var function = findFunctionInParser(parser, tree, block, functionName.name);
 
 	if (function == (FunctionDefinition)0) {
-		printError(parser, functionName.definition.region.start, " can not find function with name '");
-		print(functionName.name);
-		print("'\n");
 		return (TypeObj)0;
 	}
 
