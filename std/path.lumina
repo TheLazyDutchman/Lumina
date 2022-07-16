@@ -1,210 +1,102 @@
 import "string.lumina"
+import "io.lumina"
+import "collections.lumina"
+
 
 type Path {
-	str[] folders;
-	str name;
-	str extension;
+	Array<String> folders;
+	String name;
+	String extension;
 }
 
 
-func _is_outer(str s) -> bool {
-	if (s[0] != '.') { return false; }
-	if (s[1] != '.') { return false; }
+func _is_outer(String s) -> bool {
+	if (getItem<char>(s, 0) != '.') { return false; }
+	if (getItem<char>(s, 1) != '.') { return false; }
 	return true;
 }
 
-func getPathFromString(str file) -> Path {
-	var path = new Path();
-
-	var depth = countchr(file, '/');
-	path.folders = new str[](depth + 1);
-
-	var name = file;
-
-	var index = strindex(file, '/');
-	var currentDepth = 0;
-
-	if (name[0] == '.' && _is_outer(name) == false) {
-		depth = depth - 1;
-		name = (str)((int)name + index);
-		index = strindex(name, '/');
+func setFileName(Path path, String filename) {
+	var nameParts = split(filename, ".");
+	if (nameParts.size == 1) {
+		path.name = filename;
+		path.extension = (String)0;
+		return;
 	}
 
-	while (currentDepth < depth) {
-		if (_is_outer(name) && 
-			currentDepth > 0 &&
-			_is_outer(path.folders[currentDepth - 1]) == false) {
-			currentDepth = currentDepth - 1;
-			depth = depth - 2;
-
-			name = (str)((int)name + index);
-			index = strindex(name, '/');
-		}
-
-		path.folders[currentDepth] = strndup(name, index - 1);
-		name = (str)((int)name + index);
-		index = strindex(name, '/');
-
-		currentDepth = currentDepth + 1;
-	}
-	
-	path.folders[depth] = (str)0;
-
-	index = strindex(name, '.');
-
-	if (index == -1) {
-		path.name = name;
-		path.extension = (str)0;
-	} else {
-		path.name = strndup(name, index - 1);
-		name = (str)((int)name + index);
-		path.extension = strndup(name, strlen(name));
-	}
-
-	return path;
-}
-
-func getLocalFilePath(str outerFile, str file) -> Path {
-	var path = new Path();
-
-	var outerDepth = countchr(outerFile, '/');
-	var depth = outerDepth + countchr(file, '/');
-	path.folders = new str[](depth + 1);
-
-	var name = outerFile;
-
-	var index = strindex(outerFile, '/');
-	var currentDepth = 0;
-
-	if (name[0] == '.' && _is_outer(name) == false) {
-		outerDepth = outerDepth - 1;
-		depth = depth - 1;
-		name = (str)((int)name + index);
-		index = strindex(name, '/');
-	}
-
-	while (currentDepth < outerDepth) {
-		if (_is_outer(name) && 
-			currentDepth > 0 &&
-			_is_outer(path.folders[currentDepth - 1]) == false) {
-			currentDepth = currentDepth - 1;
-			outerDepth = outerDepth - 2;
-			depth = depth - 2;
-
-			name = (str)((int)name + index);
-			index = strindex(name, '/');
-		}
-
-		path.folders[currentDepth] = strndup(name, index - 1);
-		name = (str)((int)name + index);
-		index = strindex(name, '/');
-
-		currentDepth = currentDepth + 1;
-	}
-
-	name = file;
-
-	index = strindex(file, '/');
-	
-	if (name[0] == '.' && _is_outer(name) == false) {
-		depth = depth - 1;
-		name = (str)((int)name + index);
-		index = strindex(name, '/');
-	}
-
-	while (currentDepth < depth) {
-		if (_is_outer(name) &&
-			currentDepth > 0 &&
-			_is_outer(path.folders[currentDepth - 1]) == false) {
-			currentDepth = currentDepth - 1;
-			depth = depth - 2;
-
-			name = (str)((int)name + index);
-			index = strindex(name, '/');
-		}
-
-		path.folders[currentDepth] = strndup(name, index - 1);
-		name = (str)((int)name + index);
-		index = strindex(name, '/');
-
-		currentDepth = currentDepth + 1;
-	}
-	
-	path.folders[currentDepth] = (str)0;
-
-	index = strindex(name, '.');
-
-	if (index == -1) {
-		path.name = name;
-		path.extension = (str)0;
-	} else {
-		path.name = strndup(name, index - 1);
-		name = (str)((int)name + index);
-		path.extension = strndup(name, strlen(name));
-	}
-
-	return path;
-}
-
-func getFullPathString(Path path) -> str {
-	var len = 0;
+	var nameStrings = createArray<String>();
 	var i = 0;
-	while (path.folders[i] != (str)0) {
-		len = len + strlen(path.folders[i]) + 1;
+	while (i < nameParts.size - 1) {
+		addItem<String>(nameStrings, getItem<String>(nameParts, i));
 		i = i + 1;
 	}
 
-	var isLocal = false;
+	path.name = join(nameStrings, ".");
+	path.extension = getItem<String>(nameParts, nameParts.size - 1);
+}
 
-	if (len == 0) {
-		isLocal = true;
-		len = 2;
-	}
+func toPath(String value) -> Path {
+	var parts = split(value, "/");
+	var folders = createArray<String>();
 
-	if (path.name != (str)0) {
-		len = len + strlen(path.name);
-	}
+	var i = 0;
+	while (i < parts.size - 1) {
+		var part = getItem<String>(parts, i);
 
-	if (path.extension != (str)0) {
-		len = len + strlen(path.extension) + 1;
-	}
-
-	
-	var value = new str(len + 1);
-	var buffer = value;
-
-	if (isLocal) {
-		buffer[0] = '.';
-		buffer[1] = '/';
-		buffer = (str)((int)buffer + 2);
-	}
-
-	i = 0;
-	while (path.folders[i] != (str)0) {
-		var folderLen = strlen(path.folders[i]);
-		strncpy(path.folders[i], buffer, folderLen);
-		buffer[folderLen] = '/';
-
-		buffer = (str)((int)buffer + folderLen + 1);
-		i = i + 1;
-	}
-
-	if (path.name != (str)0) {
-		var nameLen = strlen(path.name);
-		strncpy(path.name, buffer, nameLen);
-		buffer = (str)((int)buffer + nameLen);
-
-		if (path.extension != (str)0) {
-			buffer[0] = '.';
-			buffer = (str)((int)buffer + 1);
-
-			var extLen = strlen(path.extension);
-			strncpy(path.extension, buffer, extLen);
-			buffer = (str)((int)buffer + extLen);
+		if (_is_outer(part) && folders.size != 0 && !_is_outer(getItem<String>(folders, folders.size - 1))) {
+			popItem<String>(folders);
+		} else if (!streq(part.list, ".")) {
+			addItem<String>(folders, part);
 		}
+
+		i = i + 1;
 	}
 
-	buffer[0] = '\0';
+	var path = new Path();
+	path.folders = folders;
 
-	return value;
+	setFileName(path, getItem<String>(parts, parts.size - 1));
+
+	return path;
+}
+
+func toLocalPath(String path, String file) -> Path {
+	var outerPath = toPath(path);
+	var parts = split(file, "/");
+
+	var i = 0;
+	while (i < parts.size - 1) {
+		var part = getItem<String>(parts, i);
+
+		if (_is_outer(part) && outerPath.folders.size != 0 && !_is_outer(getItem<String>(outerPath.folders, outerPath.folders.size - 1))) {
+			popItem<String>(outerPath.folders);
+		} else if (!streq(part.list, ".")) {
+			addItem<String>(outerPath.folders, part);
+		}
+
+		i = i + 1;
+	}
+
+	setFileName(outerPath, getItem<String>(parts, parts.size - 1));
+
+	return outerPath;
+}
+
+func pathToString(Path path) -> String {
+	var string = join(path.folders, "/");
+
+	if (path.folders.size == 0) {
+		addItem<char>(string, '.');
+	}
+
+	addItem<char>(string, '/');
+
+	extendArray<char>(string, path.name);
+
+	if (path.extension != (String)0) {
+		addItem<char>(string, '.');
+		extendArray<char>(string, path.extension);
+	}
+
+	return string;
 }

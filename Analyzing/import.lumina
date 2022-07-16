@@ -7,10 +7,10 @@ import "whitespace.lumina"
 type Import {
 	Region region;
 	Name keyword;
-	String fileName;
+	StringLiteral fileName;
 }
 
-func createImport(Name keyword, String fileName) -> Import {
+func createImport(Name keyword, StringLiteral fileName) -> Import {
 	var importStatement = new Import();
 
 	importStatement.region = createRegion(keyword.region.start, fileName.region.end);

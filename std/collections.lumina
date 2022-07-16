@@ -36,6 +36,12 @@ func addItem<T>(Array<T> array, T item) {
 	array.size = array.size + 1;
 }
 
+func popItem<T>(Array<T> array) -> T {
+	array.size = array.size - 1;
+
+	return getItem<T>(array, array.size);
+}
+
 func extendArray<T>(Array<T> destination, Array<T> source) {
 	if (source == (Array<T>)0) {
 		return;

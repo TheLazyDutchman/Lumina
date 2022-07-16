@@ -1,3 +1,99 @@
+import "collections.lumina"
+import "io.lumina"
+
+
+const String = Array<char>;
+
+
+func toString(str value) -> String {
+	var string = createArray<char>();
+
+	var i = 0;
+	while (value[i] != '\0') {
+		addItem<char>(string, value[i]);
+		i = i + 1;
+	}
+
+	return string;
+}
+
+func copyPart(String original, int offset, int size) -> String {
+	var string = createArray<char>();
+
+	var i = 0;
+	while (i < size) {
+		addItem<char>(string, getItem<char>(original, offset + i));
+		i = i + 1;
+	}
+
+	return string;
+}
+
+func split(String string, str separator) -> Array<String> {
+	var array = createArray<String>();
+	var separatorSize = strlen(separator);
+	var index = 0;
+
+	var offset = 0;
+	var size = match(string, separator, offset);
+
+	while (size != -1) {
+		var part = copyPart(string, offset, size);
+		addItem<String>(array, part);
+
+		offset = offset + size + separatorSize;
+		size = match(string, separator, offset);
+	}
+
+	var part = copyPart(string, offset, string.size - offset);
+	addItem<String>(array, part);
+
+	return array;
+}
+
+func join(Array<String> strings, str separator) -> String {
+	var string = createArray<char>();
+
+	var i = 0;
+	while (i < strings.size) {
+		if (i != 0) {
+			var j = 0;
+			while(separator[j] != '\0') {
+				addItem<char>(string, separator[j]);
+				j = j + 1;
+			}
+		}
+
+		extendArray<char>(string, getItem<String>(strings, i));
+		i = i + 1;
+	}
+
+	return string;
+}
+
+func match(String string, str separator, int offset) -> int {
+	var i = offset;
+	while (i < string.size) {
+		var isMatching = true;
+
+		var j = 0;
+		while (separator[j] != '\0') {
+			if (getItem<char>(string, i + j) != separator[j]) {
+				isMatching = false;
+			}
+			j = j + 1;
+		}
+
+		if (isMatching) {
+			return i - offset;
+		}
+
+		i = i + 1;
+	}
+
+	return -1;
+}
+
 func strlen(str string) -> int{
 	var i = 0;
 	while (string[i] > '\0') {

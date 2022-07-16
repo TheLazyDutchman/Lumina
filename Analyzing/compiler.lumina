@@ -1,7 +1,7 @@
 import "../std/io.lumina"
 import "../std/syscalls.lumina"
-import "../std/string.lumina"
 import "../std/path.lumina"
+import "../std/string.lumina"
 
 import "parser.lumina"
 
@@ -246,7 +246,7 @@ func writeTypeLiteral(int output, TypeObj typeObj) {
 		writeTypeName(output, typeObj.listOf);
 		fprint(output, ", ");
 	} else {
-		fprint(output, "0, ");
+		fprint(output, "type_ObjectList, ");
 	}
 
 	if (typeObj.listType != (TypeObj)0) {
@@ -651,6 +651,8 @@ func writeFooter(int output, Array<str> strings, Array<TypeObj> types) {
 		i = i + 1;
 	}
 
+	fprint(output, "	type_Object: dq 0, 8, 8, type_ObjectList, 0\n");
+	fprint(output, "	type_ObjectList: dq 0, 8, 8, 0, type_Object\n");
 	fprint(output, "	type_T: dq 0, 8, 8, type_TList, 0\n");
 	fprint(output, "	type_TList: dq 0, 8, 8, 0, type_T\n");
 
@@ -663,13 +665,18 @@ func writeFooter(int output, Array<str> strings, Array<TypeObj> types) {
 	}
 }
 
-func writeConstant(Parser parser, int output, Variable constant, str register) -> str {
+func writeConstant(Parser parser, SyntaxTree tree, Block block, int output, Variable constant, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
+	if (constant.variableType == parser.Type) {
+		// I want to move these into the type keyword, instead of the constant keyword
+		return writeOperation(parser, tree, block, output, constant.definition.value, registers, register, (bool)1, functions);
+	}
+
 	if (!constant.isEvaluated) {
 		evaluateConstant(parser, constant);
 	}
 
 	fprint(output, "	mov ");
-	fprint(output, register);
+	fprint(output, register.name);
 	fprint(output, ", ");
 
 	if (constant.variableType == parser.int) {
@@ -690,29 +697,29 @@ func writeConstant(Parser parser, int output, Variable constant, str register) -
 
 	fprint(output, " ;; constant\n");
 
-	return register;
+	return register.name;
 }
 
-func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Identifier identifier, str register, bool getValue) -> str {
+func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Identifier identifier, Array<Register> registers, Register register, bool getValue, Array<FunctionDefinition> functions) -> str {
 	var variable = findVariableInParser(parser, tree, block, identifier.name);
 	if (variable == (Variable)0) {
 		var typeObj = findTypeInParser(parser, tree, block, identifier.name);
 
 		if (typeObj == (TypeObj)0) {
-			return register;
+			return register.name;
 		}
 
 		if (typeObj.isGeneric) {
 			fprint(output, "	mov ");
-			fprint(output, register);
+			fprint(output, register.name);
 			fprint(output, ", [basestack + ");
 			fprinti(output, typeObj.depth * 8);
 			fprint(output, "]\n");
 
 			fprint(output, "	mov ");
-			fprint(output, register);
+			fprint(output, register.name);
 			fprint(output, ", [");
-			fprint(output, register);
+			fprint(output, register.name);
 			
 			if (typeObj.position != 0) {
 				fprint(output, " - ");
@@ -721,24 +728,24 @@ func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Id
 
 			fprint(output, "]\n");
 
-			return register;
+			return register.name;
 		}
 
 		fprint(output, "	mov ");
-		fprint(output, register);
+		fprint(output, register.name);
 		fprint(output, ", type_");
 		writeTypeName(output, typeObj);
 		fprint(output, "\n");
 
-		return register;
+		return register.name;
 	}
 
 	if (variable.isConstant) {
-		return writeConstant(parser, output, variable, register);
+		return writeConstant(parser, tree, block, output, variable, registers, register, functions);
 	}
 
 	fprint(output, "	mov ");
-	fprint(output, register);
+	fprint(output, register.name);
 
 	if (variable.depth == 0) {
 		fprint(output, ", [basestack]\n");
@@ -750,7 +757,7 @@ func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Id
 
 	if (variable.position != 0) {
 		fprint(output, "	sub ");
-		fprint(output, register);
+		fprint(output, register.name);
 		fprint(output, ", ");
 		fprinti(output, 8 * variable.position);
 		fprint(output, "\n");
@@ -758,13 +765,13 @@ func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Id
 
 	if (getValue) {
 		fprint(output, "	mov ");
-		fprint(output, register);
+		fprint(output, register.name);
 		fprint(output, ", [");
-		fprint(output, register);
+		fprint(output, register.name);
 		fprint(output, "] ;; variable\n");
 	}
 
-	return register;
+	return register.name;
 }
 
 func writeIndex(int output, int size, Register registerA, Register registerB, bool getValue, bool addOffset) -> str {
@@ -1029,36 +1036,36 @@ func writeGenericIndex(int output, Array<Register> registers, Register pointerRe
 	return indexRegister.name;
 }
 
-func writeValue(Parser parser, SyntaxTree tree, Block block, int output, Value value, str register, bool getValue) -> str {
+func writeValue(Parser parser, SyntaxTree tree, Block block, int output, Value value, Array<Register> registers, Register register, bool getValue, Array<FunctionDefinition> functions) -> str {
 	if (value.number != (Number)0) {
 		fprint(output, "	mov ");
-		fprint(output, register);
+		fprint(output, register.name);
 		fprint(output, ", ");
 		fprinti(output, value.number.value);
 		fprint(output, " ;; number\n");
 	} else if (value.character != (Character)0) {
 		fprint(output, "	mov ");
-		fprint(output, register);
+		fprint(output, register.name);
 		fprint(output, ", ");
 		printEscapedCharacter(output, value.character.value);
 		fprint(output, " ;; character\n");
-	} else if (value.string != (String)0) {
+	} else if (value.string != (StringLiteral)0) {
 		var id = findString(parser.strings, value.string.value);
 
 		fprint(output, "	mov ");
-		fprint(output, register);
+		fprint(output, register.name);
 		fprint(output, ", string_");
 		fprinti(output, id);
 		fprint(output, " ;; string\n");
 
 		fprint(output, "	sub ");
-		fprint(output, register);
+		fprint(output, register.name);
 		fprint(output, ", [heapstart] ;; heap offset\n");
 	} else if (value.identifier != (Identifier)0) {
-		writeIdentifier(parser, tree, block, output, value.identifier, register, getValue);
+		writeIdentifier(parser, tree, block, output, value.identifier, registers, register, getValue, functions);
 	}
 
-	return register;
+	return register.name;
 }
 
 func writeBinaryOperation(int output, str operation, str registerA, str registerB) {
@@ -1828,7 +1835,7 @@ func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Ope
 	}
 
 	if (operation.value != (Value)0) {
-		return writeValue(parser, tree, block, output, operation.value, registerA.name, getValue);
+		return writeValue(parser, tree, block, output, operation.value, registers, registerA, getValue, functions);
 	}
 
 	if (operation.sizeOf != (SizeOf)0) {
@@ -2363,7 +2370,7 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 		exit(1);
 	}
 
-	var filePath = getPathFromString(fileName);
+	var filePath = toPath(toString(fileName));
 
 	print("[FILE] checked file: '");
 	print(fileName);
@@ -2375,8 +2382,8 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 
 	const ALLOW_ALL = 511;
 
-	filePath.extension = "asm";
-	var outputName = getFullPathString(filePath);
+	filePath.extension = toString("asm");
+	var outputName = pathToString(filePath).list;
 	var output = open(outputName, O_WRONLY | O_CREAT | O_TRUNC, ALLOW_ALL);
 
 	var registers = initRegisters();
@@ -2462,11 +2469,11 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 		}
 	}
 
-	filePath.extension = "o";
-	var objectName = getFullPathString(filePath);
+	filePath.extension = toString("o");
+	var objectName = pathToString(filePath).list;
 
-	filePath.extension = (str)0;
-	var executableName = getFullPathString(filePath);
+	filePath.extension = (String)0;
+	var executableName = pathToString(filePath).list;
 
 	var linkerArgs = new str[](5);
 	linkerArgs[0] = "ld";

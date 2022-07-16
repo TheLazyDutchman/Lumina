@@ -12,7 +12,7 @@ import "comment.lumina"
 // this is a type to hold the different possible tokens
 type Token {
 	Name name;
-	String string;
+	StringLiteral string;
 	Character character;
 	Number number;
 	Operator operator;
@@ -274,7 +274,7 @@ func nextToken(Lexer lexer) -> Token {
 }
 
 func isString(Token token) -> bool {
-	return token.string != (String)0;
+	return token.string != (StringLiteral)0;
 }
 
 func isCharacter(Token token) -> bool {

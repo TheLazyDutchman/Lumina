@@ -13,7 +13,7 @@ type Value {
 	Identifier identifier;
 	Number number;
 	Character character;
-	String string;
+	StringLiteral string;
 }
 
 func createValueFromIdentifier(Identifier identifier) -> Value {
@@ -48,8 +48,8 @@ func createValueFromCharacter(Character character) -> Value {
 	return value;
 }
 
-func createValueFromString(String string) -> Value {
-	if (string == (String)0) {
+func createValueFromString(StringLiteral string) -> Value {
+	if (string == (StringLiteral)0) {
 		print("expected string to not be null when creating value\n");
 	}
 

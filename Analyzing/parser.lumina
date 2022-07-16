@@ -291,7 +291,7 @@ func consumeIdentifier(Parser parser, SyntaxTree tree) -> Name {
 	return (Name)0;
 }
 
-func consumeString(Parser parser, SyntaxTree tree) -> String {
+func consumeString(Parser parser, SyntaxTree tree) -> StringLiteral {
 	if (isString(tree.lexer.current)) {
 		var value = tree.lexer.current.string;
 		next(tree.lexer);
@@ -300,7 +300,7 @@ func consumeString(Parser parser, SyntaxTree tree) -> String {
 
 	printError(parser, createPositionFromLexer(tree.lexer), " did not find string\n");
 
-	return (String)0;
+	return (StringLiteral)0;
 }
 
 func parseType(Parser parser, SyntaxTree tree) -> Operation {
@@ -899,8 +899,8 @@ func parse(Parser parser, str fileName, str outerName) -> SyntaxTree {
 	}
 
 	if (outerName != (str)0) {
-		var filePath = getLocalFilePath(outerName, fileName);
-		fileName = getFullPathString(filePath);
+		var filePath = toLocalPath(toString(outerName), toString(fileName));
+		fileName = pathToString(filePath).list;
 	}
 
 	var tree = findSyntaxTree(parser.files, fileName);
@@ -1045,22 +1045,17 @@ func findTypeInParser(Parser parser, SyntaxTree tree, Block block, str name) -> 
 }
 
 func getTypeFromValue(Parser parser, SyntaxTree tree, Block block, Value value) -> TypeObj {
-	if (value.identifier == (Identifier)0) {
-		printError(parser, value.region.start, " an immediate value is not a type\n");
-		return (TypeObj)0;
+	var definition = value.identifier.value;
+	if (definition.typeObj != (TypeObj)0) {
+		return definition.typeObj;
 	}
 
-	if (value.identifier.value == (Definition)0) {
-		printError(parser, value.region.start, " can not find definition of type\n");
-		return (TypeObj)0;
+	if (definition.variable != (Variable)0) {
+		return getTypeFromOperation(parser, tree, block, definition.variable.definition.value);
 	}
 
-	if (value.identifier.value.typeObj == (TypeObj)0) {
-		printError(parser, value.region.start, " value is not a type\n");
-		return (TypeObj)0;
-	}
-
-	return value.identifier.value.typeObj;
+	printError(parser, value.region.start, " value is not a type\n");
+	return (TypeObj)0;
 }
 
 func getTypeFromOperation(Parser parser, SyntaxTree tree, Block block, Operation operation) -> TypeObj {
@@ -1531,7 +1526,7 @@ func checkTypesInValue(Parser parser, SyntaxTree tree, Block block, Value value)
 		return parser.char;
 	}
 
-	if (value.string != (String)0) {
+	if (value.string != (StringLiteral)0) {
 		value.string.id = addUniqueString(parser.strings, value.string.value);
 		return parser.str;
 	}
