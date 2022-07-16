@@ -124,6 +124,19 @@ func streq(str s1, str s2) -> bool {
 	return strneq(s1, s2, len);
 }
 
+func fromOffset(str s, int offset, int size) -> str {
+	var string = new str(size + 1);
+	var i = 0;
+	while (i < size) {
+		string[i] = s[i + offset];
+		i = i + 1;
+	}
+
+	string[size] = '\0';
+
+	return string;
+}
+
 func countchr(str s, char delim) -> int {
 	var sum = 0;
 	var i = 0;
@@ -254,12 +267,12 @@ func strToInt(str string, int len) -> int{
 	return value;
 }
 
-func unEscapeCharacter(str charPtr) -> char {
-	var chr = charPtr[0];
+func unEscapeCharacter(str charPtr, int offset) -> char {
+	var chr = charPtr[offset];
 
 	if (chr == '\\') {
 
-		var test = charPtr[1];
+		var test = charPtr[offset + 1];
 
 		if (test == 'a') {
 			chr = '\a';

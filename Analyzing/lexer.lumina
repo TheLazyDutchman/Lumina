@@ -130,14 +130,15 @@ func lexComments(Lexer lexer, Token token, WhiteSpace space) -> Token {
 }
 
 func lexWhiteSpace(Lexer lexer) -> WhiteSpace {
-	var startString = (str)((int)lexer.buffer + lexer.index);
 	var startIndex = lexer.index;
 
 	while (isspace(current(lexer))) {
 		advance(lexer);
 	}
 
-	return createSpace(startString, lexer.index - startIndex);
+	var string = fromOffset(lexer.buffer, startIndex, lexer.index - startIndex);
+
+	return createSpace(string);
 }
 
 func lexName(Lexer lexer, Token token, WhiteSpace space) -> Token {

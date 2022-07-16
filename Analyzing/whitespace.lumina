@@ -6,11 +6,11 @@ type WhiteSpace {
 	int length;
 }
 
-func createSpace(str start, int len) -> WhiteSpace {
+func createSpace(str start) -> WhiteSpace {
 	var space = new WhiteSpace();
 
 	space.value = start;
-	space.length = len;
+	space.length = strlen(start);
 
 	return space;
 }

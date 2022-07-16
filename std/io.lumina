@@ -1,4 +1,5 @@
 import "syscalls.lumina"
+import "collections.lumina"
 import "string.lumina"
 import "environment.lumina"
 
@@ -33,11 +34,7 @@ func printi(int number) {
 
 func execvp(str fileName, str[] args) -> int {
 	var path = getEnvironmentVariable("PATH");
-	var numPaths = countchr(path, ':') + 3;
-	var paths = new str[](numPaths); // ptr size is 8
-
-	var index = strindex(path, ':');
-	var i = 1;
+	var paths = split(toString(path), ":");
 
 	var cwdLength = 64;
 	var cwd = new str(cwdLength);
@@ -54,27 +51,16 @@ func execvp(str fileName, str[] args) -> int {
 		code = getcwd(cwd, cwdLength);
 	}
 
-	paths[0] = cwd;
+	addItem<String>(paths, toString(cwd));
 
-	while (index > 0) {
-		paths[i] = strndup(path, index - 1);
-		path = (str)((int)path + index);
-		index = strindex(path, ':');
-		i = i + 1;
-	}
-
-	paths[i] = strdup(path);
-	paths[numPaths - 1] = (str)0;
-
-	i = 0;
-
-	var dir = paths[0];
-	while (dir != (str)0) {
-		var dir_fd = open(paths[i], 2162688, 0);
+	var i = 0;
+	while (i < paths.size) {
+		var path = getItem<String>(paths, i);
+		var dir_fd = open(path.list, 2162688, 0);
 
 		if (dir_fd < 0) {
 			print("[ERROR] could not open dir '");
-			print(paths[i]);
+			print(path.list);
 			print("', error code: ");
 			printi(-dir_fd);
 			print(" \n");
@@ -84,37 +70,16 @@ func execvp(str fileName, str[] args) -> int {
 
 		var file_fd = openat(dir_fd, fileName, 2097152, 0);
 		if (file_fd > 0) {
-			var length = strlen(dir);
-			var hasNoSlash = false;
-
-			if (dir[length] != '/') {
-				length = length + 1;
-				hasNoSlash = true;
+			if (getItem<char>(path, path.size - 1) != '/') {
+				addItem<char>(path, '/');
 			}
 
-			length = length + strlen(fileName);
+			extendArray<char>(path, toString(fileName));
 
-			var buffer = new str(length + 1);
-
-			var fullPath = buffer;
-
-			strncpy(dir, buffer, strlen(dir));
-			buffer = (str)((int)buffer + strlen(dir));
-
-			if (hasNoSlash) {
-				buffer[0] = '/';
-				buffer = (str)((int)buffer + 1);
-			}
-
-			strncpy(fileName, buffer, strlen(fileName));
-
-			fullPath[length] = '\0';
-
-			return execve(fullPath, args, (str[])0);
+			return execve(path.list, args, (str[])0);
 		}
 
 		i = i + 1;
-		dir = paths[i];
 	}
 
 	return -2;

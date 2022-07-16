@@ -47,8 +47,7 @@ func createName(Position start, Position end, WhiteSpace space) -> Name {
 
 	var length = end.index - start.index;
 
-	var stringStart = (str)((int)start.buffer + start.index);
-	name.name = strndup(stringStart, length);
+	name.name = fromOffset(start.buffer, start.index, length);
 
 	var i = 0;
 	while (i < NUMKEYWORDS) {

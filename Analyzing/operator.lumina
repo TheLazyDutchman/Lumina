@@ -79,16 +79,15 @@ func createOperator(Position position, WhiteSpace space) -> Operator {
 	operator.position = position;
 	operator.space = space;
 
-	var stringStart = (str)((int)position.buffer + position.index);
 	operator.operatorType = -1;
-	operator.name = strndup(stringStart, 1);
+	operator.name = fromOffset(position.buffer, position.index, 2);
 	operator.precedence = 0;
 
 	var i = 0;
 	while (i < operatorList.size) {
 		var operatorType = getItem<OperatorType>(operatorList, i);
 		var opString = operatorType.name;
-		if (strneq(opString, stringStart, strlen(opString))) {
+		if (strneq(opString, operator.name, strlen(opString))) {
 			operator.operatorType = i;
 			operator.name = opString;
 			operator.precedence = operatorType.precedence;

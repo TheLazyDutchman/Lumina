@@ -33,8 +33,7 @@ func createString(Position start, Position end, WhiteSpace space) -> StringLiter
 
 	var length = end.index - start.index;
 
-	var stringStart = (str)((int)start.buffer + start.index + 1);
-	string.value = strndup(stringStart, length - 2);
+	string.value = fromOffset(start.buffer, start.index + 1, length - 2);
 
 	string.id = -1;
 	
@@ -47,7 +46,7 @@ func createCharacter(Position start, Position end, WhiteSpace space) -> Characte
 	character.region = createRegion(start, end);
 	character.space = space;
 
-	character.value = unEscapeCharacter((str)((int)start.buffer + start.index + 1));
+	character.value = unEscapeCharacter(start.buffer, start.index + 1);
 	
 	return character;
 }
@@ -60,8 +59,8 @@ func createNumber(Position start, Position end, WhiteSpace space) -> Number {
 	
 	var length = end.index - start.index;
 
-	var numberStart = (str)((int)start.buffer + start.index);
-	number.value = strToInt(numberStart, length);
+	var numberString = fromOffset(start.buffer, start.index, length);
+	number.value = strToInt(numberString, length);
 
 	return number;
 }

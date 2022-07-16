@@ -147,13 +147,12 @@ func writeStringLiteral(int output, str string, int id) {
 
 	var i = 0;
 	while (i < len) {
-		var chr = (str)((int)string + i);
 		var length = 1;
-		if (chr[0] == '\\') {
+		if (string[i] == '\\') {
 			length = 2;
 		}
 
-		printEscapedCharacter(output, unEscapeCharacter(chr));
+		printEscapedCharacter(output, unEscapeCharacter(string, i));
 
 		i = i + length;
 
