@@ -744,6 +744,11 @@ func parseWhile(Parser parser, SyntaxTree tree, Block outer, Array<Import> impor
 }
 
 func parseFunctionDefinition(Parser parser, SyntaxTree tree, Block outer, Array<Import> importList) -> FunctionDefinition {
+	var outerIfs = parser.numIfs;
+	parser.numIfs = 0;
+	var outerWhiles = parser.numWhiles;
+	parser.numWhiles = 0;
+
 	var keyword = consumeKeyword(parser, tree, KEYWORD_func);
 	var name = consumeIdentifier(parser, tree);
 
@@ -767,6 +772,9 @@ func parseFunctionDefinition(Parser parser, SyntaxTree tree, Block outer, Array<
 
 	var block = parseBlock(parser, tree, outer, function, importList);
 	function.block = block;
+
+	parser.numIfs = outerIfs;
+	parser.numWhiles = outerWhiles;
 
 	return function;
 }

@@ -2479,6 +2479,10 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 		if (function.isCalled) {
 			var tree = findSyntaxTree(parser.files, function.region.file);
 
+			// have ids be local to the function
+			parser.numAnds = 0;
+			parser.numOrs = 0;
+
 			writeFunctionDefinition(parser, tree, output, function, registers, functions, i);
 		}
 
