@@ -1192,6 +1192,11 @@ func bindName(Parser parser, SyntaxTree tree, Name name, Block block) {
 
 func bindIdentifier(Parser parser, SyntaxTree tree, Block block, Identifier identifier) {
 	identifier.value = findDefinitionInParser(parser, tree, block, identifier.name);
+
+	if (identifier.value.function != (FunctionDefinition)0) {
+		identifier.value.function.isCalled = true;
+	}
+
 	if (identifier.value != (Definition)0) {
 		return;
 	}

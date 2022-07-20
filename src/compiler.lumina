@@ -2394,9 +2394,12 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 	var i = parser.functions.size;
 	while (i < functions.size) {
 		var function = functions.list[i];
-		var tree = findSyntaxTree(parser.files, function.region.file);
 
-		writeFunctionDefinition(parser, tree, output, function, registers, functions, i);
+		if (function.isCalled) {
+			var tree = findSyntaxTree(parser.files, function.region.file);
+
+			writeFunctionDefinition(parser, tree, output, function, registers, functions, i);
+		}
 
 		i = i + 1;
 	}
