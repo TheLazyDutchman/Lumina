@@ -49,6 +49,8 @@ type FunctionDefinition {
 	Block block;
 
 	Array<FunctionDefinition> variants;
+
+	bool isCalled;
 }
 
 type Return {
@@ -163,6 +165,8 @@ func createFunctionDefinition(Name keyword, Name name, Operator lparen, Generics
 	function.returnType = returnType;
 
 	function.variants = createArray<FunctionDefinition>();
+
+	function.isCalled = false;
 
 	return function;
 }

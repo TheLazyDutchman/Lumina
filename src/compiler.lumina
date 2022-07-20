@@ -754,20 +754,24 @@ func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Id
 		fprint(output, "]\n");
 	}
 
-	if (variable.position != 0) {
-		fprint(output, "	sub ");
-		fprint(output, register.name);
-		fprint(output, ", ");
-		fprinti(output, 8 * variable.position);
-		fprint(output, "\n");
-	}
-
 	if (getValue) {
 		fprint(output, "	mov ");
 		fprint(output, register.name);
 		fprint(output, ", [");
 		fprint(output, register.name);
+
+		if (variable.position != 0) {
+			fprint(output, " - ");
+			fprinti(output, 8 * variable.position);
+		}
+
 		fprint(output, "] ;; variable\n");
+	} else if (variable.position != 0) {
+		fprint(output, "	sub ");
+		fprint(output, register.name);
+		fprint(output, ", ");
+		fprinti(output, 8 * variable.position);
+		fprint(output, "\n");
 	}
 
 	return register.name;
@@ -1126,28 +1130,116 @@ func writePopData(int output, Register register) {
 	fprint(output, "	xchg rsp, [datarsp]\n");
 }
 
-func writeJumpNotEqual(int output, Register register, str addr, int id) {
-	fprint(output, "	cmp ");
-	fprint(output, register.name);
-	fprint(output, ", 0\n");
-	fprint(output, "	je ");
+func writeJumpNotEqual(Parser parser, SyntaxTree tree, Block block, int output, Array<Register> registers, Operation condition, str addr, int id, Array<FunctionDefinition> functions) {
+	var jumpWord = "je";
+	var isComparison = false;
+	if (isOperator(condition.operator, "==")) {
+		isComparison = true;
+		jumpWord = "jne";
+	} else if (isOperator(condition.operator, "!=")) {
+		isComparison = true;
+		jumpWord = "je";
+	} else if (isOperator(condition.operator, "<=")) {
+		isComparison = true;
+		jumpWord = "jg";
+	} else if (isOperator(condition.operator, ">=")) {
+		isComparison = true;
+		jumpWord = "jl";
+	} else if (isOperator(condition.operator, "<")) {
+		isComparison = true;
+		jumpWord = "jge";
+	} else if (isOperator(condition.operator, ">")) {
+		isComparison = true;
+		jumpWord = "jle";
+	}
+
+	if (isComparison) {
+		var leftRegister = getRegister(registers);
+		writeOperation(parser, tree, block, output, condition.left, registers, leftRegister, true, functions);
+
+		var rightRegister = getRegister(registers);
+		writeOperation(parser, tree, block, output, condition.right, registers, rightRegister, true, functions);
+
+		fprint(output, "	cmp ");
+		fprint(output, leftRegister.name);
+		fprint(output, ", ");
+		fprint(output, rightRegister.name);
+		fprint(output, "\n");
+
+		leftRegister.used = false;
+		rightRegister.used = false;
+	} else {
+		var register = getRegister(registers);
+		writeOperation(parser, tree, block, output, condition, registers, register, true, functions);
+
+		fprint(output, "	cmp ");
+		fprint(output, register.name);
+		fprint(output, ", 0\n");
+		register.used = false;
+	}
+
+	fprint(output, "	");
+	fprint(output, jumpWord);
+	fprint(output, " ");
 	fprint(output, addr);
 	fprinti(output, id);
 	fprint(output, "\n\n");
-
-	register.used = false;
 }
 
-func writeJumpEqual(int output, Register register, str addr, int id) {
-	fprint(output, "	cmp ");
-	fprint(output, register.name);
-	fprint(output, ", 0\n");
-	fprint(output, "	jne ");
+func writeJumpEqual(Parser parser, SyntaxTree tree, Block block, int output, Array<Register> registers, Operation condition, str addr, int id, Array<FunctionDefinition> functions) {
+	var jumpWord = "jne";
+	var isComparison = false;
+	if (isOperator(condition.operator, "==")) {
+		isComparison = true;
+		jumpWord = "je";
+	} else if (isOperator(condition.operator, "!=")) {
+		isComparison = true;
+		jumpWord = "jne";
+	} else if (isOperator(condition.operator, "<=")) {
+		isComparison = true;
+		jumpWord = "jle";
+	} else if (isOperator(condition.operator, ">=")) {
+		isComparison = true;
+		jumpWord = "jge";
+	} else if (isOperator(condition.operator, "<")) {
+		isComparison = true;
+		jumpWord = "jl";
+	} else if (isOperator(condition.operator, ">")) {
+		isComparison = true;
+		jumpWord = "jg";
+	}
+
+	if (isComparison) {
+		var leftRegister = getRegister(registers);
+		writeOperation(parser, tree, block, output, condition.left, registers, leftRegister, true, functions);
+
+		var rightRegister = getRegister(registers);
+		writeOperation(parser, tree, block, output, condition.right, registers, rightRegister, true, functions);
+
+		fprint(output, "	cmp ");
+		fprint(output, leftRegister.name);
+		fprint(output, ", ");
+		fprint(output, rightRegister.name);
+		fprint(output, "\n");
+
+		leftRegister.used = false;
+		rightRegister.used = false;
+	} else {
+		var register = getRegister(registers);
+		writeOperation(parser, tree, block, output, condition, registers, register, true, functions);
+
+		fprint(output, "	cmp ");
+		fprint(output, register.name);
+		fprint(output, ", 0\n");
+		register.used = false;
+	}
+
+	fprint(output, "	");
+	fprint(output, jumpWord);
+	fprint(output, " ");
 	fprint(output, addr);
 	fprinti(output, id);
 	fprint(output, "\n\n");
-
-	register.used = false;
 }
 
 func writeJump(int output, str addr, int id) {
@@ -1772,14 +1864,14 @@ func writeAssignment(Parser parser, SyntaxTree tree, Block block, int output, Op
 }
 
 func writeAnd(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
-	writeOperation(parser, tree, block, output, operation.left, registers, register, true, functions);
-
 	var andId = parser.numAnds;
-
-	writeJumpNotEqual(output, register, ".addr_and_", andId);
-	register.used = true;
-
 	parser.numAnds = parser.numAnds + 1;
+
+	fprint(output, "	mov ");
+	fprint(output, register.name);
+	fprint(output, ", 0\n");
+
+	writeJumpNotEqual(parser, tree, block, output, registers, operation.left, ".addr_and_", andId, functions);
 
 	writeOperation(parser, tree, block, output, operation.right, registers, register, true, functions);
 
@@ -1789,14 +1881,14 @@ func writeAnd(Parser parser, SyntaxTree tree, Block block, int output, Operation
 }
 
 func writeOr(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
-	writeOperation(parser, tree, block, output, operation.left, registers, register, true, functions);
-
 	var orId = parser.numOrs;
-
-	writeJumpEqual(output, register, ".addr_or_", orId);
-	register.used = true;
-
 	parser.numOrs = parser.numOrs + 1;
+
+	fprint(output, "	mov ");
+	fprint(output, register.name);
+	fprint(output, ", 1\n");
+
+	writeJumpEqual(parser, tree, block, output, registers, operation.left, ".addr_or_", orId, functions);
 
 	writeOperation(parser, tree, block, output, operation.right, registers, register, true, functions);
 
@@ -2089,11 +2181,7 @@ func writeBlock(Parser parser, SyntaxTree tree, Block outer, int output, Block b
 }
 
 func writeIf(Parser parser, SyntaxTree tree, Block block, int output, If ifStatement, Array<Register> registers, Array<FunctionDefinition> functions) {
-	var conditionRegister = getRegister(registers);
-	writeOperation(parser, tree, block, output, ifStatement.condition, registers, conditionRegister, true, functions);
-	writeJumpNotEqual(output, conditionRegister, ".addr_if_", ifStatement.id);
-
-	conditionRegister.used = false;
+	writeJumpNotEqual(parser, tree, block, output, registers, ifStatement.condition, ".addr_if_", ifStatement.id, functions);
 
 	writeBlock(parser, tree, block, output, ifStatement.block, registers, functions);
 
@@ -2105,9 +2193,7 @@ func writeIf(Parser parser, SyntaxTree tree, Block block, int output, If ifState
 	var i = 0;
 	while (i < ifStatement.elseIfs.size) {
 		var elseIf = ifStatement.elseIfs.list[i];
-		var conditionRegister = getRegister(registers);
-		writeOperation(parser, tree, block, output, elseIf.condition, registers, conditionRegister, true, functions);
-		writeJumpNotEqual(output, conditionRegister, ".addr_if_", elseIf.id);
+		writeJumpNotEqual(parser, tree, block, output, registers, elseIf.condition, ".addr_if_", elseIf.id, functions);
 
 		writeBlock(parser, tree, block, output, elseIf.block, registers, functions);
 
@@ -2126,14 +2212,9 @@ func writeIf(Parser parser, SyntaxTree tree, Block block, int output, If ifState
 }
 
 func writeWhile(Parser parser, SyntaxTree tree, Block block, int output, While whileStatement, Array<Register> registers, Array<FunctionDefinition> functions) {
-	var conditionRegister = getRegister(registers);
-
 	writeAddress(output, ".addr_while_condition_", whileStatement.id);
 
-	writeOperation(parser, tree, block, output, whileStatement.condition, registers, conditionRegister, true, functions);
-	writeJumpNotEqual(output, conditionRegister, ".addr_while_end_", whileStatement.id);
-
-	conditionRegister.used = false;
+	writeJumpNotEqual(parser, tree, block, output, registers, whileStatement.condition, ".addr_while_end_", whileStatement.id, functions);
 
 	writeBlock(parser, tree, block, output, whileStatement.block, registers, functions);
 
@@ -2394,9 +2475,16 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 	var i = parser.functions.size;
 	while (i < functions.size) {
 		var function = functions.list[i];
-		var tree = findSyntaxTree(parser.files, function.region.file);
 
-		writeFunctionDefinition(parser, tree, output, function, registers, functions, i);
+		if (function.isCalled) {
+			var tree = findSyntaxTree(parser.files, function.region.file);
+
+			// have ids be local to the function
+			parser.numAnds = 0;
+			parser.numOrs = 0;
+
+			writeFunctionDefinition(parser, tree, output, function, registers, functions, i);
+		}
 
 		i = i + 1;
 	}
