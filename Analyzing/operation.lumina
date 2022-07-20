@@ -1,4 +1,3 @@
-import "../std/memory.lumina"
 import "../std/collections.lumina"
 
 import "position.lumina"
@@ -18,6 +17,17 @@ type SizeOf {
 	Operator rparen;
 }
 
+type NewOperation {
+	Region region;
+	
+	Name keyword;
+	Operation typeObj;
+
+	Operator left;
+	Operation num;
+	Operator right;
+}
+
 type Operation {
 	Region region;
 	Operation left;
@@ -27,12 +37,13 @@ type Operation {
 	Value value;
 	SizeOf sizeOf;
 	Operation castType;
+	NewOperation newOperation;
 
 	TypeObj operationType;
 }
 
 func createSizeOf(Name keyword, Operator lparen, Operation typeObj, Operator rparen) -> SizeOf {
-	var sizeOf = (SizeOf)malloc(sizeof(SizeOf));
+	var sizeOf = new SizeOf();
 
 	sizeOf.region = createRegion(keyword.region.start, rparen.position);
 
@@ -44,8 +55,23 @@ func createSizeOf(Name keyword, Operator lparen, Operation typeObj, Operator rpa
 	return sizeOf;
 }
 
+func createNewOperation(Name keyword, Operation typeObj, Operator left, Operation num, Operator right) -> NewOperation {
+	var newOperation = new NewOperation();
+
+	newOperation.region = createRegion(keyword.region.start, right.position);
+
+	newOperation.keyword = keyword;
+	newOperation.typeObj = typeObj;
+
+	newOperation.left = left;
+	newOperation.num = num;
+	newOperation.right = right;
+
+	return newOperation;
+}
+
 func createOperation(Operation left, Operator operator, Operation right, Operator end) -> Operation {
-	var operation = (Operation)malloc(sizeof(Operation));
+	var operation = new Operation();
 
 	if (end == (Operator)0) {
 		operation.region = createRegion(left.region.start, right.region.end);
@@ -56,16 +82,13 @@ func createOperation(Operation left, Operator operator, Operation right, Operato
 	operation.left = left;
 	operation.operator = operator;
 	operation.right = right;
-	operation.value = (Value)0;
 	operation.end = end;
-	operation.sizeOf = (SizeOf)0;
-	operation.castType = (Operation)0;
 
 	return operation;
 }
 
 func createUnaryOperation(Operator operator, Operation right, Operator end) -> Operation {
-	var operation = (Operation)malloc(sizeof(Operation));
+	var operation = new Operation();
 
 	if (end == (Operator)0) {
 		operation.region = createRegion(operator.position, right.region.end);
@@ -73,65 +96,56 @@ func createUnaryOperation(Operator operator, Operation right, Operator end) -> O
 		operation.region = createRegion(operator.position, end.position);
 	}
 
-	operation.left = (Operation)0;
 	operation.operator = operator;
 	operation.right = right;
-	operation.value = (Value)0;
 	operation.end = end;
-	operation.sizeOf = (SizeOf)0;
-	operation.castType = (Operation)0;
 
 	return operation;
 }
 
 func createOperationFromValue(Value value) -> Operation {
-	var operation = (Operation)malloc(sizeof(Operation));
+	var operation = new Operation();
 
 	operation.region = value.region;
-	operation.left = (Operation)0;
-	operation.operator = (Operator)0;
-	operation.right = (Operation)0;
 	operation.value = value;
-	operation.end = (Operator)0;
-	operation.sizeOf = (SizeOf)0;
-	operation.castType = (Operation)0;
 
 	return operation;
 }
 
 func createTypeCast(Operator lparen, Operation castType, Operator rparen, Operation castOperation) -> Operation {
-	var operation = (Operation)malloc(sizeof(Operation));
+	var operation = new Operation();
 
 	operation.region = createRegion(lparen.position, castOperation.region.end);
 
-	operation.left = (Operation)0;
 	operation.operator = lparen;
 	operation.right = castOperation;
-	operation.value = (Value)0;
 	operation.end = rparen;
-	operation.sizeOf = (SizeOf)0;
 	operation.castType = castType;
 
 	return operation;
 }
 
 func createOperationFromSizeOf(SizeOf sizeOf) -> Operation {
-	var operation = (Operation)malloc(sizeof(Operation));
+	var operation = new Operation();
 
 	operation.region = sizeOf.region;
-	operation.left = (Operation)0;
-	operation.operator = (Operator)0;
-	operation.right = (Operation)0;
-	operation.value = (Value)0;
-	operation.end = (Operator)0;
 	operation.sizeOf = sizeOf;
+
+	return operation;
+}
+
+func createOperationFromNew(NewOperation newOperation) -> Operation {
+	var operation = new Operation();
+
+	operation.region = newOperation.region;
+	operation.newOperation = newOperation;
 
 	return operation;
 }
 
 func isVariable(Operation operation) -> bool {
 	if (isName(operation.value)) {
-		return (bool)1;
+		return true;
 	}
 
 	if (isOperator(operation.operator, ".")) {
@@ -155,7 +169,7 @@ func isVariable(Operation operation) -> bool {
 		return isVariable(operation.left);
 	}
 
-	return (bool)0;
+	return false;
 }
 
 func getArguments(Array<Operation> list, Operation operation) {

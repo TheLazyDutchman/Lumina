@@ -1,4 +1,3 @@
-import "../std/memory.lumina"
 import "../std/io.lumina"
 
 import "identifier.lumina"
@@ -14,23 +13,11 @@ type Value {
 	Identifier identifier;
 	Number number;
 	Character character;
-	String string;
-}
-
-func createValue() -> Value {
-	var value = (Value)malloc(sizeof(Value));
-
-	value.region = (Region)0;
-	value.identifier = (Identifier)0;
-	value.number = (Number)0;
-	value.character = (Character)0;
-	value.string = (String)0;
-
-	return value;
+	StringLiteral string;
 }
 
 func createValueFromIdentifier(Identifier identifier) -> Value {
-	var value = createValue();
+	var value = new Value();
 
 	value.region = identifier.definition.region;
 	value.identifier = identifier;
@@ -42,7 +29,7 @@ func createValueFromNumber(Number number) -> Value {
 		print("expected number to not be null when creating value\n");
 	}
 
-	var value = createValue();
+	var value = new Value();
 
 	value.region = number.region;
 	value.number = number;
@@ -54,19 +41,19 @@ func createValueFromCharacter(Character character) -> Value {
 		print("expected character to not be null when creating value\n");
 	}
 
-	var value = createValue();
+	var value = new Value();
 
 	value.region = character.region;
 	value.character = character;
 	return value;
 }
 
-func createValueFromString(String string) -> Value {
-	if (string == (String)0) {
+func createValueFromString(StringLiteral string) -> Value {
+	if (string == (StringLiteral)0) {
 		print("expected string to not be null when creating value\n");
 	}
 
-	var value = createValue();
+	var value = new Value();
 
 	value.region = string.region;
 	value.string = string;
@@ -75,7 +62,7 @@ func createValueFromString(String string) -> Value {
 
 func isName(Value value) -> bool {
 	if (value == (Value)0) {
-		return (bool)0;
+		return false;
 	}
 
 	return value.identifier != (Identifier)0;

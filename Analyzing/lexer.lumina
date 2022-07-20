@@ -1,7 +1,6 @@
 import "../std/io.lumina"
 import "../std/string.lumina"
 import "../std/syscalls.lumina"
-import "../std/memory.lumina"
 
 import "position.lumina"
 import "name.lumina"
@@ -13,7 +12,7 @@ import "comment.lumina"
 // this is a type to hold the different possible tokens
 type Token {
 	Name name;
-	String string;
+	StringLiteral string;
 	Character character;
 	Number number;
 	Operator operator;
@@ -53,7 +52,7 @@ func readFile(str fileName) -> str {
 	var len = lseek(file, 0, SEEK_END);
 	lseek(file, 0, SEEK_SET);
 
-	var buffer = (str)malloc(len + 1);
+	var buffer = new str(len + 1);
 
 	if ((int)buffer < 0) {
 		print("[ERROR] could not allocate buffer for file: '");
@@ -87,7 +86,7 @@ func readFile(str fileName) -> str {
 }
 
 func createLexer(str fileName) -> Lexer {
-	var lexer = (Lexer)malloc(sizeof(Lexer));
+	var lexer = new Lexer();
 
 	lexer.file = fileName;
 	lexer.buffer = readFile(fileName);
@@ -97,22 +96,6 @@ func createLexer(str fileName) -> Lexer {
 	lexer.column = 0;
 
 	return lexer;
-}
-
-func createToken() -> Token {
-	var token = (Token)malloc(sizeof(Token) * 2); // there is a bug with malloc, so we allocate more memory than needed
-
-	token.name = (Name)0;
-	token.string = (String)0;
-	token.character = (Character)0;
-	token.number = (Number)0;
-	token.operator = (Operator)0;
-	token.comment = (Comment)0;
-
-	token.isEOF = (bool)0;
-	token.isError = (bool)0;
-
-	return token;
 }
 
 func current(Lexer lexer) -> char {
@@ -147,14 +130,15 @@ func lexComments(Lexer lexer, Token token, WhiteSpace space) -> Token {
 }
 
 func lexWhiteSpace(Lexer lexer) -> WhiteSpace {
-	var startString = (str)((int)lexer.buffer + lexer.index);
 	var startIndex = lexer.index;
 
 	while (isspace(current(lexer))) {
 		advance(lexer);
 	}
 
-	return createSpace(startString, lexer.index - startIndex);
+	var string = fromOffset(lexer.buffer, startIndex, lexer.index - startIndex);
+
+	return createSpace(string);
 }
 
 func lexName(Lexer lexer, Token token, WhiteSpace space) -> Token {
@@ -242,7 +226,7 @@ func lexOperator(Lexer lexer, Token token, WhiteSpace space) -> Token {
 }
 
 func nextToken(Lexer lexer) -> Token {
-	var token = createToken();
+	var token = new Token();
 
 	var space = (WhiteSpace)0;
 	if (isspace(current(lexer))) {
@@ -250,7 +234,7 @@ func nextToken(Lexer lexer) -> Token {
 	}
 
 	if (current(lexer) == '\0') {
-		token.isEOF = (bool)1;
+		token.isEOF = true;
 		return token;
 	}
 
@@ -281,7 +265,7 @@ func nextToken(Lexer lexer) -> Token {
 		print(operatorToken.operator.name);
 		print("'\n");
 
-		token.isError = (bool)1;
+		token.isError = true;
 		return token;
 	} else {
 		return operatorToken;
@@ -291,7 +275,7 @@ func nextToken(Lexer lexer) -> Token {
 }
 
 func isString(Token token) -> bool {
-	return token.string != (String)0;
+	return token.string != (StringLiteral)0;
 }
 
 func isCharacter(Token token) -> bool {

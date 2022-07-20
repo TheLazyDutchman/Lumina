@@ -1,7 +1,6 @@
-import "../std/collections.lumina"
 import "../std/string.lumina"
+import "../std/collections.lumina"
 import "../std/io.lumina"
-import "../std/memory.lumina"
 
 
 type Cat {
@@ -10,7 +9,7 @@ type Cat {
 }
 
 func createCat(str name, int age) -> Cat {
-	var cat = (Cat)malloc(sizeof(Cat));
+	var cat = new Cat();
 
 	cat.name = name;
 	cat.age = age;
@@ -37,4 +36,39 @@ addItem<Cat>(cats, createCat("jennifer", 2));
 var james = findCat(cats, "james");
 print("james` age is: ");
 printi(james.age);
+print("\n");
+
+print(getItem<Cat>(cats, 0).name);
+print("\n");
+
+addItem<Cat>(cats, createCat("fireclaw", 4));
+addItem<Cat>(cats, createCat("nya", 2));
+addItem<Cat>(cats, createCat("miauw", 1));
+addItem<Cat>(cats, createCat("purr", 3));
+addItem<Cat>(cats, createCat("tabby", 2));
+addItem<Cat>(cats, createCat("spot", 4));
+addItem<Cat>(cats, createCat("siamese", 5));
+
+var i = 0;
+while (i < cats.size) {
+	if (i != 0) {
+		print(", ");
+	}
+
+	print(getItem<Cat>(cats, i).name);
+
+	i = i + 1;
+}
+print("\n");
+
+i = 0;
+while (i < cats.size) {
+	if (i != 0) {
+		print(", ");
+	}
+
+	print(cats.list[i].name);
+
+	i = i + 1;
+}
 print("\n");

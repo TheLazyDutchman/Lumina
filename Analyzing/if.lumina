@@ -1,4 +1,3 @@
-import "../std/memory.lumina"
 import "../std/collections.lumina"
 
 import "position.lumina"
@@ -43,7 +42,7 @@ type If {
 }
 
 func createElse(Name keyword, Block block, Position end) -> Else {
-	var elseStatement = (Else)malloc(sizeof(Else));
+	var elseStatement = new Else();
 
 	elseStatement.region = createRegion(keyword.region.start, end);
 
@@ -54,7 +53,7 @@ func createElse(Name keyword, Block block, Position end) -> Else {
 }
 
 func createElseIf(Name elseKeyword, Name ifKeyword, Operator lparen, Operation condition, Operator rparen, Block block, Position end, int id) -> ElseIf {
-	var elseIf = (ElseIf)malloc(sizeof(ElseIf));
+	var elseIf = new ElseIf();
 
 	elseIf.region = createRegion(elseKeyword.region.start, end);
 
@@ -71,7 +70,7 @@ func createElseIf(Name elseKeyword, Name ifKeyword, Operator lparen, Operation c
 }
 
 func createIf(Name keyword, Operator lparen, Operation condition, Operator rparen, Block block, Array<ElseIf> elseIfs, Else elseObj, Position end, int id) -> If {
-	var ifStatement = (If)malloc(sizeof(If));
+	var ifStatement = new If();
 
 	if (elseObj != (Else)0) {
 		ifStatement.region = createRegion(keyword.region.start, end);

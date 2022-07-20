@@ -1,5 +1,3 @@
-import "../std/memory.lumina"
-
 import "position.lumina"
 import "operation.lumina"
 import "operator.lumina"
@@ -13,7 +11,7 @@ type Expression {
 }
 
 func createExpression(Operation operation, Operator semicolon) -> Expression {
-	var expression = (Expression)malloc(sizeof(Expression));
+	var expression = new Expression();
 
 	expression.region = createRegion(operation.region.start, semicolon.position);
 	expression.operation = operation;

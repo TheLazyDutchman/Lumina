@@ -1,0 +1,55 @@
+import "../std/path.lumina"
+import "../std/io.lumina"
+import "../std/string.lumina"
+
+
+var path = toPath(toString("../std/path.lumina"));
+print(pathToString(path).list);
+print("\n");
+
+
+path = toPath(toString("somefolder/../../outer/outerfile.txt"));
+print(pathToString(path).list);
+print("\n");
+
+
+path = toPath(toString("somefile.txt"));
+print(pathToString(path).list);
+print("\n");
+
+
+path = toPath(toString("../../veryouter/outerfile.txt"));
+print(pathToString(path).list);
+print("\n");
+
+
+path = toLocalPath(toString("../std/hello.test"),
+		toString("test/bonjour.test"));
+print(pathToString(path).list);
+print("\n");
+
+
+path = toLocalPath(toString("../std/hello.test"),
+		toString("../test/bonjour.test"));
+print(pathToString(path).list);
+print("\n");
+
+path.extension = toString("asm");
+print(pathToString(path).list);
+print("\n");
+
+
+path = toLocalPath(toString("../std/hello.test"),
+		toString("bonjour.test"));
+print(pathToString(path).list);
+print("\n");
+
+path = toLocalPath(toString("hello.test"),
+		toString("../test/bonjour.test"));
+print(pathToString(path).list);
+print("\n");
+
+path = toLocalPath(toString("hello.test"),
+		toString("bonjour.test"));
+print(pathToString(path).list);
+print("\n");

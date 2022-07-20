@@ -132,66 +132,97 @@ const SYSRKT_SIGSUSPEND = 130;
 const SYSOPENAT = 257;
 
 
-
-func read(int fd, str buf, int count) -> int {
-	return (int)syscall(SYSREAD, fd, buf, count, 0, 0, 0);
+type iovec {
+	str buffer;
+	int size;
 }
 
-func write(int fd, ptr buf, int count) -> int {
-	return (int)syscall(SYSWRITE, fd, buf, count, 0, 0, 0);
+
+func topointer<T>(T value) -> T {
+	if (value == (T)0) { return value; }
+	return (T)((int)value + heapstart);
+}
+
+func listtopointer<T>(T[] list) -> T[] {
+	if (list == (T[])0) { return list; }
+
+	var i = 0;
+	while (list[i] != (T)0) {
+		i = i + 1;
+	}
+
+	var newlist = new T[](i);
+	i = 0;
+	while (list[i] != (T)0) {
+		newlist[i] = topointer<T>(list[i]);
+		i = i + 1;
+	}
+
+	return topointer<T[]>(newlist);
+}
+
+
+func read(int fd, str buf, int count) -> int {
+	return (int)syscall(SYSREAD, fd, topointer<str>(buf), count, 0, 0, 0);
+}
+
+func write(int fd, str buf, int count) -> int {
+	return (int)syscall(SYSWRITE, fd, topointer<str>(buf), count, 0, 0, 0);
 }
 
 func open(str filename, int flags, int mode) -> int {
-	return (int)syscall(SYSOPEN, filename, flags, mode, 0, 0, 0);
+	return (int)syscall(SYSOPEN, topointer<str>(filename), flags, mode, 0, 0, 0);
 }
 
 func close(int fd) -> int {
 	return (int)syscall(SYSCLOSE, fd, 0, 0, 0, 0, 0);
 }
 
-func stat(str filename, ptr statbuf) -> int {
-	return (int)syscall(SYSSTAT, filename, statbuf, 0, 0, 0, 0);
-}
-
-func fstat(int fd, ptr statbuf) -> int {
-	return (int)syscall(SYSFSTAT, fd, statbuf, 0, 0, 0, 0);
-}
-
-func lstat(char filename, ptr statbuf) -> int {
-	return (int)syscall(SYSLSTAT, filename, statbuf, 0, 0, 0, 0);
-}
-
-func poll(ptr ufds, int nfds, int timeout) -> int {
-	return (int)syscall(SYSPOLL, ufds, nfds, timeout, 0, 0, 0);
-}
+// these ptrs are to structs where the definition seems to differ between distributions, therefore I can not implement them yet
+//func stat(str filename, ptr statbuf) -> int {
+//	return (int)syscall(SYSSTAT, filename, statbuf, 0, 0, 0, 0);
+//}
+//
+//func fstat(int fd, ptr statbuf) -> int {
+//	return (int)syscall(SYSFSTAT, fd, statbuf, 0, 0, 0, 0);
+//}
+//
+//func lstat(char filename, ptr statbuf) -> int {
+//	return (int)syscall(SYSLSTAT, filename, statbuf, 0, 0, 0, 0);
+//}
+//
+//func poll(ptr ufds, int nfds, int timeout) -> int {
+//	return (int)syscall(SYSPOLL, ufds, nfds, timeout, 0, 0, 0);
+//}
 
 func lseek(int fd, int offset, int whence) -> int {
 	return (int)syscall(SYSLSEEK, fd, offset, whence, 0, 0, 0);
 }
 
-func mmap(ptr addr, int length, int prot, int flags, int fd, int offset) -> ptr {
-	return (ptr)syscall(SYSMMAP, addr, length, prot, flags, fd, offset);
+func mmap(int addr, int length, int prot, int flags, int fd, int offset) -> int {
+	return (int)syscall(SYSMMAP, addr, length, prot, flags, fd, offset);
 }
 
 func mprotect(int start, int len, int prot) -> int {
 	return (int)syscall(SYSMPROTECT, start, len, prot, 0, 0, 0);
 }
 
-func munmap(ptr addr, int len) -> int {
+func munmap(int addr, int len) -> int {
 	return (int)syscall(SYSMUNMAP, addr, len, 0, 0, 0, 0);
 }
 
-func brk(ptr addr) -> ptr {
-	return (ptr)syscall(SYSBRK, addr, 0, 0, 0, 0, 0);
+func brk(int addr) -> int {
+	return (int)syscall(SYSBRK, addr, 0, 0, 0, 0, 0);
 }
 
-func rt_sigaction(int signum, ptr act, ptr oldact, int sigsetsize) -> int {
-	return (int)syscall(SYSRT_SIGACTION, signum, act, oldact, sigsetsize, 0, 0);
-}
-
-func rt_sigprocmask(int how, ptr set, ptr oset, int sigsetsize) -> int {
-	return (int)syscall(SYSRT_SIGPROCMASK, how, set, oset, sigsetsize, 0, 0);
-}
+// these ptrs are to structs where the definition seems to differ between distributions, therefore I can not implement them yet
+//func rt_sigaction(int signum, ptr act, ptr oldact, int sigsetsize) -> int {
+//	return (int)syscall(SYSRT_SIGACTION, signum, act, oldact, sigsetsize, 0, 0);
+//}
+//
+//func rt_sigprocmask(int how, ptr set, ptr oset, int sigsetsize) -> int {
+//	return (int)syscall(SYSRT_SIGPROCMASK, how, set, oset, sigsetsize, 0, 0);
+//}
 
 //TODO: look at how to implement this properly
 func ioctl(int fd, int cmd, int arg) -> int {
@@ -199,48 +230,50 @@ func ioctl(int fd, int cmd, int arg) -> int {
 }
 
 func pread64(int fd, str buf, int count, int pos) -> int {
-	return (int)syscall(SYSPREAD64, fd, buf, count, pos, 0, 0);
+	return (int)syscall(SYSPREAD64, fd, topointer<str>(buf), count, pos, 0, 0);
 }
 
 func pwrite64(int fd, str buf, int count, int pos) -> int {
-	return (int)syscall(SYSPWRITE64, fd, buf, count, pos, 0, 0);
+	return (int)syscall(SYSPWRITE64, fd, topointer<str>(buf), count, pos, 0, 0);
 }
 
-func readv(int fd, ptr vec, int vlen) -> int {
-	return (int)syscall(SYSREADV, fd, vec, vlen, 0, 0, 0);
+func readv(int fd, iovec[] vecs, int vlen) -> int {
+	return (int)syscall(SYSREADV, fd, listtopointer<iovec>(vecs), vlen, 0, 0, 0);
 }
 
-func writev(int fd, ptr vec, int vlen) -> int {
-	return (int)syscall(SYSWRITEV, fd, vec, vlen, 0, 0, 0);
+func writev(int fd, iovec[] vecs, int vlen) -> int {
+	return (int)syscall(SYSWRITEV, fd, listtopointer<iovec>(vecs), vlen, 0, 0, 0);
 }
 
 func access(str filename, int mode) -> int {
-	return (int)syscall(SYSACCESS, filename, mode, 0, 0, 0, 0);
+	return (int)syscall(SYSACCESS, topointer<str>(filename), mode, 0, 0, 0, 0);
 }
 
 func pipe(int filedes) -> int {
 	return (int)syscall(SYSPIPE, filedes, 0, 0, 0, 0, 0);
 }
 
-func select(int n, ptr inp, ptr outp, ptr exp, ptr tvp) -> int {
-	return (int)syscall(SYSSELECT, n, inp, outp, exp, tvp, 0);
-}
+// these ptrs are to structs where the definition seems to differ between distributions, therefore I can not implement them yet
+//func select(int n, ptr inp, ptr outp, ptr exp, ptr tvp) -> int {
+//	return (int)syscall(SYSSELECT, n, inp, outp, exp, tvp, 0);
+//}
 
 func sched_yield() -> int {
 	return (int)syscall(SYSSCHED_YIELD, 0, 0, 0, 0, 0, 0);
 }
 
-func mremap(int addr, int old_len, int new_len, int flags, int new_addr) -> ptr {
-	return (ptr)syscall(SYSMREMAP, addr, old_len, new_len, flags, new_addr, 0);
+func mremap(int addr, int old_len, int new_len, int flags, int new_addr) -> int {
+	return (int)syscall(SYSMREMAP, addr, old_len, new_len, flags, new_addr, 0);
 }
 
 func msync(int start, int len, int flags) -> int {
 	return (int)syscall(SYSMSYNC, start, len, flags, 0, 0, 0);
 }
 
-func mincore(int start, int len, ptr vec) -> int {
-	return (int)syscall(SYSMINCORE, start, len, vec, 0, 0, 0);
-}
+// this ptr is to a struct where the definition seems to differ between distributions, therefore I can not implement it yet
+//func mincore(int start, int len, ptr vec) -> int {
+//	return (int)syscall(SYSMINCORE, start, len, vec, 0, 0, 0);
+//}
 
 func madvise(int start, int len, int behaviour) -> int {
 	return (int)syscall(SYSMADVISE, start, len, behaviour, 0, 0, 0);
@@ -366,16 +399,21 @@ func vfork() -> int {
 	return (int)syscall(SYSVFORK, 0, 0, 0, 0, 0, 0);
 }
 
-func execve(str fileName, str[] argv, str[] envp) -> int {
-	return (int)syscall(SYSEXECVE, fileName, argv, envp, 0, 0, 0);
+func execve(str filename, str[] argv, str[] envp) -> int {
+	return (int)syscall(SYSEXECVE, topointer<str>(filename), listtopointer<str>(argv), listtopointer<str>(envp), 0, 0, 0);
 }
 
 func exit(int error_code) -> int {
 	return (int)syscall(SYSEXIT, error_code, 0, 0, 0, 0, 0);
 }
 
-func wait4(int pid, int[] wstatus, int options, ptr rusage) -> int { // int[] here is a wierd way of getting a pointer to an integer
-	return (int)syscall(SYSWAIT4, pid, wstatus, options, rusage, 0, 0);
+// the definition of rusage seems to differ between distributions, therefore Lumina cannot use it yet
+//func wait4(int pid, int[] wstatus, int options, ptr rusage) -> int { // int[] here is a wierd way of getting a pointer to an integer
+//	return (int)syscall(SYSWAIT4, pid, wstatus, options, rusage, 0, 0);
+//}
+
+func wait4(int pid, int[] wstatus, int options) -> int { // int[] here is a wierd way of getting a pointer to an integer
+	return (int)syscall(SYSWAIT4, pid, listtopointer<int>(wstatus), options, 0, 0, 0);
 }
 
 func kill() -> int {
@@ -447,7 +485,7 @@ func getdents() -> int {
 }
 
 func getcwd(str buf, int size) -> int {
-	return (int)syscall(SYSGETCWD, buf, size, 0, 0, 0, 0);
+	return (int)syscall(SYSGETCWD, topointer<str>(buf), size, 0, 0, 0, 0);
 }
 
 func chdir() -> int {
@@ -650,11 +688,11 @@ func rt_sigqueueinfo() -> int {
 	return (int)syscall(SYSRT_SIGQUEUEINFO, 0, 0, 0, 0, 0, 0);
 }
 
-func rkt_sigsuspend(ptr unewset, int sigsetsize) -> int {
-	return (int)syscall(SYSRKT_SIGSUSPEND, unewset, sigsetsize, 0, 0, 0, 0);
-}
+//func rkt_sigsuspend(ptr unewset, int sigsetsize) -> int {
+//	return (int)syscall(SYSRKT_SIGSUSPEND, unewset, sigsetsize, 0, 0, 0, 0);
+//}
 
 
-func openat(int dir_fd, str fileName, int flags, int mode) -> int {
-	return (int)syscall(SYSOPENAT, dir_fd, fileName, flags, mode, 0, 0);
+func openat(int dir_fd, str filename, int flags, int mode) -> int {
+	return (int)syscall(SYSOPENAT, dir_fd, topointer<str>(filename), flags, mode, 0, 0);
 }

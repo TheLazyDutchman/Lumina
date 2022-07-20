@@ -1,4 +1,3 @@
-import "../std/memory.lumina"
 import "../std/string.lumina"
 
 import "position.lumina"
@@ -15,9 +14,10 @@ const KEYWORD_type = 6;
 const KEYWORD_import = 7;
 const KEYWORD_return = 8;
 const KEYWORD_sizeof = 9;
-const NUMKEYWORDS = 10;
+const KEYWORD_new = 10;
+const NUMKEYWORDS = 11;
 
-var _keywordList = (str[])malloc(sizeof(str) * NUMKEYWORDS);
+var _keywordList = new str[](NUMKEYWORDS);
 _keywordList[0] = "var";
 _keywordList[1] = "const";
 _keywordList[2] = "func";
@@ -28,6 +28,7 @@ _keywordList[6] = "type";
 _keywordList[7] = "import";
 _keywordList[8] = "return";
 _keywordList[9] = "sizeof";
+_keywordList[10] = "new";
 
 type Name {
 	WhiteSpace space;
@@ -38,17 +39,15 @@ type Name {
 }
 
 func createName(Position start, Position end, WhiteSpace space) -> Name {
-	var name = (Name)malloc(sizeof(Name));
+	var name = new Name();
 
 	name.region = createRegion(start, end);
-	name.definitionRegion = (Region)0;
 	name.space = space;
 	name.keyword = -1;
 
 	var length = end.index - start.index;
 
-	var stringStart = (str)((int)start.buffer + start.index);
-	name.name = strndup(stringStart, length);
+	name.name = fromOffset(start.buffer, start.index, length);
 
 	var i = 0;
 	while (i < NUMKEYWORDS) {
@@ -63,11 +62,8 @@ func createName(Position start, Position end, WhiteSpace space) -> Name {
 }
 
 func createNameFromString(str value) -> Name {
-	var name = (Name)malloc(sizeof(Name));
+	var name = new Name();
 
-	name.region = (Region)0;
-	name.definitionRegion = (Region)0;
-	name.space = (WhiteSpace)0;
 	name.keyword = -1;
 	name.name = value;
 
@@ -76,7 +72,7 @@ func createNameFromString(str value) -> Name {
 
 func isKeyword(Name name, int keywordId) -> bool {
 	if (name == (Name)0) {
-		return (bool)0;
+		return false;
 	}
 
 	return name.keyword == keywordId;
@@ -84,7 +80,7 @@ func isKeyword(Name name, int keywordId) -> bool {
 
 func isIdentifier(Name name) -> bool {
 	if (name == (Name)0) {
-		return (bool)0;
+		return false;
 	}
 
 	return name.keyword == -1;

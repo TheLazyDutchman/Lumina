@@ -1,4 +1,11 @@
 import "../std/io.lumina"
+import "../std/collections.lumina"
+
+
+type Point {
+	int x;
+	int y;
+}
 
 print("int name: ");
 print(int.name);
@@ -10,4 +17,60 @@ print("\n");
 
 print("bool size: ");
 printi(bool.size);
+print("\n\n");
+
+func printProperties(Type typeObj) {
+	var i = 0;
+	while (typeObj.properties[i] != (TypeProperty)0) {
+		var property = typeObj.properties[i];
+		print("property: ");
+		print(property.name);
+		print(", offset: ");
+		printi(property.offset);
+		print("\n");
+		i = i + 1;
+	}
+}
+
+print("properties of 'Type':\n");
+printProperties(Type);
 print("\n");
+
+print("properties of 'TypeProperty':\n");
+printProperties(TypeProperty);
+print("\n");
+
+print("properties of 'Point':\n");
+printProperties(Point);
+print("\n");
+
+var string = new Array<char>();
+
+addItem<char>(string, 'H');
+addItem<char>(string, 'e');
+addItem<char>(string, 'l');
+addItem<char>(string, 'l');
+addItem<char>(string, 'o');
+
+print(string.list);
+print("\n");
+
+addItem<char>(string, ',');
+addItem<char>(string, ' ');
+addItem<char>(string, 'w');
+addItem<char>(string, 'o');
+addItem<char>(string, 'r');
+addItem<char>(string, 'l');
+addItem<char>(string, 'd');
+addItem<char>(string, '!');
+addItem<char>(string, '\n');
+
+print(string.list);
+
+setItem<char>(string, 5, '.');
+
+print(string.list);
+
+setItem<char>(string, 5, getItem<char>(string, 6));
+
+print(string.list);

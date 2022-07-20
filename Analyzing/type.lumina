@@ -1,5 +1,4 @@
 import "../std/string.lumina"
-import "../std/memory.lumina"
 import "../std/io.lumina"
 import "../std/collections.lumina"
 
@@ -12,6 +11,7 @@ import "whitespace.lumina"
 
 type Property {
 	str name;
+	int nameId;
 	PropertyDefinition definition;
 	str typeName;
 
@@ -40,6 +40,10 @@ type TypeObj {
 	TypeObj listType;
 
 	Array<TypeObj> variants;
+	bool isGeneric;
+
+	int depth;
+	int position;
 }
 
 type PropertyDefinition {
@@ -81,15 +85,15 @@ type TypeDefinition {
 }
 
 func createPropertyDefinition(Operation propertyType, Name name, Operator semicolon) -> PropertyDefinition {
-	if (isIdentifier(name) != (bool)1) {
+	if (!isIdentifier(name)) {
 		print("expected property name to be an identifier\n");
 	}
 
-	if (streq(semicolon.name, ";") == (bool)0) {
+	if (!streq(semicolon.name, ";")) {
 		print("expected ';' in property\n");
 	}
 
-	var property = (PropertyDefinition)malloc(sizeof(PropertyDefinition));
+	var property = new PropertyDefinition();
 
 	property.propertyType = propertyType;
 	property.name = name;
@@ -111,13 +115,14 @@ func findProperty(Array<Property> list, str name) -> Property {
 	return (Property)0;
 }
 
-func createGenericFromString(str name) -> Generic {
-	var generic = (Generic)malloc(sizeof(Generic));
+func createGenericFromString(str name, int depth, int position) -> Generic {
+	var generic = new Generic();
 
 	generic.name = name;
 	generic.typeObj = createTypeFromString(name, 8);
-
-	generic.definition = (GenericDefinition)0;
+	generic.typeObj.isGeneric = true;
+	generic.typeObj.depth = depth;
+	generic.typeObj.position = position;
 
 	return generic;
 }
@@ -127,17 +132,16 @@ func createGenericFromType(TypeObj typeObj) -> Generic {
 		return (Generic)0;
 	}
 
-	var generic = (Generic)malloc(sizeof(Generic));
+	var generic = new Generic();
 
 	generic.name = typeObj.name;
 	generic.typeObj = typeObj;
-	generic.definition = (GenericDefinition)0;
 
 	return generic;
 }
 
-func createGenericFromDefinition(GenericDefinition definition) -> Generic {
-	var generic = createGenericFromString(definition.name.name);
+func createGenericFromDefinition(GenericDefinition definition, int depth, int position) -> Generic {
+	var generic = createGenericFromString(definition.name.name, depth, position);
 
 	generic.definition = definition;
 
@@ -156,7 +160,7 @@ func findGeneric(Array<Generic> list, str name) -> Generic {
 }
 
 func createGenericDefinition(Operator comma, Name name) -> GenericDefinition {
-	var generic = (GenericDefinition)malloc(sizeof(GenericDefinition));
+	var generic = new GenericDefinition();
 
 	generic.comma = comma;
 	generic.name = name;
@@ -171,7 +175,7 @@ func createGenericDefinition(Operator comma, Name name) -> GenericDefinition {
 }
 
 func createGenericsDefinition(Operator lesser, Array<GenericDefinition> generics, Operator greater) -> GenericsDefinition {
-	var definition = (GenericsDefinition)malloc(sizeof(GenericsDefinition));
+	var definition = new GenericsDefinition();
 
 	if (lesser != (Operator)0 && greater != (Operator)0) {
 		definition.region = createRegion(lesser.position, greater.position);
@@ -185,17 +189,17 @@ func createGenericsDefinition(Operator lesser, Array<GenericDefinition> generics
 }
 
 func createTypeDefinition(Name keyword, Name name, Operator lbrace, GenericsDefinition generics, Array<PropertyDefinition> properties, Operator rbrace) -> TypeDefinition {
-	var typeDef = (TypeDefinition)malloc(sizeof(TypeDefinition));
+	var typeDef = new TypeDefinition();
 
-	if (isIdentifier(name) != (bool)1) {
+	if (!isIdentifier(name)) {
 		print("expected type name to be an identifier\n");
 	}
 
-	if (isOperator(lbrace, "{") != (bool)1) {
+	if (!isOperator(lbrace, "{")) {
 		print("expected '{' after type name\n");
 	}
 
-	if (isOperator(rbrace, "}") != (bool)1) {
+	if (!isOperator(rbrace, "}")) {
 		print("expected '}' after type definition\n");
 	}
 
@@ -206,8 +210,6 @@ func createTypeDefinition(Name keyword, Name name, Operator lbrace, GenericsDefi
 	typeDef.lbrace = lbrace;
 	typeDef.properties = properties;
 	typeDef.rbrace = rbrace;
-	typeDef.listOf = (TypeDefinition)0;
-	typeDef.arrayType = (TypeDefinition)0;
 
 	typeDef.region = createRegion(keyword.region.start, rbrace.position);
 
@@ -215,34 +217,30 @@ func createTypeDefinition(Name keyword, Name name, Operator lbrace, GenericsDefi
 }
 
 func createPropertyFromDefinition(PropertyDefinition definition) -> Property {
-	var property = (Property)malloc(sizeof(Property));
+	var property = new Property();
 
 	property.name = definition.name.name;
 	property.definition = definition;
 
-	property.typeName = (str)0; // TODO: find a way to get this type
-
 	property.offset = -1;
-	property.propertyType = (TypeObj)0;
 
 	return property;
 }
 
-func createPropertyFromString(str name, TypeObj propertyType) -> Property {
-	var property = (Property)malloc(sizeof(Property));
+func createPropertyFromString(str name, TypeObj propertyType, int offset) -> Property {
+	var property = new Property();
 
 	property.name = name;
-	property.definition = (PropertyDefinition)0;
 	property.typeName = propertyType.name;
 
-	property.offset = -1;
+	property.offset = offset;
 	property.propertyType = propertyType;
 
 	return property;
 }
 
 func copyProperty(Property original) -> Property {
-	var property = (Property)malloc(sizeof(Property));
+	var property = new Property();
 
 	property.name = original.name;
 	property.definition = original.definition;
@@ -255,11 +253,11 @@ func copyProperty(Property original) -> Property {
 }
 
 func copyPropertyArray(Array<Property> original) -> Array<Property> {
-	var list = (Array<Property>)malloc(sizeof(Array<Property>));
+	var list = new Array<Property>();
 
 	list.size = original.size;
 	list.maxSize = original.maxSize;
-	list.list = (Property[])malloc(8 * list.maxSize);
+	list.list = new Property[](list.maxSize);
 
 	var i = 0;
 	while (i < original.size) {
@@ -271,7 +269,7 @@ func copyPropertyArray(Array<Property> original) -> Array<Property> {
 }
 
 func createTypeFromDefinition(TypeDefinition definition) -> TypeObj {
-	var typeObj = (TypeObj)malloc(sizeof(TypeObj));
+	var typeObj = new TypeObj();
 
 	typeObj.name = definition.name.name;
 	typeObj.definition = definition;
@@ -281,7 +279,7 @@ func createTypeFromDefinition(TypeDefinition definition) -> TypeObj {
 
 	var i = 0;
 	while (i < definition.generics.generics.size) {
-		addItem<Generic>(typeObj.generics, createGenericFromDefinition(definition.generics.generics.list[i]));
+		addItem<Generic>(typeObj.generics, createGenericFromDefinition(definition.generics.generics.list[i], 0, i));
 		i = i + 1;
 	}
 
@@ -293,9 +291,6 @@ func createTypeFromDefinition(TypeDefinition definition) -> TypeObj {
 		i = i + 1;
 	}
 	
-	typeObj.listOf = (TypeObj)0;
-	typeObj.listType = (TypeObj)0;
-
 	typeObj.variants = createArray<TypeObj>();
 	addItem<TypeObj>(typeObj.variants, typeObj);
 
@@ -303,18 +298,14 @@ func createTypeFromDefinition(TypeDefinition definition) -> TypeObj {
 }
 
 func createTypeFromString(str name, int size) -> TypeObj {
-	var typeObj = (TypeObj)malloc(sizeof(TypeObj));
+	var typeObj = new TypeObj();
 
 	typeObj.name = name;
-	typeObj.definition = (TypeDefinition)0;
 	typeObj.size = size;
 	typeObj.objectSize = size;
 
 	typeObj.generics = createArray<Generic>();
 	typeObj.properties = createArray<Property>();
-
-	typeObj.listOf = (TypeObj)0;
-	typeObj.listType = (TypeObj)0;
 
 	typeObj.variants = createArray<TypeObj>();
 	addItem<TypeObj>(typeObj.variants, typeObj);
@@ -322,8 +313,8 @@ func createTypeFromString(str name, int size) -> TypeObj {
 	return typeObj;
 }
 
-func createNewTypeVariant(TypeObj typeObj, Array<TypeObj> newGenerics) -> TypeObj {
-	var newType = (TypeObj)malloc(sizeof(TypeObj));
+func createNewTypeVariant(Array<TypeObj> typeArray, TypeObj typeObj, Array<TypeObj> newGenerics) -> TypeObj {
+	var newType = new TypeObj();
 
 	newType.name = typeObj.name;
 	newType.definition = typeObj.definition;
@@ -342,15 +333,12 @@ func createNewTypeVariant(TypeObj typeObj, Array<TypeObj> newGenerics) -> TypeOb
 	while (i < newType.properties.size) {
 		var j = 0;
 		while (j < typeObj.generics.size) {
-			newType.properties.list[i].propertyType = applyGeneric(newType.properties.list[i].propertyType, typeObj.generics.list[j].typeObj, newGenerics.list[j]);
+			newType.properties.list[i].propertyType = applyGeneric(typeArray, newType.properties.list[i].propertyType, typeObj.generics.list[j].typeObj, newGenerics.list[j]);
 			j = j + 1;
 		}
 		i = i + 1;
 	}
 
-
-	newType.listOf = (TypeObj)0;
-	newType.listType = (TypeObj)0;
 
 	newType.variants = typeObj.variants;
 	addItem<TypeObj>(typeObj.variants, newType);
@@ -358,20 +346,26 @@ func createNewTypeVariant(TypeObj typeObj, Array<TypeObj> newGenerics) -> TypeOb
 	return newType;
 }
 
-func createListType(str name, TypeObj typeObj) -> TypeObj {
+func createListType(Array<TypeObj> typeArray, str name, TypeObj typeObj) -> TypeObj {
 	if (typeObj.listOf != (TypeObj)0) {
 		return typeObj.listOf;
 	}
 
 	var listType = createTypeFromString(name, 8);
+	listType.objectSize = typeObj.size;
 	listType.listType = typeObj;
+	listType.isGeneric = typeObj.isGeneric;
 
 	typeObj.listOf = listType;
+
+	if (typeArray != (Array<TypeObj>)0) {
+		addItem<TypeObj>(typeArray, listType);
+	}
 
 	return listType;
 }
 
-func getVariantType(TypeObj typeObj, Array<TypeObj> generics) -> TypeObj {
+func getVariantType(Array<TypeObj> typeArray, TypeObj typeObj, Array<TypeObj> generics) -> TypeObj {
 	if (typeObj.generics.size != generics.size) {
 		print("expected ");
 		printi(typeObj.generics.size);
@@ -385,10 +379,10 @@ func getVariantType(TypeObj typeObj, Array<TypeObj> generics) -> TypeObj {
 	while (i < typeObj.variants.size) {
 		var variant = typeObj.variants.list[i];
 		var j = 0;
-		var isEqual = (bool)1;
+		var isEqual = true;
 		while (j < generics.size) {
 			if (variant.generics.list[j] == (Generic)0 || variant.generics.list[j].typeObj != generics.list[j]) {
-				isEqual = (bool)0;
+				isEqual = false;
 			}
 			j = j + 1;
 		}
@@ -399,26 +393,26 @@ func getVariantType(TypeObj typeObj, Array<TypeObj> generics) -> TypeObj {
 		i = i + 1;
 	}
 
-	return createNewTypeVariant(typeObj, generics);
+	return createNewTypeVariant(typeArray, typeObj, generics);
 }
 
-func applyGeneric(TypeObj value, TypeObj old, TypeObj new) -> TypeObj {
-	if (value == old) { return new; }
+func applyGeneric(Array<TypeObj> typeArray, TypeObj value, TypeObj old, TypeObj newType) -> TypeObj {
+	if (value == old) { return newType; }
 	if (value == (TypeObj)0) {
 		return (TypeObj)0;
 	}
 
-	if (value.listOf == old) { return new.listType; }
+	if (value.listOf == old) { return newType.listType; }
 	if (value.listType == old) { 
-		if (new == (TypeObj)0) {
+		if (newType == (TypeObj)0) {
 			return (TypeObj)0;
 		}
 
-		if (new.listOf == (TypeObj)0) {
-			createListType((str)0, new);
+		if (newType.listOf == (TypeObj)0) {
+			createListType(typeArray, (str)0, newType);
 		}
 
-		return new.listOf; 
+		return newType.listOf; 
 	}
 
 	if (value.generics.size != 0) {
@@ -426,11 +420,11 @@ func applyGeneric(TypeObj value, TypeObj old, TypeObj new) -> TypeObj {
 		var i = 0;
 		while (i < value.generics.size) {
 			var original = value.generics.list[i].typeObj;
-			addItem<TypeObj>(generics, applyGeneric(original, old, new));
+			addItem<TypeObj>(generics, applyGeneric(typeArray, original, old, newType));
 			i = i + 1;
 		}
 
-		return getVariantType(value, generics);
+		return getVariantType(typeArray, value, generics);
 	}
 
 	return value;
@@ -439,7 +433,7 @@ func applyGeneric(TypeObj value, TypeObj old, TypeObj new) -> TypeObj {
 func findType(Array<TypeObj> list, str name) -> TypeObj {
 	var i = 0;
 	while (i < list.size) {
-		if (streq(list.list[i].name, name)) {
+		if (getItem<TypeObj>(list, i).name != (str)0 && streq(getItem<TypeObj>(list, i).name, name)) {
 			return list.list[i];
 		}
 		i = i + 1;

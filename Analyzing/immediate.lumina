@@ -1,4 +1,3 @@
-import "../std/memory.lumina"
 import "../std/string.lumina"
 import "../std/collections.lumina"
 
@@ -6,7 +5,7 @@ import "position.lumina"
 import "whitespace.lumina"
 
 
-type String {
+type StringLiteral {
 	WhiteSpace space;
 	Region region;
 	str value;
@@ -26,16 +25,15 @@ type Number {
 	int value;
 }
 
-func createString(Position start, Position end, WhiteSpace space) -> String {
-	var string = (String)malloc(sizeof(String));
+func createString(Position start, Position end, WhiteSpace space) -> StringLiteral {
+	var string = new StringLiteral();
 
 	string.region = createRegion(start, end);
 	string.space = space;
 
 	var length = end.index - start.index;
 
-	var stringStart = (str)((int)start.buffer + start.index + 1);
-	string.value = strndup(stringStart, length - 2);
+	string.value = fromOffset(start.buffer, start.index + 1, length - 2);
 
 	string.id = -1;
 	
@@ -43,26 +41,26 @@ func createString(Position start, Position end, WhiteSpace space) -> String {
 }
 
 func createCharacter(Position start, Position end, WhiteSpace space) -> Character {
-	var character = (Character)malloc(sizeof(Character));
+	var character = new Character();
 
 	character.region = createRegion(start, end);
 	character.space = space;
 
-	character.value = unEscapeCharacter((str)((int)start.buffer + start.index + 1));
+	character.value = unEscapeCharacter(start.buffer, start.index + 1);
 	
 	return character;
 }
 
 func createNumber(Position start, Position end, WhiteSpace space) -> Number {
-	var number = (Number)malloc(sizeof(Number));
+	var number = new Number();
 
 	number.region = createRegion(start, end);
 	number.space = space;
 	
 	var length = end.index - start.index;
 
-	var numberStart = (str)((int)start.buffer + start.index);
-	number.value = strToInt(numberStart, length);
+	var numberString = fromOffset(start.buffer, start.index, length);
+	number.value = strToInt(numberString, length);
 
 	return number;
 }

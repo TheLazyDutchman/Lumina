@@ -1,4 +1,3 @@
-import "../std/memory.lumina"
 import "../std/io.lumina"
 
 import "name.lumina"
@@ -15,13 +14,13 @@ type Identifier {
 }
 
 func createIdentifierFromName(Name name) -> Identifier {
-	if (isIdentifier(name) != (bool)1) {
+	if (isIdentifier(name) != true) {
 		printPosition(name.region.start);
 		print(" expected an identifier\n");
 		return (Identifier)0;
 	}
 
-	var identifier = (Identifier)malloc(sizeof(Identifier));
+	var identifier = new Identifier();
 
 	identifier.name = name.name;
 	identifier.definition = name;

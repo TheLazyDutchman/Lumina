@@ -1,75 +1,78 @@
-if ((bool)0) {
-	syscall(1, 1, "if false\n", 9, 0, 0, 0);
+import "../std/io.lumina"
+
+
+if (false) {
+	print("if false\n");
 }
 
-if ((bool)1) {
-	syscall(1, 1, "if true\n", 8, 0, 0, 0);
+if (true) {
+	print("if true\n");
 }
 
-if ((bool)0) {
-	syscall(1, 1, "if else 0 f\n", 12, 0, 0, 0);
+if (false) {
+	print("if else 0 f\n");
 } else {
-	syscall(1, 1, "if else 1 f\n", 12, 0, 0, 0);
+	print("if else 1 f\n");
 }
 
-if ((bool)1) {
-	syscall(1, 1, "if else 0 t\n", 12, 0, 0, 0);
+if (true) {
+	print("if else 0 t\n");
 } else {
-	syscall(1, 1, "if else 1 t\n", 12, 0, 0, 0);
+	print("if else 1 t\n");
 }
 
-if ((bool)0) {
-	syscall(1, 1, "else if 0 ff\n", 13, 0, 0, 0);
-} else if ((bool)0) {
-	syscall(1, 1, "else if 1 ff\n", 13, 0, 0, 0);
+if (false) {
+	print("else if 0 ff\n");
+} else if (false) {
+	print("else if 1 ff\n");
 }
 
-if ((bool)0) {
-	syscall(1, 1, "else if 0 ft\n", 13, 0, 0, 0);
-} else if ((bool)1) {
-	syscall(1, 1, "else if 1 ft\n", 13, 0, 0, 0);
+if (false) {
+	print("else if 0 ft\n");
+} else if (true) {
+	print("else if 1 ft\n");
 }
 
-if ((bool)1) {
-	syscall(1, 1, "else if 0 tf\n", 13, 0, 0, 0);
-} else if ((bool)0) {
-	syscall(1, 1, "else if 1 tf\n", 13, 0, 0, 0);
+if (true) {
+	print("else if 0 tf\n");
+} else if (false) {
+	print("else if 1 tf\n");
 }
 
-if ((bool)1) {
-	syscall(1, 1, "else if 0 tt\n", 13, 0, 0, 0);
-} else if ((bool)1) {
-	syscall(1, 1, "else if 1 tt\n", 13, 0, 0, 0);
+if (true) {
+	print("else if 0 tt\n");
+} else if (true) {
+	print("else if 1 tt\n");
 }
 
-if ((bool)0) {
-	syscall(1, 1, "else if else 0 ff\n", 18, 0, 0, 0);
-} else if ((bool)0) {
-	syscall(1, 1, "else if else 1 ff\n", 18, 0, 0, 0);
+if (false) {
+	print("else if else 0 ff\n");
+} else if (false) {
+	print("else if else 1 ff\n");
 } else {
-	syscall(1, 1, "else if else 2 ff\n", 18, 0, 0, 0);
+	print("else if else 2 ff\n");
 }
 
-if ((bool)0) {
-	syscall(1, 1, "else if else 0 ft\n", 18, 0, 0, 0);
-} else if ((bool)1) {
-	syscall(1, 1, "else if else 1 ft\n", 18, 0, 0, 0);
+if (false) {
+	print("else if else 0 ft\n");
+} else if (true) {
+	print("else if else 1 ft\n");
 } else {
-	syscall(1, 1, "else if else 2 ft\n", 18, 0, 0, 0);
+	print("else if else 2 ft\n");
 }
 
-if ((bool)1) {
-	syscall(1, 1, "else if else 0 tf\n", 18, 0, 0, 0);
-} else if ((bool)0) {
-	syscall(1, 1, "else if else 1 tf\n", 18, 0, 0, 0);
+if (true) {
+	print("else if else 0 tf\n");
+} else if (false) {
+	print("else if else 1 tf\n");
 } else {
-	syscall(1, 1, "else if else 2 tf\n", 18, 0, 0, 0);
+	print("else if else 2 tf\n");
 }
 
-if ((bool)1) {
-	syscall(1, 1, "else if else 0 tt\n", 18, 0, 0, 0);
-} else if ((bool)1) {
-	syscall(1, 1, "else if else 1 tt\n", 18, 0, 0, 0);
+if (true) {
+	print("else if else 0 tt\n");
+} else if (true) {
+	print("else if else 1 tt\n");
 } else {
-	syscall(1, 1, "else if else 2 tt\n", 18, 0, 0, 0);
+	print("else if else 2 tt\n");
 }

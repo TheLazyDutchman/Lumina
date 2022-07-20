@@ -1,5 +1,5 @@
-import "../std/memory.lumina"
 import "../std/string.lumina"
+import "../std/collections.lumina"
 
 import "position.lumina"
 import "whitespace.lumina"
@@ -18,65 +18,10 @@ const PREC_bitwise = 8;
 const PREC_index = 9;
 const PREC_call = 10;
 
-const NUMOPERATORS = 27;
-
-var _operatorList = (str[])malloc(sizeof(str) * NUMOPERATORS);
-var _precedenceList = (int[])malloc(sizeof(int) * NUMOPERATORS);
-
-_operatorList[0] = "<<";
-_precedenceList[0] = PREC_bitwise;
-_operatorList[1] = ">>";
-_precedenceList[1] = PREC_bitwise;
-_operatorList[2] = "||";
-_precedenceList[2] = PREC_or;
-_operatorList[3] = "&&";
-_precedenceList[3] = PREC_and;
-_operatorList[4] = "|";
-_precedenceList[4] = PREC_bitwise;
-_operatorList[5] = "&";
-_precedenceList[5] = PREC_bitwise;
-_operatorList[6] = "->";
-_precedenceList[6] = PREC_statement;
-_operatorList[7] = "!=";
-_precedenceList[7] = PREC_comparison;
-_operatorList[8] = "<=";
-_precedenceList[8] = PREC_comparison;
-_operatorList[9] = ">=";
-_precedenceList[9] = PREC_comparison;
-_operatorList[10] = "==";
-_precedenceList[10] = PREC_comparison;
-_operatorList[11] = "<";
-_precedenceList[11] = PREC_comparison;
-_operatorList[12] = ">";
-_precedenceList[12] = PREC_comparison;
-_operatorList[13] = "!";
-_precedenceList[13] = PREC_statement;
-_operatorList[14] = "=";
-_precedenceList[14] = PREC_assignment;
-_operatorList[15] = "+";
-_precedenceList[15] = PREC_term;
-_operatorList[16] = "-";
-_precedenceList[16] = PREC_term;
-_operatorList[17] = "*";
-_precedenceList[17] = PREC_factor;
-_operatorList[18] = "(";
-_precedenceList[18] = PREC_call;
-_operatorList[19] = ")";
-_precedenceList[19] = PREC_statement;
-_operatorList[20] = "{";
-_precedenceList[20] = PREC_statement;
-_operatorList[21] = "}";
-_precedenceList[21] = PREC_statement;
-_operatorList[22] = "[";
-_precedenceList[22] = PREC_index;
-_operatorList[23] = "]";
-_precedenceList[23] = PREC_statement;
-_operatorList[24] = ".";
-_precedenceList[24] = PREC_index;
-_operatorList[25] = ",";
-_precedenceList[25] = PREC_statement;
-_operatorList[26] = ";";
-_precedenceList[26] = PREC_statement;
+type OperatorType {
+	str name;
+	int precedence;
+}
 
 type Operator {
 	WhiteSpace space;
@@ -86,28 +31,68 @@ type Operator {
 	int precedence;
 }
 
+
+func createOperatorType(str name, int precedence) -> OperatorType {
+	var operator = new OperatorType();
+
+	operator.name = name;
+	operator.precedence = precedence;
+
+	return operator;
+}
+
+var operatorList = createArray<OperatorType>();
+addItem<OperatorType>(operatorList, createOperatorType("<<", PREC_bitwise));
+addItem<OperatorType>(operatorList, createOperatorType(">>", PREC_bitwise));
+addItem<OperatorType>(operatorList, createOperatorType("||", PREC_or));
+addItem<OperatorType>(operatorList, createOperatorType("&&", PREC_and));
+addItem<OperatorType>(operatorList, createOperatorType("|", PREC_bitwise));
+addItem<OperatorType>(operatorList, createOperatorType("&", PREC_bitwise));
+addItem<OperatorType>(operatorList, createOperatorType("~", PREC_bitwise));
+addItem<OperatorType>(operatorList, createOperatorType("->", PREC_statement));
+addItem<OperatorType>(operatorList, createOperatorType("!=", PREC_comparison));
+addItem<OperatorType>(operatorList, createOperatorType("<=", PREC_comparison));
+addItem<OperatorType>(operatorList, createOperatorType(">=", PREC_comparison));
+addItem<OperatorType>(operatorList, createOperatorType("==", PREC_comparison));
+addItem<OperatorType>(operatorList, createOperatorType("<", PREC_comparison));
+addItem<OperatorType>(operatorList, createOperatorType(">", PREC_comparison));
+addItem<OperatorType>(operatorList, createOperatorType("!", PREC_bitwise));
+addItem<OperatorType>(operatorList, createOperatorType("=", PREC_assignment));
+addItem<OperatorType>(operatorList, createOperatorType("+", PREC_term));
+addItem<OperatorType>(operatorList, createOperatorType("-", PREC_term));
+addItem<OperatorType>(operatorList, createOperatorType("*", PREC_factor));
+addItem<OperatorType>(operatorList, createOperatorType("/", PREC_factor));
+addItem<OperatorType>(operatorList, createOperatorType("%", PREC_factor));
+addItem<OperatorType>(operatorList, createOperatorType("(", PREC_call));
+addItem<OperatorType>(operatorList, createOperatorType(")", PREC_statement));
+addItem<OperatorType>(operatorList, createOperatorType("{", PREC_statement));
+addItem<OperatorType>(operatorList, createOperatorType("}", PREC_statement));
+addItem<OperatorType>(operatorList, createOperatorType("[", PREC_index));
+addItem<OperatorType>(operatorList, createOperatorType("]", PREC_statement));
+addItem<OperatorType>(operatorList, createOperatorType(".", PREC_index));
+addItem<OperatorType>(operatorList, createOperatorType(",", PREC_statement));
+addItem<OperatorType>(operatorList, createOperatorType(";", PREC_statement));
+
 func createOperator(Position position, WhiteSpace space) -> Operator {
-	var operator = (Operator)malloc(sizeof(Operator));
+	var operator = new Operator();
 
 	operator.position = position;
 	operator.space = space;
 
-	var stringStart = (str)((int)position.buffer + position.index);
 	operator.operatorType = -1;
-	operator.name = strndup(stringStart, 1);
+	operator.name = fromOffset(position.buffer, position.index, 2);
 	operator.precedence = 0;
 
 	var i = 0;
-	while (i < NUMOPERATORS) {
-		var opString = _operatorList[i];
-		if (strneq(opString, stringStart, strlen(opString))) {
+	while (i < operatorList.size) {
+		var operatorType = getItem<OperatorType>(operatorList, i);
+		var opString = operatorType.name;
+		if (strneq(opString, operator.name, strlen(opString))) {
 			operator.operatorType = i;
-
 			operator.name = opString;
+			operator.precedence = operatorType.precedence;
 
-			operator.precedence = _precedenceList[i];
-
-			i = NUMOPERATORS;
+			i = operatorList.size;
 		}
 		i = i + 1;
 	}
@@ -117,12 +102,12 @@ func createOperator(Position position, WhiteSpace space) -> Operator {
 
 func isOperator(Operator operator, str name) -> bool {
 	if (operator == (Operator)0) {
-		return (bool)0;
+		return false;
 	}
 
-	if (streq(operator.name, name) != (bool)1) {
-		return (bool)0;
+	if (streq(operator.name, name) != true) {
+		return false;
 	}
 
-	return (bool)1;
+	return true;
 }
