@@ -59,11 +59,7 @@ tests/*
 examples/*
 !examples/*.lumina
 
-Lumina/*
-!Lumina/*.lumina
-
-cLumina/test
 lumina
 
-Analyzing/*
-!Analyzing/*.lumina
+src/*
+!src/*.lumina
