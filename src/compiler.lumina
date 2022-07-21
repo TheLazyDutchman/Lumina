@@ -1633,6 +1633,70 @@ func writeShift(Parser parser, SyntaxTree tree, Block block, int output, str shi
 	return register.name;
 }
 
+func writeMethod(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, TypeObj typeObj, Array<Register> registers, Register register, bool addOffset, Array<FunctionDefinition> functions) -> str {
+	var name = operation.left.value.identifier.name;
+
+	var id = 0;
+	var i = 0;
+	while (i < functions.size) {
+		if (streq(functions.list[i].name.name, name)) {
+			id = i;
+			i = functions.size;
+		}
+		i = i + 1;
+	}
+
+	var arguments = createArray<Operation>();
+
+	if (operation.right != (Operation)0) {
+		getArguments(arguments, operation.right);
+	}
+
+	i = 0;
+	while (i < registers.size) {
+		var reg = registers.list[i];
+		if (reg.used && reg != register) {
+			writePushData(output, reg);
+			reg.used = true; // writePush frees register, but in this case we just do that temporarily, because the function we are calling might use the same ones
+		}
+		i = i + 1;
+	}
+
+	writePushData(output, register); // push struct
+	register.used = true;
+
+	i = 0;
+	while (i < arguments.size) {
+		writeOperation(parser, tree, block, output, arguments.list[i], registers, register, true, functions);
+		writePushData(output, register);
+		register.used = true; // writePush frees register, but in this case we want to reuse the same register
+		i = i + 1;
+	}
+
+	fprint(output, "	call addr_func_");
+	fprint(output, functions.list[id].name.name);
+	fprint(output, "_");
+	fprinti(output, id);
+	fprint(output, "\n");
+
+	if (!streq(register.name, "rax")) {
+		fprint(output, "	mov ");
+		fprint(output, register.name);
+		fprint(output, ", rax ;; return value\n");
+	}
+
+	i = registers.size - 1;
+	while (i >= 0) {
+		var reg = registers.list[i];
+		if (reg.used && reg != register) {
+			writePopData(output, reg);
+		}
+		i = i - 1;
+	}
+
+	return register.name;
+}
+
 func writeProperty(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register register, bool getValue, bool addOffset, Array<FunctionDefinition> functions) -> str {
 	var typeObj = operation.left.operationType;
 
@@ -1643,6 +1707,10 @@ func writeProperty(Parser parser, SyntaxTree tree, Block block, int output, Oper
 	}
 
 	writeOperation(parser, tree, block, output, operation.left, registers, register, true, functions);
+
+	if (isOperator(operation.right.operator, "(")) {
+		return writeMethod(parser, tree, block, output, operation.right, typeObj, registers, register, addOffset, functions);
+	}
 
 	var propertyName = operation.right.value.identifier;
 	var propertyType = operation.operationType;

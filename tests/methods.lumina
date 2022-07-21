@@ -1,0 +1,16 @@
+import "../std/io.lumina"
+
+
+type Cat {
+	str name;
+
+	func purr(Cat self) {
+		print(self.name);
+		print(" purred\n");
+	}
+}
+
+var firestar = new Cat();
+firestar.name = "Firestar";
+
+firestar.purr();

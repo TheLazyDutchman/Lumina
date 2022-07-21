@@ -367,7 +367,7 @@ func parseGenerics(Parser parser, SyntaxTree tree) -> GenericsDefinition {
 	return createGenericsDefinition(lesser, generics, greater);
 }
 
-func parseTypeDefinition(Parser parser, SyntaxTree tree) -> TypeDefinition {
+func parseTypeDefinition(Parser parser, SyntaxTree tree, Array<Import> imports) -> TypeDefinition {
 	var keyword = consumeKeyword(parser, tree, KEYWORD_type);
 
 	var typeName = consumeIdentifier(parser, tree);
@@ -377,14 +377,21 @@ func parseTypeDefinition(Parser parser, SyntaxTree tree) -> TypeDefinition {
 	var lbrace = consumeOperator(parser, tree, "{", false);
 
 	var properties = createArray<PropertyDefinition>();
+	var methods = createArray<FunctionDefinition>();
+
 	while (!isOperator(tree.lexer.current.operator, "}")) {
-		var property = parsePropertyDefinition(parser, tree);
-		addItem<PropertyDefinition>(properties, property);
+		if (isKeyword(tree.lexer.current.name, KEYWORD_func)) {
+			var method = parseFunctionDefinition(parser, tree, (Block)0, imports);
+			addItem<FunctionDefinition>(methods, method);
+		} else {
+			var property = parsePropertyDefinition(parser, tree);
+			addItem<PropertyDefinition>(properties, property);
+		}
 	}
 
 	var rbrace = consumeOperator(parser, tree, "}", false);
 
-	return createTypeDefinition(keyword, typeName, lbrace, generics, properties, rbrace);
+	return createTypeDefinition(keyword, typeName, lbrace, generics, properties, methods, rbrace);
 }
 
 func parseGroup(Parser parser, SyntaxTree tree) -> Operation {
@@ -862,7 +869,7 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, Array<Definitio
 
 		return createWhileStatement(whileStatement);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_type)) {
-		var typeDefinition = parseTypeDefinition(parser, tree);
+		var typeDefinition = parseTypeDefinition(parser, tree, importList);
 		var typeObj = createTypeFromDefinition(typeDefinition);
 		typeObj.nameId = addUniqueString(parser.strings, typeObj.name);
 
@@ -1382,6 +1389,13 @@ func bindNamesInTypeDefinition(Parser parser, SyntaxTree tree, TypeObj typeObj, 
 	}
 
 	typeObj.objectSize = sum;
+
+	i = 0;
+	while (i < typeObj.methods.size) {
+		var method = getItem<FunctionDefinition>(typeObj.methods, i);
+		bindNamesInFunctionDefinition(parser, tree, method, block);
+		i = i + 1;
+	}
 }
 
 func bindNamesInVariable(Parser parser, SyntaxTree tree, Variable variable, Block block) {
@@ -1720,6 +1734,92 @@ func checkTypesInFunctionCall(Parser parser, SyntaxTree tree, Block block, Opera
 	return returnType;
 }
 
+func checkTypesInMethod(Parser parser, SyntaxTree tree, Block block, TypeObj typeObj, Operation operation) -> TypeObj {
+	var methodName = operation.left.value.identifier;
+	if (methodName == (Identifier)0) {
+		printError(parser, operation.region.start, "expected method name\n");
+		return (TypeObj)0;
+	}
+
+	var method = findFunction(typeObj.methods, methodName.name);
+
+	if (method == (FunctionDefinition)0) {
+		printError(parser, operation.region.start, "type '");
+		printType(typeObj);
+		print("' does not have a method named '");
+		print(methodName.name);
+		print("'\n");
+	}
+
+	method.isCalled = true;
+
+	var arguments = createArray<TypeObj>();
+	addItem<TypeObj>(arguments, typeObj);
+	if (operation.right != (Operation)0) {
+		getArgumentTypes(parser, tree, block, arguments, operation.right);
+	}
+
+	var expectedList = createArray<TypeObj>();
+	var i = 0;
+	while (i < method.parameters.size) {
+		var parameter = method.parameters.list[i];
+		var expectedType = parameter.typeObj;
+
+		if (expectedType == (TypeObj)0 && parameter.parameterType != (Operation)0) {
+			expectedType = getTypeFromOperation(parser, tree, block, parameter.parameterType);
+		}
+
+		if (expectedType == (TypeObj)0) {
+			printError(parser, parameter.region.start, " type definition not found\n");
+		}
+
+		addItem<TypeObj>(expectedList, expectedType);
+		i = i + 1;
+	}
+
+	i = 0;
+	var j = 0;
+	var typesMatching = true;
+	while (i < expectedList.size) {
+		var expectedType = expectedList.list[i];
+		var argumentType = (TypeObj)0;
+		if (j > arguments.size) {
+			i = expectedList.size;
+		} else {
+			argumentType = arguments.list[j];
+		}
+
+		if (compareTypes(parser, argumentType, expectedType)) {
+			j = j + 1;
+		} else {
+			typesMatching = false;
+		}
+		i = i + 1;
+	}
+
+	if (expectedList.size != arguments.size) {
+		typesMatching = false;
+	}
+
+	if (!typesMatching) {
+		printError(parser, operation.operator.position, " arguments do not match\n");
+		print("[NOTE] expected: ");
+		printTypeArray(expectedList);
+		print(", got: ");
+		printTypeArray(arguments);
+		print("\n");
+	}
+
+	if (method.returnType == (ReturnType)0) {
+		operation.operationType = parser.null;
+		return parser.null;
+	}
+
+	var returnType = method.returnType.typeObj;
+	operation.operationType = returnType;
+	return returnType;
+}
+
 func checkTypesInProperty(Parser parser, SyntaxTree tree, Block block, Operation operation) -> TypeObj {
 	if (!isVariable(operation.left)) {
 		printError(parser, operation.operator.position, " can not read a property from a value that is not a variable\n");
@@ -1736,6 +1836,10 @@ func checkTypesInProperty(Parser parser, SyntaxTree tree, Block block, Operation
 	if (typeObj.properties.size == 0) {
 		printError(parser, operation.left.region.start, " cannot read property of immediate type\n");
 		return (TypeObj)0;
+	}
+
+	if (isOperator(operation.right.operator, "(")) {
+		return checkTypesInMethod(parser, tree, block, typeObj, operation.right);
 	}
 
 	var rightValue = operation.right.value;
@@ -2118,6 +2222,13 @@ func checkTypesInTypeDefinition(Parser parser, SyntaxTree tree, Block block, Typ
 		property.propertyType = getTypeFromOperation(parser, tree, block, property.definition.propertyType);
 		i = i + 1;
 	}
+
+	i = 0;
+	while (i < typeObj.methods.size) {
+		var method = getItem<FunctionDefinition>(typeObj.methods, i);
+		checkTypesInFunctionDefinition(parser, tree, block, method);
+		i = i + 1;
+	}
 }
 
 func checkTypesInFunctionDefinition(Parser parser, SyntaxTree tree, Block block, FunctionDefinition function) {
@@ -2179,6 +2290,13 @@ func listFunctions(Parser parser) -> Array<FunctionDefinition> {
 	extendArray<FunctionDefinition>(list, parser.functions);
 
 	var i = 0;
+	while (i < parser.types.size) {
+		var typeObj = getItem<TypeObj>(parser.types, i);
+		extendArray<FunctionDefinition>(list, typeObj.methods);
+		i = i + 1;
+	}
+
+	i = 0;
 	while (i < parser.files.size) {
 		var tree = parser.files.list[i];
 
@@ -2201,6 +2319,14 @@ func listFunctions(Parser parser) -> Array<FunctionDefinition> {
 			extendArray<FunctionDefinition>(list, block.functions);
 			j = j + 1;
 		}
+
+		j = 0;
+		while (j < tree.types.size) {
+			var typeObj = getItem<TypeObj>(tree.types, i);
+			extendArray<FunctionDefinition>(list, typeObj.methods);
+			j = j + 1;
+		}
+
 		i = i + 1;
 	}
 

@@ -3,6 +3,7 @@ import "../std/io.lumina"
 import "../std/collections.lumina"
 
 import "name.lumina" 
+import "function.lumina"
 import "operator.lumina"
 import "operation.lumina"
 import "position.lumina"
@@ -34,6 +35,7 @@ type TypeObj {
 	int objectSize;
 
 	Array<Property> properties;
+	Array<FunctionDefinition> methods;
 	Array<Generic> generics;
 
 	TypeObj listOf;
@@ -76,6 +78,7 @@ type TypeDefinition {
 	Operator lbrace;
 
 	Array<PropertyDefinition> properties;
+	Array<FunctionDefinition> methods;
 	GenericsDefinition generics;
 
 	Operator rbrace;
@@ -188,7 +191,7 @@ func createGenericsDefinition(Operator lesser, Array<GenericDefinition> generics
 	return definition;
 }
 
-func createTypeDefinition(Name keyword, Name name, Operator lbrace, GenericsDefinition generics, Array<PropertyDefinition> properties, Operator rbrace) -> TypeDefinition {
+func createTypeDefinition(Name keyword, Name name, Operator lbrace, GenericsDefinition generics, Array<PropertyDefinition> properties, Array<FunctionDefinition> methods, Operator rbrace) -> TypeDefinition {
 	var typeDef = new TypeDefinition();
 
 	if (!isIdentifier(name)) {
@@ -209,6 +212,7 @@ func createTypeDefinition(Name keyword, Name name, Operator lbrace, GenericsDefi
 	typeDef.generics = generics;
 	typeDef.lbrace = lbrace;
 	typeDef.properties = properties;
+	typeDef.methods = methods;
 	typeDef.rbrace = rbrace;
 
 	typeDef.region = createRegion(keyword.region.start, rbrace.position);
@@ -290,6 +294,8 @@ func createTypeFromDefinition(TypeDefinition definition) -> TypeObj {
 		addItem<Property>(typeObj.properties, createPropertyFromDefinition(definition.properties.list[i]));
 		i = i + 1;
 	}
+
+	typeObj.methods = definition.methods;
 	
 	typeObj.variants = createArray<TypeObj>();
 	addItem<TypeObj>(typeObj.variants, typeObj);

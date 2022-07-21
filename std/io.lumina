@@ -1,6 +1,6 @@
 import "syscalls.lumina"
-import "collections.lumina"
 import "string.lumina"
+import "collections.lumina"
 import "environment.lumina"
 
 func fprintn(int fd, str string, int length) -> int {
