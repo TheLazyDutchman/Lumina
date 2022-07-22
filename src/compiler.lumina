@@ -1635,8 +1635,7 @@ func writeShift(Parser parser, SyntaxTree tree, Block block, int output, str shi
 
 func writeMethod(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, TypeObj typeObj, Array<Register> registers, Register register, bool addOffset, Array<FunctionDefinition> functions) -> str {
 	var name = operation.left.value.identifier.name;
-
-	var id = 0;
+	var id = -1;
 	var i = 0;
 	while (i < functions.size) {
 		if (streq(functions.list[i].name.name, name)) {
@@ -1661,6 +1660,31 @@ func writeMethod(Parser parser, SyntaxTree tree, Block block, int output, Operat
 		}
 		i = i + 1;
 	}
+	
+	var method = findFunction(typeObj.methods, name);
+	var genericRegister = getRegister(registers);
+
+	i = 0;
+	while (i < method.generics.size) {
+		var generic = getItem<Generic>(method.generics, i);
+		if (generic.typeObj.isGeneric) {
+			printPosition(operation.region.start);
+			print(" dont fully support generic types in methods yet\n");
+		}
+
+		fprint(output, "	mov ");
+		fprint(output, genericRegister.name);
+		fprint(output, ", type_");
+		writeTypeName(output, typeObj);
+		fprint(output, "\n");
+
+		writePushData(output, genericRegister);
+		genericRegister.used = true;
+
+		i = i + 1;
+	}
+
+	genericRegister.used = false;
 
 	writePushData(output, register); // push struct
 	register.used = true;

@@ -1269,6 +1269,8 @@ func bindNamesInOperation(Parser parser, SyntaxTree tree, Operation operation, B
 	if (operation.right != (Operation)0) {
 		if (operation.operator == (Operator)0 || !isOperator(operation.operator, ".")) {
 			bindNamesInOperation(parser, tree, operation.right, block);
+		} else if (operation.right.right != (Operation)0) {
+			bindNamesInOperation(parser, tree, operation.right.right, block);
 		}
 	}
 
@@ -1751,7 +1753,8 @@ func checkTypesInMethod(Parser parser, SyntaxTree tree, Block block, TypeObj typ
 		print("'\n");
 	}
 
-	method.isCalled = true;
+	var baseMethod = getItem<FunctionDefinition>(method.variants, 0);
+	baseMethod.isCalled = true;
 
 	var arguments = createArray<TypeObj>();
 	addItem<TypeObj>(arguments, typeObj);
@@ -2322,7 +2325,7 @@ func listFunctions(Parser parser) -> Array<FunctionDefinition> {
 
 		j = 0;
 		while (j < tree.types.size) {
-			var typeObj = getItem<TypeObj>(tree.types, i);
+			var typeObj = getItem<TypeObj>(tree.types, j);
 			extendArray<FunctionDefinition>(list, typeObj.methods);
 			j = j + 1;
 		}

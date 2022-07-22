@@ -165,6 +165,7 @@ func createFunctionDefinition(Name keyword, Name name, Operator lparen, Generics
 	function.returnType = returnType;
 
 	function.variants = createArray<FunctionDefinition>();
+	addItem<FunctionDefinition>(function.variants, function);
 
 	function.isCalled = false;
 

@@ -272,6 +272,16 @@ func copyPropertyArray(Array<Property> original) -> Array<Property> {
 	return list;
 }
 
+func copyMethodArray(Array<FunctionDefinition> original) -> Array<FunctionDefinition> {
+	var list = new Array<FunctionDefinition>();
+
+	list.size = original.size;
+	list.maxSize = original.maxSize;
+	list.list = new FunctionDefinition[](list.maxSize);
+
+	return list;
+}
+
 func createTypeFromDefinition(TypeDefinition definition) -> TypeObj {
 	var typeObj = new TypeObj();
 
@@ -345,9 +355,15 @@ func createNewTypeVariant(Array<TypeObj> typeArray, TypeObj typeObj, Array<TypeO
 		i = i + 1;
 	}
 
-
 	newType.variants = typeObj.variants;
 	addItem<TypeObj>(typeObj.variants, newType);
+
+	newType.methods = copyMethodArray(typeObj.methods);
+	i = 0;
+	while (i < newType.methods.size) {
+		setItem<FunctionDefinition>(newType.methods, i, createNewFunctionVariant(typeArray, getItem<FunctionDefinition>(typeObj.methods, i), newGenerics));
+		i = i + 1;
+	}
 
 	return newType;
 }

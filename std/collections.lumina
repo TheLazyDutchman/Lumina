@@ -2,6 +2,10 @@ type Array<T> {
 	int size;
 	int maxSize;
 	T[] list;
+
+	func push<T>(Array<T> array, T item) {
+		addItem<T>(array, item);
+	}
 }
 
 func createArray<T>() -> Array<T> {
