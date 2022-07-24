@@ -155,7 +155,7 @@ func createFunctionDefinition(Name keyword, Name name, Operator lparen, Generics
 	function.genericsDefinition = genericsDefinition;
 	var i = 0;
 	while (i < genericsDefinition.generics.size) {
-		addItem<Generic>(function.generics, createGenericFromDefinition(genericsDefinition.generics.list[i], depth, i));
+		function.generics.push(createGenericFromDefinition(genericsDefinition.generics.list[i], depth, i));
 		i = i + 1;
 	}
 
@@ -165,7 +165,7 @@ func createFunctionDefinition(Name keyword, Name name, Operator lparen, Generics
 	function.returnType = returnType;
 
 	function.variants = createArray<FunctionDefinition>();
-	addItem<FunctionDefinition>(function.variants, function);
+	function.variants.push(function);
 
 	function.isCalled = false;
 
@@ -197,7 +197,7 @@ func createNewFunctionVariant(Array<TypeObj> arrayType, FunctionDefinition origi
 	function.genericsDefinition = original.genericsDefinition;
 	var i = 0;
 	while (i < generics.size) {
-		addItem<Generic>(function.generics, createGenericFromType(generics.list[i]));
+		function.generics.push(createGenericFromType(generics.list[i]));
 		i = i + 1;
 	}
 
@@ -227,7 +227,7 @@ func createNewFunctionVariant(Array<TypeObj> arrayType, FunctionDefinition origi
 	function.block = original.block;
 
 	function.variants = original.variants;
-	addItem<FunctionDefinition>(function.variants, function);
+	function.variants.push(function);
 
 	return function;
 }

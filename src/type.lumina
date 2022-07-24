@@ -293,7 +293,7 @@ func createTypeFromDefinition(TypeDefinition definition) -> TypeObj {
 
 	var i = 0;
 	while (i < definition.generics.generics.size) {
-		addItem<Generic>(typeObj.generics, createGenericFromDefinition(definition.generics.generics.list[i], 0, i));
+		typeObj.generics.push(createGenericFromDefinition(definition.generics.generics.list[i], 0, i));
 		i = i + 1;
 	}
 
@@ -301,14 +301,14 @@ func createTypeFromDefinition(TypeDefinition definition) -> TypeObj {
 
 	i = 0;
 	while (i < definition.properties.size) {
-		addItem<Property>(typeObj.properties, createPropertyFromDefinition(definition.properties.list[i]));
+		typeObj.properties.push(createPropertyFromDefinition(definition.properties.list[i]));
 		i = i + 1;
 	}
 
 	typeObj.methods = definition.methods;
 	
 	typeObj.variants = createArray<TypeObj>();
-	addItem<TypeObj>(typeObj.variants, typeObj);
+	typeObj.variants.push(typeObj);
 
 	return typeObj;
 }
@@ -324,7 +324,7 @@ func createTypeFromString(str name, int size) -> TypeObj {
 	typeObj.properties = createArray<Property>();
 
 	typeObj.variants = createArray<TypeObj>();
-	addItem<TypeObj>(typeObj.variants, typeObj);
+	typeObj.variants.push(typeObj);
 
 	return typeObj;
 }
@@ -340,7 +340,7 @@ func createNewTypeVariant(Array<TypeObj> typeArray, TypeObj typeObj, Array<TypeO
 	newType.generics = createArray<Generic>();
 	var i = 0;
 	while (i < newGenerics.size) {
-		addItem<Generic>(newType.generics, createGenericFromType(newGenerics.list[i]));
+		newType.generics.push(createGenericFromType(newGenerics.get(i)));
 		i = i + 1;
 	}
 
@@ -356,7 +356,7 @@ func createNewTypeVariant(Array<TypeObj> typeArray, TypeObj typeObj, Array<TypeO
 	}
 
 	newType.variants = typeObj.variants;
-	addItem<TypeObj>(typeObj.variants, newType);
+	typeObj.variants.push(newType);
 
 	newType.methods = typeObj.methods;
 
@@ -376,7 +376,7 @@ func createListType(Array<TypeObj> typeArray, str name, TypeObj typeObj) -> Type
 	typeObj.listOf = listType;
 
 	if (typeArray != (Array<TypeObj>)0) {
-		addItem<TypeObj>(typeArray, listType);
+		typeArray.push(listType);
 	}
 
 	return listType;
@@ -437,7 +437,7 @@ func applyGeneric(Array<TypeObj> typeArray, TypeObj value, TypeObj old, TypeObj 
 		var i = 0;
 		while (i < value.generics.size) {
 			var original = value.generics.list[i].typeObj;
-			addItem<TypeObj>(generics, applyGeneric(typeArray, original, old, newType));
+			generics.push(applyGeneric(typeArray, original, old, newType));
 			i = i + 1;
 		}
 
@@ -450,7 +450,8 @@ func applyGeneric(Array<TypeObj> typeArray, TypeObj value, TypeObj old, TypeObj 
 func findType(Array<TypeObj> list, str name) -> TypeObj {
 	var i = 0;
 	while (i < list.size) {
-		if (getItem<TypeObj>(list, i).name != (str)0 && streq(getItem<TypeObj>(list, i).name, name)) {
+		var item = list.get(i);
+		if (item.name != (str)0 && streq(item.name, name)) {
 			return list.list[i];
 		}
 		i = i + 1;

@@ -149,7 +149,7 @@ func isVariable(Operation operation) -> bool {
 	}
 
 	if (isOperator(operation.operator, ".")) {
-		return isVariable(operation.left) && isName(operation.right.value);
+		return isVariable(operation.left) && isVariable(operation.right);
 	}
 
 	if (isOperator(operation.operator, "[")) {
@@ -175,9 +175,9 @@ func isVariable(Operation operation) -> bool {
 func getArguments(Array<Operation> list, Operation operation) {
 	if (isOperator(operation.operator, ",")) {
 		getArguments(list, operation.left);
-		addItem<Operation>(list, operation.right);
+		list.push(operation.right);
 		return;
 	}
 
-	addItem<Operation>(list, operation);
+	list.push(operation);
 }

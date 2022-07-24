@@ -140,32 +140,36 @@ func createParser() -> Parser {
 	parser.null = createTypeFromString("null", 8);
 
 	parser.int.nameId = addUniqueString(parser.strings, parser.int.name);
-	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.int));
-	addItem<TypeObj>(parser.types, parser.int);
-	parser.char.nameId = addUniqueString(parser.strings, parser.char.name);
-	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.char));
-	addItem<TypeObj>(parser.types, parser.char);
 	parser.str.nameId = addUniqueString(parser.strings, parser.str.name);
-	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.str));
+	parser.char.nameId = addUniqueString(parser.strings, parser.char.name);
 	parser.bool.nameId = addUniqueString(parser.strings, parser.bool.name);
-	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.bool));
-	addItem<TypeObj>(parser.types, parser.bool);
 	parser.any.nameId = addUniqueString(parser.strings, parser.any.name);
-	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.any));
-	addItem<TypeObj>(parser.types, parser.any);
 	parser.null.nameId = addUniqueString(parser.strings, parser.null.name);
-	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.null));
-	addItem<TypeObj>(parser.types, parser.null);
+
+	parser.definitions.push(createDefinitionFromType(parser.int));
+	parser.definitions.push(createDefinitionFromType(parser.char));
+	parser.definitions.push(createDefinitionFromType(parser.str));
+	parser.definitions.push(createDefinitionFromType(parser.bool));
+	parser.definitions.push(createDefinitionFromType(parser.any));
+	parser.definitions.push(createDefinitionFromType(parser.null));
+
+	parser.types.push(parser.int);
+	parser.types.push(parser.char);
+	parser.types.push(parser.bool);
+	parser.types.push(parser.any);
+	parser.types.push(parser.null);
 
 	parser.Type = createTypeFromString("Type", 8);
 	parser.TypeProperty = createTypeFromString("TypeProperty", 8);
 
-	addItem<Property>(parser.Type.properties, createPropertyFromString("name", parser.str, 0));
-	addItem<Property>(parser.Type.properties, createPropertyFromString("size", parser.int, 8));
-	addItem<Property>(parser.Type.properties, createPropertyFromString("objectSize", parser.int, 16));
-	addItem<Property>(parser.Type.properties, createPropertyFromString("properties", createListType(parser.types, (str)0, parser.TypeProperty), 24));
-	addItem<Property>(parser.Type.properties, createPropertyFromString("listOf", parser.Type, 32));
-	addItem<Property>(parser.Type.properties, createPropertyFromString("listType", parser.Type, 40));
+	parser.Type.properties.push(createPropertyFromString("name", parser.str, 0));
+	parser.Type.properties.push(createPropertyFromString("size", parser.int, 8));
+	parser.Type.properties.push(createPropertyFromString("objectSize", parser.int, 16));
+	parser.Type.properties.push(createPropertyFromString("properties", 
+		createListType(parser.types, (str)0, parser.TypeProperty), 
+		24));
+	parser.Type.properties.push(createPropertyFromString("listOf", parser.Type, 32));
+	parser.Type.properties.push(createPropertyFromString("listType", parser.Type, 40));
 
 	var i = 0;
 	while (i < parser.Type.properties.size) {
@@ -174,9 +178,10 @@ func createParser() -> Parser {
 		i = i + 1;
 	}
 
-	addItem<Property>(parser.TypeProperty.properties, createPropertyFromString("name", parser.str, 0));
-	addItem<Property>(parser.TypeProperty.properties, createPropertyFromString("offset", parser.int, 8));
-	addItem<Property>(parser.TypeProperty.properties, createPropertyFromString("__type__", parser.Type, 16));
+	parser.TypeProperty.properties.push(createPropertyFromString("name", parser.str, 0));
+	parser.TypeProperty.properties.push(createPropertyFromString("offset", parser.int, 8));
+	parser.TypeProperty.properties.push(createPropertyFromString("__type__", parser.Type, 16));
+
 
 	i = 0;
 	while (i < parser.TypeProperty.properties.size) {
@@ -187,49 +192,55 @@ func createParser() -> Parser {
 
 	parser.Type.nameId = addUniqueString(parser.strings, parser.Type.name);
 	parser.Type.objectSize = 48;
-	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.Type));
-	addItem<TypeObj>(parser.types, parser.Type);
-
 	parser.TypeProperty.nameId = addUniqueString(parser.strings, parser.TypeProperty.name);
 	parser.TypeProperty.objectSize = 24;
-	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.TypeProperty));
-	addItem<TypeObj>(parser.types, parser.TypeProperty);
+
+	parser.definitions.push(createDefinitionFromType(parser.Type));
+	parser.definitions.push(createDefinitionFromType(parser.TypeProperty));
+
+	parser.types.push(parser.Type);
+	parser.types.push(parser.TypeProperty);
 
 	parser.functions = createArray<FunctionDefinition>();
 	var syscallParameters = createArray<Parameter>();
 
 	i = 0;
 	while (i < 7) {
-		addItem<Parameter>(syscallParameters, createParameterFromString(parser.any, (str)0));
+		syscallParameters.push(createParameterFromString(parser.any, (str)0));
 		i = i + 1;
 	}
 
 	var syscallReturnType = createReturnTypeFromString(parser.any);
 
 	parser.syscall = createFunctionFromString("syscall", syscallParameters, syscallReturnType);
-	addItem<Definition>(parser.definitions, createDefinitionFromFunction(parser.syscall));
-	addItem<FunctionDefinition>(parser.functions, parser.syscall);
+
+	parser.definitions.push(createDefinitionFromFunction(parser.syscall));
+	parser.functions.push(parser.syscall);
 
 	parser.variables = createArray<Variable>();
 	parser.heapstart = createVariableFromString("heapstart", 0, 1, parser.int);
 	parser.argc = createVariableFromString("argc", 0, 2, parser.int);
 	parser.argv = createVariableFromString("argv", 0, 3, createListType(parser.types, (str)0, parser.str));
 	parser.envp = createVariableFromString("envp", 0, 4, createListType(parser.types, (str)0, parser.str));
-	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.heapstart));
-	addItem<Variable>(parser.variables, parser.heapstart);
-	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.argv));
-	addItem<Variable>(parser.variables, parser.argv);
-	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.argc));
-	addItem<Variable>(parser.variables, parser.argc);
-	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.envp));
-	addItem<Variable>(parser.variables, parser.envp);
+
+	parser.definitions.push(createDefinitionFromVariable(parser.heapstart));
+	parser.definitions.push(createDefinitionFromVariable(parser.argc));
+	parser.definitions.push(createDefinitionFromVariable(parser.argv));
+	parser.definitions.push(createDefinitionFromVariable(parser.envp));
+
+	parser.variables.push(parser.heapstart);
+	parser.variables.push(parser.argv);
+	parser.variables.push(parser.argc);
+	parser.variables.push(parser.envp);
 
 	parser.false = createConstantFromString("false", parser.bool, 0);
 	parser.true = createConstantFromString("true", parser.bool, 1);
-	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.false));
-	addItem<Variable>(parser.variables, parser.false);
-	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.true));
-	addItem<Variable>(parser.variables, parser.true);
+
+	parser.definitions.push(createDefinitionFromVariable(parser.false));
+	parser.definitions.push(createDefinitionFromVariable(parser.true));
+
+	parser.variables.push(parser.false);
+	parser.variables.push(parser.true);
 
 	parser.numIfs = 0;
 	parser.numWhiles = 0;
@@ -354,12 +365,12 @@ func parseGenerics(Parser parser, SyntaxTree tree) -> GenericsDefinition {
 	var lesser = consumeOperator(parser, tree, "<", false);
 
 	var generic = consumeIdentifier(parser, tree);
-	addItem<GenericDefinition>(generics, createGenericDefinition((Operator)0, generic));
+	generics.push(createGenericDefinition((Operator)0, generic));
 
 	while (!isOperator(tree.lexer.current.operator, ">")) {
 		var comma = consumeOperator(parser, tree, ",", false);
 		generic = consumeIdentifier(parser, tree);
-		addItem<GenericDefinition>(generics, createGenericDefinition(comma, generic));
+		generics.push(createGenericDefinition(comma, generic));
 	}
 
 	var greater = consumeOperator(parser, tree, ">", false);
@@ -382,10 +393,10 @@ func parseTypeDefinition(Parser parser, SyntaxTree tree, Array<Import> imports) 
 	while (!isOperator(tree.lexer.current.operator, "}")) {
 		if (isKeyword(tree.lexer.current.name, KEYWORD_func)) {
 			var method = parseFunctionDefinition(parser, tree, (Block)0, generics, imports);
-			addItem<FunctionDefinition>(methods, method);
+			methods.push(method);
 		} else {
 			var property = parsePropertyDefinition(parser, tree);
-			addItem<PropertyDefinition>(properties, property);
+			properties.push(property);
 		}
 	}
 
@@ -624,14 +635,14 @@ func parserParameterArray(Parser parser, SyntaxTree tree) -> Array<Parameter> {
 		var comma = consumeOperator(parser, tree, ",", false);
 
 		var parameter = createParameter(parameterType, name, comma);
-		addItem<Parameter>(list, parameter);
+		list.push(parameter);
 
 		parameterType = parseType(parser, tree);
 		name = consumeIdentifier(parser, tree);
 	}
 
 	var parameter = createParameter(parameterType, name, (Operator)0);
-	addItem<Parameter>(list, parameter);
+	list.push(parameter);
 
 	return list;
 }
@@ -654,7 +665,7 @@ func parseBlock(Parser parser, SyntaxTree tree, Block outer, FunctionDefinition 
 	var variableList = createArray<Variable>();
 
 	var block = createBlock(lbrace, statementList, definitionList, typeList, functionList, variableList, outer, function);
-	addItem<Block>(tree.blocks, block);
+	tree.blocks.push(block);
 
 	if (block.function != (FunctionDefinition)0) {
 		block.depth = block.depth + 1;
@@ -662,7 +673,7 @@ func parseBlock(Parser parser, SyntaxTree tree, Block outer, FunctionDefinition 
 
 	while (!isOperator(tree.lexer.current.operator, "}") || tree.lexer.current.isEOF) {
 		var statement = parseStatement(parser, tree, block, definitionList, typeList, functionList, variableList, importList);
-		addItem<Statement>(statementList, statement);
+		statementList.push(statement);
 	}
 
 	var rbrace = consumeOperator(parser, tree, "}", false);
@@ -682,7 +693,7 @@ func parseElseIf(Parser parser, SyntaxTree tree, Array<ElseIf> list, Name elseKe
 
 	var elseIf = createElseIf(elseKeyword, ifKeyword, lparen, condition, rparen, block, endPosition, parser.numIfs);
 	parser.numIfs = parser.numIfs + 1;
-	addItem<ElseIf>(list, elseIf);
+	list.push(elseIf);
 }
 
 func parseElse(Parser parser, SyntaxTree tree, Name keyword, Block outer, Array<Import> importList) -> Else {
@@ -843,23 +854,23 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, Array<Definitio
 		var variableDefinition = parseVariableDefinition(parser, tree);
 		var variable = createVariableFromDefinition(variableDefinition, depth, size);
 
-		addItem<Definition>(definitionList, createDefinitionFromVariable(variable));
-		addItem<Variable>(variableList, variable);
+		definitionList.push(createDefinitionFromVariable(variable));
+		variableList.push(variable);
 
 		return createVariableStatement(variable);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_const)) {
 		var constantDefinition = parseVariableDefinition(parser, tree);
 		var constant = createConstantFromDefinition(constantDefinition);
 
-		addItem<Definition>(definitionList, createDefinitionFromVariable(constant));
-		addItem<Variable>(variableList, constant);
+		definitionList.push(createDefinitionFromVariable(constant));
+		variableList.push(constant);
 		
 		return createVariableStatement(constant);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_func)) {
 		var function = parseFunctionDefinition(parser, tree, block, (GenericsDefinition)0, importList);
 
-		addItem<Definition>(definitionList, createDefinitionFromFunction(function));
-		addItem<FunctionDefinition>(functionList, function);
+		definitionList.push(createDefinitionFromFunction(function));
+		functionList.push(function);
 
 		return createFunctionStatement(function);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_if)) {
@@ -882,14 +893,14 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, Array<Definitio
 			i = i + 1;
 		}
 
-		addItem<Definition>(definitionList, createDefinitionFromType(typeObj));
-		addItem<TypeObj>(typeList, typeObj);
+		definitionList.push(createDefinitionFromType(typeObj));
+		typeList.push(typeObj);
 
 		return createTypeStatement(typeObj);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_import)) {
 		var importStatement = parseImport(parser, tree);
 
-		addItem<Import>(importList, importStatement);
+		importList.push(importStatement);
 
 		return createImportStatement(importStatement);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_return)) {
@@ -929,10 +940,10 @@ func parse(Parser parser, str fileName, str outerName) -> SyntaxTree {
 
 	while (!tree.lexer.current.isEOF) {
 		var statement = parseStatement(parser, tree, (Block)0, tree.definitions, tree.types, tree.functions, tree.variables, tree.imports);
-		addItem<Statement>(tree.statements, statement);
+		tree.statements.push(statement);
 	}
 
-	addItem<SyntaxTree>(parser.files, tree);
+	parser.files.push(tree);
 
 	return tree;
 }
@@ -1396,7 +1407,7 @@ func bindNamesInTypeDefinition(Parser parser, SyntaxTree tree, TypeObj typeObj, 
 
 	i = 0;
 	while (i < typeObj.methods.size) {
-		var method = getItem<FunctionDefinition>(typeObj.methods, i);
+		var method = typeObj.methods.get(i);
 		bindNamesInFunctionDefinition(parser, tree, method, block);
 		i = i + 1;
 	}
@@ -1610,24 +1621,24 @@ func getTypeArrayFromOperation(Parser parser, SyntaxTree tree, Block block, Arra
 	if (isOperator(operation.operator, ",")) {
 		getTypeArrayFromOperation(parser, tree, block, list, operation.left);
 		var typeObj = getTypeFromOperation(parser, tree, block, operation.right);
-		addItem<TypeObj>(list, typeObj);
+		list.push(typeObj);
 		return;
 	}
 
 	var typeObj = getTypeFromOperation(parser, tree, block, operation);
-	addItem<TypeObj>(list, typeObj);
+	list.push(typeObj);
 }
 
 func getArgumentTypes(Parser parser, SyntaxTree tree, Block block, Array<TypeObj> list, Operation operation) {
 	if (isOperator(operation.operator, ",")) {
 		getArgumentTypes(parser, tree, block, list, operation.left);
 		var argumentType = checkTypesInOperation(parser, tree, block, operation.right);
-		addItem<TypeObj>(list, argumentType);
+		list.push(argumentType);
 		return;
 	}
 
 	var argumentType = checkTypesInOperation(parser, tree, block, operation);
-	addItem<TypeObj>(list, argumentType);
+	list.push(argumentType);
 }
 
 func checkTypesInFunctionCall(Parser parser, SyntaxTree tree, Block block, Operation call) -> TypeObj {
@@ -1683,7 +1694,7 @@ func checkTypesInFunctionCall(Parser parser, SyntaxTree tree, Block block, Opera
 			printError(parser, parameter.region.start, " type definition not found\n");
 		}
 
-		addItem<TypeObj>(expectedList, expectedType);
+		expectedList.push(expectedType);
 		i = i + 1;
 	}
 
@@ -1746,11 +1757,13 @@ func checkTypesInMethod(Parser parser, SyntaxTree tree, Block block, TypeObj typ
 	}
 
 	var method = findFunction(typeObj.methods, methodName.name);
+	method.isCalled = true;
 
 	var generics = createArray<TypeObj>();
 	var i = 0;
 	while (i < typeObj.generics.size) {
-		addItem<TypeObj>(generics, getItem<Generic>(typeObj.generics, i).typeObj);
+		var generic = typeObj.generics.get(i);
+		generics.push(generic.typeObj);
 		i = i + 1;
 	}
 	
@@ -1768,11 +1781,9 @@ func checkTypesInMethod(Parser parser, SyntaxTree tree, Block block, TypeObj typ
 		print("'\n");
 	}
 
-	var baseMethod = getItem<FunctionDefinition>(method.variants, 0);
-	baseMethod.isCalled = true;
 
 	var arguments = createArray<TypeObj>();
-	addItem<TypeObj>(arguments, typeObj);
+	arguments.push(typeObj);
 	if (operation.right != (Operation)0) {
 		getArgumentTypes(parser, tree, block, arguments, operation.right);
 	}
@@ -1791,7 +1802,7 @@ func checkTypesInMethod(Parser parser, SyntaxTree tree, Block block, TypeObj typ
 			printError(parser, parameter.region.start, " type definition not found\n");
 		}
 
-		addItem<TypeObj>(expectedList, expectedType);
+		expectedList.push(expectedType);
 		i = i + 1;
 	}
 
@@ -1857,7 +1868,9 @@ func checkTypesInProperty(Parser parser, SyntaxTree tree, Block block, Operation
 	}
 
 	if (isOperator(operation.right.operator, "(")) {
-		return checkTypesInMethod(parser, tree, block, typeObj, operation.right);
+		var methodType = checkTypesInMethod(parser, tree, block, typeObj, operation.right);
+		operation.operationType = methodType;
+		return methodType;
 	}
 
 	var rightValue = operation.right.value;
@@ -2243,7 +2256,7 @@ func checkTypesInTypeDefinition(Parser parser, SyntaxTree tree, Block block, Typ
 
 	i = 0;
 	while (i < typeObj.methods.size) {
-		var method = getItem<FunctionDefinition>(typeObj.methods, i);
+		var method = typeObj.methods.get(i);
 		checkTypesInFunctionDefinition(parser, tree, block, method);
 		i = i + 1;
 	}
@@ -2305,12 +2318,12 @@ func checkTypes(Parser parser, SyntaxTree tree) {
 func listFunctions(Parser parser) -> Array<FunctionDefinition> {
 	var list = createArray<FunctionDefinition>();
 
-	extendArray<FunctionDefinition>(list, parser.functions);
+	list.extend(parser.functions);
 
 	var i = 0;
 	while (i < parser.types.size) {
-		var typeObj = getItem<TypeObj>(parser.types, i);
-		extendArray<FunctionDefinition>(list, typeObj.methods);
+		var typeObj = parser.types.get(i);
+		list.extend(typeObj.methods);
 		i = i + 1;
 	}
 
@@ -2323,7 +2336,7 @@ func listFunctions(Parser parser) -> Array<FunctionDefinition> {
 			return list;
 		}
 
-		extendArray<FunctionDefinition>(list, tree.functions);
+		list.extend(tree.functions);
 
 		var j = 0;
 		while (j < tree.blocks.size) {
@@ -2334,14 +2347,14 @@ func listFunctions(Parser parser) -> Array<FunctionDefinition> {
 				return list;
 			}
 
-			extendArray<FunctionDefinition>(list, block.functions);
+			list.extend(block.functions);
 			j = j + 1;
 		}
 
 		j = 0;
 		while (j < tree.types.size) {
-			var typeObj = getItem<TypeObj>(tree.types, j);
-			extendArray<FunctionDefinition>(list, typeObj.methods);
+			var typeObj = tree.types.get(j);
+			list.extend(typeObj.methods);
 			j = j + 1;
 		}
 
@@ -2354,7 +2367,7 @@ func listFunctions(Parser parser) -> Array<FunctionDefinition> {
 func listTypes(Parser parser) -> Array<TypeObj> {
 	var list = createArray<TypeObj>();
 
-	extendArray<TypeObj>(list, parser.types);
+	list.extend(parser.types);
 
 	var i = 0;
 	while (i < parser.files.size) {
@@ -2365,7 +2378,7 @@ func listTypes(Parser parser) -> Array<TypeObj> {
 			return list;
 		}
 
-		extendArray<TypeObj>(list, tree.types);
+		list.extend(tree.types);
 
 		var j = 0;
 		while (j < tree.blocks.size) {
@@ -2376,7 +2389,7 @@ func listTypes(Parser parser) -> Array<TypeObj> {
 				return list;
 			}
 
-			extendArray<TypeObj>(list, block.types);
+			list.extend(block.types);
 			j = j + 1;
 		}
 		i = i + 1;

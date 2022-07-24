@@ -71,13 +71,13 @@ func getRegister(Array<Register> list) -> Register {
 
 func initRegisters() -> Array<Register> {
 	var registers = createArray<Register>();
-	addItem<Register>(registers, createRegister("r8"));
-	addItem<Register>(registers, createRegister("r9"));
-	addItem<Register>(registers, createRegister("r10"));
-	addItem<Register>(registers, createRegister("r11"));
-	addItem<Register>(registers, createRegister("rax"));
-	addItem<Register>(registers, createRegister("rcx"));
-	addItem<Register>(registers, createRegister("rdx"));
+	registers.push(createRegister("r8"));
+	registers.push(createRegister("r9"));
+	registers.push(createRegister("r10"));
+	registers.push(createRegister("r11"));
+	registers.push(createRegister("rax"));
+	registers.push(createRegister("rcx"));
+	registers.push(createRegister("rdx"));
 
 	return registers;
 }
@@ -1665,7 +1665,8 @@ func writeMethod(Parser parser, SyntaxTree tree, Block block, int output, Operat
 	var generics = createArray<TypeObj>();
 	i = 0;
 	while (i < typeObj.generics.size) {
-		addItem<TypeObj>(generics, getItem<Generic>(typeObj.generics, i).typeObj);
+		var generic = typeObj.generics.get(i);
+		generics.push(generic.typeObj);
 		i = i + 1;
 	}
 	
@@ -1676,7 +1677,7 @@ func writeMethod(Parser parser, SyntaxTree tree, Block block, int output, Operat
 
 	i = 0;
 	while (i < method.generics.size) {
-		var generic = getItem<Generic>(method.generics, i);
+		var generic = method.generics.get(i);
 		if (generic.typeObj.isGeneric) {
 			fprint(output, "	mov ");
 			fprint(output, genericRegister.name);
@@ -1701,7 +1702,7 @@ func writeMethod(Parser parser, SyntaxTree tree, Block block, int output, Operat
 		fprint(output, "	mov ");
 		fprint(output, genericRegister.name);
 		fprint(output, ", type_");
-		writeTypeName(output, typeObj);
+		writeTypeName(output, generic.typeObj);
 		fprint(output, "\n");
 
 		writePushData(output, genericRegister);

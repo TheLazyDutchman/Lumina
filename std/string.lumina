@@ -10,7 +10,7 @@ func toString(str value) -> String {
 
 	var i = 0;
 	while (value[i] != '\0') {
-		addItem<char>(string, value[i]);
+		string.push(value[i]);
 		i = i + 1;
 	}
 
@@ -22,7 +22,7 @@ func copyPart(String original, int offset, int size) -> String {
 
 	var i = 0;
 	while (i < size) {
-		addItem<char>(string, getItem<char>(original, offset + i));
+		string.push(original.get(offset + i));
 		i = i + 1;
 	}
 
@@ -39,14 +39,14 @@ func split(String string, str separator) -> Array<String> {
 
 	while (size != -1) {
 		var part = copyPart(string, offset, size);
-		addItem<String>(array, part);
+		array.push(part);
 
 		offset = offset + size + separatorSize;
 		size = match(string, separator, offset);
 	}
 
 	var part = copyPart(string, offset, string.size - offset);
-	addItem<String>(array, part);
+	array.push(part);
 
 	return array;
 }
@@ -59,7 +59,7 @@ func join(Array<String> strings, str separator) -> String {
 		if (i != 0) {
 			var j = 0;
 			while(separator[j] != '\0') {
-				addItem<char>(string, separator[j]);
+				string.push(separator[j]);
 				j = j + 1;
 			}
 		}
@@ -78,7 +78,7 @@ func match(String string, str separator, int offset) -> int {
 
 		var j = 0;
 		while (separator[j] != '\0') {
-			if (getItem<char>(string, i + j) != separator[j]) {
+			if (string.get(i + j) != separator[j]) {
 				isMatching = false;
 			}
 			j = j + 1;

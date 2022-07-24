@@ -42,36 +42,36 @@ func createOperatorType(str name, int precedence) -> OperatorType {
 }
 
 var operatorList = createArray<OperatorType>();
-addItem<OperatorType>(operatorList, createOperatorType("<<", PREC_bitwise));
-addItem<OperatorType>(operatorList, createOperatorType(">>", PREC_bitwise));
-addItem<OperatorType>(operatorList, createOperatorType("||", PREC_or));
-addItem<OperatorType>(operatorList, createOperatorType("&&", PREC_and));
-addItem<OperatorType>(operatorList, createOperatorType("|", PREC_bitwise));
-addItem<OperatorType>(operatorList, createOperatorType("&", PREC_bitwise));
-addItem<OperatorType>(operatorList, createOperatorType("~", PREC_bitwise));
-addItem<OperatorType>(operatorList, createOperatorType("->", PREC_statement));
-addItem<OperatorType>(operatorList, createOperatorType("!=", PREC_comparison));
-addItem<OperatorType>(operatorList, createOperatorType("<=", PREC_comparison));
-addItem<OperatorType>(operatorList, createOperatorType(">=", PREC_comparison));
-addItem<OperatorType>(operatorList, createOperatorType("==", PREC_comparison));
-addItem<OperatorType>(operatorList, createOperatorType("<", PREC_comparison));
-addItem<OperatorType>(operatorList, createOperatorType(">", PREC_comparison));
-addItem<OperatorType>(operatorList, createOperatorType("!", PREC_bitwise));
-addItem<OperatorType>(operatorList, createOperatorType("=", PREC_assignment));
-addItem<OperatorType>(operatorList, createOperatorType("+", PREC_term));
-addItem<OperatorType>(operatorList, createOperatorType("-", PREC_term));
-addItem<OperatorType>(operatorList, createOperatorType("*", PREC_factor));
-addItem<OperatorType>(operatorList, createOperatorType("/", PREC_factor));
-addItem<OperatorType>(operatorList, createOperatorType("%", PREC_factor));
-addItem<OperatorType>(operatorList, createOperatorType("(", PREC_call));
-addItem<OperatorType>(operatorList, createOperatorType(")", PREC_statement));
-addItem<OperatorType>(operatorList, createOperatorType("{", PREC_statement));
-addItem<OperatorType>(operatorList, createOperatorType("}", PREC_statement));
-addItem<OperatorType>(operatorList, createOperatorType("[", PREC_index));
-addItem<OperatorType>(operatorList, createOperatorType("]", PREC_statement));
-addItem<OperatorType>(operatorList, createOperatorType(".", PREC_index));
-addItem<OperatorType>(operatorList, createOperatorType(",", PREC_statement));
-addItem<OperatorType>(operatorList, createOperatorType(";", PREC_statement));
+operatorList.push(createOperatorType("<<", PREC_bitwise));
+operatorList.push(createOperatorType(">>", PREC_bitwise));
+operatorList.push(createOperatorType("||", PREC_or));
+operatorList.push(createOperatorType("&&", PREC_and));
+operatorList.push(createOperatorType("|", PREC_bitwise));
+operatorList.push(createOperatorType("&", PREC_bitwise));
+operatorList.push(createOperatorType("~", PREC_bitwise));
+operatorList.push(createOperatorType("->", PREC_statement));
+operatorList.push(createOperatorType("!=", PREC_comparison));
+operatorList.push(createOperatorType("<=", PREC_comparison));
+operatorList.push(createOperatorType(">=", PREC_comparison));
+operatorList.push(createOperatorType("==", PREC_comparison));
+operatorList.push(createOperatorType("<", PREC_comparison));
+operatorList.push(createOperatorType(">", PREC_comparison));
+operatorList.push(createOperatorType("!", PREC_bitwise));
+operatorList.push(createOperatorType("=", PREC_assignment));
+operatorList.push(createOperatorType("+", PREC_term));
+operatorList.push(createOperatorType("-", PREC_term));
+operatorList.push(createOperatorType("*", PREC_factor));
+operatorList.push(createOperatorType("/", PREC_factor));
+operatorList.push(createOperatorType("%", PREC_factor));
+operatorList.push(createOperatorType("(", PREC_call));
+operatorList.push(createOperatorType(")", PREC_statement));
+operatorList.push(createOperatorType("{", PREC_statement));
+operatorList.push(createOperatorType("}", PREC_statement));
+operatorList.push(createOperatorType("[", PREC_index));
+operatorList.push(createOperatorType("]", PREC_statement));
+operatorList.push(createOperatorType(".", PREC_index));
+operatorList.push(createOperatorType(",", PREC_statement));
+operatorList.push(createOperatorType(";", PREC_statement));
 
 func createOperator(Position position, WhiteSpace space) -> Operator {
 	var operator = new Operator();
@@ -85,7 +85,7 @@ func createOperator(Position position, WhiteSpace space) -> Operator {
 
 	var i = 0;
 	while (i < operatorList.size) {
-		var operatorType = getItem<OperatorType>(operatorList, i);
+		var operatorType = operatorList.get(i);
 		var opString = operatorType.name;
 		if (strneq(opString, operator.name, strlen(opString))) {
 			operator.operatorType = i;

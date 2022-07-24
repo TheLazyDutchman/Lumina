@@ -1,9 +1,12 @@
+import "../std/io.lumina"
+
+
 type Array<T> {
 	int size;
 	int maxSize;
 	T[] list;
 
-	func push(Array<T> self, T item) {
+	func push(Array<T> self, T item) -> Array<T> {
 		if (self.maxSize == 0) {
 			self.maxSize = 8;
 			self.list = new T[](self.maxSize);
@@ -24,6 +27,8 @@ type Array<T> {
 
 		self.set(self.size, item);
 		self.size = self.size + 1;
+
+		return self;
 	}
 
 	func pop(Array<T> self) -> T {
@@ -36,6 +41,10 @@ type Array<T> {
 	func extend(Array<T> self, Array<T> other) {
 		var newSize = self.size + other.size;
 		if (newSize + 1 > self.maxSize) {
+			if (self.maxSize == 0) {
+				self.maxSize = 8;
+			}
+
 			while(newSize + 1 > self.maxSize) {
 				self.maxSize = self.maxSize * 2;
 			}
@@ -56,6 +65,8 @@ type Array<T> {
 			self.set(self.size + i, other.get(i));
 			i = i + 1;
 		}
+
+		self.size = newSize;
 	}
 
 	func get(Array<T> self, int index) -> T {
@@ -75,48 +86,4 @@ func createArray<T>() -> Array<T> {
 	array.list = (T[])0;
 
 	return array;
-}
-
-func addItem<T>(Array<T> array, T item) {
-	if (array.size == array.maxSize) {
-		var newSize = array.maxSize * 2;
-		if (newSize == 0) {
-			newSize = 8;
-		}
-
-		var newList = new T[](newSize);
-		var i = 0;
-		while (i < array.maxSize) {
-			newList[i] = array.list[i];
-			i = i + 1;
-		}
-
-		array.list = newList;
-		array.maxSize = newSize;
-	}
-
-	array.list[array.size] = item;
-	array.size = array.size + 1;
-}
-
-func popItem<T>(Array<T> array) -> T {
-	array.size = array.size - 1;
-
-	return getItem<T>(array, array.size);
-}
-
-func extendArray<T>(Array<T> destination, Array<T> source) {
-	if (source == (Array<T>)0) {
-		return;
-	}
-
-	var i = 0;
-	while (i < source.size) {
-		addItem<T>(destination, getItem<T>(source, i));
-		i = i + 1;
-	}
-}
-
-func getItem<T>(Array<T> array, int index) -> T {
-	return array.list[index];
 }

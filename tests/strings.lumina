@@ -1,30 +1,36 @@
-var hello = "Hello, World!\n";
+import "../std/io.lumina"
+import "../std/string.lumina"
+import "../std/collections.lumina"
+
+var listString = toString("a, b, c, d");
+var list = split(listString, ", ");
 
 var i = 0;
-
-while (i < 15) {
-	print(hello[i]);
-
+while (i < list.size) {
+	var item = list.get(i);
+	print(item.list);
+	print(list.get(i).list);
 	i = i + 1;
 }
 
-print('\n');
+print("\n");
 
-i = 0;
+var string = join(list, "/");
 
-while (hello[i] > '\0') {
-	print(hello[i]);
+print(string.list);
+print("\n");
 
-	i = i + 1;
-}
+var newstring = createArray<char>();
 
-print('\n');
+newstring.extend(toString("Hello"));
+print(newstring.list);
+print("\n");
 
-i = 0;
+newstring.push(',');
+newstring.push(' ');
+print(newstring.list);
+print("\n");
 
-while (i < 15) {
-	print(hello[i]);
-
-	i = i + 1;
-}
-
+newstring.extend(toString("World!"));
+print(newstring.list);
+print("\n");
