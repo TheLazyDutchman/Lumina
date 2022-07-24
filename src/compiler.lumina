@@ -984,8 +984,8 @@ func writeGenericIndex(int output, Array<Register> registers, Register pointerRe
 		fprint(output, pointerRegister.name);
 		fprint(output, "\n");
 
+		pointerRegister.used = false;
 		pointerRegister = rax;
-
 		rax.used = true;
 	}
 
@@ -994,8 +994,8 @@ func writeGenericIndex(int output, Array<Register> registers, Register pointerRe
 		fprint(output, indexRegister.name);
 		fprint(output, "\n");
 
+		indexRegister.used = false;
 		indexRegister = rax;
-
 		rax.used = true;
 	}
 
@@ -1004,8 +1004,8 @@ func writeGenericIndex(int output, Array<Register> registers, Register pointerRe
 		fprint(output, pointerRegister.name);
 		fprint(output, "\n");
 
+		pointerRegister.used = false;
 		pointerRegister = rcx;
-
 		rcx.used = true;
 	}
 
@@ -1014,8 +1014,8 @@ func writeGenericIndex(int output, Array<Register> registers, Register pointerRe
 		fprint(output, indexRegister.name);
 		fprint(output, "\n");
 
+		indexRegister.used = false;
 		indexRegister = rcx;
-
 		rcx.used = true;
 	}
 
@@ -1033,6 +1033,7 @@ func writeGenericIndex(int output, Array<Register> registers, Register pointerRe
 		fprint(output, "\n");
 
 		indexRegister.used = false;
+
 		return pointerRegister.name;
 	}
 
