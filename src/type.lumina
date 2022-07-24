@@ -358,12 +358,7 @@ func createNewTypeVariant(Array<TypeObj> typeArray, TypeObj typeObj, Array<TypeO
 	newType.variants = typeObj.variants;
 	addItem<TypeObj>(typeObj.variants, newType);
 
-	newType.methods = copyMethodArray(typeObj.methods);
-	i = 0;
-	while (i < newType.methods.size) {
-		setItem<FunctionDefinition>(newType.methods, i, createNewFunctionVariant(typeArray, getItem<FunctionDefinition>(typeObj.methods, i), newGenerics));
-		i = i + 1;
-	}
+	newType.methods = typeObj.methods;
 
 	return newType;
 }

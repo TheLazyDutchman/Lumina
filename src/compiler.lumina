@@ -1661,16 +1661,41 @@ func writeMethod(Parser parser, SyntaxTree tree, Block block, int output, Operat
 		}
 		i = i + 1;
 	}
+
+	var generics = createArray<TypeObj>();
+	i = 0;
+	while (i < typeObj.generics.size) {
+		addItem<TypeObj>(generics, getItem<Generic>(typeObj.generics, i).typeObj);
+		i = i + 1;
+	}
 	
 	var method = findFunction(typeObj.methods, name);
+	method = getVariantFunction(tree.types, method, generics);
+
 	var genericRegister = getRegister(registers);
 
 	i = 0;
 	while (i < method.generics.size) {
 		var generic = getItem<Generic>(method.generics, i);
 		if (generic.typeObj.isGeneric) {
-			printPosition(operation.region.start);
-			print(" dont fully support generic types in methods yet\n");
+			fprint(output, "	mov ");
+			fprint(output, genericRegister.name);
+			fprint(output, ", [basestack + ");
+			fprinti(output, generic.typeObj.depth * 8);
+			fprint(output, "]\n");
+
+			fprint(output, "	mov ");
+			fprint(output, genericRegister.name);
+			fprint(output, ", [");
+			fprint(output, genericRegister.name);
+
+			if (generic.typeObj.position != 0) {
+				fprint(output, " - ");
+				fprinti(output, generic.typeObj.position * 8);
+			}
+
+			fprint(output, "]\n");
+			fprint(output, "\n");
 		}
 
 		fprint(output, "	mov ");

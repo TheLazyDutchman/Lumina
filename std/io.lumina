@@ -74,7 +74,7 @@ func execvp(str fileName, str[] args) -> int {
 				addItem<char>(path, '/');
 			}
 
-			extendArray<char>(path, toString(fileName));
+			path.extend(toString(fileName));
 
 			return execve(path.list, args, (str[])0);
 		}

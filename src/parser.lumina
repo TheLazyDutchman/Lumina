@@ -381,7 +381,7 @@ func parseTypeDefinition(Parser parser, SyntaxTree tree, Array<Import> imports) 
 
 	while (!isOperator(tree.lexer.current.operator, "}")) {
 		if (isKeyword(tree.lexer.current.name, KEYWORD_func)) {
-			var method = parseFunctionDefinition(parser, tree, (Block)0, imports);
+			var method = parseFunctionDefinition(parser, tree, (Block)0, generics, imports);
 			addItem<FunctionDefinition>(methods, method);
 		} else {
 			var property = parsePropertyDefinition(parser, tree);
@@ -750,7 +750,7 @@ func parseWhile(Parser parser, SyntaxTree tree, Block outer, Array<Import> impor
 	return whileObj;
 }
 
-func parseFunctionDefinition(Parser parser, SyntaxTree tree, Block outer, Array<Import> importList) -> FunctionDefinition {
+func parseFunctionDefinition(Parser parser, SyntaxTree tree, Block outer, GenericsDefinition generics, Array<Import> importList) -> FunctionDefinition {
 	var outerIfs = parser.numIfs;
 	parser.numIfs = 0;
 	var outerWhiles = parser.numWhiles;
@@ -759,7 +759,9 @@ func parseFunctionDefinition(Parser parser, SyntaxTree tree, Block outer, Array<
 	var keyword = consumeKeyword(parser, tree, KEYWORD_func);
 	var name = consumeIdentifier(parser, tree);
 
-	var generics = parseGenerics(parser, tree);
+	if (generics == (GenericsDefinition)0) {
+		generics = parseGenerics(parser, tree);
+	}
 
 	var lparen = consumeOperator(parser, tree, "(", false);
 	var parameters = parserParameterArray(parser, tree);
@@ -854,7 +856,7 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, Array<Definitio
 		
 		return createVariableStatement(constant);
 	} else if (isKeyword(tree.lexer.current.name, KEYWORD_func)) {
-		var function = parseFunctionDefinition(parser, tree, block, importList);
+		var function = parseFunctionDefinition(parser, tree, block, (GenericsDefinition)0, importList);
 
 		addItem<Definition>(definitionList, createDefinitionFromFunction(function));
 		addItem<FunctionDefinition>(functionList, function);
@@ -1745,6 +1747,19 @@ func checkTypesInMethod(Parser parser, SyntaxTree tree, Block block, TypeObj typ
 
 	var method = findFunction(typeObj.methods, methodName.name);
 
+	var generics = createArray<TypeObj>();
+	var i = 0;
+	while (i < typeObj.generics.size) {
+		addItem<TypeObj>(generics, getItem<Generic>(typeObj.generics, i).typeObj);
+		i = i + 1;
+	}
+	
+	if (block != (Block)0) {
+		method = getVariantFunction(block.types, method, generics);
+	} else {
+		method = getVariantFunction(tree.types, method, generics);
+	}
+
 	if (method == (FunctionDefinition)0) {
 		printError(parser, operation.region.start, "type '");
 		printType(typeObj);
@@ -1763,7 +1778,7 @@ func checkTypesInMethod(Parser parser, SyntaxTree tree, Block block, TypeObj typ
 	}
 
 	var expectedList = createArray<TypeObj>();
-	var i = 0;
+	i = 0;
 	while (i < method.parameters.size) {
 		var parameter = method.parameters.list[i];
 		var expectedType = parameter.typeObj;

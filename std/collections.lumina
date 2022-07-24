@@ -3,8 +3,67 @@ type Array<T> {
 	int maxSize;
 	T[] list;
 
-	func push<T>(Array<T> array, T item) {
-		addItem<T>(array, item);
+	func push(Array<T> self, T item) {
+		if (self.maxSize == 0) {
+			self.maxSize = 8;
+			self.list = new T[](self.maxSize);
+		}
+
+		if (self.size + 1 == self.maxSize) {
+			self.maxSize = self.maxSize * 2;
+			
+			var newList = new T[](self.maxSize);
+			var i = 0;
+			while (i < self.size) {
+				newList[i] = self.get(i);
+				i = i + 1;
+			}
+
+			self.list = newList;
+		}
+
+		self.set(self.size, item);
+		self.size = self.size + 1;
+	}
+
+	func pop(Array<T> self) -> T {
+		self.size = self.size - 1;
+		var item = self.get(self.size);
+		self.set(self.size, (T)0);
+		return item;
+	}
+
+	func extend(Array<T> self, Array<T> other) {
+		var newSize = self.size + other.size;
+		if (newSize + 1 > self.maxSize) {
+			while(newSize + 1 > self.maxSize) {
+				self.maxSize = self.maxSize * 2;
+			}
+
+			var newList = new T[](self.maxSize);
+
+			var i = 0;
+			while (i < self.size) {
+				newList[i] = self.get(i);
+				i = i + 1;
+			}
+
+			self.list = newList;
+		}
+
+		var i = 0;
+		while (i < other.size) {
+			self.set(self.size + i, other.get(i));
+			i = i + 1;
+		}
+	}
+
+	func get(Array<T> self, int index) -> T {
+		return self.list[index];
+	}
+
+	func set(Array<T> self, int index, T item) {
+		self.list[index] = item;
 	}
 }
 
@@ -60,8 +119,4 @@ func extendArray<T>(Array<T> destination, Array<T> source) {
 
 func getItem<T>(Array<T> array, int index) -> T {
 	return array.list[index];
-}
-
-func setItem<T>(Array<T> array, int index, T item) {
-	array.list[index] = item;
 }

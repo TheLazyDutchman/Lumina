@@ -64,7 +64,7 @@ func join(Array<String> strings, str separator) -> String {
 			}
 		}
 
-		extendArray<char>(string, getItem<String>(strings, i));
+		string.extend(strings.get(i));
 		i = i + 1;
 	}
 
