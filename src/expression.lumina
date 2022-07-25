@@ -1,21 +1,41 @@
-import "position.lumina"
-import "operation.lumina"
-import "operator.lumina"
-import "whitespace.lumina"
+import "../std/collections.lumina"
 
+import "parser.lumina"
+import "lexer.lumina"
+import "position.lumina"
+import "operator.lumina"
+import "and.lumina"
+
+
+type AndPart {
+	Operator and;
+	Or value;
+}
 
 type Expression {
 	Region region;
-	Operation operation;
-	Operator semicolon;
-}
 
-func createExpression(Operation operation, Operator semicolon) -> Expression {
-	var expression = new Expression();
+	Or value;
+	Array<AndPart> parts;
 
-	expression.region = createRegion(operation.region.start, semicolon.position);
-	expression.operation = operation;
-	expression.semicolon = semicolon;
+	func parse(Expression self, Parser parser, Lexer lexer) -> Expression {
+		self.region = lexer.startRegion();
 
-	return expression;
+		self.value = new Or();
+		self.value.parse(parser, lexer);
+
+		while (isOperator(lexer.current.operator, "&&")) {
+			var part = new AndPart();
+			part.and = lexer.consumeOperator("&&");
+
+			part.value = new Or();
+			part.value.parse(parser, lexer);
+
+			self.parts.push(part);
+		}
+
+		lexer.endRegion(self.region);
+
+		return self;
+	}
 }

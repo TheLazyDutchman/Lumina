@@ -4,6 +4,7 @@ import "../std/string.lumina"
 import "../std/syscalls.lumina"
 import "../std/collections.lumina"
 
+import "assignment.lumina"
 import "block.lumina"
 import "type.lumina"
 import "function.lumina"
@@ -77,6 +78,13 @@ type Parser {
 	Array<str> strings;
 
 	bool hadError;
+
+	func error(Parser self, Position position, str message) {
+		printPosition(position);
+		print(message);
+
+		self.hadError = true;
+	}
 }
 
 func createSyntaxTree(str fileName, int numAnds, int numOrs) -> SyntaxTree {
@@ -913,11 +921,10 @@ func parseStatement(Parser parser, SyntaxTree tree, Block block, Array<Definitio
 		return createBlockStatement(innerBlock, innerBlock.region);
 	}
 
-	var operation = parseExpression(parser, tree, PREC_assignment);
-	var semicolon = consumeOperator(parser, tree, ";", false);
-	var expression = createExpression(operation, semicolon);
+	var assignment = new Assignment();
+	assignment.parse(parser, tree.lexer);
 
-	return createExpressionStatement(expression);
+	return createAssignmentStatement(assignment);
 }
 
 func parse(Parser parser, str fileName, str outerName) -> SyntaxTree {
@@ -1350,17 +1357,17 @@ func bindNamesInWhile(Parser parser, SyntaxTree tree, While whileStatement, Bloc
 	}
 }
 
-func bindNamesInFunctionDefinition(Parser parser, SyntaxTree tree, FunctionDefinition function, Block block) {
+func bindNamesInFunctionDefinition(Parser parser, SyntaxTree tree, FunctionDefinition function, Block block, bool isMethod) {
 	var foundFunction = findFunctionInParser(parser, tree, block, function.name.name);
-	if (foundFunction != (FunctionDefinition)0 && foundFunction != function) {
+	if (!isMethod && foundFunction != (FunctionDefinition)0 && foundFunction != function) {
 		printError(parser, function.name.region.start, " a function with this name already exists\n");
 	}
 
-	if (findVariableInParser(parser, tree, block, function.name.name) != (Variable)0) {
+	if (!isMethod && findVariableInParser(parser, tree, block, function.name.name) != (Variable)0) {
 		printError(parser, function.name.region.start, " a variable with this name already exists\n");
 	}
 
-	if (findTypeInParser(parser, tree, block, function.name.name) != (TypeObj)0) {
+	if (!isMethod && findTypeInParser(parser, tree, block, function.name.name) != (TypeObj)0) {
 		printError(parser, function.name.region.start, " a type with this name already exists\n");
 	}
 
@@ -1408,7 +1415,7 @@ func bindNamesInTypeDefinition(Parser parser, SyntaxTree tree, TypeObj typeObj, 
 	i = 0;
 	while (i < typeObj.methods.size) {
 		var method = typeObj.methods.get(i);
-		bindNamesInFunctionDefinition(parser, tree, method, block);
+		bindNamesInFunctionDefinition(parser, tree, method, block, true);
 		i = i + 1;
 	}
 }
@@ -1449,7 +1456,7 @@ func bindNamesInStatementArray(Parser parser, SyntaxTree tree, Array<Statement> 
 		} else if (statement.variable != (Variable)0) {
 			bindNamesInVariable(parser, tree, statement.variable, block);
 		} else if (statement.function != (FunctionDefinition)0) {
-			bindNamesInFunctionDefinition(parser, tree, statement.function, block);
+			bindNamesInFunctionDefinition(parser, tree, statement.function, block, false);
 		} else if (statement.typeStatement != (TypeObj)0) {
 			bindNamesInTypeDefinition(parser, tree, statement.typeStatement, block);
 		} else if (statement.returnStatement != (Return)0) {
@@ -1757,6 +1764,17 @@ func checkTypesInMethod(Parser parser, SyntaxTree tree, Block block, TypeObj typ
 	}
 
 	var method = findFunction(typeObj.methods, methodName.name);
+
+	if (method == (FunctionDefinition)0) {
+		printError(parser, operation.region.start, "type '");
+		printType(typeObj);
+		print("' does not have a method named '");
+		print(methodName.name);
+		print("'\n");
+		
+		return (TypeObj)0;
+	}
+
 	method.isCalled = true;
 
 	var generics = createArray<TypeObj>();
@@ -1772,15 +1790,6 @@ func checkTypesInMethod(Parser parser, SyntaxTree tree, Block block, TypeObj typ
 	} else {
 		method = getVariantFunction(tree.types, method, generics);
 	}
-
-	if (method == (FunctionDefinition)0) {
-		printError(parser, operation.region.start, "type '");
-		printType(typeObj);
-		print("' does not have a method named '");
-		print(methodName.name);
-		print("'\n");
-	}
-
 
 	var arguments = createArray<TypeObj>();
 	arguments.push(typeObj);

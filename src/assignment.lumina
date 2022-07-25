@@ -1,0 +1,38 @@
+import "parser.lumina"
+import "lexer.lumina"
+import "position.lumina"
+import "expression.lumina"
+import "operator.lumina"
+
+
+type Assignment {
+	Region region;
+
+	Expression target;
+	Operator equalSign;
+	Expression value;
+	Operator semicolon;
+
+
+	func parse(Assignment self, Parser parser, Lexer lexer) -> Assignment {
+		self.region = lexer.startRegion();
+
+		self.target = new Expression();
+		self.target.parse(parser, lexer);
+
+		self.equalSign = lexer.consumeOperator("=");
+		if (self.equalSign != (Operator)0) {
+			self.value = new Expression();
+			self.value.parse(parser, lexer);
+		}
+
+		self.semicolon = lexer.consumeOperator(";");
+		if (self.semicolon == (Operator)0) {
+			parser.error(lexer.here(), " expected ';' after expression\n");
+		}
+
+		lexer.endRegion(self.region);
+
+		return self;
+	}
+}

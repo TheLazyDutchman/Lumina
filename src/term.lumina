@@ -1,0 +1,41 @@
+import "../std/collections.lumina"
+
+import "parser.lumina"
+import "lexer.lumina"
+import "position.lumina"
+import "operator.lumina"
+import "factor.lumina"
+
+
+type TermPart {
+	Operator operator;
+	Factor value;
+}
+
+type Term {
+	Region region;
+
+	Factor value;
+	Array<TermPart> parts;
+
+	func parse(Term self, Parser parser, Lexer lexer) -> Term {
+		self.region = lexer.startRegion();
+
+		self.value = new Factor();
+		self.value.parse(parser, lexer);
+
+		while (lexer.current.operator.precedence == PREC_term) {
+			var part = new TermPart();
+			part.operator = lexer.consumePrecedence(PREC_term);
+			
+			part.value = new Factor();
+			part.value.parse(parser, lexer);
+
+			self.parts.push(part);
+		}
+
+		lexer.endRegion(self.region);
+
+		return self;
+	}
+}

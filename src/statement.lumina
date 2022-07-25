@@ -1,4 +1,5 @@
 import "position.lumina"
+import "assignment.lumina"
 import "expression.lumina"
 import "if.lumina"
 import "while.lumina"
@@ -11,6 +12,8 @@ import "block.lumina"
 
 type Statement {
 	Region region;
+
+	Assignment assignment;
 	Expression expression;
 	If ifStatement;
 	While whileStatement;
@@ -20,6 +23,15 @@ type Statement {
 	TypeObj typeStatement;
 	Return returnStatement;
 	Block blockStatement;
+}
+
+func createAssignmentStatement(Assignment assignment) -> Statement {
+	var statement = new Statement();
+
+	statement.region = assignment.region;
+	statement.assignment = assignment;
+
+	return statement;
 }
 
 func createExpressionStatement(Expression expression) -> Statement {

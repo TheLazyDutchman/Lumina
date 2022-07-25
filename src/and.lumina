@@ -1,0 +1,41 @@
+import "../std/collections.lumina"
+
+import "parser.lumina"
+import "lexer.lumina"
+import "position.lumina"
+import "operator.lumina"
+import "comparison.lumina"
+
+
+type OrPart {
+	Operator or;
+	Comparison value;
+}
+
+type Or {
+	Region region;
+
+	Comparison value;
+	Array<OrPart> parts;
+
+	func parse(Or self, Parser parser, Lexer lexer) -> Or {
+		self.region = lexer.startRegion();
+
+		self.value = new Comparison();
+		self.value.parse(parser, lexer);
+
+		while (isOperator(lexer.current.operator, "||")) {
+			var part = new OrPart();
+			part.or = lexer.consumeOperator("||");
+			
+			part.value = new Comparison();
+			part.value.parse(parser, lexer);
+
+			self.parts.push(part);
+		}
+
+		lexer.endRegion(self.region);
+
+		return self;
+	}
+}

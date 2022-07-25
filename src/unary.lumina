@@ -1,0 +1,65 @@
+import "parser.lumina"
+import "lexer.lumina"
+import "position.lumina"
+import "value.lumina"
+import "operator.lumina"
+import "index.lumina"
+
+
+type TypeCast {
+	Operator lparen;
+	Index value;
+	Operator rparen;
+
+	func parse(TypeCast self, Parser parser, Lexer lexer) -> bool {
+		self.lparen = lexer.consumeOperator("(");
+
+		self.value = new Index();
+		self.value.parse(parser, lexer);
+
+		self.rparen = lexer.consumeOperator(")");
+		if (self.rparen == (Operator)0) {
+			return false;
+		}
+
+		if (lexer.current.operator != (Operator)0 &&
+			!isOperator(lexer.current.operator, "(")) {
+			return false;
+		}
+
+		return true;
+	}
+}
+
+type Unary {
+	Region region;
+
+	TypeCast typeCast;
+	Operator operator;
+	Value value;
+
+	func parse(Unary self, Parser parser, Lexer lexer) -> Unary {
+		self.region = lexer.startRegion();
+		
+		if (isOperator(lexer.current.operator, "-")) {
+			self.operator = lexer.consumeOperator("-");
+		} else if (isOperator(lexer.current.operator, "!")) {
+			self.operator = lexer.consumeOperator("!");
+		} else if (isOperator(lexer.current.operator, "~")) {
+			self.operator = lexer.consumeOperator("~");
+		} else if (isOperator(lexer.current.operator, "(")) {
+			self.typeCast = new TypeCast();
+			if (!self.typeCast.parse(parser, lexer)) {
+				lexer.returnTo(self.region.start);
+				self.typeCast = (TypeCast)0;
+			}
+		}
+
+		self.value = new Value();
+		self.value.parse(parser, lexer);
+
+		lexer.endRegion(self.region);
+
+		return self;
+	}
+}

@@ -1,0 +1,41 @@
+import "../std/collections.lumina"
+
+import "parser.lumina"
+import "lexer.lumina"
+import "position.lumina"
+import "operator.lumina"
+import "bitwise.lumina"
+
+
+type FactorPart {
+	Operator operator;
+	Bitwise value;
+}
+
+type Factor {
+	Region region;
+
+	Bitwise value;
+	Array<FactorPart> parts;
+
+	func parse(Factor self, Parser parser, Lexer lexer) -> Factor {
+		self.region = lexer.startRegion();
+
+		self.value = new Bitwise();
+		self.value.parse(parser, lexer);
+
+		while (lexer.current.operator.precedence == PREC_factor) {
+			var part = new FactorPart();
+			part.operator = lexer.consumePrecedence(PREC_factor);
+			
+			part.value = new Bitwise();
+			part.value.parse(parser, lexer);
+
+			self.parts.push(part);
+		}
+
+		lexer.endRegion(self.region);
+
+		return self;
+	}
+}

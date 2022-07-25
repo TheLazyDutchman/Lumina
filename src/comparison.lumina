@@ -1,0 +1,32 @@
+import "parser.lumina"
+import "lexer.lumina"
+import "position.lumina"
+import "term.lumina"
+import "operator.lumina"
+
+
+type Comparison {
+	Region region;
+
+	Term left;
+	Operator comparator;
+	Term right;
+
+
+	func parse(Comparison self, Parser parser, Lexer lexer) -> Comparison {
+		self.region = lexer.startRegion();
+
+		self.left = new Term();
+		self.left.parse(parser, lexer);
+
+		self.comparator = lexer.consumePrecedence(PREC_comparison);
+		if (self.comparator != (Operator)0) {
+			self.right = new Term();
+			self.right.parse(parser, lexer);
+		}
+
+		lexer.endRegion(self.region);
+
+		return self;
+	}
+}

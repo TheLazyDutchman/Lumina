@@ -5,6 +5,13 @@ import "../std/string.lumina"
 
 import "parser.lumina"
 
+import "term.lumina"
+import "factor.lumina"
+import "and.lumina"
+import "comparison.lumina"
+import "bitwise.lumina"
+import "index.lumina"
+import "call.lumina"
 import "block.lumina"
 import "comment.lumina"
 import "expression.lumina"

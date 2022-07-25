@@ -1,19 +1,81 @@
 import "../std/io.lumina"
 
+import "parser.lumina"
+import "lexer.lumina"
 import "identifier.lumina"
 import "name.lumina"
 import "position.lumina"
 import "immediate.lumina"
 import "whitespace.lumina"
 import "definition.lumina"
+import "operator.lumina"
+import "expression.lumina"
 
+
+type Group {
+	Region region;
+
+	Operator lparen;
+	Expression value;
+	Operator rparen;
+
+	func parse(Group self, Parser parser, Lexer lexer) -> Group {
+		self.region = lexer.startRegion();
+
+		self.lparen = lexer.consumeOperator("(");
+
+		self.value = new Expression();
+		self.value.parse(parser, lexer);
+
+		self.rparen = lexer.consumeOperator(")");
+		if (self.rparen == (Operator)0) {
+			parser.error(lexer.here(), " expected ')' after group\n");
+		}
+
+		return self;
+	}
+}
 
 type Value {
 	Region region;
+
 	Identifier identifier;
+
 	Number number;
 	Character character;
 	StringLiteral string;
+
+	Group group;
+
+
+	func parse(Value self, Parser parser, Lexer lexer) -> Value {
+		if (isIdentifier(lexer.current.name)) {
+			self.identifier = new Identifier();
+			self.identifier.parse(parser, lexer);
+
+			self.region = self.identifier.region;
+		} else if (isNumber(lexer.current)) {
+			self.number = lexer.current.number;
+			self.region = lexer.current.number.region;
+			next(lexer);
+		} else if (isCharacter(lexer.current)) {
+			self.character = lexer.current.character;
+			self.region = lexer.current.character.region;
+			next(lexer);
+		} else if (isString(lexer.current)) {
+			self.string = lexer.current.string;
+			self.region = lexer.current.string.region;
+			next(lexer);
+		} else if (isOperator(lexer.current.operator, "(")) {
+			self.group = new Group();
+			self.group.parse(parser, lexer);
+			self.region = self.group.region;
+		} else {
+			parser.error(lexer.here(), " expected an immediate value or name\n");
+		}
+
+		return self;
+	}
 }
 
 func createValueFromIdentifier(Identifier identifier) -> Value {

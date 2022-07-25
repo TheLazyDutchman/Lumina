@@ -1,0 +1,75 @@
+import "../std/collections.lumina"
+
+import "parser.lumina"
+import "lexer.lumina"
+import "position.lumina"
+import "expression.lumina"
+import "index.lumina"
+import "unary.lumina"
+import "operator.lumina"
+
+
+type ArgumentPart {
+	Operator comma;
+	Expression value;
+}
+
+type ArgumentArray {
+	Expression value;
+	Array<ArgumentPart> parts;
+
+	func parse(ArgumentArray self, Parser parser, Lexer lexer) -> ArgumentArray {
+		if (isOperator(lexer.current.operator, ")")) {
+			return self;
+		}
+
+		self.value = new Expression();
+		self.value.parse(parser, lexer);
+
+		self.parts = createArray<ArgumentPart>();
+
+		while (isOperator(lexer.current.operator, ",")) {
+			var part = new ArgumentPart();
+			part.comma = lexer.consumeOperator(",");
+
+			part.value = new Expression();
+			part.value.parse(parser, lexer);
+
+			self.parts.push(part);
+		}
+
+		return self;
+	}
+}
+
+type Call {
+	Region region;
+
+	Unary value;
+	Operator lparen;
+	ArgumentArray arguments;
+	Operator rparen;
+
+
+	func parse(Call self, Parser parser, Lexer lexer) -> Call {
+		self.region = lexer.startRegion();
+
+		self.value = new Unary();
+		self.value.parse(parser, lexer);
+
+		self.lparen = lexer.consumeOperator("(");
+		if (self.lparen != (Operator)0) {
+			self.arguments = new ArgumentArray();
+			self.arguments.parse(parser, lexer);
+
+			self.rparen = lexer.consumeOperator(")");
+			if (self.rparen == (Operator)0) {
+				parser.error(lexer.here(), " expected ')' after function arguments\n");
+			}
+		}
+
+		lexer.endRegion(self.region);
+
+		return self;
+	}
+}

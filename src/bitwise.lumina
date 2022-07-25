@@ -1,0 +1,32 @@
+import "parser.lumina"
+import "lexer.lumina"
+import "position.lumina"
+import "index.lumina"
+import "operator.lumina"
+
+
+type Bitwise {
+	Region region;
+
+	Index left;
+	Operator comparator;
+	Index right;
+
+
+	func parse(Bitwise self, Parser parser, Lexer lexer) -> Bitwise {
+		self.region = lexer.startRegion();
+
+		self.left = new Index();
+		self.left.parse(parser, lexer);
+
+		self.comparator = lexer.consumePrecedence(PREC_bitwise);
+		if (self.comparator != (Operator)0) {
+			self.right = new Index();
+			self.right.parse(parser, lexer);
+		}
+
+		lexer.endRegion(self.region);
+
+		return self;
+	}
+}
