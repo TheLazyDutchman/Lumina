@@ -1,10 +1,82 @@
 import "parser.lumina"
 import "lexer.lumina"
 import "position.lumina"
+import "name.lumina"
 import "value.lumina"
 import "operator.lumina"
 import "index.lumina"
+import "term.lumina"
+import "identifier.lumina"
 
+
+type New {
+	Region region;
+
+	Name keyword;
+	Identifier objectType;
+	Operator lparen;
+	Term value;
+	Operator rparen;
+
+	func parse(New self, Parser parser, Lexer lexer) -> New {
+		self.region = lexer.startRegion();
+
+		self.keyword = lexer.consumeKeyword(KEYWORD_new);
+
+		self.objectType = new Identifier();
+		self.objectType.parse(parser, lexer);
+		
+		self.lparen = lexer.consumeOperator("(");
+		if (self.lparen == (Operator)0) {
+			parser.error(lexer.here(), " expected '(' in 'new' operation\n");
+		}
+
+		if (!isOperator(lexer.current.operator, ")")) {
+			self.value = new Term();
+			self.value.parse(parser, lexer);
+		}
+
+		self.rparen = lexer.consumeOperator(")");
+		if (self.rparen == (Operator)0) {
+			parser.error(lexer.here(), " expected ')' after 'new' operation\n");
+		}
+
+		lexer.endRegion(self.region);
+
+		return self;
+	}
+}
+
+type Sizeof {
+	Region region;
+
+	Name keyword;
+	Operator lparen;
+	Index value;
+	Operator rparen;
+
+	func parse(Sizeof self, Parser parser, Lexer lexer) -> Sizeof {
+		self.region = lexer.startRegion();
+
+		self.keyword = lexer.consumeKeyword(KEYWORD_sizeof);
+
+		self.lparen = lexer.consumeOperator("(");
+		if (self.lparen == (Operator)0) {
+			parser.error(lexer.here(), " expected '(' in 'sizeof' operation\n");
+		}
+
+		self.value = new Index();
+		self.value.parse(parser, lexer);
+
+		self.rparen = lexer.consumeOperator(")");
+		if (self.rparen == (Operator)0) {
+			parser.error(lexer.here(), " expected ')' after 'sizeof' operation\n");
+		}
+
+		lexer.endRegion(self.region);
+		return self;
+	}
+}
 
 type TypeCast {
 	Operator lparen;
@@ -35,10 +107,28 @@ type Unary {
 	Region region;
 
 	TypeCast typeCast;
+	New newOperation;
+	Sizeof sizeOperation;
+
 	Operator operator;
+	Unary unary;
 	Value value;
 
 	func parse(Unary self, Parser parser, Lexer lexer) -> Unary {
+		if (isKeyword(lexer.current.name, KEYWORD_new)) {
+			self.newOperation = new New();
+			self.newOperation.parse(parser, lexer);
+			self.region = self.newOperation.region;
+			return self;
+		}
+
+		if (isKeyword(lexer.current.name, KEYWORD_sizeof)) {
+			self.sizeOperation = new Sizeof();
+			self.sizeOperation.parse(parser, lexer);
+			self.region = self.sizeOperation.region;
+			return self;
+		}
+
 		self.region = lexer.startRegion();
 		
 		if (isOperator(lexer.current.operator, "-")) {
@@ -55,8 +145,13 @@ type Unary {
 			}
 		}
 
-		self.value = new Value();
-		self.value.parse(parser, lexer);
+		if (self.operator == (Operator)0 || self.typeCast == (TypeCast)0) {
+			self.value = new Value();
+			self.value.parse(parser, lexer);
+		} else {
+			self.unary = new Unary();
+			self.unary.parse(parser, lexer);
+		}
 
 		lexer.endRegion(self.region);
 

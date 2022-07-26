@@ -32,6 +32,26 @@ type Lexer {
 
 	Token current;
 
+	func consumeString(Lexer self) -> StringLiteral {
+		if (self.current.string != (StringLiteral)0) {
+			var value = self.current.string;
+			next(self);
+			return value;
+		}
+
+		return (StringLiteral)0;
+	}
+
+	func consumeKeyword(Lexer self, int keyword) -> Name {
+		if (self.current.name.keyword == keyword) {
+			var value = self.current.name;
+			next(self);
+			return value;
+		}
+
+		return (Name)0;
+	}
+
 	func consumeIdentifier(Lexer self) -> Name {
 		if (self.current.name.keyword == -1) {
 			var value = self.current.name;

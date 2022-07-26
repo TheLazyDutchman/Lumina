@@ -78,50 +78,6 @@ type Value {
 	}
 }
 
-func createValueFromIdentifier(Identifier identifier) -> Value {
-	var value = new Value();
-
-	value.region = identifier.definition.region;
-	value.identifier = identifier;
-	return value;
-}
-
-func createValueFromNumber(Number number) -> Value {
-	if (number == (Number)0) {
-		print("expected number to not be null when creating value\n");
-	}
-
-	var value = new Value();
-
-	value.region = number.region;
-	value.number = number;
-	return value;
-}
-
-func createValueFromCharacter(Character character) -> Value {
-	if (character == (Character)0) {
-		print("expected character to not be null when creating value\n");
-	}
-
-	var value = new Value();
-
-	value.region = character.region;
-	value.character = character;
-	return value;
-}
-
-func createValueFromString(StringLiteral string) -> Value {
-	if (string == (StringLiteral)0) {
-		print("expected string to not be null when creating value\n");
-	}
-
-	var value = new Value();
-
-	value.region = string.region;
-	value.string = string;
-	return value;
-}
-
 func isName(Value value) -> bool {
 	if (value == (Value)0) {
 		return false;

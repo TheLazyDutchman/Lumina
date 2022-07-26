@@ -1,9 +1,11 @@
 import "../std/string.lumina"
 import "../std/collections.lumina"
 
+import "parser.lumina"
+import "lexer.lumina"
 import "position.lumina"
 import "name.lumina"
-import "operation.lumina"
+import "expression.lumina"
 import "operator.lumina"
 import "type.lumina"
 import "whitespace.lumina"
@@ -29,26 +31,41 @@ type VariableDefinition {
 	Name keyword;
 	Name name;
 	Operator equalSign;
-	Operation value;
+	Expression value;
 	Operator semicolon;
 
 	TypeObj variableType;
+
+	func parse(VariableDefinition self, Parser parser, Lexer lexer) -> VariableDefinition {
+		self.region = lexer.startRegion();
+
+		self.keyword = lexer.consumeKeyword(KEYWORD_var);
+		if (self.keyword == (Name)0) {
+			self.keyword = lexer.consumeKeyword(KEYWORD_const);
+		}
+
+		self.name = lexer.consumeIdentifier();
+		if (self.name == (Name)0) {
+			parser.error(lexer.here(), " expected variable name\n");
+		}
+
+		self.equalSign = lexer.consumeOperator("=");
+		if (self.equalSign == (Operator)0) {
+			parser.error(lexer.here(), " expected '=' in variable definition\n");
+		}
+
+		self.value = new Expression();
+		self.value.parse(parser, lexer);
+
+		self.semicolon = lexer.consumeOperator(";");
+		if (self.semicolon == (Operator)0) {
+			parser.error(lexer.here(), " expected ';' after variable definition\n");
+		}
+
+		lexer.endRegion(self.region);
+		return self;
+	}
 }
-
-func createVariableDefinition(Name keyword, Name name, Operator equalSign, Operation value, Operator semicolon) -> VariableDefinition {
-	var variable = new VariableDefinition();
-
-	variable.region = createRegion(keyword.region.start, semicolon.position);
-
-	variable.keyword = keyword;
-	variable.name = name;
-	variable.equalSign = equalSign;
-	variable.value = value;
-	variable.semicolon = semicolon;
-
-	return variable;
-}
-
 func createVariableFromString(str name, int depth, int position, TypeObj variableType) -> Variable {
 	var variable = new Variable();
 

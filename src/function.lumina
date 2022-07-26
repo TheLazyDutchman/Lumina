@@ -2,9 +2,13 @@ import "../std/string.lumina"
 import "../std/io.lumina"
 import "../std/collections.lumina"
 
+import "parser.lumina"
+import "lexer.lumina"
+import "identifier.lumina"
 import "position.lumina"
 import "name.lumina"
 import "operation.lumina"
+import "expression.lumina"
 import "operator.lumina"
 import "type.lumina"
 import "variable.lumina"
@@ -15,30 +19,58 @@ import "block.lumina"
 type Parameter {
 	Region region;
 	
-	Operation parameterType;
+	Identifier parameterType;
 	Name name;
 	Operator comma;
 
 	TypeObj typeObj;
+
+	func parse(Parameter self, Parser parser, Lexer lexer) -> Parameter {
+		self.region = lexer.startRegion();
+		
+		self.parameterType = new Identifier();
+		self.parameterType.parse();
+
+		self.name = lexer.consumeIdentifier();
+		if (self.name == (Name)0) {
+			parser.error(lexer.here(), " expected parameter name\n");
+		}
+
+		self.comma = lexer.consumeOperator(",");
+
+		lexer.endRegion(self.region);
+		return self;
+	}
 }
 
 type ReturnType {
 	Region region;
 
 	Operator rarrow;
-	Operation returnType;
+	Identifier returnType;
 
 	TypeObj typeObj;
+
+	func parse(ReturnType self, Parser parser, Lexer lexer) -> ReturnType {
+		self.region = lexer.startRegion();
+
+		self.rarrow = lexer.consumeOperator("->");
+
+		self.returnType = new Identifier();
+		self.returnType.parse(parser, lexer);
+
+		lexer.endRegion(self.region);
+
+		return self;
+	}
 }
 
 type FunctionDefinition {
 	Region region;
 
 	Name keyword;
-	Name name;
 
-	Array<Generic> generics;
-	GenericsDefinition genericsDefinition;
+	Identifier name;
 
 	Operator lparen;
 	Array<Parameter> parameters;
@@ -51,79 +83,79 @@ type FunctionDefinition {
 	Array<FunctionDefinition> variants;
 
 	bool isCalled;
+
+	int numGenerics;
+
+	func parse(FunctionDefinition self, Parser parser, Lexer lexer) -> FunctionDefinition {
+		self.region = lexer.startRegion();
+
+		self.keyword = lexer.consumeKeyword(KEYWORD_func);
+		
+		self.name = new Identifier();
+		self.name.parse(parser, lexer);
+
+		if (self.name.generics != (GenericArray)0) {
+			self.numGenerics = self.name.generics.parts.size + 1;
+		}
+
+		self.lparen = lexer.consumeOperator("(");
+		if (self.lparen == (Operator)0) {
+			parser.error(lexer.here(), " expected '(' after function name\n");
+		}
+
+		self.parameters = createArray<Parameter>();
+		if (!isOperator(lexer.current.operator, ")")) {
+			var parameter = new Parameter();
+			parameter.parse(parser, lexer);
+
+			self.parameters.push(parameter);
+
+			while (isOperator(lexer.current.operator, ",")) {
+				var parameter = new Parameter();
+				parameter.parse(parser, lexer);
+
+				self.parameters.push(parameter);
+			}
+		}
+
+		self.rparen = lexer.consumeOperator(")");
+		if (self.rparen == (Operator)0) {
+			parser.error(lexer.here(), " expected ')' after function parameters\n");
+		}
+
+		if (isOperator(lexer.current.operator, "->")) {
+			self.returnType = new ReturnType();
+			self.returnType.parse(parser, lexer);
+		}
+
+		self.block = new Block();
+		self.block.parse(parser, lexer);
+
+		return self;
+	}
 }
 
 type Return {
 	Region region;
 
 	Name keyword;
-	Operation expression;
+	Expression expression;
 	Operator semicolon;
-}
 
-func createParameter(Operation parameterType, Name name, Operator comma) -> Parameter {
-	var parameter = new Parameter();
+	func parse(Return self, Parser parser, Lexer lexer) -> Return {
+		self.region = lexer.startRegion();
 
-	if (comma != (Operator)0) {
-		parameter.region = createRegion(parameterType.region.start, comma.position);
-	} else {
-		parameter.region = createRegion(parameterType.region.start, name.region.end);
+		self.keyword = lexer.consumeKeyword(KEYWORD_return);
+		self.expression = new Expression();
+		self.expression.parse(parser, lexer);
+		self.semicolon = lexer.consumeOperator(";");
+		if (self.semicolon == (Operator)0) {
+			parser.error(lexer.here(), " expected ';' after 'return' statement\n");
+		}
+
+		lexer.endRegion(self.region);
+		return self;
 	}
-
-	parameter.parameterType = parameterType;
-	parameter.name = name;
-
-	return parameter;
-}
-
-func createParameterFromString(TypeObj typeObj, str name) -> Parameter {
-	var parameter = new Parameter();
-
-	parameter.typeObj = typeObj;
-	if (name != (str)0) {
-		parameter.name = createNameFromString(name);
-	}
-
-	return parameter;
-}
-
-func copyParameter(Parameter original) -> Parameter {
-	var parameter = new Parameter();
-
-	parameter.region = original.region;
-	parameter.parameterType = original.parameterType;
-	parameter.name = original.name;
-
-	parameter.typeObj = original.typeObj;
-
-	return parameter;
-}
-
-func copyParameterArray(Array<Parameter> original) -> Array<Parameter> {
-	var list = new Array<Parameter>();
-
-	list.size = original.size;
-	list.maxSize = original.maxSize;
-	list.list = new Parameter[](list.maxSize);
-
-	var i = 0;
-	while (i < original.size) {
-		list.list[i] = copyParameter(original.list[i]);
-		i = i + 1;
-	}
-
-	return list;
-}
-
-func createReturnType(Operator rarrow, Operation typeObj) -> ReturnType {
-	var returnType = new ReturnType();
-
-	returnType.region = createRegion(rarrow.position, typeObj.region.end);
-	
-	returnType.rarrow = rarrow;
-	returnType.returnType = typeObj;
-
-	return returnType;
 }
 
 func createReturnTypeFromString(TypeObj typeObj) -> ReturnType {
@@ -132,44 +164,6 @@ func createReturnTypeFromString(TypeObj typeObj) -> ReturnType {
 	returnType.typeObj = typeObj;
 
 	return returnType;
-}
-
-func copyReturnType(ReturnType original) -> ReturnType {
-	var returnType = new ReturnType();
-
-	returnType.region = original.region;
-	returnType.rarrow = original.rarrow;
-	returnType.returnType = original.returnType;
-	returnType.typeObj = original.typeObj;
-
-	return returnType;
-}
-
-func createFunctionDefinition(Name keyword, Name name, Operator lparen, GenericsDefinition genericsDefinition, Array<Parameter> parameters, Operator rparen, ReturnType returnType, int depth) -> FunctionDefinition {
-	var function = new FunctionDefinition();
-
-	function.keyword = keyword;
-	function.name = name;
-
-	function.generics = createArray<Generic>();
-	function.genericsDefinition = genericsDefinition;
-	var i = 0;
-	while (i < genericsDefinition.generics.size) {
-		function.generics.push(createGenericFromDefinition(genericsDefinition.generics.list[i], depth, i));
-		i = i + 1;
-	}
-
-	function.lparen = lparen;
-	function.parameters = parameters;
-	function.rparen = rparen;
-	function.returnType = returnType;
-
-	function.variants = createArray<FunctionDefinition>();
-	function.variants.push(function);
-
-	function.isCalled = false;
-
-	return function;
 }
 
 func createFunctionFromString(str value, Array<Parameter> parameters, ReturnType returnType) -> FunctionDefinition {
@@ -186,79 +180,6 @@ func createFunctionFromString(str value, Array<Parameter> parameters, ReturnType
 	return function;
 }
 
-func createNewFunctionVariant(Array<TypeObj> arrayType, FunctionDefinition original, Array<TypeObj> generics) -> FunctionDefinition {
-	var function = new FunctionDefinition();
-
-	function.region = original.region;
-	function.keyword = original.keyword;
-	function.name = original.name;
-
-	function.generics = createArray<Generic>();
-	function.genericsDefinition = original.genericsDefinition;
-	var i = 0;
-	while (i < generics.size) {
-		function.generics.push(createGenericFromType(generics.list[i]));
-		i = i + 1;
-	}
-
-	function.lparen = original.lparen;
-	function.parameters = copyParameterArray(original.parameters);
-	i = 0;
-	while (i < function.parameters.size) {
-		var j = 0;
-		while (j < generics.size) {
-			function.parameters.list[i].typeObj = applyGeneric(arrayType, function.parameters.list[i].typeObj, original.generics.list[j].typeObj, generics.list[j]);
-			j = j + 1;
-		}
-		i = i + 1;
-	}
-
-	function.rparen = original.rparen;
-
-	if (original.returnType != (ReturnType)0) {
-		function.returnType = copyReturnType(original.returnType);
-		i = 0;
-		while (i < generics.size) {
-			function.returnType.typeObj = applyGeneric(arrayType, function.returnType.typeObj, original.generics.list[i].typeObj, generics.list[i]);
-			i = i + 1;
-		}
-	}
-
-	function.block = original.block;
-
-	function.variants = original.variants;
-	function.variants.push(function);
-
-	return function;
-}
-
-func getVariantFunction(Array<TypeObj> arrayType, FunctionDefinition function, Array<TypeObj> generics) -> FunctionDefinition {
-	if (function.generics.size != generics.size) {
-		print("expected ");
-		printi(function.generics.size);
-		print(" generics, got ");
-		printi(generics.size);
-		print(" instead\n");
-		return (FunctionDefinition)0;
-	}
-
-	var i = 0;
-	while (i < function.variants.size) {
-		var variant = function.variants.list[i];
-		var j = 0;
-		var isEqual = true;
-		while (j < generics.size) {
-			if (variant.generics.list[j] == (Generic)0 || variant.generics.list[j].typeObj != generics.list[j]) {
-				isEqual = false;
-			}
-			j = j + 1;
-		}
-		i = i + 1;
-	}
-
-	return createNewFunctionVariant(arrayType, function, generics);
-}
-
 func findFunction(Array<FunctionDefinition> list, str name) -> FunctionDefinition {
 	var i = 0;
 	while (i < list.size) {
@@ -268,16 +189,4 @@ func findFunction(Array<FunctionDefinition> list, str name) -> FunctionDefinitio
 		i = i + 1;
 	}
 	return (FunctionDefinition)0;
-}
-
-func createReturn(Name keyword, Operation expression, Operator semicolon) -> Return {
-	var returnObj = new Return();
-
-	returnObj.region = createRegion(keyword.region.start, semicolon.position);
-
-	returnObj.keyword = keyword;
-	returnObj.expression = expression;
-	returnObj.semicolon = semicolon;
-
-	return returnObj;
 }
