@@ -15,26 +15,31 @@ type GenericPart {
 	Index value;
 }
 
+type TypeListPart {
+	Operator lbracket;
+	Operator rbracket;
+}
+
 type GenericArray {
 	Region region;
 
 	Operator left;
 
 	Index value;
-	Array<GenericPart> parts;
+	Array<GenericPart> generics;
 
 	Operator right;
 
-	func parse(GenericArray self, Parser parser, Lexer lexer, Position returnPosition) -> bool {
+	func parseGenericArray(GenericArray self, Parser parser, Lexer lexer, Position returnPosition) -> bool {
 		self.region = lexer.startRegion();
 
 		self.left = lexer.consumeOperator("<");
 
 		self.value = new Index();
-		self.value.parse(parser, lexer);
+		self.value.parseIndex(parser, lexer);
 
 		var hadComma = false;
-		self.parts = createArray<GenericPart>();
+		self.generics = createArray<GenericPart>();
 
 		while (isOperator(lexer.current.operator, ",")) {
 			hadComma = true;
@@ -43,9 +48,9 @@ type GenericArray {
 			part.comma = lexer.consumeOperator(",");
 
 			part.value = new Index();
-			part.value.parse(parser, lexer);
+			part.value.parseIndex(parser, lexer);
 
-			self.parts.push(part);
+			self.generics.push(part);
 		}
 
 		self.right = lexer.consumeOperator(">");
@@ -67,19 +72,40 @@ type Identifier {
 	Name definition;
 
 	GenericArray generics;
+	Array<TypeListPart> lists;
 
 	Definition value;
 
-	func parse(Identifier self, Parser parser, Lexer lexer) -> Identifier {
+	func parseIdentifier(Identifier self, Parser parser, Lexer lexer) -> Identifier {
 		self.region = lexer.startRegion();
 
 		self.definition = lexer.consumeIdentifier();
 		
 		if (isOperator(lexer.current.operator, "<")) {
 			self.generics = new GenericArray();
-			if (!self.generics.parse(parser, lexer, lexer.here())) {
+			if (!self.generics.parseGenericArray(parser, lexer, lexer.here())) {
 				self.generics = (GenericArray)0;
 			}
+		}
+
+		self.lists = createArray<TypeListPart>();
+		var endLists = false;
+		while (!endLists && isOperator(lexer.current.operator, "[")) {
+			var returnPosition = lexer.here();
+			var listPart = new TypeListPart();
+			listPart.lbracket = lexer.consumeOperator("[");
+			listPart.rbracket = lexer.consumeOperator("]");
+
+			if (listPart.rbracket == (Operator)0) {
+				if (isOperator(lexer.current.operator, "[")) {
+					parser.error(lexer.here(), " did not expect consecutive '[' operators\n");
+				} else {
+					lexer.returnTo(returnPosition);
+				}
+				endLists = true;
+			}
+
+			self.lists.push(listPart);
 		}
 
 		lexer.endRegion(self.region);
@@ -87,18 +113,8 @@ type Identifier {
 	}
 }
 
-func createIdentifierFromName(Name name) -> Identifier {
-	if (isIdentifier(name) != true) {
-		printPosition(name.region.start);
-		print(" expected an identifier\n");
-		return (Identifier)0;
-	}
-
+func createIdentifierFromString(str value) -> Identifier {
 	var identifier = new Identifier();
-
-	identifier.name = name.name;
-	identifier.definition = name;
-	identifier.value = (Definition)0;
-
+	identifier.name = value;
 	return identifier;
 }

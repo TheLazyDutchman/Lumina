@@ -25,11 +25,11 @@ type Parameter {
 
 	TypeObj typeObj;
 
-	func parse(Parameter self, Parser parser, Lexer lexer) -> Parameter {
+	func parseParameter(Parameter self, Parser parser, Lexer lexer) -> Parameter {
 		self.region = lexer.startRegion();
 		
 		self.parameterType = new Identifier();
-		self.parameterType.parse();
+		self.parameterType.parseIdentifier(parser, lexer);
 
 		self.name = lexer.consumeIdentifier();
 		if (self.name == (Name)0) {
@@ -51,13 +51,13 @@ type ReturnType {
 
 	TypeObj typeObj;
 
-	func parse(ReturnType self, Parser parser, Lexer lexer) -> ReturnType {
+	func parseReturnType(ReturnType self, Parser parser, Lexer lexer) -> ReturnType {
 		self.region = lexer.startRegion();
 
 		self.rarrow = lexer.consumeOperator("->");
 
 		self.returnType = new Identifier();
-		self.returnType.parse(parser, lexer);
+		self.returnType.parseIdentifier(parser, lexer);
 
 		lexer.endRegion(self.region);
 
@@ -65,7 +65,7 @@ type ReturnType {
 	}
 }
 
-type FunctionDefinition {
+type Function {
 	Region region;
 
 	Name keyword;
@@ -80,22 +80,22 @@ type FunctionDefinition {
 
 	Block block;
 
-	Array<FunctionDefinition> variants;
+	Array<Function> variants;
 
 	bool isCalled;
 
 	int numGenerics;
 
-	func parse(FunctionDefinition self, Parser parser, Lexer lexer) -> FunctionDefinition {
+	func parseFunction(Function self, Parser parser, SyntaxTree tree, Lexer lexer) -> Function {
 		self.region = lexer.startRegion();
 
 		self.keyword = lexer.consumeKeyword(KEYWORD_func);
 		
 		self.name = new Identifier();
-		self.name.parse(parser, lexer);
+		self.name.parseIdentifier(parser, lexer);
 
 		if (self.name.generics != (GenericArray)0) {
-			self.numGenerics = self.name.generics.parts.size + 1;
+			self.numGenerics = self.name.generics.generics.size + 1;
 		}
 
 		self.lparen = lexer.consumeOperator("(");
@@ -104,20 +104,14 @@ type FunctionDefinition {
 		}
 
 		self.parameters = createArray<Parameter>();
-		if (!isOperator(lexer.current.operator, ")")) {
+		while (!isOperator(lexer.current.operator, ")") && !lexer.current.isEOF) {
 			var parameter = new Parameter();
-			parameter.parse(parser, lexer);
+			parameter.parseParameter(parser, lexer);
 
 			self.parameters.push(parameter);
-
-			while (isOperator(lexer.current.operator, ",")) {
-				var parameter = new Parameter();
-				parameter.parse(parser, lexer);
-
-				self.parameters.push(parameter);
-			}
 		}
 
+		self.rparen = (Operator)0; // otherwise I get a segfault (this can be any operation)
 		self.rparen = lexer.consumeOperator(")");
 		if (self.rparen == (Operator)0) {
 			parser.error(lexer.here(), " expected ')' after function parameters\n");
@@ -125,11 +119,11 @@ type FunctionDefinition {
 
 		if (isOperator(lexer.current.operator, "->")) {
 			self.returnType = new ReturnType();
-			self.returnType.parse(parser, lexer);
+			self.returnType.parseReturnType(parser, lexer);
 		}
 
 		self.block = new Block();
-		self.block.parse(parser, lexer);
+		self.block.parseBlock(parser, lexer, tree);
 
 		return self;
 	}
@@ -142,12 +136,16 @@ type Return {
 	Expression expression;
 	Operator semicolon;
 
-	func parse(Return self, Parser parser, Lexer lexer) -> Return {
+	func parseReturn(Return self, Parser parser, Lexer lexer) -> Return {
 		self.region = lexer.startRegion();
 
 		self.keyword = lexer.consumeKeyword(KEYWORD_return);
-		self.expression = new Expression();
-		self.expression.parse(parser, lexer);
+
+		if (!isOperator(lexer.current.operator, ";")) {
+			self.expression = new Expression();
+			self.expression.parseExpression(parser, lexer);
+		}
+
 		self.semicolon = lexer.consumeOperator(";");
 		if (self.semicolon == (Operator)0) {
 			parser.error(lexer.here(), " expected ';' after 'return' statement\n");
@@ -166,21 +164,19 @@ func createReturnTypeFromString(TypeObj typeObj) -> ReturnType {
 	return returnType;
 }
 
-func createFunctionFromString(str value, Array<Parameter> parameters, ReturnType returnType) -> FunctionDefinition {
-	var function = new FunctionDefinition();
+func createFunctionFromString(str value, Array<Parameter> parameters, ReturnType returnType) -> Function {
+	var function = new Function();
 
-	function.name = createNameFromString(value);
+	function.name = createIdentifierFromString(value);
 	function.parameters = parameters;
 	function.returnType = returnType;
 
-	function.generics = createArray<Generic>();
-
-	function.variants = createArray<FunctionDefinition>();
+	function.variants = createArray<Function>();
 
 	return function;
 }
 
-func findFunction(Array<FunctionDefinition> list, str name) -> FunctionDefinition {
+func findFunction(Array<Function> list, str name) -> Function {
 	var i = 0;
 	while (i < list.size) {
 		if (streq(list.list[i].name.name, name)) {
@@ -188,5 +184,5 @@ func findFunction(Array<FunctionDefinition> list, str name) -> FunctionDefinitio
 		}
 		i = i + 1;
 	}
-	return (FunctionDefinition)0;
+	return (Function)0;
 }

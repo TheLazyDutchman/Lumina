@@ -16,12 +16,12 @@ type Else {
 	Name keyword;
 	Block block;
 
-	func parse(Else self, Parser parser, Lexer lexer, Name elseKeyword) -> Else {
+	func parseElse(Else self, Parser parser, Lexer lexer, SyntaxTree tree, Name elseKeyword) -> Else {
 		self.region = lexer.startRegion();
 
 		self.keyword = elseKeyword;
 		self.block = new Block();
-		self.block.parse(parser, lexer);
+		self.block.parseBlock(parser, lexer, tree);
 
 		lexer.endRegion(self.region);
 		return self;
@@ -38,17 +38,17 @@ type ElseIf {
 
 	int id;
 
-	func parse(ElseIf self, Parser parser, Lexer lexer, Name elseKeyword) -> ElseIf {
+	func parseElseIf(ElseIf self, Parser parser, Lexer lexer, SyntaxTree tree, Name elseKeyword) -> ElseIf {
 		self.region = lexer.startRegion();
 
 		self.elseKeyword = elseKeyword;
 		self.ifKeyword = lexer.consumeKeyword(KEYWORD_if);
 
 		self.condition = new Condition();
-		self.condition.parse(parser, lexer);
+		self.condition.parseCondition(parser, lexer);
 
 		self.block = new Block();
-		self.block.parse(parser, lexer);
+		self.block.parseBlock(parser, lexer, tree);
 
 		lexer.endRegion(self.region);
 		return self;
@@ -65,16 +65,16 @@ type If {
 
 	int id;
 
-	func parse(If self, Parser parser, Lexer lexer) -> If {
+	func parseIf(If self, Parser parser, SyntaxTree tree, Lexer lexer) -> If {
 		self.region = lexer.startRegion();
 
 		self.keyword = lexer.consumeKeyword(KEYWORD_if);
 
 		self.condition = new Condition();
-		self.condition.parse(parser, lexer);
+		self.condition.parseCondition(parser, lexer);
 
 		self.block = new Block();
-		self.block.parse(parser, lexer);
+		self.block.parseBlock(parser, lexer, tree);
 
 		self.elseIfs = createArray<ElseIf>();
 
@@ -82,15 +82,15 @@ type If {
 		while (elseKeyword != (Name)0) {
 			if (isKeyword(lexer.current.name, KEYWORD_if)) {
 				var elseIf = new ElseIf();
-				elseIf.parse(parser, lexer, elseKeyword);
+				elseIf.parseElseIf(parser, lexer, tree, elseKeyword);
 
 				self.elseIfs.push(elseIf);
 			} else {
 				self.elseObj = new Else();
-				self.elseObj.parse(parser, lexer, elseKeyword);
+				self.elseObj.parseElse(parser, lexer, tree, elseKeyword);
 			}
 
-			var elseKeyword = lexer.consumeKeyword(KEYWORD_else);
+			elseKeyword = lexer.consumeKeyword(KEYWORD_else);
 		}
 
 		lexer.endRegion(self.region);

@@ -13,16 +13,16 @@ type Comparison {
 	Term right;
 
 
-	func parse(Comparison self, Parser parser, Lexer lexer) -> Comparison {
+	func parseComparison(Comparison self, Parser parser, Lexer lexer) -> Comparison {
 		self.region = lexer.startRegion();
 
 		self.left = new Term();
-		self.left.parse(parser, lexer);
+		self.left.parseTerm(parser, lexer);
 
 		self.comparator = lexer.consumePrecedence(PREC_comparison);
 		if (self.comparator != (Operator)0) {
 			self.right = new Term();
-			self.right.parse(parser, lexer);
+			self.right.parseTerm(parser, lexer);
 		}
 
 		lexer.endRegion(self.region);

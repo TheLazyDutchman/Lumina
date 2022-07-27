@@ -10,7 +10,7 @@ type Import {
 	Name keyword;
 	StringLiteral fileName;
 
-	func parse(Import self, Parser parser, Lexer lexer) -> Import {
+	func parseImport(Import self, Parser parser, Lexer lexer) -> Import {
 		self.region = lexer.startRegion();
 
 		self.keyword = lexer.consumeKeyword(KEYWORD_import);

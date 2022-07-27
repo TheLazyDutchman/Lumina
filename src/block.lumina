@@ -13,6 +13,7 @@ import "whitespace.lumina"
 import "definition.lumina"
 
 
+import "../std/syscalls.lumina"
 type Block {
 	Region region;
 
@@ -21,25 +22,37 @@ type Block {
 
 	Array<Definition> definitions;
 	Array<TypeObj> types;
-	Array<FunctionDefinition> functions;
+	Array<Function> functions;
 	Array<Variable> variables;
 	Operator rbrace;
 	int depth;
 
 	Block outer;
-	FunctionDefinition function;
+	Function function;
 
-	func parse(Block self, Parser parser, Lexer lexer) -> Block {
+	func parseBlock(Block self, Parser parser, Lexer lexer, SyntaxTree tree) -> Block {
 		self.region = lexer.startRegion();
 
 		self.lbrace = lexer.consumeOperator("{");
 		if (self.lbrace == (Operator)0) {
 			parser.error(self.region.start, " expected '{' before block\n");
+			exit(1);
 		}
+
+		self.definitions = createArray<Definition>();
+		self.types = createArray<TypeObj>();
+		self.functions = createArray<Function>();
+		self.variables = createArray<Variable>();
 
 		while (!isOperator(lexer.current.operator, "}") && !lexer.current.isEOF) {
 			var statement = new Statement();
-			statement.parse(parser, lexer);
+			statement.parseStatement(parser, lexer, tree,
+				self.definitions,
+				self.variables,
+				self.types,
+				self.functions,
+				tree.imports,
+				self);
 			self.statements.push(statement);
 		}
 
@@ -53,18 +66,18 @@ type Block {
 	}
 }
 
-func findFunctionInBlock(Block block, str name) -> FunctionDefinition {
+func findFunctionInBlock(Block block, str name) -> Function {
 	var function = findFunction(block.functions, name);
 
-	if (function == (FunctionDefinition)0 && block.outer != (Block)0) {
+	if (function == (Function)0 && block.outer != (Block)0) {
 		return findFunctionInBlock(block.outer, name);
 	}
 
 	return function;
 }
 
-func getBlockFunction(Block block) -> FunctionDefinition {
-	if (block.function != (FunctionDefinition)0) {
+func getBlockFunction(Block block) -> Function {
+	if (block.function != (Function)0) {
 	return block.function;
 	}
 

@@ -70,10 +70,12 @@ type Array<T> {
 	}
 
 	func get(Array<T> self, int index) -> T {
+		if (self.list == (T[])0) { return (T)0; }
 		return self.list[index];
 	}
 
 	func set(Array<T> self, int index, T item) {
+		if (self.list == (T[])0) { return; }
 		self.list[index] = item;
 	}
 }

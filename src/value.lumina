@@ -19,13 +19,13 @@ type Group {
 	Expression value;
 	Operator rparen;
 
-	func parse(Group self, Parser parser, Lexer lexer) -> Group {
+	func parseGroup(Group self, Parser parser, Lexer lexer) -> Group {
 		self.region = lexer.startRegion();
 
 		self.lparen = lexer.consumeOperator("(");
 
 		self.value = new Expression();
-		self.value.parse(parser, lexer);
+		self.value.parseExpression(parser, lexer);
 
 		self.rparen = lexer.consumeOperator(")");
 		if (self.rparen == (Operator)0) {
@@ -48,10 +48,10 @@ type Value {
 	Group group;
 
 
-	func parse(Value self, Parser parser, Lexer lexer) -> Value {
+	func parseValue(Value self, Parser parser, Lexer lexer) -> Value {
 		if (isIdentifier(lexer.current.name)) {
 			self.identifier = new Identifier();
-			self.identifier.parse(parser, lexer);
+			self.identifier.parseIdentifier(parser, lexer);
 
 			self.region = self.identifier.region;
 		} else if (isNumber(lexer.current)) {
@@ -68,7 +68,7 @@ type Value {
 			next(lexer);
 		} else if (isOperator(lexer.current.operator, "(")) {
 			self.group = new Group();
-			self.group.parse(parser, lexer);
+			self.group.parseGroup(parser, lexer);
 			self.region = self.group.region;
 		} else {
 			parser.error(lexer.here(), " expected an immediate value or name\n");

@@ -31,11 +31,11 @@ type Index {
 	Call value;
 	Array<IndexPart> parts;
 
-	func parse(Index self, Parser parser, Lexer lexer) -> Index {
+	func parseIndex(Index self, Parser parser, Lexer lexer) -> Index {
 		self.region = lexer.startRegion();
 
 		self.value = new Call();
-		self.value.parse(parser, lexer);
+		self.value.parseCall(parser, lexer);
 
 		while (lexer.current.operator.precedence == PREC_index) {
 			var part = new IndexPart();
@@ -45,15 +45,13 @@ type Index {
 				part.propertyPart.operator = lexer.consumeOperator(".");
 
 				part.propertyPart.property = new Call();
-				part.propertyPart.property.parse(parser, lexer);
+				part.propertyPart.property.parseCall(parser, lexer);
 			} else if (isOperator(lexer.current.operator, "[")) {
 				part.indexPart = new ListPart();
 				part.indexPart.left = lexer.consumeOperator("[");
 
-				if (!isOperator(lexer.current.operator, "]")) {
-					part.indexPart.index = new Term();
-					part.indexPart.index.parse(parser, lexer);
-				}
+				part.indexPart.index = new Term();
+				part.indexPart.index.parseTerm(parser, lexer);
 
 				part.indexPart.right = lexer.consumeOperator("]");
 

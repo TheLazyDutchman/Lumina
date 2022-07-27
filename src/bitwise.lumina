@@ -13,16 +13,16 @@ type Bitwise {
 	Index right;
 
 
-	func parse(Bitwise self, Parser parser, Lexer lexer) -> Bitwise {
+	func parseBitwise(Bitwise self, Parser parser, Lexer lexer) -> Bitwise {
 		self.region = lexer.startRegion();
 
 		self.left = new Index();
-		self.left.parse(parser, lexer);
+		self.left.parseIndex(parser, lexer);
 
 		self.comparator = lexer.consumePrecedence(PREC_bitwise);
 		if (self.comparator != (Operator)0) {
 			self.right = new Index();
-			self.right.parse(parser, lexer);
+			self.right.parseIndex(parser, lexer);
 		}
 
 		lexer.endRegion(self.region);

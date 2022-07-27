@@ -12,7 +12,7 @@ type Condition {
 	Expression value;
 	Operator rparen;
 
-	func parse(Condition self, Parser parser, Lexer lexer) -> Condition {
+	func parseCondition(Condition self, Parser parser, Lexer lexer) -> Condition {
 		self.region = lexer.startRegion();
 
 		self.lparen = lexer.consumeOperator("(");
@@ -21,7 +21,7 @@ type Condition {
 		}
 
 		self.value = new Expression();
-		self.value.parse(parser, lexer);
+		self.value.parseExpression(parser, lexer);
 
 		self.rparen = lexer.consumeOperator(")");
 		if (self.rparen == (Operator)0) {

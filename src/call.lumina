@@ -18,13 +18,13 @@ type ArgumentArray {
 	Expression value;
 	Array<ArgumentPart> parts;
 
-	func parse(ArgumentArray self, Parser parser, Lexer lexer) -> ArgumentArray {
+	func parseArgumentArray(ArgumentArray self, Parser parser, Lexer lexer) -> ArgumentArray {
 		if (isOperator(lexer.current.operator, ")")) {
 			return self;
 		}
 
 		self.value = new Expression();
-		self.value.parse(parser, lexer);
+		self.value.parseExpression(parser, lexer);
 
 		self.parts = createArray<ArgumentPart>();
 
@@ -33,7 +33,7 @@ type ArgumentArray {
 			part.comma = lexer.consumeOperator(",");
 
 			part.value = new Expression();
-			part.value.parse(parser, lexer);
+			part.value.parseExpression(parser, lexer);
 
 			self.parts.push(part);
 		}
@@ -51,16 +51,16 @@ type Call {
 	Operator rparen;
 
 
-	func parse(Call self, Parser parser, Lexer lexer) -> Call {
+	func parseCall(Call self, Parser parser, Lexer lexer) -> Call {
 		self.region = lexer.startRegion();
 
 		self.value = new Unary();
-		self.value.parse(parser, lexer);
+		self.value.parseUnary(parser, lexer);
 
 		self.lparen = lexer.consumeOperator("(");
 		if (self.lparen != (Operator)0) {
 			self.arguments = new ArgumentArray();
-			self.arguments.parse(parser, lexer);
+			self.arguments.parseArgumentArray(parser, lexer);
 
 			self.rparen = lexer.consumeOperator(")");
 			if (self.rparen == (Operator)0) {

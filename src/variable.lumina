@@ -12,20 +12,6 @@ import "whitespace.lumina"
 
 
 type Variable {
-	str name;
-	VariableDefinition definition;
-
-	int depth;
-	int position;
-
-	TypeObj variableType;
-	
-	bool isConstant;
-	bool isEvaluated;
-	int value;
-}
-
-type VariableDefinition {
 	Region region;
 
 	Name keyword;
@@ -36,7 +22,16 @@ type VariableDefinition {
 
 	TypeObj variableType;
 
-	func parse(VariableDefinition self, Parser parser, Lexer lexer) -> VariableDefinition {
+	int position;
+	int depth;
+
+	int constantValue;
+	bool isConstant;
+	bool isEvaluated;
+
+	func parseVariable(Variable self, Parser parser, Lexer lexer, int depth, int position) -> Variable {
+		self.depth = depth;
+		self.position = position;
 		self.region = lexer.startRegion();
 
 		self.keyword = lexer.consumeKeyword(KEYWORD_var);
@@ -55,7 +50,7 @@ type VariableDefinition {
 		}
 
 		self.value = new Expression();
-		self.value.parse(parser, lexer);
+		self.value.parseExpression(parser, lexer);
 
 		self.semicolon = lexer.consumeOperator(";");
 		if (self.semicolon == (Operator)0) {
@@ -69,22 +64,14 @@ type VariableDefinition {
 func createVariableFromString(str name, int depth, int position, TypeObj variableType) -> Variable {
 	var variable = new Variable();
 
-	variable.name = name;
+	variable.name = createNameFromString(name);
 
 	variable.depth = depth;
 	variable.position = position;
 
 	variable.variableType = variableType;
 
-	variable.value = 0;
-
-	return variable;
-}
-
-func createVariableFromDefinition(VariableDefinition definition, int depth, int position) -> Variable {
-	var variable = createVariableFromString(definition.name.name, depth, position, definition.variableType);
-
-	variable.definition = definition;
+	variable.constantValue = 0;
 
 	return variable;
 }
@@ -94,16 +81,7 @@ func createConstantFromString(str name, TypeObj constantType, int value) -> Vari
 
 	constant.isConstant = true;
 	constant.isEvaluated = true;
-	constant.value = value;
-
-	return constant;
-}
-
-func createConstantFromDefinition(VariableDefinition definition) -> Variable {
-	var constant = createVariableFromString(definition.name.name, 0, 0, definition.variableType);
-
-	constant.isConstant = true;
-	constant.definition = definition;
+	constant.constantValue = value;
 
 	return constant;
 }
@@ -111,7 +89,7 @@ func createConstantFromDefinition(VariableDefinition definition) -> Variable {
 func findVariable(Array<Variable> list, str name) -> Variable {
 	var i = 0;
 	while (i < list.size) {
-		if (streq(list.list[i].name, name)) {
+		if (streq(list.list[i].name.name, name)) {
 			return list.list[i];
 		}
 		i = i + 1;

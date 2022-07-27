@@ -18,18 +18,18 @@ type Expression {
 	Or value;
 	Array<AndPart> parts;
 
-	func parse(Expression self, Parser parser, Lexer lexer) -> Expression {
+	func parseExpression(Expression self, Parser parser, Lexer lexer) -> Expression {
 		self.region = lexer.startRegion();
 
 		self.value = new Or();
-		self.value.parse(parser, lexer);
+		self.value.parseOr(parser, lexer);
 
 		while (isOperator(lexer.current.operator, "&&")) {
 			var part = new AndPart();
 			part.and = lexer.consumeOperator("&&");
 
 			part.value = new Or();
-			part.value.parse(parser, lexer);
+			part.value.parseOr(parser, lexer);
 
 			self.parts.push(part);
 		}

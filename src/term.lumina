@@ -18,18 +18,18 @@ type Term {
 	Factor value;
 	Array<TermPart> parts;
 
-	func parse(Term self, Parser parser, Lexer lexer) -> Term {
+	func parseTerm(Term self, Parser parser, Lexer lexer) -> Term {
 		self.region = lexer.startRegion();
 
 		self.value = new Factor();
-		self.value.parse(parser, lexer);
+		self.value.parseFactor(parser, lexer);
 
 		while (lexer.current.operator.precedence == PREC_term) {
 			var part = new TermPart();
 			part.operator = lexer.consumePrecedence(PREC_term);
 			
 			part.value = new Factor();
-			part.value.parse(parser, lexer);
+			part.value.parseFactor(parser, lexer);
 
 			self.parts.push(part);
 		}

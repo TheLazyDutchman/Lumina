@@ -15,16 +15,16 @@ type While {
 
 	int id;
 
-	func parse(While self, Parser parser, Lexer lexer) -> While {
+	func parseWhile(While self, Parser parser, SyntaxTree tree, Lexer lexer) -> While {
 		self.region = lexer.startRegion();
 
 		self.keyword = lexer.consumeKeyword(KEYWORD_while);
 
 		self.condition = new Condition();
-		self.condition.parse(parser, lexer);
+		self.condition.parseCondition(parser, lexer);
 
 		self.block = new Block();
-		self.block.parse(parser, lexer);
+		self.block.parseBlock(parser, lexer, tree);
 
 		lexer.endRegion(self.region);
 		return self;

@@ -14,16 +14,16 @@ type Assignment {
 	Operator semicolon;
 
 
-	func parse(Assignment self, Parser parser, Lexer lexer) -> Assignment {
+	func parseAssignment(Assignment self, Parser parser, Lexer lexer) -> Assignment {
 		self.region = lexer.startRegion();
 
 		self.target = new Expression();
-		self.target.parse(parser, lexer);
+		self.target.parseExpression(parser, lexer);
 
 		self.equalSign = lexer.consumeOperator("=");
 		if (self.equalSign != (Operator)0) {
 			self.value = new Expression();
-			self.value.parse(parser, lexer);
+			self.value.parseExpression(parser, lexer);
 		}
 
 		self.semicolon = lexer.consumeOperator(";");

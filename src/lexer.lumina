@@ -102,9 +102,11 @@ type Lexer {
 	func returnTo(Lexer self, Position position) {
 		self.file = position.file;
 		self.buffer = position.buffer;
-		self.index = position.index;
+		self.index = position.index - 1;
 		self.line = position.line;
-		self.column = position.column;
+		self.column = position.column - 1;
+
+		next(self);
 	}
 }
 

@@ -18,18 +18,18 @@ type Factor {
 	Bitwise value;
 	Array<FactorPart> parts;
 
-	func parse(Factor self, Parser parser, Lexer lexer) -> Factor {
+	func parseFactor(Factor self, Parser parser, Lexer lexer) -> Factor {
 		self.region = lexer.startRegion();
 
 		self.value = new Bitwise();
-		self.value.parse(parser, lexer);
+		self.value.parseBitwise(parser, lexer);
 
 		while (lexer.current.operator.precedence == PREC_factor) {
 			var part = new FactorPart();
 			part.operator = lexer.consumePrecedence(PREC_factor);
 			
 			part.value = new Bitwise();
-			part.value.parse(parser, lexer);
+			part.value.parseBitwise(parser, lexer);
 
 			self.parts.push(part);
 		}

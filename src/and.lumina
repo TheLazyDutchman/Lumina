@@ -18,18 +18,18 @@ type Or {
 	Comparison value;
 	Array<OrPart> parts;
 
-	func parse(Or self, Parser parser, Lexer lexer) -> Or {
+	func parseOr(Or self, Parser parser, Lexer lexer) -> Or {
 		self.region = lexer.startRegion();
 
 		self.value = new Comparison();
-		self.value.parse(parser, lexer);
+		self.value.parseComparison(parser, lexer);
 
 		while (isOperator(lexer.current.operator, "||")) {
 			var part = new OrPart();
 			part.or = lexer.consumeOperator("||");
 			
 			part.value = new Comparison();
-			part.value.parse(parser, lexer);
+			part.value.parseComparison(parser, lexer);
 
 			self.parts.push(part);
 		}
