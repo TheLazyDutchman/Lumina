@@ -49,8 +49,8 @@ func createDefinitionFromFunction(Function function) -> Definition {
 func findDefinition(Array<Definition> list, str name) -> Definition {
 	var i = 0;
 	while (i < list.size) {
-		if (streq(list.list[i].name, name)) {
-			return list.list[i];
+		if (streq(list.get(i).name, name)) {
+			return list.get(i);
 		}
 		i = i + 1;
 	}

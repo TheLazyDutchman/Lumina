@@ -3,8 +3,10 @@ import "../std/collections.lumina"
 
 import "parser.lumina"
 import "lexer.lumina"
+import "block.lumina"
 import "index.lumina"
 import "name.lumina"
+import "variable.lumina"
 import "operator.lumina"
 import "position.lumina"
 import "definition.lumina"
@@ -30,13 +32,13 @@ type GenericArray {
 
 	Operator right;
 
-	func parseGenericArray(GenericArray self, Parser parser, Lexer lexer, Position returnPosition) -> bool {
+	func parseGenericArray(GenericArray self, Parser parser, Lexer lexer, Block block, Position returnPosition) -> bool {
 		self.region = lexer.startRegion();
 
 		self.left = lexer.consumeOperator("<");
 
 		self.value = new Index();
-		self.value.parseIndex(parser, lexer);
+		self.value.parseIndex(parser, lexer, block);
 
 		var hadComma = false;
 		self.generics = createArray<GenericPart>();
@@ -48,7 +50,7 @@ type GenericArray {
 			part.comma = lexer.consumeOperator(",");
 
 			part.value = new Index();
-			part.value.parseIndex(parser, lexer);
+			part.value.parseIndex(parser, lexer, block);
 
 			self.generics.push(part);
 		}
@@ -64,26 +66,43 @@ type GenericArray {
 
 		return true;
 	}
+
+	func bindGenericArray(GenericArray self, Parser parser) {
+		self.value.bindIndex(parser);
+
+		var i = 0;
+		while (i < self.generics.size) {
+			var part = self.generics.get(i);
+			part.value.bindIndex(parser);
+			i = i + 1;
+		}
+	}
 }
 
 type Identifier {
 	Region region;
 	str name;
-	Name definition;
+	Name value;
 
 	GenericArray generics;
 	Array<TypeListPart> lists;
 
-	Definition value;
+	Definition definition;
+	Block block;
 
-	func parseIdentifier(Identifier self, Parser parser, Lexer lexer) -> Identifier {
+	func parseIdentifier(Identifier self, Parser parser, Lexer lexer, Block block) -> Identifier {
+		self.block = block;
 		self.region = lexer.startRegion();
 
-		self.definition = lexer.consumeIdentifier();
+		self.value = lexer.consumeIdentifier();
+		if (self.value == (Name)0) {
+			parser.error(lexer.here(), " expected identifier\n");
+		}
+		self.name = self.value.name;
 		
 		if (isOperator(lexer.current.operator, "<")) {
 			self.generics = new GenericArray();
-			if (!self.generics.parseGenericArray(parser, lexer, lexer.here())) {
+			if (!self.generics.parseGenericArray(parser, lexer, block, lexer.here())) {
 				self.generics = (GenericArray)0;
 			}
 		}
@@ -110,6 +129,24 @@ type Identifier {
 
 		lexer.endRegion(self.region);
 		return self;
+	}
+
+	func bindIdentifier(Identifier self, Parser parser) {
+		self.definition = self.block.findDefinitionInBlock(self.name);
+
+		if (self.definition == (Definition)0) {
+			parser.error(self.region.start, " can not find name: ");
+			print(self.name);
+			print("\n");
+		}
+
+		if (self.generics != (GenericArray)0) {
+			if (self.definition.variable != (Variable)0) {
+				parser.error(self.generics.region.start, " can not get generic of variable\n");
+			}
+
+			self.generics.bindGenericArray(parser);
+		}
 	}
 }
 

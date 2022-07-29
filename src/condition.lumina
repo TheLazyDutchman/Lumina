@@ -1,5 +1,6 @@
 import "parser.lumina"
 import "lexer.lumina"
+import "block.lumina"
 import "operator.lumina"
 import "expression.lumina"
 import "position.lumina"
@@ -12,7 +13,7 @@ type Condition {
 	Expression value;
 	Operator rparen;
 
-	func parseCondition(Condition self, Parser parser, Lexer lexer) -> Condition {
+	func parseCondition(Condition self, Parser parser, Lexer lexer, Block block) -> Condition {
 		self.region = lexer.startRegion();
 
 		self.lparen = lexer.consumeOperator("(");
@@ -21,7 +22,7 @@ type Condition {
 		}
 
 		self.value = new Expression();
-		self.value.parseExpression(parser, lexer);
+		self.value.parseExpression(parser, lexer, block);
 
 		self.rparen = lexer.consumeOperator(")");
 		if (self.rparen == (Operator)0) {
@@ -30,5 +31,9 @@ type Condition {
 
 		lexer.endRegion(self.region);
 		return self;
+	}
+
+	func bindCondition(Condition self, Parser parser) {
+		self.value.bindExpression(parser);
 	}
 }

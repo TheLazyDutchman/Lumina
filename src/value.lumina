@@ -10,6 +10,7 @@ import "whitespace.lumina"
 import "definition.lumina"
 import "operator.lumina"
 import "expression.lumina"
+import "block.lumina"
 
 
 type Group {
@@ -19,13 +20,13 @@ type Group {
 	Expression value;
 	Operator rparen;
 
-	func parseGroup(Group self, Parser parser, Lexer lexer) -> Group {
+	func parseGroup(Group self, Parser parser, Lexer lexer, Block block) -> Group {
 		self.region = lexer.startRegion();
 
 		self.lparen = lexer.consumeOperator("(");
 
 		self.value = new Expression();
-		self.value.parseExpression(parser, lexer);
+		self.value.parseExpression(parser, lexer, block);
 
 		self.rparen = lexer.consumeOperator(")");
 		if (self.rparen == (Operator)0) {
@@ -33,6 +34,10 @@ type Group {
 		}
 
 		return self;
+	}
+
+	func bindGroup(Group self, Parser parser) {
+		self.value.bindExpression(parser);
 	}
 }
 
@@ -48,10 +53,10 @@ type Value {
 	Group group;
 
 
-	func parseValue(Value self, Parser parser, Lexer lexer) -> Value {
+	func parseValue(Value self, Parser parser, Lexer lexer, Block block) -> Value {
 		if (isIdentifier(lexer.current.name)) {
 			self.identifier = new Identifier();
-			self.identifier.parseIdentifier(parser, lexer);
+			self.identifier.parseIdentifier(parser, lexer, block);
 
 			self.region = self.identifier.region;
 		} else if (isNumber(lexer.current)) {
@@ -68,13 +73,21 @@ type Value {
 			next(lexer);
 		} else if (isOperator(lexer.current.operator, "(")) {
 			self.group = new Group();
-			self.group.parseGroup(parser, lexer);
+			self.group.parseGroup(parser, lexer, block);
 			self.region = self.group.region;
 		} else {
 			parser.error(lexer.here(), " expected an immediate value or name\n");
 		}
 
 		return self;
+	}
+
+	func bindValue(Value self, Parser parser) {
+		if (self.identifier != (Identifier)0) {
+			self.identifier.bindIdentifier(parser);
+		} else if (self.group != (Group)0) {
+			self.group.bindGroup(parser);
+		}
 	}
 }
 

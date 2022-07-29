@@ -7,6 +7,7 @@ import "position.lumina"
 import "operator.lumina"
 import "term.lumina"
 import "call.lumina"
+import "block.lumina"
 
 
 type PropertyPart {
@@ -31,11 +32,11 @@ type Index {
 	Call value;
 	Array<IndexPart> parts;
 
-	func parseIndex(Index self, Parser parser, Lexer lexer) -> Index {
+	func parseIndex(Index self, Parser parser, Lexer lexer, Block block) -> Index {
 		self.region = lexer.startRegion();
 
 		self.value = new Call();
-		self.value.parseCall(parser, lexer);
+		self.value.parseCall(parser, lexer, block);
 
 		while (lexer.current.operator.precedence == PREC_index) {
 			var part = new IndexPart();
@@ -45,13 +46,13 @@ type Index {
 				part.propertyPart.operator = lexer.consumeOperator(".");
 
 				part.propertyPart.property = new Call();
-				part.propertyPart.property.parseCall(parser, lexer);
+				part.propertyPart.property.parseCall(parser, lexer, block);
 			} else if (isOperator(lexer.current.operator, "[")) {
 				part.indexPart = new ListPart();
 				part.indexPart.left = lexer.consumeOperator("[");
 
 				part.indexPart.index = new Term();
-				part.indexPart.index.parseTerm(parser, lexer);
+				part.indexPart.index.parseTerm(parser, lexer, block);
 
 				part.indexPart.right = lexer.consumeOperator("]");
 
@@ -70,5 +71,20 @@ type Index {
 		lexer.endRegion(self.region);
 
 		return self;
+	}
+
+	func bindIndex(Index self, Parser parser) {
+		self.value.bindCall(parser);
+
+		var i = 0;
+		while (i < self.parts.size) {
+			var part = self.parts.get(i);
+			if (part.indexPart != (ListPart)0) {
+				part.indexPart.index.bindTerm(parser);
+			} else {
+				part.propertyPart.property.bindCall(parser);
+			}
+			i = i + 1;
+		}
 	}
 }

@@ -13,7 +13,6 @@ import "whitespace.lumina"
 import "definition.lumina"
 
 
-import "../std/syscalls.lumina"
 type Block {
 	Region region;
 
@@ -28,25 +27,22 @@ type Block {
 	int depth;
 
 	Block outer;
+	SyntaxTree tree;
 	Function function;
 
-	func parseBlock(Block self, Parser parser, Lexer lexer, SyntaxTree tree) -> Block {
+	func parseBlock(Block self, Parser parser, Lexer lexer, SyntaxTree tree, Block outer) -> Block {
+		self.outer = outer;
+		self.tree = tree;
 		self.region = lexer.startRegion();
 
 		self.lbrace = lexer.consumeOperator("{");
 		if (self.lbrace == (Operator)0) {
 			parser.error(self.region.start, " expected '{' before block\n");
-			exit(1);
 		}
-
-		self.definitions = createArray<Definition>();
-		self.types = createArray<TypeObj>();
-		self.functions = createArray<Function>();
-		self.variables = createArray<Variable>();
 
 		while (!isOperator(lexer.current.operator, "}") && !lexer.current.isEOF) {
 			var statement = new Statement();
-			statement.parseStatement(parser, lexer, tree,
+			statement.parseStatement(parser, lexer, self, tree,
 				self.definitions,
 				self.variables,
 				self.types,
@@ -64,6 +60,38 @@ type Block {
 		lexer.endRegion(self.region);
 		return self;
 	}
+
+	func bindBlock(Block self, Parser parser) {
+		var i = 0;
+		while (i < self.statements.size) {
+			var statement = self.statements.get(i);
+			statement.bindStatement(parser);
+			i = i + 1;
+		}
+	}
+
+	func findDefinitionInBlock(Block self, str name) -> Definition {
+		var definition = findDefinition(self.definitions, name);
+
+		if (definition != (Definition)0) {
+			return definition;
+		}
+
+		if (self.outer != (Block)0) {
+			return self.outer.findDefinitionInBlock(name);
+		}
+
+		return self.tree.findDefinitionInTree(name);
+	}
+}
+
+func createBlock() -> Block {
+	var block = new Block();
+	block.definitions = createArray<Definition>();
+	block.types = createArray<TypeObj>();
+	block.functions = createArray<Function>();
+	block.variables = createArray<Variable>();
+	return block;
 }
 
 func findFunctionInBlock(Block block, str name) -> Function {

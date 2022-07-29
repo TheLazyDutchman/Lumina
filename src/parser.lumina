@@ -30,16 +30,26 @@ import "definition.lumina"
 type SyntaxTree {
 	str fileName;
 	Lexer lexer;
-	Array<Block> blocks;
+	Block block;
 	Array<Statement> statements;
 
-	Array<Definition> definitions;
-	Array<TypeObj> types;
-	Array<Function> functions;
-	Array<Variable> variables;
 	Array<Import> imports;
+	Array<SyntaxTree> importTrees;
 
-	SyntaxTree[] importTrees;
+	Parser parser;
+
+	func findDefinitionInTree(SyntaxTree self, str name) -> Definition {
+		var definition = findDefinition(self.parser.definitions, name);
+
+		var i = 0;
+		while (definition == (Definition)0 && i < self.importTrees.size) {
+			var tree = self.importTrees.get(i);
+			definition = tree.findDefinitionInTree(name);
+			i = i + 1;
+		}
+
+		return definition;
+	}
 }
 
 type Parser {
@@ -87,23 +97,22 @@ type Parser {
 	}
 }
 
-func createSyntaxTree(str fileName, int numAnds, int numOrs) -> SyntaxTree {
+func createSyntaxTree(str fileName, Parser parser) -> SyntaxTree {
 	var tree = new SyntaxTree();
 
 	tree.fileName = fileName;
-	tree.blocks = createArray<Block>();
+	tree.block = createBlock();
 	tree.lexer = createLexer(fileName);
 	next(tree.lexer);
 
 	tree.statements = createArray<Statement>();
+	tree.block.tree = tree;
 
-	tree.definitions = createArray<Definition>();
-	tree.types = createArray<TypeObj>();
-	tree.functions = createArray<Function>();
-	tree.variables = createArray<Variable>();
 	tree.imports = createArray<Import>();
 
-	tree.importTrees = (SyntaxTree[])0;
+	tree.importTrees = createArray<SyntaxTree>();
+
+	tree.parser = parser;
 
 	return tree;
 }
@@ -140,19 +149,19 @@ func createParser() -> Parser {
 	parser.strings = createArray<str>();
 
 	parser.types = createArray<TypeObj>();
-//	parser.int = createTypeFromString("int", 8);
-//	parser.char = createTypeFromString("char", 1);
-//	parser.str = createListType(parser.types, "str", parser.char);
-//	parser.bool = createTypeFromString("bool", 1);
-//	parser.any = createTypeFromString("any", 8);
-//	parser.null = createTypeFromString("null", 8);
+	parser.int = createTypeFromString("int", 8);
+	parser.char = createTypeFromString("char", 1);
+	parser.str = createListType(parser.types, "str", parser.char);
+	parser.bool = createTypeFromString("bool", 1);
+	parser.any = createTypeFromString("any", 8);
+	parser.null = createTypeFromString("null", 8);
 
-//	parser.int.nameId = addUniqueString(parser.strings, parser.int.name);
-//	parser.str.nameId = addUniqueString(parser.strings, parser.str.name);
-//	parser.char.nameId = addUniqueString(parser.strings, parser.char.name);
-//	parser.bool.nameId = addUniqueString(parser.strings, parser.bool.name);
-//	parser.any.nameId = addUniqueString(parser.strings, parser.any.name);
-//	parser.null.nameId = addUniqueString(parser.strings, parser.null.name);
+	parser.int.nameId = addUniqueString(parser.strings, parser.int.name.name);
+	parser.str.nameId = addUniqueString(parser.strings, parser.str.name.name);
+	parser.char.nameId = addUniqueString(parser.strings, parser.char.name.name);
+	parser.bool.nameId = addUniqueString(parser.strings, parser.bool.name.name);
+	parser.any.nameId = addUniqueString(parser.strings, parser.any.name.name);
+	parser.null.nameId = addUniqueString(parser.strings, parser.null.name.name);
 
 	parser.definitions.push(createDefinitionFromType(parser.int));
 	parser.definitions.push(createDefinitionFromType(parser.char));
@@ -167,41 +176,41 @@ func createParser() -> Parser {
 	parser.types.push(parser.any);
 	parser.types.push(parser.null);
 
-//	parser.Type = createTypeFromString("Type", 8);
-//	parser.TypeProperty = createTypeFromString("TypeProperty", 8);
-//
-//	parser.Type.properties.push(createPropertyFromString("name", parser.str, 0));
-//	parser.Type.properties.push(createPropertyFromString("size", parser.int, 8));
-//	parser.Type.properties.push(createPropertyFromString("objectSize", parser.int, 16));
-//	parser.Type.properties.push(createPropertyFromString("properties", 
-//		createListType(parser.types, (str)0, parser.TypeProperty), 
-//		24));
-//	parser.Type.properties.push(createPropertyFromString("listOf", parser.Type, 32));
-//	parser.Type.properties.push(createPropertyFromString("listType", parser.Type, 40));
+	parser.Type = createTypeFromString("Type", 8);
+	parser.TypeProperty = createTypeFromString("TypeProperty", 8);
+
+	parser.Type.properties.push(createPropertyFromString("name", parser.str, 0));
+	parser.Type.properties.push(createPropertyFromString("size", parser.int, 8));
+	parser.Type.properties.push(createPropertyFromString("objectSize", parser.int, 16));
+	parser.Type.properties.push(createPropertyFromString("properties", 
+		createListType(parser.types, (str)0, parser.TypeProperty), 
+		24));
+	parser.Type.properties.push(createPropertyFromString("listOf", parser.Type, 32));
+	parser.Type.properties.push(createPropertyFromString("listType", parser.Type, 40));
 
 	var i = 0;
 	while (i < parser.Type.properties.size) {
 		var property = parser.Type.properties.list[i];
-		//property.nameId = addUniqueString(parser.strings, property.name);
+		property.nameId = addUniqueString(parser.strings, property.name.name);
 		i = i + 1;
 	}
 
-//	parser.TypeProperty.properties.push(createPropertyFromString("name", parser.str, 0));
-//	parser.TypeProperty.properties.push(createPropertyFromString("offset", parser.int, 8));
-//	parser.TypeProperty.properties.push(createPropertyFromString("__type__", parser.Type, 16));
+	parser.TypeProperty.properties.push(createPropertyFromString("name", parser.str, 0));
+	parser.TypeProperty.properties.push(createPropertyFromString("offset", parser.int, 8));
+	parser.TypeProperty.properties.push(createPropertyFromString("__type__", parser.Type, 16));
 
 
 	i = 0;
 	while (i < parser.TypeProperty.properties.size) {
 		var property = parser.TypeProperty.properties.list[i];
-	//	property.nameId = addUniqueString(parser.strings, property.name);
+		property.nameId = addUniqueString(parser.strings, property.name.name);
 		i = i + 1;
 	}
 
-//	parser.Type.nameId = addUniqueString(parser.strings, parser.Type.name);
-//	parser.Type.objectSize = 48;
-//	parser.TypeProperty.nameId = addUniqueString(parser.strings, parser.TypeProperty.name);
-//	parser.TypeProperty.objectSize = 24;
+	parser.Type.nameId = addUniqueString(parser.strings, parser.Type.name.name);
+	parser.Type.objectSize = 48;
+	parser.TypeProperty.nameId = addUniqueString(parser.strings, parser.TypeProperty.name.name);
+	parser.TypeProperty.objectSize = 24;
 
 	parser.definitions.push(createDefinitionFromType(parser.Type));
 	parser.definitions.push(createDefinitionFromType(parser.TypeProperty));
@@ -214,7 +223,7 @@ func createParser() -> Parser {
 
 	i = 0;
 	while (i < 7) {
-//		syscallParameters.push(createParameterFromString(parser.any, (str)0));
+		syscallParameters.push(createParameterFromString(parser.any, (str)0));
 		i = i + 1;
 	}
 
@@ -338,15 +347,15 @@ func parseFile(Parser parser, str fileName, str outerName) -> SyntaxTree {
 		return tree;
 	}
 
-	tree = createSyntaxTree(fileName, parser.numAnds, parser.numOrs);
+	tree = createSyntaxTree(fileName, parser);
 
 	while (!tree.lexer.current.isEOF) {
 		var statement = new Statement();
-		statement.parseStatement(parser, tree.lexer, tree, 
-			tree.definitions,
-			tree.variables,
-			tree.types,
-			tree.functions,
+		statement.parseStatement(parser, tree.lexer, tree.block, tree, 
+			tree.block.definitions,
+			tree.block.variables,
+			tree.block.types,
+			tree.block.functions,
 			tree.imports,
 			(Block)0);
 		tree.statements.push(statement);
@@ -357,23 +366,17 @@ func parseFile(Parser parser, str fileName, str outerName) -> SyntaxTree {
 	return tree;
 }
 
-//func parseImports(Parser parser, SyntaxTree tree) {
-//	if (tree.importTrees != (SyntaxTree[])0) {
-//		return;
-//	}
-//
-//	tree.importTrees = new SyntaxTree[](tree.imports.size);
-//
-//	var i = 0;
-//	while (i < tree.imports.size) {
-//		var importObj = tree.imports.list[i];
-//
-//		var importTree = parse(parser, importObj.fileName.value, tree.fileName);
-//		tree.importTrees[i] = importTree;
-//		i = i + 1;
-//	}
-//}
-//
+func parseImports(Parser parser, SyntaxTree tree) {
+	var i = 0;
+	while (i < tree.imports.size) {
+		var importObj = tree.imports.get(i);
+
+		var importTree = parseFile(parser, importObj.fileName.value, tree.fileName);
+		tree.importTrees.push(importTree);
+		i = i + 1;
+	}
+}
+
 //func findDefinitionInBlock(Block block, str name) -> Definition {
 //	var definition = findDefinition(block.definitions, name);
 //
@@ -599,288 +602,36 @@ func parseFile(Parser parser, str fileName, str outerName) -> SyntaxTree {
 //	return variable;
 //}
 //
-//func bindName(Parser parser, SyntaxTree tree, Name name, Block block) {
-//	var function = findFunctionInParser(parser, tree, block, name.name);
-//	if (function != (FunctionDefinition)0) {
-//		name.definitionRegion = function.region;
-//		return;
-//	}
-//
-//	var typeDef = findTypeInParser(parser, tree, block, name.name);
-//	if (typeDef != (TypeObj)0) {
-//		if (typeDef.definition != (TypeDefinition)0) {
-//			name.definitionRegion = typeDef.definition.region;
-//		}
-//		return;
-//	}
-//
-//	var variable = findVariableInParser(parser, tree, block, name.name);
-//	if (variable != (Variable)0) {
-//		if (variable.definition != (VariableDefinition)0) {
-//			name.definitionRegion = variable.definition.region;
-//		}
-//		return;
-//	}
-//
-//	printError(parser, name.region.start, "could not find name: '");
-//	print(name.name);
-//	print("'\n");
-//}
-//
-//func bindIdentifier(Parser parser, SyntaxTree tree, Block block, Identifier identifier) {
-//	identifier.value = findDefinitionInParser(parser, tree, block, identifier.name);
-//
-//	if (identifier.value.function != (FunctionDefinition)0) {
-//		identifier.value.function.isCalled = true;
-//	}
-//
-//	if (identifier.value != (Definition)0) {
-//		return;
-//	}
-//
-//	var variable = findVariableInParser(parser, tree, block, identifier.name); // this is because findDefinitionInParser does not yet look for function parameters
-//
-//	if (variable != (Variable)0) {
-//		identifier.value = createDefinitionFromVariable(variable);
-//		return;
-//	}
-//
-//	var typeObj = findTypeInParser(parser, tree, block, identifier.name); // this is because findDefinitionInParser does not yet look for function generics
-//
-//	if (typeObj != (TypeObj)0) {
-//		identifier.value = createDefinitionFromType(typeObj);
-//		return;
-//	}
-//
-//	printError(parser, identifier.definition.region.start, " did not find value with name: '");
-//	print(identifier.name);
-//	print("'\n");
-//}
-//
-//func bindTypeIdentifier(Parser parser, SyntaxTree tree, Block block, Array<Generic> generics, Identifier identifier) {
-//	identifier.value = findDefinitionInParser(parser, tree, block, identifier.name);
-//
-//	if (identifier.value != (Definition)0) {
-//		return;
-//	}
-//
-//	var variable = findVariableInParser(parser, tree, block, identifier.name); // this is because findDefinitionInParser does not yet look for function parameters
-//
-//	if (variable != (Variable)0) {
-//		identifier.value = createDefinitionFromVariable(variable);
-//		return;
-//	}
-//
-//	var generic = findGeneric(generics, identifier.name);
-//
-//	if (generic != (Generic)0) {
-//		identifier.value = createDefinitionFromType(generic.typeObj);
-//		return;
-//	}
-//
-//	printError(parser, identifier.definition.region.start, " did not find value with name: '");
-//	print(identifier.name);
-//	print("'\n");
-//}
-//
-//func bindNamesInOperation(Parser parser, SyntaxTree tree, Operation operation, Block block) {
-//	if (operation.left != (Operation)0) {
-//		bindNamesInOperation(parser, tree, operation.left, block);
-//	}
-//
-//	if (operation.right != (Operation)0) {
-//		if (operation.operator == (Operator)0 || !isOperator(operation.operator, ".")) {
-//			bindNamesInOperation(parser, tree, operation.right, block);
-//		} else if (operation.right.right != (Operation)0) {
-//			bindNamesInOperation(parser, tree, operation.right.right, block);
-//		}
-//	}
-//
-//	if (operation.sizeOf != (SizeOf)0) {
-//		bindNamesInOperation(parser, tree, operation.sizeOf.typeObj, block);
-//	}
-//
-//	if (operation.castType != (Operation)0) {
-//		bindNamesInOperation(parser, tree, operation.castType, block);
-//	}
-//
-//	if (operation.newOperation != (NewOperation)0) {
-//		bindNamesInOperation(parser, tree, operation.newOperation.typeObj, block);
-//		
-//		if (operation.newOperation.num != (Operation)0) {
-//			bindNamesInOperation(parser, tree, operation.newOperation.num, block);
-//		}
-//	}
-//
-//	if (operation.value != (Value)0 && operation.value.identifier != (Identifier)0) {
-//		bindIdentifier(parser, tree, block, operation.value.identifier);
-//	}
-//}
-//
-//func bindTypeNamesInOperation(Parser parser, SyntaxTree tree, Operation operation, Array<Generic> generics, Block block) {
-//	if (operation.left != (Operation)0) {
-//		bindTypeNamesInOperation(parser, tree, operation.left, generics, block);
-//	}
-//
-//	if (operation.right != (Operation)0 && !isOperator(operation.operator, ".")) {
-//		bindTypeNamesInOperation(parser, tree, operation.right, generics, block);
-//	}
-//
-//	if (operation.value != (Value)0 && operation.value.identifier != (Identifier)0) {
-//		bindTypeIdentifier(parser, tree, block, generics, operation.value.identifier);
-//	}
-//}
-//
-//func bindNamesInExpression(Parser parser, SyntaxTree tree, Expression expression, Block block) {
-//	bindNamesInOperation(parser, tree, expression.operation, block);
-//}
-//
-//func bindNamesInElseIf(Parser parser, SyntaxTree tree, ElseIf elseIf, Block block) {
-//	if (elseIf.condition != (Operation)0) {
-//		bindNamesInOperation(parser, tree, elseIf.condition, block);
-//	}
-//}
-//
-//func bindNamesInIf(Parser parser, SyntaxTree tree, If ifStatement, Block block) {
-//	if (ifStatement.condition != (Operation)0) {
-//		bindNamesInOperation(parser, tree, ifStatement.condition, block);
-//	}
-//
-//	var i = 0;
-//	while (i < ifStatement.elseIfs.size) {
-//		bindNamesInElseIf(parser, tree, ifStatement.elseIfs.list[i], block);
-//		i = i + 1;
-//	}
-//}
-//
-//func bindNamesInWhile(Parser parser, SyntaxTree tree, While whileStatement, Block block) {
-//	if (whileStatement.condition != (Operation)0) {
-//		bindNamesInOperation(parser, tree, whileStatement.condition, block);
-//	}
-//}
-//
-//func bindNamesInFunctionDefinition(Parser parser, SyntaxTree tree, FunctionDefinition function, Block block, bool isMethod) {
-//	var foundFunction = findFunctionInParser(parser, tree, block, function.name.name);
-//	if (!isMethod && foundFunction != (FunctionDefinition)0 && foundFunction != function) {
-//		printError(parser, function.name.region.start, " a function with this name already exists\n");
-//	}
-//
-//	if (!isMethod && findVariableInParser(parser, tree, block, function.name.name) != (Variable)0) {
-//		printError(parser, function.name.region.start, " a variable with this name already exists\n");
-//	}
-//
-//	if (!isMethod && findTypeInParser(parser, tree, block, function.name.name) != (TypeObj)0) {
-//		printError(parser, function.name.region.start, " a type with this name already exists\n");
-//	}
-//
-//	var i = 0;
-//	while (i < function.parameters.size) {
-//		bindTypeNamesInOperation(parser, tree, function.parameters.list[i].parameterType, function.generics, block);
-//		i = i + 1;
-//	}
-//
-//	if (function.returnType != (ReturnType)0) {
-//		bindTypeNamesInOperation(parser, tree, function.returnType.returnType, function.generics, block);
-//		function.returnType.typeObj = getTypeFromOperation(parser, tree, block, function.returnType.returnType);
-//	}
-//}
-//
-//func bindNamesInTypeDefinition(Parser parser, SyntaxTree tree, TypeObj typeObj, Block block) {
-//	var foundType = findTypeInParser(parser, tree, block, typeObj.name);
-//	if (foundType != (TypeObj)0 && foundType != typeObj) {
-//		printError(parser, typeObj.definition.name.region.start, " a type with this name already exists\n");
-//	}
-//
-//	if (findVariableInParser(parser, tree, block, typeObj.name) != (Variable)0) {
-//		printError(parser, typeObj.definition.name.region.start, " a variable with this name already exists\n");
-//	}
-//
-//	if (findFunctionInParser(parser, tree, block, typeObj.name) != (FunctionDefinition)0) {
-//		printError(parser, typeObj.definition.name.region.start, " a function with this name already exists\n");
-//	}
-//
-//	var i = 0;
-//	var sum = 0;
-//	while (i < typeObj.properties.size) {
-//		var property = typeObj.properties.list[i];
-//		bindTypeNamesInOperation(parser, tree, property.definition.propertyType, typeObj.generics, block);
-//
-//		property.propertyType = getTypeFromOperation(parser, tree, block, property.definition.propertyType);
-//
-//		property.offset = sum;
-//		sum = sum + property.propertyType.size;
-//		i = i + 1;
-//	}
-//
-//	typeObj.objectSize = sum;
-//
-//	i = 0;
-//	while (i < typeObj.methods.size) {
-//		var method = typeObj.methods.get(i);
-//		bindNamesInFunctionDefinition(parser, tree, method, block, true);
-//		i = i + 1;
-//	}
-//}
-//
-//func bindNamesInVariable(Parser parser, SyntaxTree tree, Variable variable, Block block) {
-//	var foundVariable = findVariableInParser(parser, tree, block, variable.name);
-//	if (foundVariable != (Variable)0 && foundVariable.depth == variable.depth && foundVariable != variable) {
-//		printError(parser, variable.definition.name.region.start, " a variable with this name already exists\n");
-//	}
-//
-//	if (findTypeInParser(parser, tree, block, variable.name) != (TypeObj)0) {
-//		printError(parser, variable.definition.name.region.start, " a type with this name already exists\n");
-//	}
-//
-//	if (findFunctionInParser(parser, tree, block, variable.name) != (FunctionDefinition)0) {
-//		printError(parser, variable.definition.name.region.start, " a function with this name already exists\n");
-//	}
-//
-//	bindNamesInOperation(parser, tree, variable.definition.value, block);
-//}
-//
-//func bindNamesInReturn(Parser parser, SyntaxTree tree, Return returnStatement, Block block) {
-//	if (returnStatement.expression != (Operation)0) {
-//		bindNamesInOperation(parser, tree, returnStatement.expression, block);
-//	}
-//}
-//
-//func bindNamesInStatementArray(Parser parser, SyntaxTree tree, Array<Statement> list, Block block) {
-//	var i = 0;
-//	while (i < list.size) {
-//		var statement = list.get(i);
-//		statement.bindNames();
-//		i = i + 1;
-//	}
-//}
-//
-//func bindNames(Parser parser, str fileName) {
-//	var tree = (SyntaxTree)0;
-//
-//	var i = 0;
-//	while (i < parser.files.size) {
-//		if (streq(parser.files.list[i].fileName, fileName)) {
-//			tree = parser.files.list[i];
-//		}
-//		i = i + 1;
-//	}
-//
-//	if (tree == (SyntaxTree)0) {
-//		print("no tree has been created for the file '");
-//		print(fileName);
-//		print("'\n");
-//		return;
-//	}
-//
-//	bindNamesInStatementArray(parser, tree, tree.statements, (Block)0);
-//
-//	i = 0;
-//	while (i < tree.blocks.size) {
-//		bindNamesInStatementArray(parser, tree, tree.blocks.list[i].statements, tree.blocks.list[i]);
-//		i = i + 1;
-//	}
-//}
-//
+func bindNamesInStatementArray(Parser parser, SyntaxTree tree, Array<Statement> list, Block block) {
+	var i = 0;
+	while (i < list.size) {
+		var statement = list.get(i);
+		statement.bindStatement(parser);
+		i = i + 1;
+	}
+}
+
+func bindNames(Parser parser, str fileName) {
+	var tree = (SyntaxTree)0;
+
+	var i = 0;
+	while (i < parser.files.size) {
+		if (streq(parser.files.list[i].fileName, fileName)) {
+			tree = parser.files.list[i];
+		}
+		i = i + 1;
+	}
+
+	if (tree == (SyntaxTree)0) {
+		print("no tree has been created for the file '");
+		print(fileName);
+		print("'\n");
+		return;
+	}
+
+	bindNamesInStatementArray(parser, tree, tree.statements, (Block)0);
+}
+
 //func compareTypes(Parser parser, TypeObj a, TypeObj b) -> bool {
 //	return a == b || b == parser.any || a == (TypeObj)0;
 //}
@@ -1734,25 +1485,25 @@ func listFunctions(Parser parser) -> Array<Function> {
 
 //		list.extend(tree.functions);
 
-		var j = 0;
-		while (j < tree.blocks.size) {
-			var block = tree.blocks.list[j];
-
-			if (block == (Block)0) {
-				print("block is null in 'listFunctions'\n");
-				return list;
-			}
-
-//			list.extend(block.functions);
-			j = j + 1;
-		}
-
-		j = 0;
-		while (j < tree.types.size) {
-			var typeObj = tree.types.get(j);
-//			list.extend(typeObj.methods);
-			j = j + 1;
-		}
+//		var j = 0;
+//		while (j < tree.blocks.size) {
+//			var block = tree.blocks.list[j];
+//
+//			if (block == (Block)0) {
+//				print("block is null in 'listFunctions'\n");
+//				return list;
+//			}
+//
+////			list.extend(block.functions);
+//			j = j + 1;
+//		}
+//
+//		j = 0;
+//		while (j < tree.types.size) {
+//			var typeObj = tree.types.get(j);
+////			list.extend(typeObj.methods);
+//			j = j + 1;
+//		}
 
 		i = i + 1;
 	}
@@ -1774,20 +1525,20 @@ func listTypes(Parser parser) -> Array<TypeObj> {
 			return list;
 		}
 
-		list.extend(tree.types);
-
-		var j = 0;
-		while (j < tree.blocks.size) {
-			var block = tree.blocks.list[j];
-
-			if (block == (Block)0) {
-				print("block is null in 'listTypes'\n");
-				return list;
-			}
-
-			list.extend(block.types);
-			j = j + 1;
-		}
+//		list.extend(tree.types);
+//
+//		var j = 0;
+//		while (j < tree.blocks.size) {
+//			var block = tree.blocks.list[j];
+//
+//			if (block == (Block)0) {
+//				print("block is null in 'listTypes'\n");
+//				return list;
+//			}
+//
+//			list.extend(block.types);
+//			j = j + 1;
+//		}
 		i = i + 1;
 	}
 

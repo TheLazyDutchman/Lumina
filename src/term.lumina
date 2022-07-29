@@ -2,6 +2,7 @@ import "../std/collections.lumina"
 
 import "parser.lumina"
 import "lexer.lumina"
+import "block.lumina"
 import "position.lumina"
 import "operator.lumina"
 import "factor.lumina"
@@ -18,18 +19,18 @@ type Term {
 	Factor value;
 	Array<TermPart> parts;
 
-	func parseTerm(Term self, Parser parser, Lexer lexer) -> Term {
+	func parseTerm(Term self, Parser parser, Lexer lexer, Block block) -> Term {
 		self.region = lexer.startRegion();
 
 		self.value = new Factor();
-		self.value.parseFactor(parser, lexer);
+		self.value.parseFactor(parser, lexer, block);
 
 		while (lexer.current.operator.precedence == PREC_term) {
 			var part = new TermPart();
 			part.operator = lexer.consumePrecedence(PREC_term);
 			
 			part.value = new Factor();
-			part.value.parseFactor(parser, lexer);
+			part.value.parseFactor(parser, lexer, block);
 
 			self.parts.push(part);
 		}
@@ -37,5 +38,16 @@ type Term {
 		lexer.endRegion(self.region);
 
 		return self;
+	}
+
+	func bindTerm(Term self, Parser parser) {
+		self.value.bindFactor(parser);
+
+		var i = 0;
+		while (i < self.parts.size) {
+			var part = self.parts.get(i);
+			part.value.bindFactor(parser);
+			i = i + 1;
+		}
 	}
 }

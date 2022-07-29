@@ -16,15 +16,19 @@ type Else {
 	Name keyword;
 	Block block;
 
-	func parseElse(Else self, Parser parser, Lexer lexer, SyntaxTree tree, Name elseKeyword) -> Else {
+	func parseElse(Else self, Parser parser, Lexer lexer, SyntaxTree tree, Block block, Name elseKeyword) -> Else {
 		self.region = lexer.startRegion();
 
 		self.keyword = elseKeyword;
-		self.block = new Block();
-		self.block.parseBlock(parser, lexer, tree);
+		self.block = createBlock();
+		self.block.parseBlock(parser, lexer, tree, block);
 
 		lexer.endRegion(self.region);
 		return self;
+	}
+
+	func bindElse(Else self, Parser parser) {
+		self.block.bindBlock(parser);
 	}
 }
 
@@ -38,20 +42,25 @@ type ElseIf {
 
 	int id;
 
-	func parseElseIf(ElseIf self, Parser parser, Lexer lexer, SyntaxTree tree, Name elseKeyword) -> ElseIf {
+	func parseElseIf(ElseIf self, Parser parser, Lexer lexer, SyntaxTree tree, Block block, Name elseKeyword) -> ElseIf {
 		self.region = lexer.startRegion();
 
 		self.elseKeyword = elseKeyword;
 		self.ifKeyword = lexer.consumeKeyword(KEYWORD_if);
 
 		self.condition = new Condition();
-		self.condition.parseCondition(parser, lexer);
+		self.condition.parseCondition(parser, lexer, block);
 
-		self.block = new Block();
-		self.block.parseBlock(parser, lexer, tree);
+		self.block = createBlock();
+		self.block.parseBlock(parser, lexer, tree, block);
 
 		lexer.endRegion(self.region);
 		return self;
+	}
+
+	func bindElseIf(ElseIf self, Parser parser) {
+		self.condition.bindCondition(parser);
+		self.block.bindBlock(parser);
 	}
 }
 
@@ -65,16 +74,16 @@ type If {
 
 	int id;
 
-	func parseIf(If self, Parser parser, SyntaxTree tree, Lexer lexer) -> If {
+	func parseIf(If self, Parser parser, SyntaxTree tree, Lexer lexer, Block block) -> If {
 		self.region = lexer.startRegion();
 
 		self.keyword = lexer.consumeKeyword(KEYWORD_if);
 
 		self.condition = new Condition();
-		self.condition.parseCondition(parser, lexer);
+		self.condition.parseCondition(parser, lexer, block);
 
-		self.block = new Block();
-		self.block.parseBlock(parser, lexer, tree);
+		self.block = createBlock();
+		self.block.parseBlock(parser, lexer, tree, block);
 
 		self.elseIfs = createArray<ElseIf>();
 
@@ -82,12 +91,12 @@ type If {
 		while (elseKeyword != (Name)0) {
 			if (isKeyword(lexer.current.name, KEYWORD_if)) {
 				var elseIf = new ElseIf();
-				elseIf.parseElseIf(parser, lexer, tree, elseKeyword);
+				elseIf.parseElseIf(parser, lexer, tree, block, elseKeyword);
 
 				self.elseIfs.push(elseIf);
 			} else {
 				self.elseObj = new Else();
-				self.elseObj.parseElse(parser, lexer, tree, elseKeyword);
+				self.elseObj.parseElse(parser, lexer, tree, block, elseKeyword);
 			}
 
 			elseKeyword = lexer.consumeKeyword(KEYWORD_else);
@@ -95,5 +104,20 @@ type If {
 
 		lexer.endRegion(self.region);
 		return self;
+	}
+
+	func bindIf(If self, Parser parser) {
+		self.condition.bindCondition(parser);
+		self.block.bindBlock(parser);
+
+		var i = 0;
+		while (i < self.elseIfs.size) {
+			var elseIf = self.elseIfs.get(i);
+			elseIf.bindElseIf(parser);
+		}
+
+		if (self.elseObj != (Else)0) {
+			self.elseObj.bindElse(parser);
+		}
 	}
 }

@@ -4,6 +4,7 @@ import "../std/collections.lumina"
 
 import "parser.lumina"
 import "lexer.lumina"
+import "definition.lumina"
 import "identifier.lumina"
 import "index.lumina"
 import "name.lumina" 
@@ -12,6 +13,8 @@ import "operator.lumina"
 import "operation.lumina"
 import "position.lumina"
 import "whitespace.lumina"
+import "block.lumina"
+import "variable.lumina"
 
 
 type Property {
@@ -22,12 +25,15 @@ type Property {
 	Operator semicolon;
 
 	int offset;
+	int nameId;
+	TypeObj typeObj;
 
-	func parseProperty(Property self, Parser parser, Lexer lexer) -> Property {
+	func parseProperty(Property self, Parser parser, Lexer lexer, Block block, TypeObj typeObj) -> Property {
+		self.typeObj = typeObj;
 		self.region = lexer.startRegion();
 
 		self.propertyType = new Identifier();
-		self.propertyType.parseIdentifier(parser, lexer);
+		self.propertyType.parseIdentifier(parser, lexer, block);
 
 		self.name = lexer.consumeIdentifier();
 		if (self.name == (Name)0) {
@@ -41,6 +47,18 @@ type Property {
 
 		lexer.endRegion(self.region);
 		return self;
+	}
+	
+	func bindProperty(Property self, Parser parser) {
+		if (findProperty(self.typeObj.properties, self.name.name) != self) {
+			parser.error(self.region.start, " a property with this name already exists\n");
+		}
+
+		if (findFunction(self.typeObj.methods, self.name.name) != (Function)0) {
+			parser.error(self.region.start, " a method with this name already exists\n");
+		}
+
+		self.propertyType.bindIdentifier(parser);
 	}
 }
 
@@ -62,15 +80,19 @@ type TypeObj {
 	TypeObj listType;
 
 	bool isGeneric;
+
+	Block block;
+	int nameId;
 	
 
-	func parseType(TypeObj self, Parser parser, SyntaxTree tree, Lexer lexer) -> TypeObj {
+	func parseType(TypeObj self, Parser parser, SyntaxTree tree, Lexer lexer, Block block) -> TypeObj {
+		self.block = block;
 		self.region = lexer.startRegion();
 
 		self.keyword = lexer.consumeKeyword(KEYWORD_type);
 
 		self.name = new Identifier();
-		self.name.parseIdentifier(parser, lexer);
+		self.name.parseIdentifier(parser, lexer, block);
 
 		self.lbrace = lexer.consumeOperator("{");
 		if (self.lbrace == (Operator)0) {
@@ -83,11 +105,11 @@ type TypeObj {
 		while (!isOperator(lexer.current.operator, "}") && !lexer.current.isEOF) {
 			if (isKeyword(lexer.current.name, KEYWORD_func)) {
 				var method = new Function();
-				method.parseFunction(parser, tree, lexer);
+				method.parseFunction(parser, tree, lexer, block);
 				self.methods.push(method);
 			} else {
 				var property = new Property();
-				property.parseProperty(parser, lexer);
+				property.parseProperty(parser, lexer, block, self);
 				self.properties.push(property);
 			}
 		}
@@ -99,6 +121,53 @@ type TypeObj {
 
 		lexer.endRegion(self.region);
 		return self;
+	}
+
+	func bindType(TypeObj self, Parser parser) {
+		var definition = self.block.findDefinitionInBlock(self.name.name);
+
+		if (definition.typeObj != self) {
+			parser.error(self.region.start, " a type with this name already exists\n");
+			print("[NOTE] the other is defined here: ");
+			printPosition(definition.typeObj.region.start);
+			print("\n");
+		}
+
+		if (definition.variable != (Variable)0) {
+			parser.error(self.region.start, " a variable with this name already exists\n");
+			print("[NOTE] the other is defined here: ");
+			printPosition(definition.variable.region.start);
+			print("\n");
+		}
+
+		if (definition.function != (Function)0) {
+			parser.error(self.region.start, " a function with this name already exists\n");
+			print("[NOTE] the other is defined here: ");
+			printPosition(definition.function.region.start);
+			print("\n");
+		}
+
+		var i = 0;
+		while (i < self.properties.size) {
+			var property = self.properties.get(i);
+			property.bindProperty(parser);
+			i = i + 1;
+		}
+
+		i = 0;
+		while (i < self.methods.size) {
+			var method = self.methods.get(i);
+			if (findFunction(self.methods, method.name.name) != method) {
+				parser.error(method.region.start, " a method with this name already exists\n");
+			}
+
+			if (findProperty(self.properties, method.name.name) != (Property)0) {
+				parser.error(method.region.start, " a property with this name already exists\n");
+			}
+
+			method.bindFunction(parser);
+			i = i + 1;
+		}
 	}
 }
 

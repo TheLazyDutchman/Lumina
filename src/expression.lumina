@@ -2,6 +2,7 @@ import "../std/collections.lumina"
 
 import "parser.lumina"
 import "lexer.lumina"
+import "block.lumina"
 import "position.lumina"
 import "operator.lumina"
 import "and.lumina"
@@ -18,18 +19,18 @@ type Expression {
 	Or value;
 	Array<AndPart> parts;
 
-	func parseExpression(Expression self, Parser parser, Lexer lexer) -> Expression {
+	func parseExpression(Expression self, Parser parser, Lexer lexer, Block block) -> Expression {
 		self.region = lexer.startRegion();
 
 		self.value = new Or();
-		self.value.parseOr(parser, lexer);
+		self.value.parseOr(parser, lexer, block);
 
 		while (isOperator(lexer.current.operator, "&&")) {
 			var part = new AndPart();
 			part.and = lexer.consumeOperator("&&");
 
 			part.value = new Or();
-			part.value.parseOr(parser, lexer);
+			part.value.parseOr(parser, lexer, block);
 
 			self.parts.push(part);
 		}
@@ -37,5 +38,16 @@ type Expression {
 		lexer.endRegion(self.region);
 
 		return self;
+	}
+
+	func bindExpression(Expression self, Parser parser) {
+		self.value.bindOr(parser);
+
+		var i = 0;
+		while (i < self.parts.size) {
+			var part = self.parts.get(i);
+			part.value.bindOr(parser);
+			i = i + 1;
+		}
 	}
 }

@@ -5,6 +5,7 @@ import "lexer.lumina"
 import "position.lumina"
 import "operator.lumina"
 import "comparison.lumina"
+import "block.lumina"
 
 
 type OrPart {
@@ -18,18 +19,18 @@ type Or {
 	Comparison value;
 	Array<OrPart> parts;
 
-	func parseOr(Or self, Parser parser, Lexer lexer) -> Or {
+	func parseOr(Or self, Parser parser, Lexer lexer, Block block) -> Or {
 		self.region = lexer.startRegion();
 
 		self.value = new Comparison();
-		self.value.parseComparison(parser, lexer);
+		self.value.parseComparison(parser, lexer, block);
 
 		while (isOperator(lexer.current.operator, "||")) {
 			var part = new OrPart();
 			part.or = lexer.consumeOperator("||");
 			
 			part.value = new Comparison();
-			part.value.parseComparison(parser, lexer);
+			part.value.parseComparison(parser, lexer, block);
 
 			self.parts.push(part);
 		}
@@ -37,5 +38,16 @@ type Or {
 		lexer.endRegion(self.region);
 
 		return self;
+	}
+
+	func bindOr(Or self, Parser parser) {
+		self.value.bindComparison(parser);
+
+		var i = 0;
+		while (i < self.parts.size) {
+			var part = self.parts.get(i);
+			part.value.bindComparison(parser);
+			i = i + 1;
+		}
 	}
 }

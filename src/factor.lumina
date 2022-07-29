@@ -2,6 +2,7 @@ import "../std/collections.lumina"
 
 import "parser.lumina"
 import "lexer.lumina"
+import "block.lumina"
 import "position.lumina"
 import "operator.lumina"
 import "bitwise.lumina"
@@ -18,18 +19,18 @@ type Factor {
 	Bitwise value;
 	Array<FactorPart> parts;
 
-	func parseFactor(Factor self, Parser parser, Lexer lexer) -> Factor {
+	func parseFactor(Factor self, Parser parser, Lexer lexer, Block block) -> Factor {
 		self.region = lexer.startRegion();
 
 		self.value = new Bitwise();
-		self.value.parseBitwise(parser, lexer);
+		self.value.parseBitwise(parser, lexer, block);
 
 		while (lexer.current.operator.precedence == PREC_factor) {
 			var part = new FactorPart();
 			part.operator = lexer.consumePrecedence(PREC_factor);
 			
 			part.value = new Bitwise();
-			part.value.parseBitwise(parser, lexer);
+			part.value.parseBitwise(parser, lexer, block);
 
 			self.parts.push(part);
 		}
@@ -37,5 +38,16 @@ type Factor {
 		lexer.endRegion(self.region);
 
 		return self;
+	}
+
+	func bindFactor(Factor self, Parser parser) {
+		self.value.bindBitwise(parser);
+
+		var i = 0;
+		while (i < self.parts.size) {
+			var part = self.parts.get(i);
+			part.value.bindBitwise(parser);
+			i = i + 1;
+		}
 	}
 }

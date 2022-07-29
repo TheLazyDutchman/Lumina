@@ -3,6 +3,7 @@ import "lexer.lumina"
 import "position.lumina"
 import "index.lumina"
 import "operator.lumina"
+import "block.lumina"
 
 
 type Bitwise {
@@ -13,20 +14,28 @@ type Bitwise {
 	Index right;
 
 
-	func parseBitwise(Bitwise self, Parser parser, Lexer lexer) -> Bitwise {
+	func parseBitwise(Bitwise self, Parser parser, Lexer lexer, Block block) -> Bitwise {
 		self.region = lexer.startRegion();
 
 		self.left = new Index();
-		self.left.parseIndex(parser, lexer);
+		self.left.parseIndex(parser, lexer, block);
 
 		self.comparator = lexer.consumePrecedence(PREC_bitwise);
 		if (self.comparator != (Operator)0) {
 			self.right = new Index();
-			self.right.parseIndex(parser, lexer);
+			self.right.parseIndex(parser, lexer, block);
 		}
 
 		lexer.endRegion(self.region);
 
 		return self;
+	}
+
+	func bindBitwise(Bitwise self, Parser parser) {
+		self.left.bindIndex(parser);
+
+		if (self.right != (Index)0) {
+			self.right.bindIndex(parser);
+		}
 	}
 }

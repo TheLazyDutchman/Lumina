@@ -29,7 +29,7 @@ type Statement {
 	Return returnStatement;
 	Block blockStatement;
 
-	func parseStatement(Statement self, Parser parser, Lexer lexer, SyntaxTree tree,
+	func parseStatement(Statement self, Parser parser, Lexer lexer, Block block, SyntaxTree tree,
 		Array<Definition> definitions,
 		Array<Variable> variables,
 		Array<TypeObj> types,
@@ -41,10 +41,10 @@ type Statement {
 
 		if (isKeyword(lexer.current.name, KEYWORD_if)) {
 			self.ifStatement = new If();
-			self.ifStatement.parseIf(parser, tree, lexer);
+			self.ifStatement.parseIf(parser, tree, lexer, block);
 		} else if (isKeyword(lexer.current.name, KEYWORD_while)) {
 			self.whileStatement = new While();
-			self.whileStatement.parseWhile(parser, tree, lexer);
+			self.whileStatement.parseWhile(parser, tree, lexer, block);
 		} else if (isKeyword(lexer.current.name, KEYWORD_import)) {
 			self.importStatement = new Import();
 			self.importStatement.parseImport(parser, lexer);
@@ -62,12 +62,10 @@ type Statement {
 				var i = 1;
 				while (i < parser.files.size) {
 					var tree = parser.files.get(i);
-					position = position + getNumVariables(tree.variables);
+					position = position + getNumVariables(tree.block.variables);
 
 					i = i + 1;
 				}
-
-				position = position + getNumVariables(tree.variables);
 			}
 
 			if (block != (Block)0) {
@@ -86,52 +84,56 @@ type Statement {
 			}
 
 			self.variable = new Variable();
-			self.variable.parseVariable(parser, lexer, depth, position);
+			self.variable.parseVariable(parser, lexer, block, depth, position);
 			variables.push(self.variable);
 			definitions.push(createDefinitionFromVariable(self.variable));
 		} else if (isKeyword(lexer.current.name, KEYWORD_const)) {
 			self.variable = new Variable();
-			self.variable.parseVariable(parser, lexer, 0, 0);
+			self.variable.parseVariable(parser, lexer, block, 0, 0);
 			variables.push(self.variable);
 			definitions.push(createDefinitionFromVariable(self.variable));
 		} else if (isKeyword(lexer.current.name, KEYWORD_func)) {
 			self.function = new Function();
-			self.function.parseFunction(parser, tree, lexer);
+			self.function.parseFunction(parser, tree, lexer, block);
 			functions.push(self.function);
+			definitions.push(createDefinitionFromFunction(self.function));
 		} else if (isKeyword(lexer.current.name, KEYWORD_type)) {
 			self.typeStatement = new TypeObj();
-			self.typeStatement.parseType(parser, tree, lexer);
+			self.typeStatement.parseType(parser, tree, lexer, block);
 			types.push(self.typeStatement);
+			definitions.push(createDefinitionFromType(self.typeStatement));
 		} else if (isKeyword(lexer.current.name, KEYWORD_return)) {
 			self.returnStatement = new Return();
-			self.returnStatement.parseReturn(parser, lexer);
+			self.returnStatement.parseReturn(parser, lexer, block);
 		} else if (isOperator(lexer.current.operator, "{")) {
-			self.blockStatement = new Block();
-			self.blockStatement.parseBlock(parser, lexer, tree);
+			self.blockStatement = createBlock();
+			self.blockStatement.parseBlock(parser, lexer, tree, block);
 		} else {
 			self.assignment = new Assignment();
-			self.assignment.parseAssignment(parser, lexer);
+			self.assignment.parseAssignment(parser, lexer, block);
 		}
 
 		lexer.endRegion(self.region);
 		return self;
 	}
 
-//	func bindNames(Statement self) {
-//		if (self.assignment != (Assignment)0) {
-//			self.assignment.bindNames();
-//		} else if (self.ifStatement != (If)0) {
-//			self.ifStatement.bindNames();
-//		} else if (self.whileStatement != (While)0) {
-//			self.whileStatement.bindNames();
-//		} else if (self.variable != (Variable)0) {
-//			self.variable.bindNames();
-//		} else if (self.function != (FunctionDefinition)0) {
-//			self.function.bindNames();
-//		} else if (self.typeStatement != (TypeObj)0) {
-//			self.typeStatement.bindNames();
-//		} else if (self.blockStatement != (Block)0) {
-//			self.blockStatement.bindNames();
-//		}
-//	}
+	func bindStatement(Statement self, Parser parser) {
+		if (self.assignment != (Assignment)0) {
+			self.assignment.bindAssignment(parser);
+		} else if (self.ifStatement != (If)0) {
+			self.ifStatement.bindIf(parser);
+		} else if (self.whileStatement != (While)0) {
+			self.whileStatement.bindWhile(parser);
+		} else if (self.variable != (Variable)0) {
+			self.variable.bindVariable(parser);
+		} else if (self.function != (Function)0) {
+			self.function.bindFunction(parser);
+		} else if (self.typeStatement != (TypeObj)0) {
+			self.typeStatement.bindType(parser);
+		} else if (self.returnStatement != (Return)0) {
+			self.returnStatement.bindReturn(parser);
+		} else if (self.blockStatement != (Block)0) {
+			self.blockStatement.bindBlock(parser);
+		}
+	}
 }

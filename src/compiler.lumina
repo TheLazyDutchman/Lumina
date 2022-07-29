@@ -2481,21 +2481,21 @@ func checkFiles(str fileName) -> Parser {
 
 	parseFile(parser, fileName, (str)0);
 
-//	var numFilesParsed = 0;
-//	while (numFilesParsed < parser.files.size) {
-//		var file = parser.files.list[numFilesParsed];
-////		parseImports(parser, file);
-//		numFilesParsed = numFilesParsed + 1;
-//	}
-//
-//
-//	var numFilesNamesBound = parser.files.size - 1;
-//	while (numFilesNamesBound >= 0) {
-//		var fileName = parser.files.list[numFilesNamesBound].fileName;
-////		bindNames(parser, fileName);
-//		numFilesNamesBound = numFilesNamesBound - 1;
-//	}
-//
+	var numFilesParsed = 0;
+	while (numFilesParsed < parser.files.size) {
+		var file = parser.files.get(numFilesParsed);
+		parseImports(parser, file);
+		numFilesParsed = numFilesParsed + 1;
+	}
+
+
+	var numFilesNamesBound = parser.files.size - 1;
+	while (numFilesNamesBound >= 0) {
+		var fileName = parser.files.list[numFilesNamesBound].fileName;
+		bindNames(parser, fileName);
+		numFilesNamesBound = numFilesNamesBound - 1;
+	}
+
 //	var numImportedVars = 0;
 //	var files = 1;
 //	while (files < parser.files.size) {

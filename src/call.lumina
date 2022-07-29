@@ -7,6 +7,7 @@ import "expression.lumina"
 import "index.lumina"
 import "unary.lumina"
 import "operator.lumina"
+import "block.lumina"
 
 
 type ArgumentPart {
@@ -18,13 +19,13 @@ type ArgumentArray {
 	Expression value;
 	Array<ArgumentPart> parts;
 
-	func parseArgumentArray(ArgumentArray self, Parser parser, Lexer lexer) -> ArgumentArray {
+	func parseArgumentArray(ArgumentArray self, Parser parser, Lexer lexer, Block block) -> ArgumentArray {
 		if (isOperator(lexer.current.operator, ")")) {
 			return self;
 		}
 
 		self.value = new Expression();
-		self.value.parseExpression(parser, lexer);
+		self.value.parseExpression(parser, lexer, block);
 
 		self.parts = createArray<ArgumentPart>();
 
@@ -33,12 +34,23 @@ type ArgumentArray {
 			part.comma = lexer.consumeOperator(",");
 
 			part.value = new Expression();
-			part.value.parseExpression(parser, lexer);
+			part.value.parseExpression(parser, lexer, block);
 
 			self.parts.push(part);
 		}
 
 		return self;
+	}
+
+	func bindArguments(ArgumentArray self, Parser parser) {
+		self.value.bindExpression(parser);
+
+		var i = 0;
+		while (i < self.parts.size) {
+			var part = self.parts.get(i);
+			part.value.bindExpression(parser);
+			i = i + 1;
+		}
 	}
 }
 
@@ -51,16 +63,16 @@ type Call {
 	Operator rparen;
 
 
-	func parseCall(Call self, Parser parser, Lexer lexer) -> Call {
+	func parseCall(Call self, Parser parser, Lexer lexer, Block block) -> Call {
 		self.region = lexer.startRegion();
 
 		self.value = new Unary();
-		self.value.parseUnary(parser, lexer);
+		self.value.parseUnary(parser, lexer, block);
 
 		self.lparen = lexer.consumeOperator("(");
 		if (self.lparen != (Operator)0) {
 			self.arguments = new ArgumentArray();
-			self.arguments.parseArgumentArray(parser, lexer);
+			self.arguments.parseArgumentArray(parser, lexer, block);
 
 			self.rparen = lexer.consumeOperator(")");
 			if (self.rparen == (Operator)0) {
@@ -71,5 +83,13 @@ type Call {
 		lexer.endRegion(self.region);
 
 		return self;
+	}
+
+	func bindCall(Call self, Parser parser) {
+		self.value.bindUnary(parser);
+
+		if (self.arguments != (ArgumentArray)0) {
+			self.arguments.bindArguments(parser);
+		}
 	}
 }

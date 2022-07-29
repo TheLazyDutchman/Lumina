@@ -6,6 +6,7 @@ import "value.lumina"
 import "operator.lumina"
 import "term.lumina"
 import "identifier.lumina"
+import "block.lumina"
 
 
 type New {
@@ -17,13 +18,13 @@ type New {
 	Term value;
 	Operator rparen;
 
-	func parseNew(New self, Parser parser, Lexer lexer) -> New {
+	func parseNew(New self, Parser parser, Lexer lexer, Block block) -> New {
 		self.region = lexer.startRegion();
 
 		self.keyword = lexer.consumeKeyword(KEYWORD_new);
 
 		self.objectType = new Identifier();
-		self.objectType.parseIdentifier(parser, lexer);
+		self.objectType.parseIdentifier(parser, lexer, block);
 		
 		self.lparen = lexer.consumeOperator("(");
 		if (self.lparen == (Operator)0) {
@@ -32,7 +33,7 @@ type New {
 
 		if (!isOperator(lexer.current.operator, ")")) {
 			self.value = new Term();
-			self.value.parseTerm(parser, lexer);
+			self.value.parseTerm(parser, lexer, block);
 		}
 
 		self.rparen = lexer.consumeOperator(")");
@@ -44,6 +45,14 @@ type New {
 
 		return self;
 	}
+
+	func bindNew(New self, Parser parser) {
+		self.objectType.bindIdentifier(parser);
+
+		if (self.value != (Term)0) {
+			self.value.bindTerm(parser);
+		}
+	}
 }
 
 type Sizeof {
@@ -54,7 +63,7 @@ type Sizeof {
 	Identifier value;
 	Operator rparen;
 
-	func parseSizeof(Sizeof self, Parser parser, Lexer lexer) -> Sizeof {
+	func parseSizeof(Sizeof self, Parser parser, Lexer lexer, Block block) -> Sizeof {
 		self.region = lexer.startRegion();
 
 		self.keyword = lexer.consumeKeyword(KEYWORD_sizeof);
@@ -65,7 +74,7 @@ type Sizeof {
 		}
 
 		self.value = new Identifier();
-		self.value.parseIdentifier(parser, lexer);
+		self.value.parseIdentifier(parser, lexer, block);
 
 		self.rparen = lexer.consumeOperator(")");
 		if (self.rparen == (Operator)0) {
@@ -75,6 +84,10 @@ type Sizeof {
 		lexer.endRegion(self.region);
 		return self;
 	}
+
+	func bindSizeof(Sizeof self, Parser parser) {
+		self.value.bindIdentifier(parser);
+	}
 }
 
 type TypeCast {
@@ -82,11 +95,11 @@ type TypeCast {
 	Identifier value;
 	Operator rparen;
 
-	func parseTypeCast(TypeCast self, Parser parser, Lexer lexer) -> bool {
+	func parseTypeCast(TypeCast self, Parser parser, Lexer lexer, Block block) -> bool {
 		self.lparen = lexer.consumeOperator("(");
 
 		self.value = new Identifier();
-		self.value.parseIdentifier(parser, lexer);
+		self.value.parseIdentifier(parser, lexer, block);
 
 		self.rparen = lexer.consumeOperator(")");
 		if (self.rparen == (Operator)0) {
@@ -99,6 +112,10 @@ type TypeCast {
 		}
 
 		return true;
+	}
+
+	func bindTypeCast(TypeCast self, Parser parser) {
+		self.value.bindIdentifier(parser);
 	}
 }
 
@@ -113,17 +130,17 @@ type Unary {
 	Unary unary;
 	Value value;
 
-	func parseUnary(Unary self, Parser parser, Lexer lexer) -> Unary {
+	func parseUnary(Unary self, Parser parser, Lexer lexer, Block block) -> Unary {
 		if (isKeyword(lexer.current.name, KEYWORD_new)) {
 			self.newOperation = new New();
-			self.newOperation.parseNew(parser, lexer);
+			self.newOperation.parseNew(parser, lexer, block);
 			self.region = self.newOperation.region;
 			return self;
 		}
 
 		if (isKeyword(lexer.current.name, KEYWORD_sizeof)) {
 			self.sizeOperation = new Sizeof();
-			self.sizeOperation.parseSizeof(parser, lexer);
+			self.sizeOperation.parseSizeof(parser, lexer, block);
 			self.region = self.sizeOperation.region;
 			return self;
 		}
@@ -138,7 +155,7 @@ type Unary {
 			self.operator = lexer.consumeOperator("~");
 		} else if (isOperator(lexer.current.operator, "(")) {
 			self.typeCast = new TypeCast();
-			if (!self.typeCast.parseTypeCast(parser, lexer)) {
+			if (!self.typeCast.parseTypeCast(parser, lexer, block)) {
 				lexer.returnTo(self.region.start);
 				self.typeCast = (TypeCast)0;
 			}
@@ -146,14 +163,36 @@ type Unary {
 
 		if (self.operator == (Operator)0 || self.typeCast == (TypeCast)0) {
 			self.value = new Value();
-			self.value.parseValue(parser, lexer);
+			self.value.parseValue(parser, lexer, block);
 		} else {
 			self.unary = new Unary();
-			self.unary.parseUnary(parser, lexer);
+			self.unary.parseUnary(parser, lexer, block);
 		}
 
 		lexer.endRegion(self.region);
 
 		return self;
+	}
+
+	func bindUnary(Unary self, Parser parser) {
+		if (self.typeCast != (TypeCast)0) {
+			self.typeCast.bindTypeCast(parser);
+		}
+
+		if (self.newOperation != (New)0) {
+			self.newOperation.bindNew(parser);
+		}
+
+		if (self.sizeOperation != (Sizeof)0) {
+			self.sizeOperation.bindSizeof(parser);
+		}
+
+		if (self.unary != (Unary)0) {
+			self.unary.bindUnary(parser);
+		}
+
+		if (self.value != (Value)0) {
+			self.value.bindValue(parser);
+		}
 	}
 }

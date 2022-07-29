@@ -136,10 +136,10 @@ func readFile(str fileName) -> str {
 		print(fileName);
 		print("'\n");
 
-		printi(-(int)buffer);
+		printi(-((int)buffer));
 		print("\n");
 
-		exit(-(int)buffer);
+		exit(-((int)buffer));
 	}
 
 	len = read(file, buffer, len);

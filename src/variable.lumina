@@ -1,5 +1,6 @@
 import "../std/string.lumina"
 import "../std/collections.lumina"
+import "../std/io.lumina"
 
 import "parser.lumina"
 import "lexer.lumina"
@@ -8,6 +9,9 @@ import "name.lumina"
 import "expression.lumina"
 import "operator.lumina"
 import "type.lumina"
+import "function.lumina"
+import "definition.lumina"
+import "block.lumina"
 import "whitespace.lumina"
 
 
@@ -21,6 +25,7 @@ type Variable {
 	Operator semicolon;
 
 	TypeObj variableType;
+	Block block;
 
 	int position;
 	int depth;
@@ -29,7 +34,8 @@ type Variable {
 	bool isConstant;
 	bool isEvaluated;
 
-	func parseVariable(Variable self, Parser parser, Lexer lexer, int depth, int position) -> Variable {
+	func parseVariable(Variable self, Parser parser, Lexer lexer, Block block, int depth, int position) -> Variable {
+		self.block = block;
 		self.depth = depth;
 		self.position = position;
 		self.region = lexer.startRegion();
@@ -50,7 +56,7 @@ type Variable {
 		}
 
 		self.value = new Expression();
-		self.value.parseExpression(parser, lexer);
+		self.value.parseExpression(parser, lexer, block);
 
 		self.semicolon = lexer.consumeOperator(";");
 		if (self.semicolon == (Operator)0) {
@@ -59,6 +65,32 @@ type Variable {
 
 		lexer.endRegion(self.region);
 		return self;
+	}
+
+	func bindVariable(Variable self, Parser parser) {
+		var definition = self.block.findDefinitionInBlock(self.name.name);
+		if (definition.variable != self) {
+			parser.error(self.region.start, " a variable with this name already exists\n");
+			print("[NOTE] the other is defined here: ");
+			printPosition(definition.variable.region.start);
+			print("\n");
+		}
+
+		if (definition.typeObj != (TypeObj)0) {
+			parser.error(self.region.start, " a type with this name already exists\n");
+			print("[NOTE] the other is defined here: ");
+			printPosition(definition.typeObj.region.start);
+			print("\n");
+		}
+
+		if (definition.function != (Function)0) {
+			parser.error(self.region.start, " a function with this name already exists\n");
+			print("[NOTE] the other is defined here: ");
+			printPosition(definition.function.region.start);
+			print("\n");
+		}
+
+		self.value.bindExpression(parser);
 	}
 }
 func createVariableFromString(str name, int depth, int position, TypeObj variableType) -> Variable {

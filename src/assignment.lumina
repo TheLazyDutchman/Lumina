@@ -1,5 +1,6 @@
 import "parser.lumina"
 import "lexer.lumina"
+import "block.lumina"
 import "position.lumina"
 import "expression.lumina"
 import "operator.lumina"
@@ -14,16 +15,16 @@ type Assignment {
 	Operator semicolon;
 
 
-	func parseAssignment(Assignment self, Parser parser, Lexer lexer) -> Assignment {
+	func parseAssignment(Assignment self, Parser parser, Lexer lexer, Block block) -> Assignment {
 		self.region = lexer.startRegion();
 
 		self.target = new Expression();
-		self.target.parseExpression(parser, lexer);
+		self.target.parseExpression(parser, lexer, block);
 
 		self.equalSign = lexer.consumeOperator("=");
 		if (self.equalSign != (Operator)0) {
 			self.value = new Expression();
-			self.value.parseExpression(parser, lexer);
+			self.value.parseExpression(parser, lexer, block);
 		}
 
 		self.semicolon = lexer.consumeOperator(";");
@@ -34,5 +35,13 @@ type Assignment {
 		lexer.endRegion(self.region);
 
 		return self;
+	}
+
+	func bindAssignment(Assignment self, Parser parser) {
+		self.target.bindExpression(parser);
+
+		if (self.value != (Expression)0) {
+			self.value.bindExpression(parser);
+		}
 	}
 }

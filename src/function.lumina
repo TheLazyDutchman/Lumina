@@ -12,6 +12,7 @@ import "expression.lumina"
 import "operator.lumina"
 import "type.lumina"
 import "variable.lumina"
+import "definition.lumina"
 import "whitespace.lumina"
 import "block.lumina"
 
@@ -24,12 +25,13 @@ type Parameter {
 	Operator comma;
 
 	TypeObj typeObj;
+	Variable variable;
 
-	func parseParameter(Parameter self, Parser parser, Lexer lexer) -> Parameter {
+	func parseParameter(Parameter self, Parser parser, Lexer lexer, Block block, Array<Variable> variables, Array<Definition> definitions) -> Parameter {
 		self.region = lexer.startRegion();
 		
 		self.parameterType = new Identifier();
-		self.parameterType.parseIdentifier(parser, lexer);
+		self.parameterType.parseIdentifier(parser, lexer, block);
 
 		self.name = lexer.consumeIdentifier();
 		if (self.name == (Name)0) {
@@ -39,7 +41,16 @@ type Parameter {
 		self.comma = lexer.consumeOperator(",");
 
 		lexer.endRegion(self.region);
+
+		self.variable = createVariableFromString(self.parameterType.name, block.depth + 1, variables.size, (TypeObj)0);
+		variables.push(self.variable);
+		definitions.push(createDefinitionFromVariable(self.variable));
+
 		return self;
+	}
+
+	func bindParameter(Parameter self, Parser parser) {
+		self.parameterType.bindIdentifier(parser);
 	}
 }
 
@@ -51,17 +62,21 @@ type ReturnType {
 
 	TypeObj typeObj;
 
-	func parseReturnType(ReturnType self, Parser parser, Lexer lexer) -> ReturnType {
+	func parseReturnType(ReturnType self, Parser parser, Lexer lexer, Block block) -> ReturnType {
 		self.region = lexer.startRegion();
 
 		self.rarrow = lexer.consumeOperator("->");
 
 		self.returnType = new Identifier();
-		self.returnType.parseIdentifier(parser, lexer);
+		self.returnType.parseIdentifier(parser, lexer, block);
 
 		lexer.endRegion(self.region);
 
 		return self;
+	}
+
+	func bindReturnType(ReturnType self, Parser parser) {
+		self.returnType.bindIdentifier(parser);
 	}
 }
 
@@ -79,6 +94,7 @@ type Function {
 	ReturnType returnType;
 
 	Block block;
+	Block outerBlock;
 
 	Array<Function> variants;
 
@@ -86,13 +102,14 @@ type Function {
 
 	int numGenerics;
 
-	func parseFunction(Function self, Parser parser, SyntaxTree tree, Lexer lexer) -> Function {
+	func parseFunction(Function self, Parser parser, SyntaxTree tree, Lexer lexer, Block block) -> Function {
+		self.outerBlock = block;
 		self.region = lexer.startRegion();
 
 		self.keyword = lexer.consumeKeyword(KEYWORD_func);
 		
 		self.name = new Identifier();
-		self.name.parseIdentifier(parser, lexer);
+		self.name.parseIdentifier(parser, lexer, block);
 
 		if (self.name.generics != (GenericArray)0) {
 			self.numGenerics = self.name.generics.generics.size + 1;
@@ -103,15 +120,17 @@ type Function {
 			parser.error(lexer.here(), " expected '(' after function name\n");
 		}
 
+		self.block = createBlock();
+		self.block.depth = block.depth + 1;
+
 		self.parameters = createArray<Parameter>();
 		while (!isOperator(lexer.current.operator, ")") && !lexer.current.isEOF) {
 			var parameter = new Parameter();
-			parameter.parseParameter(parser, lexer);
+			parameter.parseParameter(parser, lexer, block, self.block.variables, self.block.definitions);
 
 			self.parameters.push(parameter);
 		}
 
-		self.rparen = (Operator)0; // otherwise I get a segfault (this can be any operation)
 		self.rparen = lexer.consumeOperator(")");
 		if (self.rparen == (Operator)0) {
 			parser.error(lexer.here(), " expected ')' after function parameters\n");
@@ -119,13 +138,48 @@ type Function {
 
 		if (isOperator(lexer.current.operator, "->")) {
 			self.returnType = new ReturnType();
-			self.returnType.parseReturnType(parser, lexer);
+			self.returnType.parseReturnType(parser, lexer, block);
 		}
 
-		self.block = new Block();
-		self.block.parseBlock(parser, lexer, tree);
+		self.block.parseBlock(parser, lexer, tree, block);
 
 		return self;
+	}
+
+	func bindFunction(Function self, Parser parser) {
+		var definition = self.outerBlock.findDefinitionInBlock(self.name.name);
+		if (definition.function != self) {
+			parser.error(self.region.start, " a function with this name already exists\n");
+			print("[NOTE] the other is defined here: ");
+			printPosition(definition.function.region.start);
+			print("\n");
+		}
+
+		if (definition.variable != (Variable)0) {
+			parser.error(self.region.start, " a variable with this name already exists\n");
+			print("[NOTE] the other is defined here: ");
+			printPosition(definition.variable.region.start);
+			print("\n");
+		}
+
+		if (definition.typeObj != (TypeObj)0) {
+			parser.error(self.region.start, " a type with this name already exists\n");
+			print("[NOTE] the other is defined here: ");
+			printPosition(definition.typeObj.region.start);
+			print("\n");
+		}
+
+		var i = 0;
+		while (i < self.parameters.size) {
+			var parameter = self.parameters.get(i);
+			parameter.bindParameter(parser);
+
+			if (findParameter(self.parameters, parameter.name.name) != parameter) {
+				parser.error(parameter.region.start, " there already is a parameter with this name\n");
+			}
+
+			i = i + 1;
+		}
 	}
 }
 
@@ -136,14 +190,14 @@ type Return {
 	Expression expression;
 	Operator semicolon;
 
-	func parseReturn(Return self, Parser parser, Lexer lexer) -> Return {
+	func parseReturn(Return self, Parser parser, Lexer lexer, Block block) -> Return {
 		self.region = lexer.startRegion();
 
 		self.keyword = lexer.consumeKeyword(KEYWORD_return);
 
 		if (!isOperator(lexer.current.operator, ";")) {
 			self.expression = new Expression();
-			self.expression.parseExpression(parser, lexer);
+			self.expression.parseExpression(parser, lexer, block);
 		}
 
 		self.semicolon = lexer.consumeOperator(";");
@@ -153,6 +207,12 @@ type Return {
 
 		lexer.endRegion(self.region);
 		return self;
+	}
+
+	func bindReturn(Return self, Parser parser) {
+		if (self.expression != (Expression)0) {
+			self.expression.bindExpression(parser);
+		}
 	}
 }
 
@@ -185,4 +245,24 @@ func findFunction(Array<Function> list, str name) -> Function {
 		i = i + 1;
 	}
 	return (Function)0;
+}
+
+func findParameter(Array<Parameter> list, str name) -> Parameter {
+	var i = 0;
+	while (i < list.size) {
+		if (streq(list.get(i).name.name, name)) {
+			return list.get(i);
+		}
+		i = i + 1;
+	}
+	return (Parameter)0;
+}
+
+func createParameterFromString(TypeObj typeObj, str name) -> Parameter {
+	var parameter = new Parameter();
+
+	parameter.name = createNameFromString(name);
+	parameter.typeObj = typeObj;
+
+	return parameter;
 }
