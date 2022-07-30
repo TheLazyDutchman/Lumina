@@ -103,7 +103,7 @@ type Function {
 	int numGenerics;
 
 	func parseFunction(Function self, Parser parser, SyntaxTree tree, Lexer lexer, Block block) -> Function {
-		self.outerBlock = block;
+		self.outerBlock = createBlock(block);
 		self.region = lexer.startRegion();
 
 		self.keyword = lexer.consumeKeyword(KEYWORD_func);
@@ -121,13 +121,13 @@ type Function {
 			parser.error(lexer.here(), " expected '(' after function name\n");
 		}
 
-		self.block = createBlock(block);
+		self.block = createBlock(self.outerBlock);
 		self.block.depth = self.block.depth + 1;
 
 		self.parameters = createArray<Parameter>();
 		while (!isOperator(lexer.current.operator, ")") && !lexer.current.isEOF) {
 			var parameter = new Parameter();
-			parameter.parseParameter(parser, lexer, block, self.block.variables, self.block.definitions);
+			parameter.parseParameter(parser, lexer, self.outerBlock, self.block.variables, self.block.definitions);
 
 			self.parameters.push(parameter);
 		}
@@ -139,7 +139,7 @@ type Function {
 
 		if (isOperator(lexer.current.operator, "->")) {
 			self.returnType = new ReturnType();
-			self.returnType.parseReturnType(parser, lexer, block);
+			self.returnType.parseReturnType(parser, lexer, self.outerBlock);
 		}
 
 		self.block.parseBlock(parser, lexer, tree);
