@@ -34,8 +34,7 @@ type Statement {
 		Array<Variable> variables,
 		Array<TypeObj> types,
 		Array<Function> functions,
-		Array<Import> imports,
-		Block block) -> Statement {
+		Array<Import> imports) -> Statement {
 
 		self.region = lexer.startRegion();
 
@@ -106,8 +105,8 @@ type Statement {
 			self.returnStatement = new Return();
 			self.returnStatement.parseReturn(parser, lexer, block);
 		} else if (isOperator(lexer.current.operator, "{")) {
-			self.blockStatement = createBlock();
-			self.blockStatement.parseBlock(parser, lexer, tree, block);
+			self.blockStatement = createBlock(block);
+			self.blockStatement.parseBlock(parser, lexer, tree);
 		} else {
 			self.assignment = new Assignment();
 			self.assignment.parseAssignment(parser, lexer, block);

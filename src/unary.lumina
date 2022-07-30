@@ -98,6 +98,10 @@ type TypeCast {
 	func parseTypeCast(TypeCast self, Parser parser, Lexer lexer, Block block) -> bool {
 		self.lparen = lexer.consumeOperator("(");
 
+		if (lexer.current.name == (Name)0) {
+			return false;
+		}
+
 		self.value = new Identifier();
 		self.value.parseIdentifier(parser, lexer, block);
 

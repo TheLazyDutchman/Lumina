@@ -20,8 +20,8 @@ type Else {
 		self.region = lexer.startRegion();
 
 		self.keyword = elseKeyword;
-		self.block = createBlock();
-		self.block.parseBlock(parser, lexer, tree, block);
+		self.block = createBlock(block);
+		self.block.parseBlock(parser, lexer, tree);
 
 		lexer.endRegion(self.region);
 		return self;
@@ -51,8 +51,8 @@ type ElseIf {
 		self.condition = new Condition();
 		self.condition.parseCondition(parser, lexer, block);
 
-		self.block = createBlock();
-		self.block.parseBlock(parser, lexer, tree, block);
+		self.block = createBlock(block);
+		self.block.parseBlock(parser, lexer, tree);
 
 		lexer.endRegion(self.region);
 		return self;
@@ -82,8 +82,8 @@ type If {
 		self.condition = new Condition();
 		self.condition.parseCondition(parser, lexer, block);
 
-		self.block = createBlock();
-		self.block.parseBlock(parser, lexer, tree, block);
+		self.block = createBlock(block);
+		self.block.parseBlock(parser, lexer, tree);
 
 		self.elseIfs = createArray<ElseIf>();
 

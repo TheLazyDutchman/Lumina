@@ -44,7 +44,7 @@ type SyntaxTree {
 		var i = 0;
 		while (definition == (Definition)0 && i < self.importTrees.size) {
 			var tree = self.importTrees.get(i);
-			definition = tree.findDefinitionInTree(name);
+			definition = findDefinition(tree.block.definitions, name);
 			i = i + 1;
 		}
 
@@ -101,7 +101,7 @@ func createSyntaxTree(str fileName, Parser parser) -> SyntaxTree {
 	var tree = new SyntaxTree();
 
 	tree.fileName = fileName;
-	tree.block = createBlock();
+	tree.block = createBlock((Block)0);
 	tree.lexer = createLexer(fileName);
 	next(tree.lexer);
 
@@ -356,8 +356,7 @@ func parseFile(Parser parser, str fileName, str outerName) -> SyntaxTree {
 			tree.block.variables,
 			tree.block.types,
 			tree.block.functions,
-			tree.imports,
-			(Block)0);
+			tree.imports);
 		tree.statements.push(statement);
 	}
 

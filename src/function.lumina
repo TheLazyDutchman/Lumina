@@ -85,7 +85,7 @@ type Function {
 
 	Name keyword;
 
-	Identifier name;
+	IdentifierDefinition name;
 
 	Operator lparen;
 	Array<Parameter> parameters;
@@ -108,11 +108,12 @@ type Function {
 
 		self.keyword = lexer.consumeKeyword(KEYWORD_func);
 		
-		self.name = new Identifier();
-		self.name.parseIdentifier(parser, lexer, block);
+		self.name = new IdentifierDefinition();
+		self.name.parseIdentifierDefinition(parser, lexer);
 
-		if (self.name.generics != (GenericArray)0) {
-			self.numGenerics = self.name.generics.generics.size + 1;
+		if (self.name.generics != (GenericDefinitionArray)0) {
+			self.numGenerics = self.name.generics.parts.size + 1;
+			self.name.generics.addTypes(self.outerBlock.types, self.outerBlock.definitions);
 		}
 
 		self.lparen = lexer.consumeOperator("(");
@@ -120,8 +121,8 @@ type Function {
 			parser.error(lexer.here(), " expected '(' after function name\n");
 		}
 
-		self.block = createBlock();
-		self.block.depth = block.depth + 1;
+		self.block = createBlock(block);
+		self.block.depth = self.block.depth + 1;
 
 		self.parameters = createArray<Parameter>();
 		while (!isOperator(lexer.current.operator, ")") && !lexer.current.isEOF) {
@@ -141,7 +142,7 @@ type Function {
 			self.returnType.parseReturnType(parser, lexer, block);
 		}
 
-		self.block.parseBlock(parser, lexer, tree, block);
+		self.block.parseBlock(parser, lexer, tree);
 
 		return self;
 	}
@@ -227,7 +228,7 @@ func createReturnTypeFromString(TypeObj typeObj) -> ReturnType {
 func createFunctionFromString(str value, Array<Parameter> parameters, ReturnType returnType) -> Function {
 	var function = new Function();
 
-	function.name = createIdentifierFromString(value);
+	function.name = createIdentifierDefinitionFromString(value);
 	function.parameters = parameters;
 	function.returnType = returnType;
 

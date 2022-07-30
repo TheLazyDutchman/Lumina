@@ -30,8 +30,7 @@ type Block {
 	SyntaxTree tree;
 	Function function;
 
-	func parseBlock(Block self, Parser parser, Lexer lexer, SyntaxTree tree, Block outer) -> Block {
-		self.outer = outer;
+	func parseBlock(Block self, Parser parser, Lexer lexer, SyntaxTree tree) -> Block {
 		self.tree = tree;
 		self.region = lexer.startRegion();
 
@@ -47,8 +46,7 @@ type Block {
 				self.variables,
 				self.types,
 				self.functions,
-				tree.imports,
-				self);
+				tree.imports);
 			self.statements.push(statement);
 		}
 
@@ -85,12 +83,17 @@ type Block {
 	}
 }
 
-func createBlock() -> Block {
+func createBlock(Block outer) -> Block {
 	var block = new Block();
+
 	block.definitions = createArray<Definition>();
 	block.types = createArray<TypeObj>();
 	block.functions = createArray<Function>();
 	block.variables = createArray<Variable>();
+
+	block.outer = outer;
+	block.depth = outer.depth;
+
 	return block;
 }
 
