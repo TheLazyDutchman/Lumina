@@ -50,15 +50,22 @@ type Property {
 	}
 	
 	func bindProperty(Property self, Parser parser) {
-		if (findProperty(self.typeObj.properties, self.name.name) != self) {
+		if (self.typeObj.findProperty(self.name.name) != self) {
 			parser.error(self.region.start, " a property with this name already exists\n");
 		}
 
-		if (findFunction(self.typeObj.methods, self.name.name) != (Function)0) {
+		if (self.typeObj.findMethod(self.name.name) != (Function)0) {
 			parser.error(self.region.start, " a method with this name already exists\n");
 		}
 
-		self.propertyType.bindIdentifier(parser);
+		self.propertyType.bindIdentifier(parser, false);
+	}
+
+	func typeCheckProperty(Property self, Parser parser) {
+		var typeObj = self.propertyType.typeCheckIdentifier(parser);
+		if (!typeObj.checkType(parser.Type, parser)) {
+			parser.error(self.region.start, " expected property type to be a type\n");
+		}
 	}
 }
 
@@ -163,11 +170,11 @@ type TypeObj {
 		i = 0;
 		while (i < self.methods.size) {
 			var method = self.methods.get(i);
-			if (findFunction(self.methods, method.name.name) != method) {
+			if (self.findMethod(method.name.name) != method) {
 				parser.error(method.region.start, " a method with this name already exists\n");
 			}
 
-			if (findProperty(self.properties, method.name.name) != (Property)0) {
+			if (self.findProperty(method.name.name) != (Property)0) {
 				parser.error(method.region.start, " a property with this name already exists\n");
 			}
 
@@ -175,17 +182,68 @@ type TypeObj {
 			i = i + 1;
 		}
 	}
-}
 
-func findProperty(Array<Property> list, str name) -> Property {
-	var i = 0;
-	while (i < list.size) {
-		if (streq(list.list[i].name.name, name)) {
-			return list.list[i];
+	func typeCheckType(TypeObj self, Parser parser) {
+		var i = 0;
+		while (i < self.properties.size) {
+			var property = self.properties.get(i);
+			property.typeCheckProperty(parser);
+			i = i + 1;
 		}
-		i = i + 1;
+
+		i = 0;
+		while (i < self.methods.size) {
+			var method = self.methods.get(i);
+			method.typeCheckFunction(parser);
+			i = i + 1;
+		}
 	}
-	return (Property)0;
+
+	func checkType(TypeObj self, TypeObj expected, Parser parser) -> bool {
+		return self == expected || self == (TypeObj)0 || expected == (TypeObj)0 || expected == parser.any;
+	}
+
+	func findProperty(TypeObj self, str name) -> Property {
+		var i = 0;
+		while (i < self.properties.size) {
+			if (streq(self.properties.get(i).name.name, name)) {
+				return self.properties.get(i);
+			}
+			i = i + 1;
+		}
+		return (Property)0;
+	}
+
+	func findMethod(TypeObj self, str name) -> Function {
+		var i = 0;
+		while (i < self.methods.size) {
+			if (streq(self.methods.get(i).name.name, name)) {
+				return self.methods.get(i);
+			}
+			i = i + 1;
+		}
+		return (Function)0;
+	}
+
+	func printType(TypeObj self) {
+		if (self == (TypeObj)0) {
+			print("Type is null");
+			return;
+		}
+
+		if (self.name == (IdentifierDefinition)0) {
+			if (self.listType != (TypeObj)0) {
+				self.listType.printType();
+				print("[]");
+			}
+		} else {
+			print(self.name.name);
+		}
+
+		if (self.name.generics != (GenericDefinitionArray)0) {
+			self.name.generics.printGenericDefinition();
+		}
+	}
 }
 
 func createPropertyFromString(str name, TypeObj propertyType, int offset) -> Property {

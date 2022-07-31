@@ -1445,22 +1445,20 @@ func bindNames(Parser parser, str fileName) {
 //	}
 //}
 //
-//func checkTypes(Parser parser, SyntaxTree tree) {
-//	if (tree == (SyntaxTree)0) {
-//		print("syntax tree is null\n");
-//		return;
-//	}
-//
-//	checkTypesInStatementArray(parser, tree, (Block)0, tree.statements);
-//
-//	var i = 0;
-//	while (i < tree.blocks.size) {
-//		var block = tree.blocks.list[i];
-//		checkTypesInStatementArray(parser, tree, block, block.statements);
-//		i = i + 1;
-//	}
-//}
-//
+func checkTypes(Parser parser, SyntaxTree tree) {
+	if (tree == (SyntaxTree)0) {
+		print("syntax tree is null\n");
+		return;
+	}
+
+	var i = 0;
+	while (i < tree.statements.size) {
+		var statement = tree.statements.get(i);
+		statement.typeCheckStatement(parser);
+		i = i + 1;
+	}
+}
+
 func listFunctions(Parser parser) -> Array<Function> {
 	var list = createArray<Function>();
 

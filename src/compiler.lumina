@@ -2481,19 +2481,19 @@ func checkFiles(str fileName) -> Parser {
 
 	parseFile(parser, fileName, (str)0);
 
-	var numFilesParsed = 0;
-	while (numFilesParsed < parser.files.size) {
-		var file = parser.files.get(numFilesParsed);
+	var i = 0;
+	while (i < parser.files.size) {
+		var file = parser.files.get(i);
 		parseImports(parser, file);
-		numFilesParsed = numFilesParsed + 1;
+		i = i + 1;
 	}
 
 
-	var numFilesNamesBound = parser.files.size - 1;
-	while (numFilesNamesBound >= 0) {
-		var fileName = parser.files.list[numFilesNamesBound].fileName;
+	i = 0;
+	while (i < parser.files.size) {
+		var fileName = parser.files.get(i).fileName;
 		bindNames(parser, fileName);
-		numFilesNamesBound = numFilesNamesBound - 1;
+		i = i + 1;
 	}
 
 //	var numImportedVars = 0;
@@ -2526,16 +2526,16 @@ func checkFiles(str fileName) -> Parser {
 //		i = i + 1;
 //	}
 //
-//	print("[FILE] parsed files\n");
-//
-//	var numFilesTypeChecked = parser.files.size - 1;
-//	while (numFilesTypeChecked >= 0) {
-//		var tree = parser.files.list[numFilesTypeChecked];
-////		checkTypes(parser, tree);
-//		numFilesTypeChecked = numFilesTypeChecked - 1;
-//	}
-//
-//	print("[FILE] type checked files\n");
+	print("[FILE] parsed files\n");
+
+	i = 0;
+	while (i < parser.files.size) {
+		var tree = parser.files.get(i);
+		checkTypes(parser, tree);
+		i = i + 1;
+	}
+
+	print("[FILE] type checked files\n");
 
 	return parser;
 }

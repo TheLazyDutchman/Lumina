@@ -3,6 +3,7 @@ import "../std/collections.lumina"
 import "parser.lumina"
 import "lexer.lumina"
 import "block.lumina"
+import "type.lumina"
 import "position.lumina"
 import "operator.lumina"
 import "factor.lumina"
@@ -24,6 +25,8 @@ type Term {
 
 		self.value = new Factor();
 		self.value.parseFactor(parser, lexer, block);
+
+		self.parts = createArray<TermPart>();
 
 		while (lexer.current.operator.precedence == PREC_term) {
 			var part = new TermPart();
@@ -49,5 +52,52 @@ type Term {
 			part.value.bindFactor(parser);
 			i = i + 1;
 		}
+	}
+
+	func typeCheckTerm(Term self, Parser parser) -> TypeObj {
+		var leftType = self.value.typeCheckFactor(parser);
+
+		var i = 0;
+		while (i < self.parts.size) {
+			var part = self.parts.get(i);
+			
+			var rightType = part.value.typeCheckFactor(parser);
+
+			if (isOperator(part.operator, "+")) {
+				if (leftType.checkType(parser.char, parser)) {
+					if (!rightType.checkType(parser.int, parser)) {
+						parser.error(part.value.region.start, " expected value added to a character to be of type 'int'\n");
+					}
+				} else if (leftType.checkType(parser.char, parser)) {
+					if (rightType.checkType(parser.char, parser)) {
+						leftType = parser.char;
+					} else if (!rightType.checkType(parser.int, parser)) {
+						parser.error(part.value.region.start, " expected value added to an integer to be of type 'int' or 'char'\n");
+					}
+				} else {
+					parser.error(part.operator.position, " expected left hand side of addition to be of type 'int' or 'char'\n");
+				}
+			} else if (isOperator(part.operator, "-")) {
+				if (leftType.checkType(parser.int, parser)) {
+					if (!rightType.checkType(parser.int, parser)) {
+						parser.error(part.value.region.start, " expected value subtracted from an integer to be of type 'int'\n");
+					}
+				} else if (leftType.checkType(parser.char, parser)) {
+					if (rightType.checkType(parser.char, parser)) {
+						leftType = parser.int;
+					} else if (!rightType.checkType(parser.int, parser)) {
+						parser.error(part.value.region.start, " expected value subtracted from a character to be of type 'char'\n");
+					}
+				} else {
+					parser.error(part.operator.position, " expected left hand side of subtraction to be of type 'int' or 'char\n");
+				}
+			} else {
+				parser.error(part.operator.position, " do not support this operator in typechecking\n");
+			}
+
+			i = i + 1;
+		}
+
+		return leftType;
 	}
 }

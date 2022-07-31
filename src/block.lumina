@@ -68,6 +68,15 @@ type Block {
 		}
 	}
 
+	func typeCheckBlock(Block self, Parser parser) {
+		var i = 0;
+		while (i < self.statements.size) {
+			var statement = self.statements.get(i);
+			statement.typeCheckStatement(parser);
+			i = i + 1;
+		}
+	}
+
 	func findDefinitionInBlock(Block self, str name) -> Definition {
 		var definition = findDefinition(self.definitions, name);
 

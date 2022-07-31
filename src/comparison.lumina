@@ -1,5 +1,8 @@
+import "../std/io.lumina"
+
 import "parser.lumina"
 import "lexer.lumina"
+import "type.lumina"
 import "block.lumina"
 import "position.lumina"
 import "term.lumina"
@@ -37,5 +40,26 @@ type Comparison {
 		if (self.right != (Term)0) {
 			self.right.bindTerm(parser);
 		}
+	}
+
+	func typeCheckComparison(Comparison self, Parser parser) -> TypeObj{
+		var leftType = self.left.typeCheckTerm(parser);
+
+		if (self.right == (Term)0) {
+			return leftType;
+		}
+
+		var rightType = self.right.typeCheckTerm(parser);
+
+		if (!leftType.checkType(rightType, parser)) {
+			parser.error(self.comparator.position, " cannot compare values of different types\n");
+			print("[NOTE] got: ");
+			leftType.printType();
+			print(", and: ");
+			rightType.printType();
+			print("\n");
+		}
+
+		return parser.bool;
 	}
 }

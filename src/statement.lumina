@@ -135,4 +135,24 @@ type Statement {
 			self.blockStatement.bindBlock(parser);
 		}
 	}
+
+	func typeCheckStatement(Statement self, Parser parser) {
+		if (self.assignment != (Assignment)0) {
+			self.assignment.typeCheckAssignment(parser);
+		} else if (self.ifStatement != (If)0) {
+			self.ifStatement.typeCheckIf(parser);
+		} else if (self.whileStatement != (While)0) {
+			self.whileStatement.typeCheckWhile(parser);
+		} else if (self.variable != (Variable)0) {
+			self.variable.typeCheckVariable(parser);
+		} else if (self.function != (Function)0) {
+			self.function.typeCheckFunction(parser);
+		} else if (self.typeStatement != (TypeObj)0) {
+			self.typeStatement.typeCheckType(parser);
+		} else if (self.returnStatement != (Return)0) {
+			self.returnStatement.typeCheckReturn(parser);
+		} else if (self.blockStatement != (Block)0) {
+			self.blockStatement.typeCheckBlock(parser);
+		}
+	}
 }

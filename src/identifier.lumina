@@ -139,6 +139,22 @@ type GenericDefinitionArray {
 			i = i + 1;
 		}
 	}
+
+	func printGenericDefinition(GenericDefinitionArray self) {
+		print("<");
+		print(self.value.name);
+
+		var i = 0;
+		while (i < self.parts.size) {
+			var part = self.parts.get(i);
+
+			print(",");
+			print(part.value.name);
+			i = i + 1;
+		}
+
+		print(">");
+	}
 }
 
 type Identifier {
@@ -193,10 +209,10 @@ type Identifier {
 		return self;
 	}
 
-	func bindIdentifier(Identifier self, Parser parser) {
+	func bindIdentifier(Identifier self, Parser parser, bool isProperty) {
 		self.definition = self.block.findDefinitionInBlock(self.name);
 
-		if (self.definition == (Definition)0) {
+		if (self.definition == (Definition)0 && !isProperty) {
 			parser.error(self.region.start, " can not find name: ");
 			print(self.name);
 			print("\n");
@@ -209,6 +225,22 @@ type Identifier {
 
 			self.generics.bindGenericArray(parser);
 		}
+
+		if (self.definition.variable != (Variable)0 && self.definition.variable.region.end.index > self.region.start.index) {
+			parser.error(self.region.start, " can not use variable before definition\n");
+		}
+	}
+
+	func typeCheckIdentifier(Identifier self, Parser parser) -> TypeObj {
+		if (self.definition.typeObj != (TypeObj)0) {
+			return parser.Type;
+		}
+
+		if (self.definition.variable != (Variable)0) {
+			return self.definition.variable.variableType;
+		}
+
+		return (TypeObj)0;
 	}
 }
 

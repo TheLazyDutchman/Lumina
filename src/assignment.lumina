@@ -1,3 +1,5 @@
+import "../std/io.lumina"
+
 import "parser.lumina"
 import "lexer.lumina"
 import "block.lumina"
@@ -42,6 +44,21 @@ type Assignment {
 
 		if (self.value != (Expression)0) {
 			self.value.bindExpression(parser);
+		}
+	}
+
+	func typeCheckAssignment(Assignment self, Parser parser) {
+		var targetType = self.target.typeCheckExpression(parser);
+		if (self.value != (Expression)0) {
+			var valueType = self.value.typeCheckExpression(parser);
+			if (!targetType.checkType(valueType, parser)) {
+				parser.error(self.value.region.start, " can not assign value with different type\n");
+				print("[NOTE] expected: ");
+				targetType.printType();
+				print(", got: ");
+				valueType.printType();
+				print("\n");
+			}
 		}
 	}
 }

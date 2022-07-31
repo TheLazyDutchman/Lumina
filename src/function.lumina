@@ -50,7 +50,18 @@ type Parameter {
 	}
 
 	func bindParameter(Parameter self, Parser parser) {
-		self.parameterType.bindIdentifier(parser);
+		self.parameterType.bindIdentifier(parser, false);
+
+		self.typeObj = self.parameterType.definition.typeObj;
+		self.variable.variableType = self.typeObj;
+	}
+
+	func typeCheckParameter(Parameter self, Parser parser) {
+		var typeObj = self.parameterType.typeCheckIdentifier(parser);
+
+		if (!typeObj.checkType(parser.Type, parser)) {
+			parser.error(self.parameterType.region.start, " expected parameter type to be a type\n");
+		}
 	}
 }
 
@@ -76,7 +87,17 @@ type ReturnType {
 	}
 
 	func bindReturnType(ReturnType self, Parser parser) {
-		self.returnType.bindIdentifier(parser);
+		self.returnType.bindIdentifier(parser, false);
+
+		self.typeObj = self.returnType.definition.typeObj;
+	}
+
+	func typeCheckReturnType(ReturnType self, Parser parser) {
+		var typeObj = self.returnType.typeCheckIdentifier(parser);
+
+		if (!typeObj.checkType(parser.Type, parser)) {
+			parser.error(self.returnType.region.start, " expected type for return type\n");
+		}
 	}
 }
 
@@ -181,6 +202,23 @@ type Function {
 
 			i = i + 1;
 		}
+
+		self.block.bindBlock(parser);
+	}
+
+	func typeCheckFunction(Function self, Parser parser) {
+		var i = 0;
+		while (i < self.parameters.size) {
+			var parameter = self.parameters.get(i);
+			parameter.typeCheckParameter(parser);
+			i = i + 1;
+		}
+
+		if (self.returnType != (ReturnType)0) {
+			self.returnType.typeCheckReturnType(parser);
+		}
+
+		self.block.typeCheckBlock(parser);
 	}
 }
 
@@ -214,6 +252,11 @@ type Return {
 		if (self.expression != (Expression)0) {
 			self.expression.bindExpression(parser);
 		}
+	}
+
+	func typeCheckReturn(Return self, Parser parser) -> TypeObj {
+		print("can't check return yet\n");
+		return (TypeObj)0;
 	}
 }
 

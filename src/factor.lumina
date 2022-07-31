@@ -2,6 +2,7 @@ import "../std/collections.lumina"
 
 import "parser.lumina"
 import "lexer.lumina"
+import "type.lumina"
 import "block.lumina"
 import "position.lumina"
 import "operator.lumina"
@@ -24,6 +25,8 @@ type Factor {
 
 		self.value = new Bitwise();
 		self.value.parseBitwise(parser, lexer, block);
+
+		self.parts = createArray<FactorPart>();
 
 		while (lexer.current.operator.precedence == PREC_factor) {
 			var part = new FactorPart();
@@ -49,5 +52,31 @@ type Factor {
 			part.value.bindBitwise(parser);
 			i = i + 1;
 		}
+	}
+
+	func typeCheckFactor(Factor self, Parser parser) -> TypeObj {
+		var leftType = self.value.typeCheckBitwise(parser);
+
+		if (self.parts.size == 0) {
+			return leftType;
+		}
+
+		if (!leftType.checkType(parser.int, parser)) {
+			parser.error(self.region.start, " expected left hand side of factor operation to be of type 'int'\n");
+		}
+
+		var i = 0;
+		while (i < self.parts.size) {
+			var part = self.parts.get(i);
+			var rightType = part.value.typeCheckBitwise(parser);
+
+			if (!rightType.checkType(parser.int, parser)) {
+				parser.error(part.value.region.start, " expected right hand side of factor operation to be of type 'int'\n");
+			}
+
+			i = i + 1;
+		}
+
+		return parser.int;
 	}
 }

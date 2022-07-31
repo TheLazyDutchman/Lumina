@@ -34,4 +34,9 @@ type While {
 		self.condition.bindCondition(parser);
 		self.block.bindBlock(parser);
 	}
+
+	func typeCheckWhile(While self, Parser parser) {
+		self.condition.typeCheckCondition(parser);
+		self.block.typeCheckBlock(parser);
+	}
 }

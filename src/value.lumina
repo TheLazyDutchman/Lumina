@@ -2,6 +2,7 @@ import "../std/io.lumina"
 
 import "parser.lumina"
 import "lexer.lumina"
+import "type.lumina"
 import "identifier.lumina"
 import "name.lumina"
 import "position.lumina"
@@ -82,12 +83,32 @@ type Value {
 		return self;
 	}
 
-	func bindValue(Value self, Parser parser) {
+	func bindValue(Value self, Parser parser, bool isProperty) {
 		if (self.identifier != (Identifier)0) {
-			self.identifier.bindIdentifier(parser);
+			self.identifier.bindIdentifier(parser, isProperty);
 		} else if (self.group != (Group)0) {
 			self.group.bindGroup(parser);
 		}
+	}
+
+	func typeCheckValue(Value self, Parser parser) -> TypeObj {
+		if (self.identifier != (Identifier)0) {
+			return self.identifier.typeCheckIdentifier(parser);
+		} 
+
+		if (self.number != (Number)0) {
+			return parser.int;
+		} 
+
+		if (self.character != (Character)0) {
+			return parser.char;
+		} 
+
+		if (self.string != (StringLiteral)0) {
+			return parser.str;
+		}
+
+		return self.group.value.typeCheckExpression(parser);
 	}
 }
 

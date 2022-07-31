@@ -92,6 +92,10 @@ type Variable {
 
 		self.value.bindExpression(parser);
 	}
+
+	func typeCheckVariable(Variable self, Parser parser) {
+		self.variableType = self.value.typeCheckExpression(parser);
+	}
 }
 func createVariableFromString(str name, int depth, int position, TypeObj variableType) -> Variable {
 	var variable = new Variable();

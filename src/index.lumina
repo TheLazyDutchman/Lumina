@@ -3,6 +3,7 @@ import "../std/io.lumina"
 
 import "parser.lumina"
 import "lexer.lumina"
+import "type.lumina"
 import "position.lumina"
 import "operator.lumina"
 import "term.lumina"
@@ -13,12 +14,36 @@ import "block.lumina"
 type PropertyPart {
 	Operator operator;
 	Call property;
+
+	func typeCheckPropertyPart(PropertyPart self, TypeObj objectType, Parser parser) -> TypeObj {
+		var identifier = self.property.value.identifier;
+
+		if (self.property.lparen == (Operator)0) {
+			var property = objectType.findProperty(identifier.name);
+			return property.propertyType.definition.typeObj;
+		} else {
+			return self.property.typeCheckCall(parser, objectType);
+		}
+	}
 }
 
 type ListPart {
 	Operator left;
 	Term index;
 	Operator right;
+
+	func typeCheckListPart(ListPart self, TypeObj objectType, Parser parser) -> TypeObj {
+		var indexType = self.index.typeCheckTerm(parser);
+		if (!indexType.checkType(parser.int, parser)) {
+			parser.error(self.index.region.start, " expected type of index to be 'int'\n");
+		}
+
+		if (objectType.listType == (TypeObj)0) {
+			parser.error(self.left.position, " can not get index of value that is not a list\n");
+		}
+
+		return objectType.listType;
+	}
 }
 
 type IndexPart {
@@ -37,6 +62,8 @@ type Index {
 
 		self.value = new Call();
 		self.value.parseCall(parser, lexer, block);
+
+		self.parts = createArray<IndexPart>();
 
 		while (lexer.current.operator.precedence == PREC_index) {
 			var part = new IndexPart();
@@ -74,7 +101,7 @@ type Index {
 	}
 
 	func bindIndex(Index self, Parser parser) {
-		self.value.bindCall(parser);
+		self.value.bindCall(parser, false);
 
 		var i = 0;
 		while (i < self.parts.size) {
@@ -82,9 +109,30 @@ type Index {
 			if (part.indexPart != (ListPart)0) {
 				part.indexPart.index.bindTerm(parser);
 			} else {
-				part.propertyPart.property.bindCall(parser);
+				part.propertyPart.property.bindCall(parser, true);
 			}
 			i = i + 1;
 		}
+	}
+
+	func typeCheckIndex(Index self, Parser parser) -> TypeObj {
+		var objectType = self.value.typeCheckCall(parser, (TypeObj)0);
+
+		if (objectType == (TypeObj)0) {
+			return objectType;
+		}
+
+		var i = 0;
+		while (i < self.parts.size) {
+			var part = self.parts.get(i);
+			if (part.indexPart != (ListPart)0) {
+				objectType = part.indexPart.typeCheckListPart(objectType, parser);
+			} else {
+				objectType = part.propertyPart.typeCheckPropertyPart(objectType, parser);
+			}
+			i = i + 1;
+		}
+
+		return objectType;
 	}
 }

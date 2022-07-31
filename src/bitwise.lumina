@@ -1,7 +1,8 @@
 import "parser.lumina"
 import "lexer.lumina"
+import "type.lumina"
 import "position.lumina"
-import "index.lumina"
+import "unary.lumina"
 import "operator.lumina"
 import "block.lumina"
 
@@ -9,21 +10,21 @@ import "block.lumina"
 type Bitwise {
 	Region region;
 
-	Index left;
+	Unary left;
 	Operator comparator;
-	Index right;
+	Unary right;
 
 
 	func parseBitwise(Bitwise self, Parser parser, Lexer lexer, Block block) -> Bitwise {
 		self.region = lexer.startRegion();
 
-		self.left = new Index();
-		self.left.parseIndex(parser, lexer, block);
+		self.left = new Unary();
+		self.left.parseUnary(parser, lexer, block);
 
 		self.comparator = lexer.consumePrecedence(PREC_bitwise);
 		if (self.comparator != (Operator)0) {
-			self.right = new Index();
-			self.right.parseIndex(parser, lexer, block);
+			self.right = new Unary();
+			self.right.parseUnary(parser, lexer, block);
 		}
 
 		lexer.endRegion(self.region);
@@ -32,10 +33,30 @@ type Bitwise {
 	}
 
 	func bindBitwise(Bitwise self, Parser parser) {
-		self.left.bindIndex(parser);
+		self.left.bindUnary(parser);
 
-		if (self.right != (Index)0) {
-			self.right.bindIndex(parser);
+		if (self.right != (Unary)0) {
+			self.right.bindUnary(parser);
 		}
+	}
+
+	func typeCheckBitwise(Bitwise self, Parser parser) -> TypeObj {
+		var leftType = self.left.typeCheckUnary(parser);
+
+		if (self.right == (Unary)0) {
+			return leftType;
+		}
+
+		if (!leftType.checkType(parser.int, parser)) {
+			parser.error(self.region.start, " expected left hand side of bitwise operation to be of type 'int'\n");
+		}
+
+		var rightType = self.right.typeCheckUnary(parser);
+
+		if (!rightType.checkType(parser.int, parser)) {
+			parser.error(self.right.region.start, " expected right hand side of bitwise operation to be of type 'int'\n");
+		}
+
+		return parser.int;
 	}
 }

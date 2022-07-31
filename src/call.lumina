@@ -1,11 +1,14 @@
 import "../std/collections.lumina"
+import "../std/io.lumina"
 
 import "parser.lumina"
 import "lexer.lumina"
+import "function.lumina"
+import "type.lumina"
 import "position.lumina"
 import "expression.lumina"
 import "index.lumina"
-import "unary.lumina"
+import "value.lumina"
 import "operator.lumina"
 import "block.lumina"
 
@@ -16,10 +19,14 @@ type ArgumentPart {
 }
 
 type ArgumentArray {
+	Region region;
+
 	Expression value;
 	Array<ArgumentPart> parts;
 
 	func parseArgumentArray(ArgumentArray self, Parser parser, Lexer lexer, Block block) -> ArgumentArray {
+		self.region = lexer.startRegion();
+
 		if (isOperator(lexer.current.operator, ")")) {
 			return self;
 		}
@@ -39,6 +46,7 @@ type ArgumentArray {
 			self.parts.push(part);
 		}
 
+		lexer.endRegion(self.region);
 		return self;
 	}
 
@@ -52,12 +60,56 @@ type ArgumentArray {
 			i = i + 1;
 		}
 	}
+
+	func typeCheckArguments(ArgumentArray self, Function function, Parser parser, TypeObj objectType) {
+		var argumentTypes = createArray<TypeObj>();
+
+		if (objectType != (TypeObj)0) {
+			argumentTypes.push(objectType);
+		}
+
+		if (self.value != (Expression)0) {
+			argumentTypes.push(self.value.typeCheckExpression(parser));
+
+			var i = 0;
+			while (i < self.parts.size) {
+				var part = self.parts.get(i);
+				argumentTypes.push(part.value.typeCheckExpression(parser));
+				i = i + 1;
+			}
+		}
+
+		if (argumentTypes.size != function.parameters.size) {
+			parser.error(self.region.start, " expected ");
+			printi(function.parameters.size);
+			print(" arguments, got ");
+			printi(argumentTypes.size);
+			print(" instead\n");
+			return;
+		}
+
+		var i = 0;
+		while (i < argumentTypes.size) {
+			var typeObj = argumentTypes.get(i);
+			var expected = function.parameters.get(i).typeObj;
+			if (!typeObj.checkType(expected, parser)) {
+				parser.error(self.region.start, " incorrect argument type at index ");
+				printi(i);
+				print(", expected: ");
+				expected.printType();
+				print(", got: ");
+				typeObj.printType();
+				print("\n");
+			}
+			i = i + 1;
+		}
+	}
 }
 
 type Call {
 	Region region;
 
-	Unary value;
+	Value value;
 	Operator lparen;
 	ArgumentArray arguments;
 	Operator rparen;
@@ -66,8 +118,8 @@ type Call {
 	func parseCall(Call self, Parser parser, Lexer lexer, Block block) -> Call {
 		self.region = lexer.startRegion();
 
-		self.value = new Unary();
-		self.value.parseUnary(parser, lexer, block);
+		self.value = new Value();
+		self.value.parseValue(parser, lexer, block);
 
 		self.lparen = lexer.consumeOperator("(");
 		if (self.lparen != (Operator)0) {
@@ -85,11 +137,32 @@ type Call {
 		return self;
 	}
 
-	func bindCall(Call self, Parser parser) {
-		self.value.bindUnary(parser);
+	func bindCall(Call self, Parser parser, bool isProperty) {
+		self.value.bindValue(parser, isProperty);
 
 		if (self.arguments != (ArgumentArray)0) {
 			self.arguments.bindArguments(parser);
 		}
+	}
+
+	func typeCheckCall(Call self, Parser parser, TypeObj objectType) -> TypeObj {
+		var valueType = self.value.typeCheckValue(parser);
+
+		if (self.lparen == (Operator)0) {
+			return valueType;
+		}
+
+		var function = self.value.identifier.definition.function;
+		if (function == (Function)0 && objectType != (TypeObj)0) {
+			function = objectType.findMethod(self.value.identifier.name);
+		}
+
+		if (function == (Function)0) {
+			parser.error(self.region.start, " expected identifier to be a function\n");
+		}
+
+		self.arguments.typeCheckArguments(function, parser, objectType);
+
+		return function.returnType.typeObj;
 	}
 }

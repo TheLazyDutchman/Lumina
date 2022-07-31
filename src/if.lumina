@@ -30,6 +30,10 @@ type Else {
 	func bindElse(Else self, Parser parser) {
 		self.block.bindBlock(parser);
 	}
+
+	func typeCheckElse(Else self, Parser parser) {
+		self.block.typeCheckBlock(parser);
+	}
 }
 
 type ElseIf {
@@ -61,6 +65,11 @@ type ElseIf {
 	func bindElseIf(ElseIf self, Parser parser) {
 		self.condition.bindCondition(parser);
 		self.block.bindBlock(parser);
+	}
+
+	func typeCheckElseIf(ElseIf self, Parser parser) {
+		self.condition.typeCheckCondition(parser);
+		self.block.typeCheckBlock(parser);
 	}
 }
 
@@ -114,10 +123,27 @@ type If {
 		while (i < self.elseIfs.size) {
 			var elseIf = self.elseIfs.get(i);
 			elseIf.bindElseIf(parser);
+			i = i + 1;
 		}
 
 		if (self.elseObj != (Else)0) {
 			self.elseObj.bindElse(parser);
+		}
+	}
+
+	func typeCheckIf(If self, Parser parser) {
+		self.condition.typeCheckCondition(parser);
+		self.block.typeCheckBlock(parser);
+
+		var i = 0;
+		while (i < self.elseIfs.size) {
+			var elseIf = self.elseIfs.get(i);
+			elseIf.typeCheckElseIf(parser);
+			i = i + 1;
+		}
+
+		if (self.elseObj != (Else)0) {
+			self.elseObj.typeCheckElse(parser);
 		}
 	}
 }
