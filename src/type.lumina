@@ -67,6 +67,14 @@ type Property {
 			parser.error(self.region.start, " expected property type to be a type\n");
 		}
 	}
+
+	func cloneProperty(Property self) -> Property {
+		var clone = new Property();
+
+		clone.typeObj = self.typeObj;
+
+		return clone;
+	}
 }
 
 type TypeObj {
@@ -86,14 +94,21 @@ type TypeObj {
 	TypeObj listOf;
 	TypeObj listType;
 
+	Array<TypeObj> variants;
+
 	bool isGeneric;
 
 	Block block;
 	int nameId;
-	
+
+	Array<TypeObj> generics;
+
+	bool isChecked;
 
 	func parseType(TypeObj self, Parser parser, SyntaxTree tree, Lexer lexer, Block block) -> TypeObj {
 		self.block = createBlock(block);
+		self.isChecked = false;
+
 		self.region = lexer.startRegion();
 
 		self.keyword = lexer.consumeKeyword(KEYWORD_type);
@@ -102,7 +117,9 @@ type TypeObj {
 		self.name.parseIdentifierDefinition(parser, lexer);
 
 		if (self.name.generics != (GenericDefinitionArray)0) {
-			self.name.generics.addTypes(self.block.types, self.block.definitions);
+			self.generics = createArray<TypeObj>();
+			self.name.generics.addTypes(self.generics, self.block.definitions);
+			self.block.types.extend(self.generics);
 		}
 
 		self.lbrace = lexer.consumeOperator("{");
@@ -116,6 +133,7 @@ type TypeObj {
 		while (!isOperator(lexer.current.operator, "}") && !lexer.current.isEOF) {
 			if (isKeyword(lexer.current.name, KEYWORD_func)) {
 				var method = new Function();
+				method.generics = self.generics;
 				method.parseFunction(parser, tree, lexer, self.block);
 				self.methods.push(method);
 				self.block.functions.push(method);
@@ -131,6 +149,9 @@ type TypeObj {
 		if (self.rbrace == (Operator)0) {
 			parser.error(lexer.here(), " expected '}' after type definition\n");
 		}
+
+		self.variants = createArray<TypeObj>();
+		self.variants.push(self);
 
 		lexer.endRegion(self.region);
 		return self;
@@ -184,6 +205,7 @@ type TypeObj {
 	}
 
 	func typeCheckType(TypeObj self, Parser parser) {
+		self.isChecked = true;
 		var i = 0;
 		while (i < self.properties.size) {
 			var property = self.properties.get(i);
@@ -197,6 +219,104 @@ type TypeObj {
 			method.typeCheckFunction(parser);
 			i = i + 1;
 		}
+	}
+
+	func getVariantType(TypeObj self, Array<TypeObj> generics) -> TypeObj {
+		if (self.generics == (Array<TypeObj>)0) {
+			return self;
+		}
+
+		if (self.generics.size != generics.size) {
+			return (TypeObj)0;
+		}
+
+		var i = 0;
+		while (i < self.variants.size) {
+			var variant = self.variants.get(i);
+			if (checkGenerics(variant.generics, generics)) {
+				return variant;
+			}
+
+			i = i + 1;
+		}
+
+		return self.createVariantType(generics);
+	}
+
+	func createVariantType(TypeObj self, Array<TypeObj> generics) -> TypeObj {
+		var newType = self.cloneType();
+
+		var i = 0;
+		while (i < self.properties.size) {
+			var property = newType.properties.get(i);
+			property.typeObj = property.typeObj.applyGenerics(self.generics, generics);
+			i = i + 1;
+		}
+		
+		i = 0;
+		while (i < self.methods.size) {
+			newType.methods.push(self.methods.get(i).getVariantFunction(generics));
+			newType.block.functions.push(newType.methods.get(i));
+			newType.block.definitions.push(createDefinitionFromFunction(newType.methods.get(i)));
+			i = i + 1;
+		}
+
+		newType.generics = generics;
+
+		return newType;
+	}
+
+	func cloneType(TypeObj self) -> TypeObj {
+		var clone = new TypeObj();
+		self.variants.push(clone);
+
+		clone.name = self.name;
+		clone.block = createBlock(self.block.outer);
+
+		clone.properties = createArray<Property>();
+		var i = 0;
+		while (i < self.properties.size) {
+			clone.properties.push(self.properties.get(i).cloneProperty());
+			i = i + 1;
+		}
+
+		clone.methods = createArray<Function>();
+		clone.variants = self.variants;
+
+		return clone;
+	}
+
+	func applyGenerics(TypeObj self, Array<TypeObj> generics, Array<TypeObj> newTypes) -> TypeObj {
+		var i = 0;
+		while (i < generics.size) {
+			if (self == generics.get(i)) {
+				return newTypes.get(i);
+			}
+			i = i + 1;
+		}
+
+		if (self.listType != (TypeObj)0) {
+			return createListType((str)0, self.listType.applyGenerics(generics, newTypes));
+		}
+
+		if (self.generics != (Array<TypeObj>)0) {
+			var genericTypes = createArray<TypeObj>();
+			var i = 0;
+			while (i < self.generics.size) {
+				var j = 0;
+				while (j < generics.size) {
+					if (self.generics.get(i) == generics.get(j)) {
+						genericTypes.push(newTypes.get(j));
+					}
+					j = j + 1;
+				}
+				i = i + 1;
+			}
+
+			return self.getVariantType(genericTypes);
+		}
+
+		return self;
 	}
 
 	func checkType(TypeObj self, TypeObj expected, Parser parser) -> bool {
@@ -240,10 +360,34 @@ type TypeObj {
 			print(self.name.name);
 		}
 
-		if (self.name.generics != (GenericDefinitionArray)0) {
-			self.name.generics.printGenericDefinition();
+		if (self.generics != (Array<TypeObj>)0) {
+			print("<");
+
+			var i = 0;
+			while (i < self.generics.size) {
+				if (i > 0) {
+					print(",");
+				}
+
+				self.generics.get(i).printType();
+				i = i + 1;
+			}
+
+			print(">");
 		}
 	}
+}
+
+func checkGenerics(Array<TypeObj> original, Array<TypeObj> expected) -> bool {
+	var i = 0;
+	while (i < original.size) {
+		if (original.get(i) != expected.get(i)) {
+			return false;
+		}
+		i = i + 1;
+	}
+
+	return true;
 }
 
 func createPropertyFromString(str name, TypeObj propertyType, int offset) -> Property {
@@ -260,19 +404,24 @@ func createPropertyFromString(str name, TypeObj propertyType, int offset) -> Pro
 func createTypeFromString(str name, int size) -> TypeObj {
 	var typeObj = new TypeObj();
 
-	typeObj.name = createIdentifierDefinitionFromString(name);
+	if (name != (str)0) {
+		typeObj.name = createIdentifierDefinitionFromString(name);
+	}
+
+	typeObj.isChecked = true;
+
 	typeObj.size = size;
 	typeObj.objectSize = size;
 
 	typeObj.properties = createArray<Property>();
 
-//	typeObj.variants = createArray<TypeObj>();
-//	typeObj.variants.push(typeObj);
+	typeObj.variants = createArray<TypeObj>();
+	typeObj.variants.push(typeObj);
 
 	return typeObj;
 }
 
-func createListType(Array<TypeObj> typeArray, str name, TypeObj typeObj) -> TypeObj {
+func createListType(str name, TypeObj typeObj) -> TypeObj {
 	if (typeObj.listOf != (TypeObj)0) {
 		return typeObj.listOf;
 	}
@@ -282,11 +431,11 @@ func createListType(Array<TypeObj> typeArray, str name, TypeObj typeObj) -> Type
 	listType.listType = typeObj;
 	listType.isGeneric = typeObj.isGeneric;
 
+	listType.isChecked = true;
+
 	typeObj.listOf = listType;
 
-	if (typeArray != (Array<TypeObj>)0) {
-		typeArray.push(listType);
-	}
+	typeObj.block.outer.types.push(listType);
 
 	return listType;
 }

@@ -151,7 +151,7 @@ func createParser() -> Parser {
 	parser.types = createArray<TypeObj>();
 	parser.int = createTypeFromString("int", 8);
 	parser.char = createTypeFromString("char", 1);
-	parser.str = createListType(parser.types, "str", parser.char);
+	parser.str = createListType("str", parser.char);
 	parser.bool = createTypeFromString("bool", 1);
 	parser.any = createTypeFromString("any", 8);
 	parser.null = createTypeFromString("null", 8);
@@ -183,7 +183,7 @@ func createParser() -> Parser {
 	parser.Type.properties.push(createPropertyFromString("size", parser.int, 8));
 	parser.Type.properties.push(createPropertyFromString("objectSize", parser.int, 16));
 	parser.Type.properties.push(createPropertyFromString("properties", 
-		createListType(parser.types, (str)0, parser.TypeProperty), 
+		createListType((str)0, parser.TypeProperty), 
 		24));
 	parser.Type.properties.push(createPropertyFromString("listOf", parser.Type, 32));
 	parser.Type.properties.push(createPropertyFromString("listType", parser.Type, 40));
@@ -237,8 +237,8 @@ func createParser() -> Parser {
 	parser.variables = createArray<Variable>();
 	parser.heapstart = createVariableFromString("heapstart", 0, 1, parser.int);
 	parser.argc = createVariableFromString("argc", 0, 2, parser.int);
-	parser.argv = createVariableFromString("argv", 0, 3, createListType(parser.types, (str)0, parser.str));
-	parser.envp = createVariableFromString("envp", 0, 4, createListType(parser.types, (str)0, parser.str));
+	parser.argv = createVariableFromString("argv", 0, 3, createListType((str)0, parser.str));
+	parser.envp = createVariableFromString("envp", 0, 4, createListType((str)0, parser.str));
 
 	parser.definitions.push(createDefinitionFromVariable(parser.heapstart));
 	parser.definitions.push(createDefinitionFromVariable(parser.argc));

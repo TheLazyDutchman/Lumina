@@ -51,17 +51,25 @@ type Parameter {
 
 	func bindParameter(Parameter self, Parser parser) {
 		self.parameterType.bindIdentifier(parser, false);
-
-		self.typeObj = self.parameterType.definition.typeObj;
-		self.variable.variableType = self.typeObj;
 	}
 
 	func typeCheckParameter(Parameter self, Parser parser) {
 		var typeObj = self.parameterType.typeCheckIdentifier(parser);
+		self.typeObj = self.parameterType.definition.typeObj;
+		self.variable.variableType = self.typeObj;
 
 		if (!typeObj.checkType(parser.Type, parser)) {
 			parser.error(self.parameterType.region.start, " expected parameter type to be a type\n");
 		}
+	}
+
+	func cloneParameter(Parameter self) -> Parameter {
+		var clone = new Parameter();
+
+		clone.typeObj = self.typeObj;
+		clone.variable = self.variable;
+
+		return clone;
 	}
 }
 
@@ -88,16 +96,23 @@ type ReturnType {
 
 	func bindReturnType(ReturnType self, Parser parser) {
 		self.returnType.bindIdentifier(parser, false);
-
-		self.typeObj = self.returnType.definition.typeObj;
 	}
 
 	func typeCheckReturnType(ReturnType self, Parser parser) {
 		var typeObj = self.returnType.typeCheckIdentifier(parser);
+		self.typeObj = self.returnType.definition.typeObj;
 
 		if (!typeObj.checkType(parser.Type, parser)) {
 			parser.error(self.returnType.region.start, " expected type for return type\n");
 		}
+	}
+
+	func cloneReturnType(ReturnType self) -> ReturnType {
+		var clone = new ReturnType();
+
+		clone.typeObj = self.typeObj;
+
+		return clone;
 	}
 }
 
@@ -121,10 +136,14 @@ type Function {
 
 	bool isCalled;
 
-	int numGenerics;
+	Array<TypeObj> generics;
+
+	bool isChecked;
 
 	func parseFunction(Function self, Parser parser, SyntaxTree tree, Lexer lexer, Block block) -> Function {
 		self.outerBlock = createBlock(block);
+		self.isChecked = false;
+
 		self.region = lexer.startRegion();
 
 		self.keyword = lexer.consumeKeyword(KEYWORD_func);
@@ -133,8 +152,9 @@ type Function {
 		self.name.parseIdentifierDefinition(parser, lexer);
 
 		if (self.name.generics != (GenericDefinitionArray)0) {
-			self.numGenerics = self.name.generics.parts.size + 1;
-			self.name.generics.addTypes(self.outerBlock.types, self.outerBlock.definitions);
+			self.generics = createArray<TypeObj>();
+			self.name.generics.addTypes(self.generics, self.outerBlock.definitions);
+			self.outerBlock.types.extend(self.generics);
 		}
 
 		self.lparen = lexer.consumeOperator("(");
@@ -164,6 +184,11 @@ type Function {
 		}
 
 		self.block.parseBlock(parser, lexer, tree);
+
+		self.variants = createArray<Function>();
+		self.variants.push(self);
+
+		lexer.endRegion(self.region);
 
 		return self;
 	}
@@ -203,10 +228,16 @@ type Function {
 			i = i + 1;
 		}
 
+		if (self.returnType != (ReturnType)0) {
+			self.returnType.bindReturnType(parser);
+		}
+
 		self.block.bindBlock(parser);
 	}
 
 	func typeCheckFunction(Function self, Parser parser) {
+		self.isChecked = true;
+
 		var i = 0;
 		while (i < self.parameters.size) {
 			var parameter = self.parameters.get(i);
@@ -219,6 +250,103 @@ type Function {
 		}
 
 		self.block.typeCheckBlock(parser);
+	}
+
+	func getVariantFunction(Function self, Array<TypeObj> generics) -> Function {
+		if (self.generics == (Array<TypeObj>)0) {
+			return self;
+		}
+
+		if (self.generics.size != generics.size) {
+			return (Function)0;
+		}
+
+		var i = 0;
+		while (i < self.variants.size) {
+			var variant = self.variants.get(i);
+			if (checkGenerics(variant.generics, generics)) {
+				return variant;
+			}
+
+			i = i + 1;
+		}
+
+		return self.createVariantFunction(generics);
+	}
+
+	func createVariantFunction(Function self, Array<TypeObj> generics) -> Function {
+		var newFunction = self.cloneFunction();
+
+		var i = 0;
+		while (i < self.parameters.size) {
+			var parameter = newFunction.parameters.get(i);
+			parameter.typeObj = parameter.typeObj.applyGenerics(self.generics, generics);
+			i = i + 1;
+		}
+
+		if (newFunction.returnType != (ReturnType)0) {
+			newFunction.returnType.typeObj = newFunction.returnType.typeObj.applyGenerics(self.generics, generics);
+		}
+
+		newFunction.generics = generics;
+
+		return newFunction;
+	}
+
+	func cloneFunction(Function self) -> Function {
+		var clone = new Function();
+		self.variants.push(clone);
+
+		clone.name = self.name;
+		clone.parameters = createArray<Parameter>();
+
+		var i = 0;
+		while (i < self.parameters.size) {
+			clone.parameters.push(self.parameters.get(i).cloneParameter());
+			i = i + 1;
+		}
+
+		if (self.returnType != (ReturnType)0) {
+			clone.returnType = self.returnType.cloneReturnType();
+		}
+
+		clone.variants = self.variants;
+
+		return clone;
+	}
+
+	func printFunction(Function self) {
+		print(self.name.name);
+
+		if (self.generics != (Array<TypeObj>)0) {
+			print("<");
+			
+			var i = 0;
+			while (i < self.generics.size) {
+				if (i > 0) {
+					print(", ");
+				}
+
+				self.generics.get(i).printType();
+				i = i + 1;
+			}
+
+			print(">");
+		}
+
+		print("(");
+
+		var i = 0;
+		while (i < self.parameters.size) {
+			if (i > 0) {
+				print(",");
+			}
+
+			self.parameters.get(i).typeObj.printType();
+			i = i + 1;
+		}
+
+		print(")");
 	}
 }
 
@@ -275,7 +403,10 @@ func createFunctionFromString(str value, Array<Parameter> parameters, ReturnType
 	function.parameters = parameters;
 	function.returnType = returnType;
 
+	function.isChecked = true;
+
 	function.variants = createArray<Function>();
+	function.variants.push(function);
 
 	return function;
 }

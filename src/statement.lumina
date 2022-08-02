@@ -77,7 +77,7 @@ type Statement {
 				}
 
 				if (outerBlock.function != (Function)0) {
-					position = position + outerBlock.function.numGenerics;
+					position = position + outerBlock.function.generics.size;
 					position = position + outerBlock.function.parameters.size + 1;
 				}
 			}

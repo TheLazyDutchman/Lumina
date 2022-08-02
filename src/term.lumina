@@ -100,4 +100,8 @@ type Term {
 
 		return leftType;
 	}
+
+	func getTypeTerm(Term self, Parser parser) -> TypeObj {
+		return self.value.getTypeFactor(parser);
+	}
 }

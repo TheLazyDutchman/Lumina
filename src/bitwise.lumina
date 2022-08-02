@@ -59,4 +59,8 @@ type Bitwise {
 
 		return parser.int;
 	}
+
+	func getTypeBitwise(Bitwise self, Parser parser) -> TypeObj {
+		return self.left.getTypeUnary(parser);
+	}
 }

@@ -58,11 +58,13 @@ type New {
 	}
 
 	func typeCheckNew(New self, Parser parser) -> TypeObj {
-		var typeObj = self.objectType.definition.typeObj;
-		if (typeObj == (TypeObj)0) {
+		var objectType = self.objectType.typeCheckIdentifier(parser);
+		if (!objectType.checkType(parser.Type, parser)) {
 			parser.error(self.objectType.region.start, " expected type\n");
-			return typeObj;
+			return (TypeObj)0;
 		}
+
+		var typeObj = self.objectType.definition.typeObj;
 
 		if (typeObj.listType != (TypeObj)0) {
 			if (self.value == (Term)0) {
@@ -266,6 +268,15 @@ type Unary {
 			return self.index.typeCheckIndex(parser);
 		}
 
+		return (TypeObj)0;
+	}
+
+	func getTypeUnary(Unary self, Parser parser) -> TypeObj {
+		if (self.index != (Index)0) {
+			return self.index.getTypeIndex(parser);
+		}
+
+		parser.error(self.region.start, " can not get type from this value\n");
 		return (TypeObj)0;
 	}
 }

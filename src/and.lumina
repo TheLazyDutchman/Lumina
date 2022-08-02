@@ -76,4 +76,8 @@ type Or {
 
 		return parser.bool;
 	}
+
+	func getTypeOr(Or self, Parser parser) -> TypeObj {
+		return self.value.getTypeComparison(parser);
+	}
 }

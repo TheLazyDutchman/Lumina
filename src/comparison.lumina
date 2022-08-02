@@ -42,7 +42,7 @@ type Comparison {
 		}
 	}
 
-	func typeCheckComparison(Comparison self, Parser parser) -> TypeObj{
+	func typeCheckComparison(Comparison self, Parser parser) -> TypeObj {
 		var leftType = self.left.typeCheckTerm(parser);
 
 		if (self.right == (Term)0) {
@@ -61,5 +61,9 @@ type Comparison {
 		}
 
 		return parser.bool;
+	}
+
+	func getTypeComparison(Comparison self, Parser parser) -> TypeObj {
+		return self.left.getTypeTerm(parser);
 	}
 }

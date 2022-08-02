@@ -8,6 +8,7 @@ import "index.lumina"
 import "name.lumina"
 import "variable.lumina"
 import "type.lumina"
+import "function.lumina"
 import "operator.lumina"
 import "position.lumina"
 import "definition.lumina"
@@ -84,6 +85,32 @@ type GenericArray {
 			i = i + 1;
 		}
 	}
+
+	func typeCheckGenericArray(GenericArray self, Parser parser) -> Array<TypeObj> {
+		var types = createArray<TypeObj>();
+
+		var typeObj = self.value.typeCheckIndex(parser); 
+		if (!typeObj.checkType(parser.Type, parser)) {
+			parser.error(self.value.region.start, " expected generic to be a type\n");
+		}
+
+		types.push(self.value.getTypeIndex(parser));
+
+		var i = 0;
+		while (i < self.generics.size) {
+			var part = self.generics.get(i);
+
+			typeObj = part.value.typeCheckIndex(parser);
+			if (!typeObj.checkType(parser.Type, parser)) {
+				parser.error(part.value.region.start, " expected generic to be a type\n");
+			}
+
+			types.push(part.value.getTypeIndex(parser));
+			i = i + 1;
+		}
+
+		return types;
+	}
 }
 
 type GenericDefinitionArray {
@@ -139,22 +166,6 @@ type GenericDefinitionArray {
 			i = i + 1;
 		}
 	}
-
-	func printGenericDefinition(GenericDefinitionArray self) {
-		print("<");
-		print(self.value.name);
-
-		var i = 0;
-		while (i < self.parts.size) {
-			var part = self.parts.get(i);
-
-			print(",");
-			print(part.value.name);
-			i = i + 1;
-		}
-
-		print(">");
-	}
 }
 
 type Identifier {
@@ -200,9 +211,9 @@ type Identifier {
 					lexer.returnTo(returnPosition);
 				}
 				endLists = true;
+			} else {
+				self.lists.push(listPart);
 			}
-
-			self.lists.push(listPart);
 		}
 
 		lexer.endRegion(self.region);
@@ -229,18 +240,96 @@ type Identifier {
 		if (self.definition.variable != (Variable)0 && self.definition.variable.region.end.index > self.region.start.index) {
 			parser.error(self.region.start, " can not use variable before definition\n");
 		}
+
+		var typeObj = self.definition.typeObj;
+		if (typeObj != (TypeObj)0) {
+			if (typeObj.generics == (Array<TypeObj>)0) {
+				if (self.generics != (GenericArray)0) {
+					parser.error(self.generics.region.start, " can not get generic of a non-generic type\n");
+				}
+			} else if (self.generics == (GenericArray)0) {
+				parser.error(self.region.end, " expected generics for a generic type\n");
+			} else if (typeObj.generics.size != self.generics.generics.size + 1) {
+				parser.error(self.generics.region.start, " expected ");
+				printi(typeObj.generics.size);
+				print(" generics, got ");
+				printi(self.generics.generics.size + 1);
+				print(" instead\n");
+			}
+		}
+
+		var function = self.definition.function;
+		if (function != (Function)0) {
+			if (function.generics == (Array<TypeObj>)0) {
+				if (self.generics != (GenericArray)0) {
+					parser.error(self.generics.region.start, " can not get generic of a non-generic type\n");
+				}
+			} else if (self.generics == (GenericArray)0) {
+				parser.error(self.region.end, " expected generics for a generic type\n");
+			} else if (function.generics.size != self.generics.generics.size + 1) {
+				parser.error(self.generics.region.start, " expected ");
+				printi(function.generics.size);
+				print(" generics, got ");
+				printi(self.generics.generics.size + 1);
+				print(" instead\n");
+			}
+		}
 	}
 
 	func typeCheckIdentifier(Identifier self, Parser parser) -> TypeObj {
+		if (self.definition.variable != (Variable)0 && !self.definition.variable.isChecked) {
+			self.definition.variable.typeCheckVariable(parser);
+		}
+
+		if (self.definition.function != (Function)0 && !self.definition.function.isChecked) {
+			self.definition.function.typeCheckFunction(parser);
+		}
+
+		if (self.definition.typeObj != (TypeObj)0 && !self.definition.typeObj.isChecked) {
+			self.definition.typeObj.typeCheckType(parser);
+		}
+
+		if (self.generics != (GenericArray)0) {
+			var generics = self.generics.typeCheckGenericArray(parser);
+
+			if (self.definition.typeObj != (TypeObj)0) {
+				self.definition.typeObj = self.definition.typeObj.getVariantType(generics);
+			} else if (self.definition.function != (Function)0) {
+				self.definition.function = self.definition.function.getVariantFunction(generics);
+			}
+		}
+
 		if (self.definition.typeObj != (TypeObj)0) {
+			var i = 0;
+			while (i < self.lists.size) {
+				self.definition = self.definition.createListDefinition();
+				i = i + 1;
+			}
+
 			return parser.Type;
+		} else if (self.definition != (Definition)0 && self.lists.size != 0) {
+			parser.error(self.region.start, " can not get list of value that is not a type\n");
 		}
 
 		if (self.definition.variable != (Variable)0) {
-			return self.definition.variable.variableType;
+			var varType = self.definition.variable.variableType;
+
+			if (varType == (TypeObj)0) {
+				parser.error(self.region.start, " variable type is undefined\n");
+			}
+
+			return varType;
 		}
 
 		return (TypeObj)0;
+	}
+
+	func getTypeIdentifier(Identifier self, Parser parser) -> TypeObj {
+		if (self.definition.variable != (Variable)0) {
+			return self.definition.variable.getTypeVariable(parser);
+		}
+
+		return self.definition.typeObj;
 	}
 }
 

@@ -135,4 +135,14 @@ type Index {
 
 		return objectType;
 	}
+
+	func getTypeIndex(Index self, Parser parser) -> TypeObj {
+		var typeObj = self.value.getTypeCall(parser);
+
+		if (self.parts.size > 0) {
+			parser.error(self.value.region.end, " do not yet support getting type from property or list\n");
+		}
+
+		return typeObj;
+	}
 }

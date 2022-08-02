@@ -79,4 +79,8 @@ type Factor {
 
 		return parser.int;
 	}
+
+	func getTypeFactor(Factor self, Parser parser) -> TypeObj {
+		return self.value.getTypeBitwise(parser);
+	}
 }

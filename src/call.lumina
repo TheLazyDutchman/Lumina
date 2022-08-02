@@ -79,13 +79,17 @@ type ArgumentArray {
 			}
 		}
 
-		if (argumentTypes.size != function.parameters.size) {
-			parser.error(self.region.start, " expected ");
-			printi(function.parameters.size);
-			print(" arguments, got ");
-			printi(argumentTypes.size);
-			print(" instead\n");
+		if (function == (Function)0) {
 			return;
+		} else {
+			if (argumentTypes.size != function.parameters.size) {
+				parser.error(self.region.start, " expected ");
+				printi(function.parameters.size);
+				print(" arguments, got ");
+				printi(argumentTypes.size);
+				print(" instead\n");
+				return;
+			}
 		}
 
 		var i = 0;
@@ -164,5 +168,15 @@ type Call {
 		self.arguments.typeCheckArguments(function, parser, objectType);
 
 		return function.returnType.typeObj;
+	}
+
+	func getTypeCall(Call self, Parser parser) -> TypeObj {
+		var typeObj = self.value.getTypeValue(parser);
+
+		if (self.lparen != (Operator)0) {
+			parser.error(self.lparen.position, " do not yet support getting type from function\n");
+		}
+
+		return typeObj;
 	}
 }

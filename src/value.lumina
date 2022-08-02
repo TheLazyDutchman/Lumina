@@ -110,6 +110,14 @@ type Value {
 
 		return self.group.value.typeCheckExpression(parser);
 	}
+
+	func getTypeValue(Value self, Parser parser) -> TypeObj {
+		if (self.identifier != (Identifier)0) {
+			return self.identifier.getTypeIdentifier(parser);
+		}
+		parser.error(self.region.start, " can not get type from this value\n");
+		return (TypeObj)0;
+	}
 }
 
 func isName(Value value) -> bool {

@@ -16,7 +16,19 @@ type Definition {
 	Variable variable;
 	Function function;
 
-	TypeObj valueType;
+	Definition listDefinition;
+
+	func createListDefinition(Definition self) -> Definition {
+		if (self.typeObj == (TypeObj)0) {
+			return (Definition)0;
+		}
+
+		if (self.listDefinition == (Definition)0) {
+			self.listDefinition = createDefinitionFromType(createListType((str)0, self.typeObj));
+		}
+
+		return self.listDefinition;
+	}
 }
 
 func createDefinitionFromType(TypeObj typeObj) -> Definition {
