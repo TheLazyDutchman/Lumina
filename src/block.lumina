@@ -1,4 +1,5 @@
 import "../std/collections.lumina"
+import "../std/io.lumina"
 
 import "parser.lumina"
 import "lexer.lumina"
@@ -30,6 +31,8 @@ type Block {
 	SyntaxTree tree;
 	Function function;
 
+	bool hasReturned;
+
 	func parseBlock(Block self, Parser parser, Lexer lexer, SyntaxTree tree) -> Block {
 		self.tree = tree;
 		self.region = lexer.startRegion();
@@ -38,6 +41,8 @@ type Block {
 		if (self.lbrace == (Operator)0) {
 			parser.error(self.region.start, " expected '{' before block\n");
 		}
+
+		self.statements = createArray<Statement>();
 
 		while (!isOperator(lexer.current.operator, "}") && !lexer.current.isEOF) {
 			var statement = new Statement();
@@ -48,6 +53,9 @@ type Block {
 				self.functions,
 				tree.imports);
 			self.statements.push(statement);
+			if (statement.hasReturned) {
+				self.hasReturned = true;
+			}
 		}
 
 		self.rbrace = lexer.consumeOperator("}");
@@ -102,6 +110,7 @@ func createBlock(Block outer) -> Block {
 
 	block.outer = outer;
 	block.depth = outer.depth;
+	block.function = outer.function;
 
 	return block;
 }

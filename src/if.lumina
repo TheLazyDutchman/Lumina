@@ -20,8 +20,7 @@ type Else {
 		self.region = lexer.startRegion();
 
 		self.keyword = elseKeyword;
-		self.block = createBlock(block);
-		self.block.parseBlock(parser, lexer, tree);
+		self.block = createBlock(block); self.block.parseBlock(parser, lexer, tree);
 
 		lexer.endRegion(self.region);
 		return self;
@@ -83,7 +82,10 @@ type If {
 
 	int id;
 
+	bool hasReturned;
+
 	func parseIf(If self, Parser parser, SyntaxTree tree, Lexer lexer, Block block) -> If {
+		self.hasReturned = true;
 		self.region = lexer.startRegion();
 
 		self.keyword = lexer.consumeKeyword(KEYWORD_if);
@@ -94,6 +96,10 @@ type If {
 		self.block = createBlock(block);
 		self.block.parseBlock(parser, lexer, tree);
 
+		if (!self.block.hasReturned) {
+			self.hasReturned = false;
+		}
+
 		self.elseIfs = createArray<ElseIf>();
 
 		var elseKeyword = lexer.consumeKeyword(KEYWORD_else);
@@ -103,12 +109,20 @@ type If {
 				elseIf.parseElseIf(parser, lexer, tree, block, elseKeyword);
 
 				self.elseIfs.push(elseIf);
+
+				if (!elseIf.block.hasReturned) {
+					self.hasReturned = false;
+				}
 			} else {
 				self.elseObj = new Else();
 				self.elseObj.parseElse(parser, lexer, tree, block, elseKeyword);
 			}
 
 			elseKeyword = lexer.consumeKeyword(KEYWORD_else);
+		}
+
+		if (self.elseObj == (Else)0 || !self.elseObj.block.hasReturned) {
+			self.hasReturned = false;
 		}
 
 		lexer.endRegion(self.region);

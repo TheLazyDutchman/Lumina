@@ -14,6 +14,7 @@ type While {
 	Block block;
 
 	int id;
+	bool hasReturned;
 
 	func parseWhile(While self, Parser parser, SyntaxTree tree, Lexer lexer, Block block) -> While {
 		self.region = lexer.startRegion();
@@ -25,6 +26,8 @@ type While {
 
 		self.block = createBlock(block);
 		self.block.parseBlock(parser, lexer, tree);
+
+		self.hasReturned = self.block.hasReturned;
 
 		lexer.endRegion(self.region);
 		return self;

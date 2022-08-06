@@ -164,6 +164,7 @@ type Function {
 
 		self.block = createBlock(self.outerBlock);
 		self.block.depth = self.block.depth + 1;
+		self.block.function = self;
 
 		self.parameters = createArray<Parameter>();
 		while (!isOperator(lexer.current.operator, ")") && !lexer.current.isEOF) {
@@ -184,6 +185,10 @@ type Function {
 		}
 
 		self.block.parseBlock(parser, lexer, tree);
+
+		if (self.returnType != (ReturnType)0 && !self.block.hasReturned) {
+			parser.error(self.block.region.end, " not all paths return a value\n");
+		}
 
 		self.variants = createArray<Function>();
 		self.variants.push(self);
@@ -357,10 +362,17 @@ type Return {
 	Expression expression;
 	Operator semicolon;
 
+	Block block;
+
 	func parseReturn(Return self, Parser parser, Lexer lexer, Block block) -> Return {
+		self.block = block;
 		self.region = lexer.startRegion();
 
 		self.keyword = lexer.consumeKeyword(KEYWORD_return);
+
+		if (block.function == (Function)0) {
+			parser.error(self.region.start, " did not expect return outside of function\n");
+		}
 
 		if (!isOperator(lexer.current.operator, ";")) {
 			self.expression = new Expression();
@@ -382,9 +394,28 @@ type Return {
 		}
 	}
 
-	func typeCheckReturn(Return self, Parser parser) -> TypeObj {
-		print("can't check return yet\n");
-		return (TypeObj)0;
+	func typeCheckReturn(Return self, Parser parser) {
+		var returnType = self.block.function.returnType;
+		if (self.expression == (Expression)0) {
+			if (returnType != (ReturnType)0) {
+				parser.error(self.region.start, " expected return value\n");
+			}
+			return;
+		}
+
+		var typeObj = self.expression.typeCheckExpression(parser);
+		if (returnType == (ReturnType)0) {
+			parser.error(self.region.start, " did not expect return value from a null function\n");
+			return;
+		}
+
+		if (!typeObj.checkType(returnType.typeObj, parser)) {
+			parser.error(self.region.start, " expected type '");
+			returnType.typeObj.printType();
+			print("' in return, got '");
+			typeObj.printType();
+			print("' instead\n");
+		}
 	}
 }
 
