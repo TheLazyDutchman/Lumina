@@ -159,7 +159,8 @@ type TypeCast {
 	}
 
 	func typeCheckTypeCast(TypeCast self, Parser parser) -> TypeObj {
-		if (self.value.definition.typeObj == (TypeObj)0) {
+		var typeObj = self.value.typeCheckIdentifier(parser);
+		if (!typeObj.checkType(parser.Type, parser)) {
 			parser.error(self.value.region.start, " expected value of type cast to be a type\n");
 		}
 

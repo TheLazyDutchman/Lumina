@@ -42,7 +42,7 @@ type Parameter {
 
 		lexer.endRegion(self.region);
 
-		self.variable = createVariableFromString(self.parameterType.name, block.depth + 1, variables.size, (TypeObj)0);
+		self.variable = createVariableFromString(self.name.name, block.depth + 1, variables.size, (TypeObj)0);
 		variables.push(self.variable);
 		definitions.push(createDefinitionFromVariable(self.variable));
 
