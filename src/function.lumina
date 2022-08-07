@@ -99,6 +99,8 @@ type ReturnType {
 	}
 
 	func typeCheckReturnType(ReturnType self, Parser parser) {
+		if (self.typeObj != (TypeObj)0) { return; }
+
 		var typeObj = self.returnType.typeCheckIdentifier(parser);
 		self.typeObj = self.returnType.definition.typeObj;
 
@@ -281,9 +283,10 @@ type Function {
 
 	func createVariantFunction(Function self, Array<TypeObj> generics) -> Function {
 		var newFunction = self.cloneFunction();
+		self.variants.push(newFunction);
 
 		var i = 0;
-		while (i < self.parameters.size) {
+		while (i < newFunction.parameters.size) {
 			var parameter = newFunction.parameters.get(i);
 			parameter.typeObj = parameter.typeObj.applyGenerics(self.generics, generics);
 			i = i + 1;
@@ -294,13 +297,33 @@ type Function {
 		}
 
 		newFunction.generics = generics;
+		newFunction.variants = self.variants;
 
 		return newFunction;
 	}
 
+	func createVariantMethod(Function self, Array<TypeObj> generics, TypeObj objectType) -> Function {
+		var newMethod = self.cloneFunction();
+
+		var i = 0;
+		while (i < newMethod.parameters.size) {
+			var parameter = newMethod.parameters.get(i);
+			parameter.typeObj = parameter.typeObj.applyGenerics(objectType.generics, generics);
+			i = i + 1;
+		}
+
+		if (newMethod.returnType != (ReturnType)0) {
+			newMethod.returnType.typeObj = newMethod.returnType.typeObj.applyGenerics(objectType.generics, generics);
+		}
+
+		newMethod.generics = self.generics;
+		newMethod.variants = createArray<Function>();
+		newMethod.variants.push(newMethod);
+		return newMethod;
+	}
+
 	func cloneFunction(Function self) -> Function {
 		var clone = new Function();
-		self.variants.push(clone);
 
 		clone.name = self.name;
 		clone.parameters = createArray<Parameter>();
@@ -314,8 +337,6 @@ type Function {
 		if (self.returnType != (ReturnType)0) {
 			clone.returnType = self.returnType.cloneReturnType();
 		}
-
-		clone.variants = self.variants;
 
 		return clone;
 	}

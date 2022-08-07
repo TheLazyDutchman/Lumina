@@ -133,7 +133,6 @@ type TypeObj {
 		while (!isOperator(lexer.current.operator, "}") && !lexer.current.isEOF) {
 			if (isKeyword(lexer.current.name, KEYWORD_func)) {
 				var method = new Function();
-				method.generics = self.generics;
 				method.parseFunction(parser, tree, lexer, self.block);
 				self.methods.push(method);
 				self.block.functions.push(method);
@@ -255,7 +254,7 @@ type TypeObj {
 		
 		i = 0;
 		while (i < self.methods.size) {
-			newType.methods.push(self.methods.get(i).getVariantFunction(generics));
+			newType.methods.push(self.methods.get(i).createVariantMethod(generics, self));
 			newType.block.functions.push(newType.methods.get(i));
 			newType.block.definitions.push(createDefinitionFromFunction(newType.methods.get(i)));
 			i = i + 1;

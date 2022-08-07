@@ -178,9 +178,14 @@ type Identifier {
 
 	Definition definition;
 	Block block;
+	bool isChecked;
+
+	TypeObj typeObj;
 
 	func parseIdentifier(Identifier self, Parser parser, Lexer lexer, Block block) -> Identifier {
 		self.block = block;
+		self.isChecked = false;
+
 		self.region = lexer.startRegion();
 
 		self.value = lexer.consumeIdentifier();
@@ -277,6 +282,9 @@ type Identifier {
 	}
 
 	func typeCheckIdentifier(Identifier self, Parser parser) -> TypeObj {
+		if (self.isChecked) { return self.typeObj; }
+		self.isChecked = true;
+
 		if (self.definition.variable != (Variable)0 && !self.definition.variable.isChecked) {
 			self.definition.variable.typeCheckVariable(parser);
 		}
@@ -306,19 +314,20 @@ type Identifier {
 				i = i + 1;
 			}
 
+			self.typeObj = parser.Type;
 			return parser.Type;
 		} else if (self.definition != (Definition)0 && self.lists.size != 0) {
 			parser.error(self.region.start, " can not get list of value that is not a type\n");
 		}
 
 		if (self.definition.variable != (Variable)0) {
-			var varType = self.definition.variable.variableType;
+			self.typeObj = self.definition.variable.variableType;
 
-			if (varType == (TypeObj)0) {
+			if (self.typeObj == (TypeObj)0) {
 				parser.error(self.region.start, " variable type is undefined\n");
 			}
 
-			return varType;
+			return self.typeObj;
 		}
 
 		return (TypeObj)0;
