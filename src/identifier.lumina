@@ -300,11 +300,7 @@ type Identifier {
 		if (self.generics != (GenericArray)0) {
 			var generics = self.generics.typeCheckGenericArray(parser);
 
-			if (self.definition.typeObj != (TypeObj)0) {
-				self.definition.typeObj = self.definition.typeObj.getVariantType(generics);
-			} else if (self.definition.function != (Function)0) {
-				self.definition.function = self.definition.function.getVariantFunction(generics);
-			}
+			self.definition = self.definition.getVariantDefinition(generics);
 		}
 
 		if (self.definition.typeObj != (TypeObj)0) {
@@ -325,6 +321,8 @@ type Identifier {
 
 			if (self.typeObj == (TypeObj)0) {
 				parser.error(self.region.start, " variable type is undefined\n");
+			} else if (self.typeObj.checkType(parser.Type, parser)) {
+				self.definition.typeObj = self.getTypeIdentifier(parser);
 			}
 
 			return self.typeObj;
@@ -334,6 +332,8 @@ type Identifier {
 	}
 
 	func getTypeIdentifier(Identifier self, Parser parser) -> TypeObj {
+		self.typeCheckIdentifier(parser);
+
 		if (self.definition.variable != (Variable)0) {
 			return self.definition.variable.getTypeVariable(parser);
 		}

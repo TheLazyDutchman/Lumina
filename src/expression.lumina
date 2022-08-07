@@ -20,6 +20,8 @@ type Expression {
 	Or value;
 	Array<AndPart> parts;
 
+	TypeObj typeObj;
+
 	func parseExpression(Expression self, Parser parser, Lexer lexer, Block block) -> Expression {
 		self.region = lexer.startRegion();
 
@@ -55,9 +57,14 @@ type Expression {
 	}
 
 	func typeCheckExpression(Expression self, Parser parser) -> TypeObj {
+		if (self.typeObj != (TypeObj)0) {
+			return self.typeObj;
+		}
+
 		var valueType = self.value.typeCheckOr(parser);
 
 		if (self.parts.size == 0) {
+			self.typeObj = valueType;
 			return valueType;
 		}
 
@@ -76,6 +83,7 @@ type Expression {
 			i = i + 1;
 		}
 
+		self.typeObj = parser.bool;
 		return parser.bool;
 	}
 

@@ -384,11 +384,15 @@ type Return {
 	Operator semicolon;
 
 	Block block;
+	
+	bool isChecked;
 
 	func parseReturn(Return self, Parser parser, Lexer lexer, Block block) -> Return {
 		self.block = block;
-		self.region = lexer.startRegion();
+		self.isChecked = false;
 
+		self.region = lexer.startRegion();
+		
 		self.keyword = lexer.consumeKeyword(KEYWORD_return);
 
 		if (block.function == (Function)0) {
@@ -416,6 +420,9 @@ type Return {
 	}
 
 	func typeCheckReturn(Return self, Parser parser) {
+		if (self.isChecked) { return; }
+		self.isChecked = true;
+
 		var returnType = self.block.function.returnType;
 		if (self.expression == (Expression)0) {
 			if (returnType != (ReturnType)0) {

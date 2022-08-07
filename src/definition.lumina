@@ -29,6 +29,18 @@ type Definition {
 
 		return self.listDefinition;
 	}
+
+	func getVariantDefinition(Definition self, Array<TypeObj> generics) -> Definition {
+		if (self.typeObj != (TypeObj)0) {
+			return createDefinitionFromType(self.typeObj.getVariantType(generics));
+		}
+
+		if (self.function != (Function)0) {
+			return createDefinitionFromFunction(self.function.getVariantFunction(generics));
+		}
+
+		return (Definition)0;
+	}
 }
 
 func createDefinitionFromType(TypeObj typeObj) -> Definition {
