@@ -16,11 +16,16 @@ type PropertyPart {
 	Call property;
 
 	func typeCheckPropertyPart(PropertyPart self, TypeObj objectType, Parser parser) -> TypeObj {
+		if (objectType == (TypeObj)0) { return (TypeObj)0; }
+
 		var identifier = self.property.value.identifier;
+		if (!objectType.isChecked) {
+			objectType.typeCheckType(parser);
+		}
 
 		if (self.property.lparen == (Operator)0) {
 			var property = objectType.findProperty(identifier.name);
-			return property.propertyType.definition.typeObj;
+			return property.typeObj;
 		} else {
 			return self.property.typeCheckCall(parser, objectType);
 		}

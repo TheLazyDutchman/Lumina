@@ -1,5 +1,6 @@
 import "../std/string.lumina"
 import "../std/collections.lumina"
+import "../std/io.lumina"
 
 import "name.lumina"
 import "position.lumina"
@@ -32,7 +33,8 @@ type Definition {
 
 	func getVariantDefinition(Definition self, Array<TypeObj> generics) -> Definition {
 		if (self.typeObj != (TypeObj)0) {
-			return createDefinitionFromType(self.typeObj.getVariantType(generics));
+			var newType = self.typeObj.getVariantType(generics);
+			return createDefinitionFromType(newType);
 		}
 
 		if (self.function != (Function)0) {

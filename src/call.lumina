@@ -165,6 +165,10 @@ type Call {
 			parser.error(self.region.start, " expected identifier to be a function\n");
 		}
 
+		if (!function.isChecked) {
+			function.typeCheckFunction(parser);
+		}
+
 		self.arguments.typeCheckArguments(function, parser, objectType);
 
 		return function.returnType.typeObj;

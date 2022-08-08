@@ -26,10 +26,13 @@ type Property {
 
 	int offset;
 	int nameId;
+	TypeObj objectType;
+
 	TypeObj typeObj;
 
-	func parseProperty(Property self, Parser parser, Lexer lexer, Block block, TypeObj typeObj) -> Property {
-		self.typeObj = typeObj;
+	func parseProperty(Property self, Parser parser, Lexer lexer, Block block, TypeObj objectType) -> Property {
+		self.objectType = objectType;
+
 		self.region = lexer.startRegion();
 
 		self.propertyType = new Identifier();
@@ -50,11 +53,11 @@ type Property {
 	}
 	
 	func bindProperty(Property self, Parser parser) {
-		if (self.typeObj.findProperty(self.name.name) != self) {
+		if (self.objectType.findProperty(self.name.name) != self) {
 			parser.error(self.region.start, " a property with this name already exists\n");
 		}
 
-		if (self.typeObj.findMethod(self.name.name) != (Function)0) {
+		if (self.objectType.findMethod(self.name.name) != (Function)0) {
 			parser.error(self.region.start, " a method with this name already exists\n");
 		}
 
@@ -62,15 +65,20 @@ type Property {
 	}
 
 	func typeCheckProperty(Property self, Parser parser) {
+		if (self.typeObj != (TypeObj)0) { return; }
+
 		var typeObj = self.propertyType.typeCheckIdentifier(parser);
 		if (!typeObj.checkType(parser.Type, parser)) {
 			parser.error(self.region.start, " expected property type to be a type\n");
 		}
+
+		self.typeObj = self.propertyType.definition.typeObj;
 	}
 
 	func cloneProperty(Property self) -> Property {
 		var clone = new Property();
 
+		clone.name = self.name;
 		clone.typeObj = self.typeObj;
 
 		return clone;
@@ -204,7 +212,9 @@ type TypeObj {
 	}
 
 	func typeCheckType(TypeObj self, Parser parser) {
+		if (self.isChecked) { return; }
 		self.isChecked = true;
+
 		var i = 0;
 		while (i < self.properties.size) {
 			var property = self.properties.get(i);
@@ -244,6 +254,7 @@ type TypeObj {
 
 	func createVariantType(TypeObj self, Array<TypeObj> generics) -> TypeObj {
 		var newType = self.cloneType();
+		newType.generics = generics;
 
 		var i = 0;
 		while (i < self.properties.size) {
@@ -254,13 +265,12 @@ type TypeObj {
 		
 		i = 0;
 		while (i < self.methods.size) {
-			newType.methods.push(self.methods.get(i).createVariantMethod(generics, self));
+			var newMethod = self.methods.get(i).createVariantMethod(generics, self);
+			newType.methods.push(newMethod);
 			newType.block.functions.push(newType.methods.get(i));
 			newType.block.definitions.push(createDefinitionFromFunction(newType.methods.get(i)));
 			i = i + 1;
 		}
-
-		newType.generics = generics;
 
 		return newType;
 	}
@@ -268,6 +278,8 @@ type TypeObj {
 	func cloneType(TypeObj self) -> TypeObj {
 		var clone = new TypeObj();
 		self.variants.push(clone);
+
+		clone.isChecked = true;
 
 		clone.name = self.name;
 		clone.block = createBlock(self.block.outer);

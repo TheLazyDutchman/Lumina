@@ -72,7 +72,7 @@ type Term {
 						print("\n");
 					}
 				} else if (leftType.checkType(parser.int, parser)) {
-					if (rightType.checkType(parser.char, parser)) {
+					if (rightType.checkType(parser.char, parser) && rightType != (TypeObj)0) {
 						leftType = parser.char;
 					} else if (!rightType.checkType(parser.int, parser)) {
 						parser.error(part.value.region.start, " expected value added to an integer to be of type 'int' or 'char', got: ");
@@ -92,7 +92,7 @@ type Term {
 						print("\n");
 					}
 				} else if (leftType.checkType(parser.char, parser)) {
-					if (rightType.checkType(parser.char, parser)) {
+					if (rightType.checkType(parser.char, parser) && rightType != (TypeObj)0) {
 						leftType = parser.int;
 					} else if (!rightType.checkType(parser.int, parser)) {
 						parser.error(part.value.region.start, " expected value subtracted from a character to be of type 'char', got: ");

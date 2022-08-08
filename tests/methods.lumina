@@ -36,7 +36,7 @@ type Vector<T> {
 	T x;
 	T y;
 
-	func getX<T>(Vector<T> self) -> T {
+	func getX(Vector<T> self) -> T {
 		return self.x;
 	}
 }

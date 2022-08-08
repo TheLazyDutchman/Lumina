@@ -319,12 +319,14 @@ type Function {
 		newMethod.generics = self.generics;
 		newMethod.variants = createArray<Function>();
 		newMethod.variants.push(newMethod);
+
 		return newMethod;
 	}
 
 	func cloneFunction(Function self) -> Function {
 		var clone = new Function();
 
+		clone.isChecked = self.isChecked;
 		clone.name = self.name;
 		clone.parameters = createArray<Parameter>();
 
@@ -373,6 +375,11 @@ type Function {
 		}
 
 		print(")");
+
+		if (self.returnType != (ReturnType)0) {
+			print("->");
+			self.returnType.typeObj.printType();
+		}
 	}
 }
 

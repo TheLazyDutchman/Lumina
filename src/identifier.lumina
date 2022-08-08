@@ -242,6 +242,8 @@ type Identifier {
 			self.generics.bindGenericArray(parser);
 		}
 
+		if (isProperty) { return; }
+
 		if (self.definition.variable != (Variable)0 && self.definition.variable.region.end.index > self.region.start.index) {
 			parser.error(self.region.start, " can not use variable before definition\n");
 		}
@@ -293,7 +295,7 @@ type Identifier {
 			self.definition.function.typeCheckFunction(parser);
 		}
 
-		if (self.definition.typeObj != (TypeObj)0 && !self.definition.typeObj.isChecked) {
+		if (self.definition.typeObj != (TypeObj)0 && !self.definition.typeObj.isChecked && self.generics != (GenericArray)0) {
 			self.definition.typeObj.typeCheckType(parser);
 		}
 
