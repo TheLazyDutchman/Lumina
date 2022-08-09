@@ -1,6 +1,7 @@
 import "../std/collections.lumina"
 import "../std/io.lumina"
 
+import "compiler.lumina"
 import "parser.lumina"
 import "lexer.lumina"
 import "type.lumina"
@@ -139,6 +140,18 @@ type Index {
 		}
 
 		return objectType;
+	}
+
+	func writeIndex(Index self, Compiler compiler, bool getPointer) -> Register {
+		var valueRegister = self.value.writeCall(compiler, getPointer);
+
+		var i = 0;
+		while (i < self.parts.size) {
+			print("can't write index yet\n");
+			i = i + 1;
+		}
+
+		return valueRegister;
 	}
 
 	func getTypeIndex(Index self, Parser parser) -> TypeObj {

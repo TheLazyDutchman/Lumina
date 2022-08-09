@@ -1,5 +1,6 @@
 import "../std/io.lumina"
 
+import "compiler.lumina"
 import "parser.lumina"
 import "lexer.lumina"
 import "block.lumina"
@@ -20,11 +21,13 @@ type Assignment {
 	func parseAssignment(Assignment self, Parser parser, Lexer lexer, Block block) -> Assignment {
 		self.region = lexer.startRegion();
 
-		self.target = new Expression();
-		self.target.parseExpression(parser, lexer, block);
+		self.value = new Expression();
+		self.value.parseExpression(parser, lexer, block);
 
 		self.equalSign = lexer.consumeOperator("=");
 		if (self.equalSign != (Operator)0) {
+			self.target = self.value;
+
 			self.value = new Expression();
 			self.value.parseExpression(parser, lexer, block);
 		}
@@ -40,17 +43,17 @@ type Assignment {
 	}
 
 	func bindAssignment(Assignment self, Parser parser) {
-		self.target.bindExpression(parser);
-
-		if (self.value != (Expression)0) {
-			self.value.bindExpression(parser);
+		if (self.target != (Expression)0) {
+			self.target.bindExpression(parser);
 		}
+
+		self.value.bindExpression(parser);
 	}
 
 	func typeCheckAssignment(Assignment self, Parser parser) {
-		var targetType = self.target.typeCheckExpression(parser);
-		if (self.value != (Expression)0) {
-			var valueType = self.value.typeCheckExpression(parser);
+		var valueType = self.value.typeCheckExpression(parser);
+		if (self.target != (Expression)0) {
+			var targetType = self.target.typeCheckExpression(parser);
 			if (!targetType.checkType(valueType, parser)) {
 				parser.error(self.value.region.start, " can not assign value with different type\n");
 				print("[NOTE] expected: ");
@@ -59,6 +62,14 @@ type Assignment {
 				valueType.printType();
 				print("\n");
 			}
+		}
+	}
+
+	func writeAssignment(Assignment self, Compiler compiler) {
+		var valueRegister = self.value.writeExpression(compiler, false);
+
+		if (self.target != (Expression)0) {
+			print("can't write assignment yet\n");
 		}
 	}
 }

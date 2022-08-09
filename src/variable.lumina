@@ -2,6 +2,7 @@ import "../std/string.lumina"
 import "../std/collections.lumina"
 import "../std/io.lumina"
 
+import "compiler.lumina"
 import "parser.lumina"
 import "lexer.lumina"
 import "position.lumina"
@@ -100,6 +101,10 @@ type Variable {
 	func typeCheckVariable(Variable self, Parser parser) {
 		self.isChecked = true;
 		self.variableType = self.value.typeCheckExpression(parser);
+	}
+
+	func writeVariable(Variable self, Compiler compiler) {
+		print("can't write variable yet\n");
 	}
 
 	func getTypeVariable(Variable self, Parser parser) -> TypeObj {

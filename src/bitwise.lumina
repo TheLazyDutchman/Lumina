@@ -1,5 +1,7 @@
+import "../std/io.lumina"
 import "../std/collections.lumina"
 
+import "compiler.lumina"
 import "parser.lumina"
 import "lexer.lumina"
 import "type.lumina"
@@ -76,6 +78,18 @@ type Bitwise {
 		}
 
 		return parser.int;
+	}
+
+	func writeBitwise(Bitwise self, Compiler compiler, bool getPointer) -> Register {
+		var valueRegister = self.value.writeUnary(compiler, getPointer);
+
+		var i = 0;
+		while (i < self.parts.size) {
+			print("can't write bitwise operation\n");
+			i = i + 1;
+		}
+
+		return valueRegister;
 	}
 
 	func getTypeBitwise(Bitwise self, Parser parser) -> TypeObj {

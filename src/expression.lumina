@@ -1,5 +1,7 @@
+import "../std/io.lumina"
 import "../std/collections.lumina"
 
+import "compiler.lumina"
 import "parser.lumina"
 import "lexer.lumina"
 import "block.lumina"
@@ -85,6 +87,18 @@ type Expression {
 
 		self.typeObj = parser.bool;
 		return parser.bool;
+	}
+
+	func writeExpression(Expression self, Compiler compiler, bool getPointer) -> Register {
+		var valueRegister = self.value.writeOr(compiler, getPointer);
+
+		var i = 0;
+		while (i < self.parts.size) {
+			print("can't write and yet\n");
+			i = i + 1;
+		}
+
+		return valueRegister;
 	}
 
 	func getTypeExpression(Expression self, Parser parser) -> TypeObj {

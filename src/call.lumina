@@ -1,6 +1,7 @@
 import "../std/collections.lumina"
 import "../std/io.lumina"
 
+import "compiler.lumina"
 import "parser.lumina"
 import "lexer.lumina"
 import "function.lumina"
@@ -172,6 +173,15 @@ type Call {
 		self.arguments.typeCheckArguments(function, parser, objectType);
 
 		return function.returnType.typeObj;
+	}
+
+	func writeCall(Call self, Compiler compiler, bool getPointer) -> Register {
+		if (self.lparen == (Operator)0) {
+			return self.value.writeValue(compiler, getPointer);
+		}
+
+		print("can't write function call yet\n");
+		return (Register)0;
 	}
 
 	func getTypeCall(Call self, Parser parser) -> TypeObj {

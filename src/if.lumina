@@ -1,5 +1,7 @@
+import "../std/io.lumina"
 import "../std/collections.lumina"
 
+import "compiler.lumina"
 import "parser.lumina"
 import "lexer.lumina"
 import "position.lumina"
@@ -159,5 +161,9 @@ type If {
 		if (self.elseObj != (Else)0) {
 			self.elseObj.typeCheckElse(parser);
 		}
+	}
+
+	func writeIf(If self, Compiler compiler) {
+		print("can't write if yet\n");
 	}
 }

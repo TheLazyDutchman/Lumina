@@ -1,5 +1,6 @@
 import "../std/io.lumina"
 
+import "compiler.lumina"
 import "parser.lumina"
 import "lexer.lumina"
 import "type.lumina"
@@ -70,6 +71,7 @@ type Value {
 			next(lexer);
 		} else if (isString(lexer.current)) {
 			self.string = lexer.current.string;
+			self.string.id = addUniqueString(parser.strings, self.string.value);
 			self.region = lexer.current.string.region;
 			next(lexer);
 		} else if (isOperator(lexer.current.operator, "(")) {
@@ -109,6 +111,31 @@ type Value {
 		}
 
 		return self.group.value.typeCheckExpression(parser);
+	}
+
+	func writeValue(Value self, Compiler compiler, bool getPointer) -> Register {
+		if (self.group != (Group)0) {
+			return self.group.value.writeExpression(compiler, getPointer);
+		}
+
+		var register = compiler.getRegister();
+		if (self.identifier != (Identifier)0) {
+			print("can't write variable\n");
+		}
+
+		if (self.number != (Number)0) {
+			compiler.writeMovInt(register, self.number.value);
+		}
+
+		if (self.character != (Character)0) {
+			compiler.writeMovChar(register, self.character.value);
+		}
+
+		if (self.string != (StringLiteral)0) {
+			compiler.writeMovStr(register, self.string);
+		}
+
+		return register;
 	}
 
 	func getTypeValue(Value self, Parser parser) -> TypeObj {

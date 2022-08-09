@@ -306,3 +306,59 @@ func unEscapeCharacter(str charPtr, int offset) -> char {
 	}
 	return chr;
 }
+
+func unescapeChar(char chr) -> char {
+	if (chr == 'a') {
+		return '\a';
+	}
+
+	if (chr == 'b') {
+		return '\b';
+	}
+
+	if (chr == 'e') {
+		return '\e';
+	}
+
+	if (chr == 'f') {
+		return '\f';
+	}
+
+	if (chr == 'n') {
+		return '\n';
+	}
+
+	if (chr == 'r') {
+		return '\r';
+	}
+
+	if (chr == 't') {
+		return '\t';
+	}
+
+	if (chr == 'v') {
+		return '\v';
+	}
+
+	if (chr == '\\') {
+		return '\\';
+	}
+
+	if (chr == '\'') {
+		return '\'';
+	}
+
+	if (chr == '\"') {
+		return '\"';
+	}
+
+	if (chr == '?') {
+		return '\?';
+	}
+
+	if (chr == '0') {
+		return '\0'; // cannot do octal yet, just null
+	}
+
+	return chr;
+}

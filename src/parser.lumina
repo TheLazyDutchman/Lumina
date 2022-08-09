@@ -4,6 +4,7 @@ import "../std/string.lumina"
 import "../std/syscalls.lumina"
 import "../std/collections.lumina"
 
+import "compiler.lumina"
 import "assignment.lumina"
 import "block.lumina"
 import "type.lumina"
@@ -49,6 +50,18 @@ type SyntaxTree {
 		}
 
 		return definition;
+	}
+
+	func writeFile(SyntaxTree self, Compiler compiler) {
+		compiler.writeOutput(";;starting file: ");
+		compiler.writeOutput(self.fileName);
+		compiler.writeOutput("\n");
+
+		var i = 0;
+		while (i < self.statements.size) {
+			self.statements.get(i).writeStatement(compiler);
+			i = i + 1;
+		}
 	}
 }
 

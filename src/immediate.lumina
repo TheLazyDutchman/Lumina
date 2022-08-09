@@ -1,6 +1,7 @@
 import "../std/string.lumina"
 import "../std/collections.lumina"
 
+import "compiler.lumina"
 import "position.lumina"
 import "whitespace.lumina"
 
@@ -11,6 +12,28 @@ type StringLiteral {
 	str value;
 
 	int id;
+
+	func writeLiteralString(StringLiteral self, Compiler compiler) {
+		compiler.writeOutput("	str_");
+		compiler.writeInt(self.id);
+		compiler.writeOutput(": ");
+
+		var i = 0;
+		var size = strlen(self.value);
+		while (i < size) {
+			var character = self.value[i];
+			if (character == '\\') {
+				character = unescapeChar(self.value[i + 1]);
+			}
+
+			compiler.writeChar(character);
+			compiler.writeOutput(", ");
+			i = i + 1;
+		}
+
+		compiler.writeChar('\0');
+		compiler.writeOutput("\n");
+	}
 }
 
 type Character {

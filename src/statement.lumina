@@ -1,6 +1,7 @@
 import "../std/collections.lumina"
 import "../std/io.lumina"
 
+import "compiler.lumina"
 import "parser.lumina"
 import "lexer.lumina"
 import "position.lumina"
@@ -166,6 +167,22 @@ type Statement {
 			self.returnStatement.typeCheckReturn(parser);
 		} else if (self.blockStatement != (Block)0) {
 			self.blockStatement.typeCheckBlock(parser);
+		}
+	}
+
+	func writeStatement(Statement self, Compiler compiler) {
+		if (self.assignment != (Assignment)0) {
+			self.assignment.writeAssignment(compiler);
+		} else if (self.ifStatement != (If)0) {
+			self.ifStatement.writeIf(compiler);
+		} else if (self.whileStatement != (While)0) {
+			self.whileStatement.writeWhile(compiler);
+		} else if (self.variable != (Variable)0) {
+			self.variable.writeVariable(compiler);
+		} else if (self.returnStatement != (Return)0) {
+			self.returnStatement.writeReturn(compiler);
+		} else if (self.blockStatement != (Block)0) {
+			self.blockStatement.writeBlock(compiler);
 		}
 	}
 }

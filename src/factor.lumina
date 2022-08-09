@@ -1,5 +1,7 @@
+import "../std/io.lumina"
 import "../std/collections.lumina"
 
+import "compiler.lumina"
 import "parser.lumina"
 import "lexer.lumina"
 import "type.lumina"
@@ -78,6 +80,18 @@ type Factor {
 		}
 
 		return parser.int;
+	}
+
+	func writeFactor(Factor self, Compiler compiler, bool getPointer) -> Register {
+		var valueRegister = self.value.writeBitwise(compiler, getPointer);
+
+		var i = 0;
+		while (i < self.parts.size) {
+			print("can't write factor operation\n");
+			i = i + 1;
+		}
+
+		return valueRegister;
 	}
 
 	func getTypeFactor(Factor self, Parser parser) -> TypeObj {

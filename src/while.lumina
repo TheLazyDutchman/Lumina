@@ -1,3 +1,6 @@
+import "../std/io.lumina"
+
+import "compiler.lumina"
 import "parser.lumina"
 import "lexer.lumina"
 import "position.lumina"
@@ -41,5 +44,9 @@ type While {
 	func typeCheckWhile(While self, Parser parser) {
 		self.condition.typeCheckCondition(parser);
 		self.block.typeCheckBlock(parser);
+	}
+
+	func writeWhile(While self, Compiler compiler) {
+		print("can't write while yet\n");
 	}
 }

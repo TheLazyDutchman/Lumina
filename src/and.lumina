@@ -1,5 +1,7 @@
+import "../std/io.lumina"
 import "../std/collections.lumina"
 
+import "compiler.lumina"
 import "parser.lumina"
 import "lexer.lumina"
 import "type.lumina"
@@ -75,6 +77,18 @@ type Or {
 		}
 
 		return parser.bool;
+	}
+
+	func writeOr(Or self, Compiler compiler, bool getPointer) -> Register {
+		var valueRegister = self.value.writeComparison(compiler, getPointer);
+
+		var i = 0;
+		while (i < self.parts.size) {
+			print("can't write or yet\n");
+			i = i + 1;
+		}
+
+		return valueRegister;
 	}
 
 	func getTypeOr(Or self, Parser parser) -> TypeObj {

@@ -1,5 +1,6 @@
 import "../std/io.lumina"
 
+import "compiler.lumina"
 import "parser.lumina"
 import "lexer.lumina"
 import "type.lumina"
@@ -270,6 +271,15 @@ type Unary {
 		}
 
 		return (TypeObj)0;
+	}
+
+	func writeUnary(Unary self, Compiler compiler, bool getPointer) -> Register {
+		if (self.index != (Index)0) {
+			return self.index.writeIndex(compiler, getPointer);
+		}
+
+		print("can't write unary yet\n");
+		return (Register)0;
 	}
 
 	func getTypeUnary(Unary self, Parser parser) -> TypeObj {

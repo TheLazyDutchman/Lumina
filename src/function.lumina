@@ -2,6 +2,7 @@ import "../std/string.lumina"
 import "../std/io.lumina"
 import "../std/collections.lumina"
 
+import "compiler.lumina"
 import "parser.lumina"
 import "lexer.lumina"
 import "identifier.lumina"
@@ -451,6 +452,10 @@ type Return {
 			typeObj.printType();
 			print("' instead\n");
 		}
+	}
+
+	func writeReturn(Return self, Compiler compiler) {
+		print("can't write return yet\n");
 	}
 }
 

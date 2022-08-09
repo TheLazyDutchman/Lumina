@@ -2446,11 +2446,11 @@ func CompileLinuxx86_nasm(str fileName, bool debug) {
 	i = 1;
 	while (i < parser.files.size) {
 		var tree = parser.files.get(i);
-		//tree.writeFile(compiler);
+		tree.writeFile(compiler);
 		i = i + 1;
 	}
 
-	//parser.files.get(0).writeFile(compiler);
+	parser.files.get(0).writeFile(compiler);
 
 	compiler.writeFooter(parser.strings, types);
 

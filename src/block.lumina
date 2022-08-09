@@ -1,6 +1,7 @@
 import "../std/collections.lumina"
 import "../std/io.lumina"
 
+import "compiler.lumina"
 import "parser.lumina"
 import "lexer.lumina"
 import "position.lumina"
@@ -85,6 +86,14 @@ type Block {
 		}
 	}
 
+	func writeBlock(Block self, Compiler compiler) {
+		var i = 0;
+		while (i < self.statements.size) {
+			self.statements.get(i).writeStatement(compiler);
+			i = i + 1;
+		}
+	}
+
 	func findDefinitionInBlock(Block self, str name) -> Definition {
 		var definition = findDefinition(self.definitions, name);
 
@@ -127,7 +136,7 @@ func findFunctionInBlock(Block block, str name) -> Function {
 
 func getBlockFunction(Block block) -> Function {
 	if (block.function != (Function)0) {
-	return block.function;
+		return block.function;
 	}
 
 	return getBlockFunction(block.outer);

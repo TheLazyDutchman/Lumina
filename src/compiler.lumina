@@ -3,6 +3,7 @@ import "../std/string.lumina"
 import "../std/io.lumina"
 
 import "type.lumina"
+import "immediate.lumina"
 
 
 const CALLSTACKSIZE = 2048;
@@ -50,6 +51,81 @@ type Compiler {
 
 	func writeInt(Compiler self, int value) {
 		fprinti(self.target, value);
+	}
+
+	func writeChar(Compiler self, char chr) {
+		var lower = (int)chr & 15; // get lower 4 bits
+		var higher = (int)chr >> 4; // get higher 4 bits
+
+		var value = new str(5);
+		value[0] = '0';
+		value[1] = 'x';
+
+		if (0 <= higher && higher <= 9) {
+			value[2] = '0' + higher;
+		} else {
+			value[3] = 'A' + higher - 10;
+		}
+
+		if (0 <= lower && lower <= 9) {
+			value[3] = '0' + lower;
+		} else {
+			value[3] = 'A' + lower - 10;
+		}
+
+		value[4] = '\0';
+		self.writeOutput(value);
+	}
+
+	func writeStringLiteral(Compiler self, str value, int id) {
+		self.writeOutput("	str_");
+		self.writeInt(id);
+		self.writeOutput(": db ");
+
+		var i = 0;
+		var size = strlen(value);
+		while (i < size) {
+			var character = value[i];
+			if (character == '\\') {
+				character = unescapeChar(value[i + 1]);
+			}
+
+			self.writeChar(character);
+			self.writeOutput(", ");
+			i = i + 1;
+		}
+
+		self.writeChar('\0');
+		self.writeOutput("\n");
+	}
+
+	func writeRegister(Compiler self, Register register) {
+		self.writeOutput(register.name);
+	}
+
+	func writeMov(Compiler self, Register register) {
+		self.writeOutput("	mov ");
+		self.writeRegister(register);
+		self.writeOutput(", ");
+	}
+
+	func writeMovInt(Compiler self, Register register, int value) {
+		self.writeMov(register);
+		self.writeInt(value);
+		self.writeOutput(" ;; number\n");
+	}
+
+	func writeMovChar(Compiler self, Register register, char value) {
+		self.writeMov(register);
+		self.writeChar(value);
+		self.writeOutput(" ;; character\n");
+	}
+
+	func writeMovStr(Compiler self, Register register, StringLiteral value) {
+		self.writeMov(register);
+		self.writeOutput("str_");
+		self.writeInt(value.id);
+		self.writeOutput(" ;; string literal\n");
 	}
 
 	func writeHeader(Compiler self) {
@@ -163,16 +239,11 @@ type Compiler {
 			i = i + 1;
 		}
 
-		self.writeOutput("	type_Object: dq 0, 8, 8, type_ObjectList, 0\n");
-		self.writeOutput("	type_ObjectList: dq 0, 8, 8, 0, type_Object\n");
-		self.writeOutput("	type_T: dq 0, 8, 8, type_TList, 0\n");
-		self.writeOutput("	type_TList: dq 0, 8, 8, 0, type_T\n");
-
 		self.writeOutput("\n\n");
 
 		i = 0;
 		while (i < strings.size) {
-			//strings.get(i).writeLiteralString(self);
+			self.writeStringLiteral(strings.get(i), i);
 			i = i + 1;
 		}
 	}
