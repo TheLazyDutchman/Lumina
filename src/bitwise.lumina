@@ -1,3 +1,5 @@
+import "../std/collections.lumina"
+
 import "parser.lumina"
 import "lexer.lumina"
 import "type.lumina"
@@ -7,24 +9,33 @@ import "operator.lumina"
 import "block.lumina"
 
 
+type BitwisePart {
+	Operator operator;
+	Unary value;
+}
+
 type Bitwise {
 	Region region;
 
-	Unary left;
-	Operator comparator;
-	Unary right;
-
+	Unary value;
+	Array<BitwisePart> parts;
 
 	func parseBitwise(Bitwise self, Parser parser, Lexer lexer, Block block) -> Bitwise {
 		self.region = lexer.startRegion();
 
-		self.left = new Unary();
-		self.left.parseUnary(parser, lexer, block);
+		self.value = new Unary();
+		self.value.parseUnary(parser, lexer, block);
 
-		self.comparator = lexer.consumePrecedence(PREC_bitwise);
-		if (self.comparator != (Operator)0) {
-			self.right = new Unary();
-			self.right.parseUnary(parser, lexer, block);
+		self.parts = createArray<BitwisePart>();
+
+		while (lexer.current.operator.precedence == PREC_bitwise) {
+			var part = new BitwisePart();
+			part.operator = lexer.consumePrecedence(PREC_bitwise);
+
+			part.value = new Unary();
+			part.value.parseUnary(parser, lexer, block);
+
+			self.parts.push(part);
 		}
 
 		lexer.endRegion(self.region);
@@ -33,17 +44,20 @@ type Bitwise {
 	}
 
 	func bindBitwise(Bitwise self, Parser parser) {
-		self.left.bindUnary(parser);
+		self.value.bindUnary(parser);
 
-		if (self.right != (Unary)0) {
-			self.right.bindUnary(parser);
+		var i = 0;
+		while (i < self.parts.size) {
+			var part = self.parts.get(i);
+			part.value.bindUnary(parser);
+			i = i + 1;
 		}
 	}
 
 	func typeCheckBitwise(Bitwise self, Parser parser) -> TypeObj {
-		var leftType = self.left.typeCheckUnary(parser);
+		var leftType = self.value.typeCheckUnary(parser);
 
-		if (self.right == (Unary)0) {
+		if (self.parts.size == 0) {
 			return leftType;
 		}
 
@@ -51,16 +65,20 @@ type Bitwise {
 			parser.error(self.region.start, " expected left hand side of bitwise operation to be of type 'int'\n");
 		}
 
-		var rightType = self.right.typeCheckUnary(parser);
+		var i = 0;
+		while (i < self.parts.size) {
+			var rightType = self.value.typeCheckUnary(parser);
 
-		if (!rightType.checkType(parser.int, parser)) {
-			parser.error(self.right.region.start, " expected right hand side of bitwise operation to be of type 'int'\n");
+			if (!rightType.checkType(parser.int, parser)) {
+				parser.error(self.value.region.start, " expected right hand side of bitwise operation to be of type 'int'\n");
+			}
+			i = i + 1;
 		}
 
 		return parser.int;
 	}
 
 	func getTypeBitwise(Bitwise self, Parser parser) -> TypeObj {
-		return self.left.getTypeUnary(parser);
+		return self.value.getTypeUnary(parser);
 	}
 }

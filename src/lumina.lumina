@@ -1,0 +1,2550 @@
+import "../std/io.lumina"
+import "../std/syscalls.lumina"
+import "../std/path.lumina"
+import "../std/string.lumina"
+
+import "parser.lumina"
+import "compiler.lumina"
+import "unary.lumina"
+import "term.lumina"
+import "factor.lumina"
+import "and.lumina"
+import "comparison.lumina"
+import "bitwise.lumina"
+import "index.lumina"
+import "call.lumina"
+import "block.lumina"
+import "comment.lumina"
+import "expression.lumina"
+import "function.lumina"
+import "if.lumina"
+import "immediate.lumina"
+import "import.lumina"
+import "identifier.lumina"
+import "operation.lumina"
+import "operator.lumina"
+import "position.lumina"
+import "statement.lumina"
+import "type.lumina"
+import "value.lumina"
+import "variable.lumina"
+import "while.lumina"
+import "condition.lumina"
+import "name.lumina"
+import "lexer.lumina"
+import "whitespace.lumina"
+import "definition.lumina"
+
+import "../std/collections.lumina"
+
+
+func evaluateValue(Parser parser, Value value) -> int {
+	if (value.number != (Number)0) {
+		return value.number.value;
+	}
+
+	//printError(parser, value.region.start, " do not support constant values of this type yet\n");
+
+	return -1;
+}
+
+func evaluateOperation(Parser parser, Operation operation) -> int {
+	if (operation.value != (Value)0) {
+		return evaluateValue(parser, operation.value);
+	}
+
+//	printError(parser, operation.region.start, " do not support constant operations yet\n");
+	
+	return -1;
+}
+
+func printEscapedCharacter(int output, char chr) {
+	//split the higher and lower 4 bits of the character
+	var lower = (int)chr;
+
+	var higher = 0;
+	while (lower >= 16) {
+		higher = higher + 1;
+		lower = lower - 16;
+	}
+
+	if (higher >= 16) {
+		return;
+	}
+
+	var charString = new str(5);
+
+	charString[0] = '0';
+	charString[1] = 'x';
+
+	if (0 <= higher && higher <= 9) {
+		charString[2] = '0' + higher;
+	} else {
+		charString[2] = 'A' + higher - 10;
+	}
+
+	if (0 <= lower && lower <= 9) {
+		charString[3] = '0' + lower;
+	} else {
+		charString[3] = 'A' + lower - 10;
+	}
+
+	charString[4] = '\0';
+
+	fprint(output, charString);
+}
+
+//func writeStringLiteral(int output, str string, int id) {
+//	fprint(output, "	string_");
+//	fprinti(output, id);
+//	fprint(output, ": db ");
+//	
+//	var len = strlen(string);
+//
+//	var i = 0;
+//	while (i < len) {
+//		var length = 1;
+//		if (string[i] == '\\') {
+//			length = 2;
+//		}
+//
+//		printEscapedCharacter(output, unEscapeCharacter(string, i));
+//
+//		i = i + length;
+//
+//		fprint(output, ", ");
+//
+//		if (length == -1) {
+//			i = len;
+//		}
+//	}
+//
+//	fprint(output, "0x00\n");
+//}
+//
+//func writeTypeName(int output, TypeObj typeObj) {
+//	if (typeObj.name != (str)0) {
+//		fprint(output, typeObj.name);
+//		return;
+//	}
+//	
+//	if (typeObj.listType == (TypeObj)0) {
+//		print(" type obj has no name in 'writeTypeName'\n");
+//		return;
+//	}
+//
+//	writeTypeName(output, typeObj.listType);
+//	fprint(output, "List");
+//}
+//
+//func writeTypeProperties(int output, TypeObj typeObj) {
+//	fprint(output, "	properties_");
+//	writeTypeName(output, typeObj);
+//	fprint(output, ": dq ");
+//
+//	var i = 0;
+//	while (i < typeObj.properties.size) {
+//		var property = typeObj.properties.list[i];
+//
+//		fprint(output, "property_");
+//		writeTypeName(output, typeObj);
+//		fprint(output, "_");
+//		fprint(output, property.name);
+//		fprint(output, ", ");
+//
+//		i = i + 1;
+//	}
+//
+//	fprint(output, "0\n");
+//
+//	i = 0;
+//	while (i < typeObj.properties.size) {
+//		var property = typeObj.properties.list[i];
+//
+//		fprint(output, "	property_");
+//		writeTypeName(output, typeObj);
+//		fprint(output, "_");
+//		fprint(output, property.name);
+//		fprint(output, ": dq string_");
+//		fprinti(output, property.nameId);
+//		fprint(output, ", ");
+//		fprinti(output, property.offset);
+//		fprint(output, ", type_");
+//		writeTypeName(output, property.propertyType);
+//		fprint(output, "\n");
+//
+//		i = i + 1;
+//	}
+//
+//	fprint(output, "\n");
+//}
+//
+//func writeTypeLiteral(int output, TypeObj typeObj) {
+//	if (typeObj.isGeneric) {
+//		return;
+//	}
+//
+//	fprint(output, "	type_");
+//	writeTypeName(output, typeObj);
+//	fprint(output, ": dq string_");
+//	fprinti(output, typeObj.nameId);
+//	fprint(output, ", ");
+//	fprinti(output, typeObj.size);
+//	fprint(output, ", ");
+//	fprinti(output, typeObj.objectSize);
+//	fprint(output, ", properties_");
+//	writeTypeName(output, typeObj);
+//	fprint(output, ", ");
+//
+//	if (typeObj.listOf != (TypeObj)0) {
+//		fprint(output, "type_");
+//		writeTypeName(output, typeObj.listOf);
+//		fprint(output, ", ");
+//	} else {
+//		fprint(output, "type_ObjectList, ");
+//	}
+//
+//	if (typeObj.listType != (TypeObj)0) {
+//		fprint(output, "type_");
+//		writeTypeName(output, typeObj.listType);
+//	} else {
+//		fprint(output, "0");
+//	}
+//
+//	fprint(output, "\n");
+//
+//	writeTypeProperties(output, typeObj);
+//}
+//
+//func writeFindBlockBuiltin(int output) {
+//	fprint(output, "__find_block__:\n");
+//
+//	fprint(output, "	;; finds the first memory block after a given pointer\n");
+//	fprint(output, "	;; or null if there are none\n\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//	fprint(output, "	pop rbx ;; pointer\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//
+//	fprint(output, "	mov rcx, [lastblock]\n");
+//	fprint(output, "	mov rax, 0\n");
+//
+//	fprint(output, ".loop_condition:\n");
+//	fprint(output, "	cmp rcx, rbx\n");
+//	fprint(output, "	jl .loop_end\n");
+//
+//	fprint(output, "	mov rax, rcx\n");
+//	fprint(output, "	mov rcx, [rcx] ;; last block\n");
+//	fprint(output, "	jmp .loop_condition\n");
+//	fprint(output, ".loop_end:\n");
+//
+//	fprint(output, "	ret\n\n");
+//}
+//
+//func writeGetBlockBuiltin(int output) {
+//	fprint(output, "__get_block__:\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//	fprint(output, "	pop rbx ;; size\n");
+//	fprint(output, "	add rbx, 24 ;; block header\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//
+//	fprint(output, "	mov rax, [lastblock]\n");
+//	fprint(output, "	mov r8, 0\n");
+//	fprint(output, "	mov rcx, 1\n");
+//
+//	fprint(output, ".loop_condition:\n");
+//	fprint(output, "	cmp rcx, 0\n");
+//	fprint(output, "	je .loop_end\n");
+//
+//	fprint(output, "	cmp [rax + 16], rbx\n");
+//	fprint(output, "	cmovl rax, [rax]\n");
+//	fprint(output, "	cmovge rcx, r8\n");
+//
+//	fprint(output, "	cmp rax, 0\n");
+//	fprint(output, "	cmove rcx, r8\n");
+//
+//	fprint(output, "	jmp .loop_condition\n");
+//
+//	fprint(output, ".loop_end:\n");
+//
+//	fprint(output, "	ret\n\n");
+//}
+//
+//func writeCreateBlockBuiltin(int output) {
+//	fprint(output, "__create_block__:\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//	fprint(output, "	pop rbx ;; size\n");
+//	fprint(output, "	pop rcx ;; pointer\n");
+//
+//	fprint(output, "	;; store values\n");
+//	fprint(output, "	push rbx\n");
+//	fprint(output, "	push rcx\n");
+//	fprint(output, "	;; push arguments\n");
+//	fprint(output, "	push rcx\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//
+//	fprint(output, "	call __find_block__\n");
+//
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//	fprint(output, "	pop rcx ;; pointer\n");
+//	fprint(output, "	pop rbx ;; size\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//
+//	fprint(output, "	;; set block before this one\n");
+//	fprint(output, "	cmp rax, 0\n");
+//	fprint(output, "	cmove r8, [lastblock]\n");
+//	fprint(output, "	cmovg r8, [rax]\n");
+//
+//	fprint(output, "	mov r9, r8\n");
+//	fprint(output, "	add r9, [r8 + 16] ;; size\n");
+//	fprint(output, "	cmp r9, rcx\n");
+//	fprint(output, "	jne .joined_before\n");
+//
+//	fprint(output, "	add [r8 + 16], rbx\n");
+//	fprint(output, "	mov rax, r8\n");
+//	fprint(output, "	ret\n");
+//	fprint(output, ".joined_before:\n");
+//
+//	fprint(output, "	mov r9, rcx\n");
+//	fprint(output, "	add r9, rbx\n");
+//	fprint(output, "	cmp r9, rax\n");
+//	fprint(output, "	jne .joined_after\n");
+//
+//	fprint(output, "	add rbx, [rax + 16]\n");
+//	fprint(output, "	mov [rcx + 16], rbx\n");
+//	fprint(output, "	mov rax, [rax + 8]\n");
+//	fprint(output, ".joined_after:\n");
+//
+//	fprint(output, "	mov [rcx], r8\n");
+//	fprint(output, "	mov [rcx + 8], rax\n");
+//
+//	fprint(output, "	mov r9, r8\n");
+//	fprint(output, "	cmp r8, 0\n");
+//	fprint(output, "	cmovg r9, [heapstart]\n");
+//	fprint(output, "	cmovg r8, rcx\n");
+//	fprint(output, "	add r9, 8\n");
+//	fprint(output, "	mov [r9], r8\n");
+//
+//	fprint(output, "	cmp rax, 0\n");
+//	fprint(output, "	cmove rax, [lastblock]\n");
+//	fprint(output, "	mov [rax], rcx\n");
+//
+//	fprint(output, "	mov rax, rcx\n");
+//	fprint(output, "	ret\n\n");
+//}
+//
+//func writeExpandHeapBuiltin(int output) {
+//	fprint(output, "__expand_heap__:\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//	fprint(output, "	pop rbx ;; size\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//
+//	fprint(output, "	mov r8, 4096\n");
+//	fprint(output, ".loop_condition:\n");
+//	fprint(output, "	cmp r8, rbx\n");
+//	fprint(output, "	jg .loop_end\n");
+//
+//	fprint(output, "	add r8, 4096\n");
+//	fprint(output, "	jmp .loop_condition\n");
+//	fprint(output, ".loop_end:\n");
+//
+//	fprint(output, "	mov rbx, [heapend]\n");
+//
+//	fprint(output, "	mov rax, 12 ;; sysbrk\n");
+//	fprint(output, "	mov rdi, rbx\n");
+//	fprint(output, "	add rdi, r8\n");
+//	fprint(output, "	mov [heapend], rdi\n");
+//	fprint(output, "	syscall\n");
+//
+//	fprint(output, "	sub rbx, 8\n");
+//	fprint(output, "	mov r9, [lastblock]\n");
+//	fprint(output, "	mov [rbx], r9\n");
+//	fprint(output, "	mov [rbx + 16], r8\n");
+//	fprint(output, "	mov [lastblock], rbx\n");
+//
+//	fprint(output, "	ret\n\n");
+//}
+//
+//func writeAllocateBuiltin(int output) {
+//	fprint(output, "__allocate__:\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//	fprint(output, "	pop rbx ;; size\n");
+//	fprint(output, "	push rbx\n");
+//	fprint(output, "	push rbx\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//
+//	fprint(output, "	call __get_block__\n");
+//
+//	fprint(output, "	cmp rax, 0\n");
+//	fprint(output, "	jg .setup\n");
+//
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//	fprint(output, "	push rbx\n");
+//	fprint(output, "	push rbx\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//
+//	fprint(output, "	call __expand_heap__\n");
+//	fprint(output, "	call __get_block__\n");
+//
+//	fprint(output, ".setup:\n");
+//
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//	fprint(output, "	pop rbx\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//
+//	fprint(output, "	sub [rax + 16], rbx\n");
+//	fprint(output, "	add rax, [rax + 16] ;; block size\n");
+//	fprint(output, "	mov r8, rax\n");
+//
+//	fprint(output, "	mov rcx, rax\n");
+//
+//	fprint(output, ".init_condition:\n");
+//	fprint(output, "	cmp rcx, r8\n");
+//	fprint(output, "	jg .return\n");
+//	fprint(output, "	mov qword [rcx], 0 ;; zero-initialize allocated memory\n");
+//	fprint(output, "	add rcx, 8\n");
+//	fprint(output, "	jmp .init_condition\n");
+//
+//	fprint(output, ".return:\n");
+//
+//	fprint(output, "	sub rax, [heapstart]\n");
+//
+//	fprint(output, "	ret\n\n");
+//}
+//
+//func writeNewBuiltin(int output) {
+//	fprint(output, "__new__:\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//	fprint(output, "	pop rax ;; type\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//
+//	fprint(output, "	mov rbx, [rax + 16] ;; size\n");
+//	fprint(output, "	add rbx, 16 ;; header size\n");
+//
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//	fprint(output, "	push rax ;; type\n");
+//
+//	fprint(output, "	push rbx\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//
+//	fprint(output, "	call __allocate__\n");
+//
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//	fprint(output, "	pop rbx ;; type\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//
+//	fprint(output, "	mov rcx, rax\n");
+//	fprint(output, "	add rcx, [heapstart]\n");
+//	fprint(output, "	add rax, 16\n");
+//
+//	fprint(output, "	mov [rcx + 8], rbx\n");
+//
+//	fprint(output, "	ret\n\n");
+//}
+//
+//func writeNewListBuiltin(int output) {
+//	fprint(output, "__new_list__:\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//	fprint(output, "	pop rax ;; size\n");
+//	fprint(output, "	pop rbx ;; type\n");
+//	fprint(output, "	push rax\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//
+//	fprint(output, "	mov rcx, [rbx + 16] ;; item size\n");
+//	fprint(output, "	mul rcx\n");
+//
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//	fprint(output, "	push rbx ;; type\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//
+//	fprint(output, "	mov rbx, rax\n");
+//	fprint(output, "	add rbx, 24 ;; header size\n");
+//
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//	fprint(output, "	push rbx ;; size\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//
+//	fprint(output, "	call __allocate__\n");
+//
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//	fprint(output, "	pop rbx ;; type\n");
+//	fprint(output, "	pop rcx ;; size\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//
+//	fprint(output, "	mov r8, rax\n");
+//	fprint(output, "	add r8, [heapstart]\n");
+//	fprint(output, "	add rax, 24\n");
+//
+//	fprint(output, "	mov [r8 + 8], rcx\n");
+//	fprint(output, "	mov [r8 + 16], rbx\n");
+//
+//	fprint(output, "	ret\n\n");
+//}
+//
+//func writeSyscallBuiltin(int output) {
+//	fprint(output, "	;; -- syscall builtin --\n");
+//	fprint(output, "addr_func_syscall_0:\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//	fprint(output, "	pop r9\n");
+//	fprint(output, "	pop r8\n");
+//	fprint(output, "	pop r10\n");
+//	fprint(output, "	pop rdx\n");
+//	fprint(output, "	pop rsi\n");
+//	fprint(output, "	pop rdi\n");
+//	fprint(output, "	pop rax\n");
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//	fprint(output, "	syscall\n");
+//	fprint(output, "	ret\n\n");
+//}
+//
+//func writeConstant(Parser parser, SyntaxTree tree, Block block, int output, Variable constant, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
+//	if (constant.variableType == parser.Type) {
+//		// I want to move these into the type keyword, instead of the constant keyword
+//		return writeOperation(parser, tree, block, output, constant.definition.value, registers, register, (bool)1, functions);
+//	}
+//
+//	if (!constant.isEvaluated) {
+//		evaluateConstant(parser, constant);
+//	}
+//
+//	fprint(output, "	mov ");
+//	fprint(output, register.name);
+//	fprint(output, ", ");
+//
+//	if (constant.variableType == parser.int) {
+//		fprinti(output, constant.value);
+//	} else if (constant.variableType == parser.char) {
+//		printEscapedCharacter(output, (char)constant.value);
+//	} else if (constant.variableType == parser.str) {
+//		fprint(output, "string_");
+//		fprinti(output, constant.value);
+//	} else if (constant.variableType == parser.bool) {
+//		fprinti(output, constant.value);
+//	} else {
+//		printPosition(constant.definition.value.region.start);
+//		print(" do not support type '");
+//		printType(constant.variableType);
+//		print("' for constants yet\n");
+//	}
+//
+//	fprint(output, " ;; constant\n");
+//
+//	return register.name;
+//}
+//
+//func writeIdentifier(Parser parser, SyntaxTree tree, Block block, int output, Identifier identifier, Array<Register> registers, Register register, bool getValue, Array<FunctionDefinition> functions) -> str {
+//	var variable = findVariableInParser(parser, tree, block, identifier.name);
+//	if (variable == (Variable)0) {
+//		var typeObj = findTypeInParser(parser, tree, block, identifier.name);
+//
+//		if (typeObj == (TypeObj)0) {
+//			return register.name;
+//		}
+//
+//		if (typeObj.isGeneric) {
+//			fprint(output, "	mov ");
+//			fprint(output, register.name);
+//			fprint(output, ", [basestack + ");
+//			fprinti(output, typeObj.depth * 8);
+//			fprint(output, "]\n");
+//
+//			fprint(output, "	mov ");
+//			fprint(output, register.name);
+//			fprint(output, ", [");
+//			fprint(output, register.name);
+//			
+//			if (typeObj.position != 0) {
+//				fprint(output, " - ");
+//				fprinti(output, typeObj.position * 8);
+//			}
+//
+//			fprint(output, "]\n");
+//
+//			return register.name;
+//		}
+//
+//		fprint(output, "	mov ");
+//		fprint(output, register.name);
+//		fprint(output, ", type_");
+//		writeTypeName(output, typeObj);
+//		fprint(output, "\n");
+//
+//		return register.name;
+//	}
+//
+//	if (variable.isConstant) {
+//		return writeConstant(parser, tree, block, output, variable, registers, register, functions);
+//	}
+//
+//	fprint(output, "	mov ");
+//	fprint(output, register.name);
+//
+//	if (variable.depth == 0) {
+//		fprint(output, ", [basestack]\n");
+//	} else {
+//		fprint(output, ", [basestack + ");
+//		fprinti(output, 8 * variable.depth);
+//		fprint(output, "]\n");
+//	}
+//
+//	if (getValue) {
+//		fprint(output, "	mov ");
+//		fprint(output, register.name);
+//		fprint(output, ", [");
+//		fprint(output, register.name);
+//
+//		if (variable.position != 0) {
+//			fprint(output, " - ");
+//			fprinti(output, 8 * variable.position);
+//		}
+//
+//		fprint(output, "] ;; variable\n");
+//	} else if (variable.position != 0) {
+//		fprint(output, "	sub ");
+//		fprint(output, register.name);
+//		fprint(output, ", ");
+//		fprinti(output, 8 * variable.position);
+//		fprint(output, "\n");
+//	}
+//
+//	return register.name;
+//}
+//
+//func writeIndex(int output, int size, Register registerA, Register registerB, bool getValue, bool addOffset) -> str {
+//	if (addOffset) {
+//		fprint(output, "	add ");
+//		fprint(output, registerA.name);
+//		fprint(output, ", [heapstart] ;; heap offset\n");
+//	}
+//
+//	fprint(output, "	lea ");
+//	fprint(output, registerA.name);
+//	fprint(output, ", [");
+//	fprint(output, registerA.name);
+//	fprint(output, " + ");
+//	fprinti(output, size);
+//	fprint(output, " * ");
+//	fprint(output, registerB.name);
+//	fprint(output, "]\n");
+//
+//	if (getValue) {
+//		fprint(output, "	mov ");
+//		fprint(output, registerA.name);
+//		fprint(output, ", [");
+//		fprint(output, registerA.name);
+//		fprint(output, "] ;; index \n");
+//
+//		if (size != 8) {
+//			fprint(output, "	and ");
+//			fprint(output, registerA.name);
+//			fprint(output, ", ");
+//			fprinti(output, (1 << (8 * size)) - 1);
+//			fprint(output, " ;; mask\n");
+//		}
+//	}
+//
+//	registerB.used = false;
+//	return registerA.name;
+//}
+//
+//func writeGenericIndex(int output, Array<Register> registers, Register pointerRegister, Register indexRegister, bool getValue) -> str {
+//	fprint(output, "	add ");
+//	fprint(output, pointerRegister.name);
+//	fprint(output, ", [heapstart] ;; heap offset\n");
+//
+//	var rax = findRegister(registers, "rax");
+//	var rcx = findRegister(registers, "rcx");
+//
+//	var pointerWasRax = false;
+//	var indexWasRax = false;
+//	var pointerWasRcx = false;
+//	var indexWasRcx = false;
+//
+//	if (pointerRegister == rax) {
+//		pointerRegister = getRegister(registers);
+//
+//		fprint(output, "	mov ");
+//		fprint(output, pointerRegister.name);
+//		fprint(output, ", rax\n");
+//
+//		rax.used = false;
+//		pointerWasRax = true;
+//	}
+//
+//	if (indexRegister == rax) {
+//		indexRegister = getRegister(registers);
+//
+//		fprint(output, "	mov ");
+//		fprint(output, indexRegister.name);
+//		fprint(output, ", rax\n");
+//
+//		rax.used = false;
+//		indexWasRax = true;
+//	}
+//
+//	if (pointerRegister == rcx) {
+//		pointerRegister = getRegister(registers);
+//
+//		fprint(output, "	mov ");
+//		fprint(output, pointerRegister.name);
+//		fprint(output, ", rcx\n");
+//
+//		rcx.used = false;
+//		pointerWasRcx = true;
+//	}
+//
+//	if (indexRegister == rcx) {
+//		indexRegister = getRegister(registers);
+//
+//		fprint(output, "	mov ");
+//		fprint(output, indexRegister.name);
+//		fprint(output, ", rcx\n");
+//
+//		rcx.used = false;
+//		indexWasRcx = true;
+//	}
+//
+//	var pushedRcx = false;
+//	if (rcx.used) {
+//		writePushData(output, rcx);
+//		pushedRcx = true;
+//	}
+//
+//	var sizeRegister = rcx;
+//	sizeRegister.used = true;
+//
+//	fprint(output, "	mov ");
+//	fprint(output, sizeRegister.name);
+//	fprint(output, ", [");
+//	fprint(output, pointerRegister.name);
+//	fprint(output, " - 8] ;; list type\n");
+//
+//	fprint(output, "	mov ");
+//	fprint(output, sizeRegister.name);
+//	fprint(output, ", [");
+//	fprint(output, sizeRegister.name);
+//	fprint(output, " + 16] ;; item size\n");
+//
+//	if (rax.used) {
+//		writePushData(output, rax);
+//		rax.used = true;
+//	}
+//
+//	fprint(output, "	mov rax, ");
+//	fprint(output, indexRegister.name);
+//	fprint(output, "\n");
+//
+//	fprint(output, "	mul ");
+//	fprint(output, sizeRegister.name);
+//	fprint(output, "\n");
+//
+//	fprint(output, "	mov ");
+//	fprint(output, indexRegister.name);
+//	fprint(output, ", rax\n");
+//
+//	if (rax.used) {
+//		writePopData(output, rax);
+//	}
+//
+//	fprint(output, "	lea ");
+//	fprint(output, pointerRegister.name);
+//	fprint(output, ", [");
+//	fprint(output, pointerRegister.name);
+//	fprint(output, " + ");
+//	fprint(output, indexRegister.name);
+//	fprint(output, "]\n");
+//
+//	if (rax.used) {
+//		writePushData(output, rax);
+//		rax.used = true;
+//	}
+//
+//	fprint(output, "	mov rax, ");
+//	fprint(output, sizeRegister.name);
+//	fprint(output, "\n");
+//
+//	fprint(output, "	mov ");
+//	fprint(output, indexRegister.name);
+//	fprint(output, ", 0\n");
+//
+//	fprint(output, "	cmp rax, 8\n");
+//	
+//	fprint(output, "	cmove rax, ");
+//	fprint(output, indexRegister.name);
+//	fprint(output, "\n");
+//
+//	fprint(output, "	mov ");
+//	fprint(output, indexRegister.name);
+//	fprint(output, ", 8\n");
+//
+//	fprint(output, "	mul ");
+//	fprint(output, indexRegister.name);
+//	fprint(output, "\n");
+//
+//	fprint(output, "	mov ");
+//	fprint(output, sizeRegister.name);
+//	fprint(output, ", rax\n");
+//
+//	if (rax.used) {
+//		writePopData(output, rax);
+//	}
+//
+//	fprint(output, "	mov ");
+//	fprint(output, indexRegister.name);
+//	fprint(output, ", 1\n");
+//
+//	fprint(output, "	cmp rcx, 0\n");
+//	fprint(output, "	cmove ");
+//	fprint(output, indexRegister.name);
+//	fprint(output, ", rcx\n");
+//
+//	fprint(output, "	shl ");
+//	fprint(output, indexRegister.name);
+//	fprint(output, ", cl\n");
+//
+//	fprint(output, "	dec ");
+//	fprint(output, indexRegister.name);
+//	fprint(output, "\n");
+//
+//	if (pushedRcx) {
+//		writePopData(output, rcx);
+//	} else {
+//		sizeRegister.used = false;
+//	}
+//
+//	if (pointerWasRax) {
+//		fprint(output, "	mov rax, ");
+//		fprint(output, pointerRegister.name);
+//		fprint(output, "\n");
+//
+//		pointerRegister.used = false;
+//		pointerRegister = rax;
+//		rax.used = true;
+//	}
+//
+//	if (indexWasRax) {
+//		fprint(output, "	mov rax, ");
+//		fprint(output, indexRegister.name);
+//		fprint(output, "\n");
+//
+//		indexRegister.used = false;
+//		indexRegister = rax;
+//		rax.used = true;
+//	}
+//
+//	if (pointerWasRcx) {
+//		fprint(output, "	mov rcx, ");
+//		fprint(output, pointerRegister.name);
+//		fprint(output, "\n");
+//
+//		pointerRegister.used = false;
+//		pointerRegister = rcx;
+//		rcx.used = true;
+//	}
+//
+//	if (indexWasRcx) {
+//		fprint(output, "	mov rcx, ");
+//		fprint(output, indexRegister.name);
+//		fprint(output, "\n");
+//
+//		indexRegister.used = false;
+//		indexRegister = rcx;
+//		rcx.used = true;
+//	}
+//
+//	if (getValue) {
+//		fprint(output, "	mov ");
+//		fprint(output, pointerRegister.name);
+//		fprint(output, ", [");
+//		fprint(output, pointerRegister.name);
+//		fprint(output, "] ;; index \n");
+//
+//		fprint(output, "	and ");
+//		fprint(output, pointerRegister.name);
+//		fprint(output, ", ");
+//		fprint(output, indexRegister.name);
+//		fprint(output, "\n");
+//
+//		indexRegister.used = false;
+//
+//		return pointerRegister.name;
+//	}
+//
+//	return indexRegister.name;
+//}
+//
+//func writeValue(Parser parser, SyntaxTree tree, Block block, int output, Value value, Array<Register> registers, Register register, bool getValue, Array<FunctionDefinition> functions) -> str {
+//	if (value.number != (Number)0) {
+//		fprint(output, "	mov ");
+//		fprint(output, register.name);
+//		fprint(output, ", ");
+//		fprinti(output, value.number.value);
+//		fprint(output, " ;; number\n");
+//	} else if (value.character != (Character)0) {
+//		fprint(output, "	mov ");
+//		fprint(output, register.name);
+//		fprint(output, ", ");
+//		printEscapedCharacter(output, value.character.value);
+//		fprint(output, " ;; character\n");
+//	} else if (value.string != (StringLiteral)0) {
+//		var id = findString(parser.strings, value.string.value);
+//
+//		fprint(output, "	mov ");
+//		fprint(output, register.name);
+//		fprint(output, ", string_");
+//		fprinti(output, id);
+//		fprint(output, " ;; string\n");
+//
+//		fprint(output, "	sub ");
+//		fprint(output, register.name);
+//		fprint(output, ", [heapstart] ;; heap offset\n");
+//	} else if (value.identifier != (Identifier)0) {
+//		writeIdentifier(parser, tree, block, output, value.identifier, registers, register, getValue, functions);
+//	}
+//
+//	return register.name;
+//}
+//
+//func writeBinaryOperation(int output, str operation, str registerA, str registerB) {
+//	fprint(output, "	");
+//	fprint(output, operation);
+//	fprint(output, " ");
+//	fprint(output, registerA);
+//	fprint(output, ", ");
+//	fprint(output, registerB);
+//	fprint(output, "\n");
+//}
+//
+//func writeComparison(int output, str cmov, Register registerA, Register registerB) -> str {
+//	fprint(output, "	cmp ");
+//	fprint(output, registerA.name);
+//	fprint(output, ", ");
+//	fprint(output, registerB.name);
+//	fprint(output, "\n");
+//	
+//	fprint(output, "	mov ");
+//	fprint(output, registerA.name);
+//	fprint(output, ", 0\n");
+//
+//	fprint(output, "	mov ");
+//	fprint(output, registerB.name);
+//	fprint(output, ", 1\n");
+//
+//	fprint(output, "	");
+//	fprint(output, cmov);
+//	fprint(output, " ");
+//	fprint(output, registerA.name);
+//	fprint(output, ", ");
+//	fprint(output, registerB.name);
+//	fprint(output, " ;; comparison\n");
+//
+//	registerB.used = false;
+//	return registerA.name;
+//}
+//
+//func writePushData(int output, Register register) {
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//
+//	fprint(output, "	push ");
+//	fprint(output, register.name);
+//	fprint(output, "\n");
+//
+//	fprint(output, "	xchg rsp, [datarsp]\n\n");
+//
+//	register.used = false;
+//}
+//
+//func writePopData(int output, Register register) {
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//
+//	fprint(output, "	pop ");
+//	fprint(output, register.name);
+//	fprint(output, "\n");
+//
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//}
+//
+//func writeJumpNotEqual(Parser parser, SyntaxTree tree, Block block, int output, Array<Register> registers, Operation condition, str addr, int id, Array<FunctionDefinition> functions) {
+//	var jumpWord = "je";
+//	var isComparison = false;
+//	if (isOperator(condition.operator, "==")) {
+//		isComparison = true;
+//		jumpWord = "jne";
+//	} else if (isOperator(condition.operator, "!=")) {
+//		isComparison = true;
+//		jumpWord = "je";
+//	} else if (isOperator(condition.operator, "<=")) {
+//		isComparison = true;
+//		jumpWord = "jg";
+//	} else if (isOperator(condition.operator, ">=")) {
+//		isComparison = true;
+//		jumpWord = "jl";
+//	} else if (isOperator(condition.operator, "<")) {
+//		isComparison = true;
+//		jumpWord = "jge";
+//	} else if (isOperator(condition.operator, ">")) {
+//		isComparison = true;
+//		jumpWord = "jle";
+//	}
+//
+//	if (isComparison) {
+//		var leftRegister = getRegister(registers);
+//		writeOperation(parser, tree, block, output, condition.left, registers, leftRegister, true, functions);
+//
+//		var rightRegister = getRegister(registers);
+//		writeOperation(parser, tree, block, output, condition.right, registers, rightRegister, true, functions);
+//
+//		fprint(output, "	cmp ");
+//		fprint(output, leftRegister.name);
+//		fprint(output, ", ");
+//		fprint(output, rightRegister.name);
+//		fprint(output, "\n");
+//
+//		leftRegister.used = false;
+//		rightRegister.used = false;
+//	} else {
+//		var register = getRegister(registers);
+//		writeOperation(parser, tree, block, output, condition, registers, register, true, functions);
+//
+//		fprint(output, "	cmp ");
+//		fprint(output, register.name);
+//		fprint(output, ", 0\n");
+//		register.used = false;
+//	}
+//
+//	fprint(output, "	");
+//	fprint(output, jumpWord);
+//	fprint(output, " ");
+//	fprint(output, addr);
+//	fprinti(output, id);
+//	fprint(output, "\n\n");
+//}
+//
+//func writeJumpEqual(Parser parser, SyntaxTree tree, Block block, int output, Array<Register> registers, Operation condition, str addr, int id, Array<FunctionDefinition> functions) {
+//	var jumpWord = "jne";
+//	var isComparison = false;
+//	if (isOperator(condition.operator, "==")) {
+//		isComparison = true;
+//		jumpWord = "je";
+//	} else if (isOperator(condition.operator, "!=")) {
+//		isComparison = true;
+//		jumpWord = "jne";
+//	} else if (isOperator(condition.operator, "<=")) {
+//		isComparison = true;
+//		jumpWord = "jle";
+//	} else if (isOperator(condition.operator, ">=")) {
+//		isComparison = true;
+//		jumpWord = "jge";
+//	} else if (isOperator(condition.operator, "<")) {
+//		isComparison = true;
+//		jumpWord = "jl";
+//	} else if (isOperator(condition.operator, ">")) {
+//		isComparison = true;
+//		jumpWord = "jg";
+//	}
+//
+//	if (isComparison) {
+//		var leftRegister = getRegister(registers);
+//		writeOperation(parser, tree, block, output, condition.left, registers, leftRegister, true, functions);
+//
+//		var rightRegister = getRegister(registers);
+//		writeOperation(parser, tree, block, output, condition.right, registers, rightRegister, true, functions);
+//
+//		fprint(output, "	cmp ");
+//		fprint(output, leftRegister.name);
+//		fprint(output, ", ");
+//		fprint(output, rightRegister.name);
+//		fprint(output, "\n");
+//
+//		leftRegister.used = false;
+//		rightRegister.used = false;
+//	} else {
+//		var register = getRegister(registers);
+//		writeOperation(parser, tree, block, output, condition, registers, register, true, functions);
+//
+//		fprint(output, "	cmp ");
+//		fprint(output, register.name);
+//		fprint(output, ", 0\n");
+//		register.used = false;
+//	}
+//
+//	fprint(output, "	");
+//	fprint(output, jumpWord);
+//	fprint(output, " ");
+//	fprint(output, addr);
+//	fprinti(output, id);
+//	fprint(output, "\n\n");
+//}
+//
+//func writeJump(int output, str addr, int id) {
+//	fprint(output, "	jmp ");
+//	fprint(output, addr);
+//	fprinti(output, id);
+//	fprint(output, "\n\n");
+//}
+//
+//func writeAddress(int output, str addr, int id) {
+//	fprint(output, addr);
+//	fprinti(output, id);
+//	fprint(output, ":\n\n");
+//}
+//
+//func writeSizeOf(Parser parser, SyntaxTree tree, Block block, int output, SizeOf sizeOf, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
+//	writeOperation(parser, tree, block, output, sizeOf.typeObj, registers, register, true, functions);
+//
+//	fprint(output, "	mov ");
+//	fprint(output, register.name);
+//	fprint(output, ", [");
+//	fprint(output, register.name);
+//	fprint(output, " + 16] ;; type size\n");
+//
+//	return register.name;
+//}
+//
+//func writeNewOperation(Parser parser, SyntaxTree tree, Block block, int output, Array<Register> registers, NewOperation newOperation, Register register, Array<FunctionDefinition> functions) -> str {
+//	var typeLiteral = getTypeFromOperation(parser, tree, block, newOperation.typeObj);
+//
+//	var i = 0;
+//	while (i < registers.size) {
+//		var reg = registers.list[i];
+//		if (reg.used && reg != register) {
+//		writePushData(output, reg);
+//		reg.used = true; // writePush frees register, but in this case we just do that temporarily, because the function we are calling might use the same ones
+//		}
+//		i = i + 1;
+//	}
+//
+//	writeOperation(parser, tree, block, output, newOperation.typeObj, registers, register, true, functions);
+//	
+//	writePushData(output, register);
+//	register.used = true;
+//
+//	if (typeLiteral.listType == (TypeObj)0) {
+//		fprint(output, "	call __new__\n");
+//	} else {
+//		writeOperation(parser, tree, block, output, newOperation.num, registers, register, true, functions); // list size
+//		writePushData(output, register);
+//		register.used = true;
+//
+//		fprint(output, "	call __new_list__\n");
+//	}
+//
+//	if (!streq(register.name, "rax")) {
+//		fprint(output, "	mov ");
+//		fprint(output, register.name);
+//		fprint(output, ", rax\n");
+//	}
+//
+//	i = registers.size - 1;
+//	while (i >= 0) {
+//		var reg = registers.list[i];
+//		if (reg.used && reg != register) {
+//			writePopData(output, reg);
+//		}
+//		i = i - 1;
+//	}
+//
+//	return register.name;
+//}
+//
+//func writeCall(Parser parser, SyntaxTree tree, Block block, int output, Operation call, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
+//	var name = (str)0;
+//
+//	if (call.left.value == (Value)0 && isOperator(call.left.operator, "<")) {
+//		name = call.left.left.value.identifier.name;
+//	} else {
+//		name = call.left.value.identifier.name;
+//	}
+//
+//	var id = 0;
+//	var i = 0;
+//	while (i < functions.size) {
+//		if (streq(functions.list[i].name.name, name)) {
+//			id = i;
+//			i = functions.size;
+//		}
+//		i = i + 1;
+//	}
+//
+//	var arguments = createArray<Operation>();
+//
+//	if (call.left.right != (Operation)0) {
+//		getArguments(arguments, call.left.right);
+//	}
+//
+//	if (call.right != (Operation)0) {
+//		getArguments(arguments, call.right);
+//	}
+//
+//	i = 0;
+//	while (i < registers.size) {
+//		var reg = registers.list[i];
+//		if (reg.used && reg != register) {
+//			writePushData(output, reg);
+//			reg.used = true; // writePush frees register, but in this case we just do that temporarily, because the function we are calling might use the same ones
+//		}
+//		i = i + 1;
+//	}
+//
+//	i = 0;
+//	while (i < arguments.size) {
+//		writeOperation(parser, tree, block, output, arguments.list[i], registers, register, true, functions);
+//		writePushData(output, register);
+//		register.used = true; // writePush frees register, but in this case we want to reuse the same register
+//		i = i + 1;
+//	}
+//
+//	fprint(output, "	call addr_func_");
+//	fprint(output, functions.list[id].name.name);
+//	fprint(output, "_");
+//	fprinti(output, id);
+//	fprint(output, "\n");
+//
+//	if (!streq(register.name, "rax")) {
+//		fprint(output, "	mov ");
+//		fprint(output, register.name);
+//		fprint(output, ", rax ;; return value\n");
+//	}
+//
+//	i = registers.size - 1;
+//	while (i >= 0) {
+//		var reg = registers.list[i];
+//		if (reg.used && reg != register) {
+//			writePopData(output, reg);
+//		}
+//		i = i - 1;
+//	}
+//
+//	return register.name;
+//}
+//
+//func writeNegative(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
+//	writeOperation(parser, tree, block, output, operation.right, registers, register, true, functions);
+//
+//	fprint(output, "	neg ");
+//	fprint(output, register.name);
+//	fprint(output, " ;; negative\n");
+//
+//	return register.name;
+//}
+//
+//func writeLogicNot(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
+//	var rightRegister = getRegister(registers);
+//
+//	writeOperation(parser, tree, block, output, operation.right, registers, rightRegister, true, functions);
+//
+//	fprint(output, "	mov ");
+//	fprint(output, register.name);
+//	fprint(output, ", 1\n");
+//
+//	fprint(output, "	sub ");
+//	fprint(output, register.name);
+//	fprint(output, ", ");
+//	fprint(output, rightRegister.name);
+//	fprint(output, " ;; logical not\n");
+//
+//	rightRegister.used = false;
+//
+//	return register.name;
+//}
+//
+//func writeBitwiseNot(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
+//	writeOperation(parser, tree, block, output, operation.right, registers, register, true, functions);
+//
+//	fprint(output, "	not ");
+//	fprint(output, register.name);
+//	fprint(output, " ;; bitwise not\n");
+//
+//	return register.name;
+//}
+//
+//func writeMultiplication(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
+//	var rax = findRegister(registers, "rax");
+//
+//	var registerB = register;
+//
+//	if (rax.used) {
+//		writeOperation(parser, tree, block, output, operation.left, registers, register, true, functions);
+//		registerB = getRegister(registers);
+//	} else {
+//		rax.used = true;
+//		writeOperation(parser, tree, block, output, operation.left, registers, rax, true, functions);
+//	}
+//
+//	writeOperation(parser, tree, block, output, operation.right, registers, registerB, true, functions);
+//
+//	if (register != registerB && register != rax) {
+//		writePushData(output, rax);
+//		rax.used = true;
+//
+//		fprint(output, "	mov rax, ");
+//		fprint(output, register.name);
+//		fprint(output, "\n");
+//	}
+//
+//	fprint(output, "	mul ");
+//	fprint(output, registerB.name);
+//	fprint(output, " ;; multiplication\n");
+//
+//	if (register != rax) {
+//		fprint(output, "	mov ");
+//		fprint(output, register.name);
+//		fprint(output, ", rax\n");
+//
+//		rax.used = false;
+//	}
+//
+//	if (register != registerB) {
+//		registerB.used = false;
+//	}
+//
+//	if (register != registerB && register != rax) {
+//		writePopData(output, rax);
+//		rax.used = true;
+//	}
+//
+//	return register.name;
+//}
+//
+//func writeDivision(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
+//	var rax = findRegister(registers, "rax");
+//	var pushedRax = false;
+//	if (rax.used && register != rax) {
+//		pushedRax = true;
+//		writePushData(output, rax);
+//	}
+//	rax.used = true;
+//
+//	var rdx = findRegister(registers, "rax");
+//	var pushedRdx = false;
+//	if (rdx.used && register != rax) {
+//		pushedRdx = true;
+//		writePushData(output, rdx);
+//	}
+//	rdx.used = true;
+//
+//	var rightRegister = register;
+//	if (register == rax || register == rdx) {
+//		rightRegister = getRegister(registers);
+//	}
+//
+//	writeOperation(parser, tree, block, output, operation.left, registers, rax, true, functions);
+//	writeOperation(parser, tree, block, output, operation.right, registers, rightRegister, true, functions);
+//
+//	fprint(output, "	mov rdx, 0 ;; clear dividend\n");
+//	fprint(output, "	div ");
+//	fprint(output, rightRegister.name);
+//	fprint(output, " ;; division\n");
+//
+//	if (register != rax) {
+//		fprint(output, "	mov ");
+//		fprint(output, register.name);
+//		fprint(output, ", rax\n");
+//
+//		rax.used = false;
+//	}
+//
+//	if (rightRegister != register) {
+//		rightRegister.used = false;
+//	}
+//
+//	if (pushedRax) {
+//		writePopData(output, rax);
+//	}
+//
+//	if (pushedRdx) {
+//		writePopData(output, rdx);
+//	} else {
+//		rdx.used = false;
+//	}
+//
+//	return register.name;
+//}
+//
+//func writeModulo(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
+//	var rax = findRegister(registers, "rax");
+//	var pushedRax = false;
+//	if (rax.used && register != rax) {
+//		pushedRax = true;
+//		writePushData(output, rax);
+//	}
+//	rax.used = true;
+//
+//	var rdx = findRegister(registers, "rax");
+//	var pushedRdx = false;
+//	if (rdx.used && register != rax) {
+//		pushedRdx = true;
+//		writePushData(output, rdx);
+//	}
+//	rdx.used = true;
+//
+//	var rightRegister = register;
+//	if (register == rax || register == rdx) {
+//		rightRegister = getRegister(registers);
+//	}
+//
+//	writeOperation(parser, tree, block, output, operation.left, registers, rax, true, functions);
+//	writeOperation(parser, tree, block, output, operation.right, registers, rightRegister, true, functions);
+//
+//	fprint(output, "	mov rdx, 0 ;; clear dividend\n");
+//	fprint(output, "	div ");
+//	fprint(output, rightRegister.name);
+//	fprint(output, " ;; division\n");
+//
+//	if (register != rdx) {
+//		fprint(output, "	mov ");
+//		fprint(output, register.name);
+//		fprint(output, ", rdx\n");
+//
+//		rdx.used = false;
+//	}
+//
+//	if (rightRegister != register) {
+//		rightRegister.used = false;
+//	}
+//
+//	if (pushedRax) {
+//		writePopData(output, rax);
+//	} else {
+//		rax.used = false;
+//	}
+//
+//	if (pushedRdx) {
+//		writePopData(output, rdx);
+//	}
+//
+//	return register.name;
+//}
+//
+//func writeShift(Parser parser, SyntaxTree tree, Block block, int output, str shiftWord, Operation operation, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
+//	var rcx = findRegister(registers, "rcx");
+//
+//	var leftReg = register;
+//
+//	if (rcx.used) {
+//		leftReg = getRegister(registers);
+//		writeOperation(parser, tree, block, output, operation.left, registers, leftReg, true, functions);
+//
+//		writeOperation(parser, tree, block, output, operation.right, registers, register, true, functions);
+//	} else {
+//		writeOperation(parser, tree, block, output, operation.left, registers, leftReg, true, functions);
+//
+//		rcx.used = true;
+//		writeOperation(parser, tree, block, output, operation.right, registers, rcx, true, functions);
+//	}
+//
+//	if (register != leftReg && register != rcx) {
+//		writePushData(output, rcx);
+//		rcx.used = true;
+//
+//		fprint(output, "	mov rcx, ");
+//		fprint(output, register.name);
+//		fprint(output, "\n");
+//	}
+//
+//	fprint(output, "	");
+//	fprint(output, shiftWord);
+//	fprint(output, " ");
+//	fprint(output, leftReg.name);
+//	fprint(output, ", cl ;; shift\n");
+//
+//	if (register != leftReg && register != rcx) {
+//		writePopData(output, rcx);
+//	}
+//
+//	if (leftReg != register) {
+//		fprint(output, "	mov ");
+//		fprint(output, register.name);
+//		fprint(output, ", ");
+//		fprint(output, leftReg.name);
+//		fprint(output, "\n");
+//
+//		leftReg.used = false;
+//	} else {
+//		rcx.used = false;
+//	}
+//
+//	return register.name;
+//}
+//
+//func writeMethod(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, TypeObj typeObj, Array<Register> registers, Register register, bool addOffset, Array<FunctionDefinition> functions) -> str {
+//	var name = operation.left.value.identifier.name;
+//	var id = -1;
+//	var i = 0;
+//	while (i < functions.size) {
+//		if (streq(functions.list[i].name.name, name)) {
+//			id = i;
+//			i = functions.size;
+//		}
+//		i = i + 1;
+//	}
+//
+//	var arguments = createArray<Operation>();
+//
+//	if (operation.right != (Operation)0) {
+//		getArguments(arguments, operation.right);
+//	}
+//
+//	i = 0;
+//	while (i < registers.size) {
+//		var reg = registers.list[i];
+//		if (reg.used && reg != register) {
+//			writePushData(output, reg);
+//			reg.used = true; // writePush frees register, but in this case we just do that temporarily, because the function we are calling might use the same ones
+//		}
+//		i = i + 1;
+//	}
+//
+//	var generics = createArray<TypeObj>();
+//	i = 0;
+//	while (i < typeObj.generics.size) {
+//		var generic = typeObj.generics.get(i);
+//		generics.push(generic.typeObj);
+//		i = i + 1;
+//	}
+//	
+//	var method = findFunction(typeObj.methods, name);
+//	method = getVariantFunction(tree.types, method, generics);
+//
+//	var genericRegister = getRegister(registers);
+//
+//	i = 0;
+//	while (i < method.generics.size) {
+//		var generic = method.generics.get(i);
+//		if (generic.typeObj.isGeneric) {
+//			fprint(output, "	mov ");
+//			fprint(output, genericRegister.name);
+//			fprint(output, ", [basestack + ");
+//			fprinti(output, generic.typeObj.depth * 8);
+//			fprint(output, "]\n");
+//
+//			fprint(output, "	mov ");
+//			fprint(output, genericRegister.name);
+//			fprint(output, ", [");
+//			fprint(output, genericRegister.name);
+//
+//			if (generic.typeObj.position != 0) {
+//				fprint(output, " - ");
+//				fprinti(output, generic.typeObj.position * 8);
+//			}
+//
+//			fprint(output, "]\n");
+//			fprint(output, "\n");
+//		}
+//
+//		fprint(output, "	mov ");
+//		fprint(output, genericRegister.name);
+//		fprint(output, ", type_");
+//		writeTypeName(output, generic.typeObj);
+//		fprint(output, "\n");
+//
+//		writePushData(output, genericRegister);
+//		genericRegister.used = true;
+//
+//		i = i + 1;
+//	}
+//
+//	genericRegister.used = false;
+//
+//	writePushData(output, register); // push struct
+//	register.used = true;
+//
+//	i = 0;
+//	while (i < arguments.size) {
+//		writeOperation(parser, tree, block, output, arguments.list[i], registers, register, true, functions);
+//		writePushData(output, register);
+//		register.used = true; // writePush frees register, but in this case we want to reuse the same register
+//		i = i + 1;
+//	}
+//
+//	fprint(output, "	call addr_func_");
+//	fprint(output, functions.list[id].name.name);
+//	fprint(output, "_");
+//	fprinti(output, id);
+//	fprint(output, "\n");
+//
+//	if (!streq(register.name, "rax")) {
+//		fprint(output, "	mov ");
+//		fprint(output, register.name);
+//		fprint(output, ", rax ;; return value\n");
+//	}
+//
+//	i = registers.size - 1;
+//	while (i >= 0) {
+//		var reg = registers.list[i];
+//		if (reg.used && reg != register) {
+//			writePopData(output, reg);
+//		}
+//		i = i - 1;
+//	}
+//
+//	return register.name;
+//}
+//
+//func writeProperty(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register register, bool getValue, bool addOffset, Array<FunctionDefinition> functions) -> str {
+//	var typeObj = operation.left.operationType;
+//
+//	if (typeObj == (TypeObj)0) {
+//		printPosition(operation.operator.position);
+//		print(" struct type is null\n");
+//		return register.name;
+//	}
+//
+//	writeOperation(parser, tree, block, output, operation.left, registers, register, true, functions);
+//
+//	if (isOperator(operation.right.operator, "(")) {
+//		return writeMethod(parser, tree, block, output, operation.right, typeObj, registers, register, addOffset, functions);
+//	}
+//
+//	var propertyName = operation.right.value.identifier;
+//	var propertyType = operation.operationType;
+//
+//	if (propertyType == (TypeObj)0) {
+//		printPosition(operation.operator.position);
+//		print(" type of property is null\n");
+//		return register.name;
+//	}
+//
+//	var offset = findProperty(typeObj.properties, propertyName.name).offset;
+//
+//	if (addOffset) {
+//		fprint(output, "	add ");
+//		fprint(output, register.name);
+//		fprint(output, ", [heapstart] ;; heap offset\n");
+//	}
+//	
+//	if (getValue) {
+//		fprint(output, "	mov ");
+//		fprint(output, register.name);
+//		fprint(output, ", [");
+//		fprint(output, register.name);
+//
+//		if (offset != 0) {
+//			fprint(output, " + ");
+//			fprinti(output, offset);
+//		}
+//
+//		fprint(output, "] ;; read offset\n");
+//
+//		var propertySize = propertyType.size;
+//
+//		if (propertySize != 8) {
+//			var mask = (1 << (8 * propertySize)) - 1;
+//
+//			fprint(output, "	and ");
+//			fprint(output, register.name);
+//			fprint(output, ", ");
+//			fprinti(output, mask);
+//			fprint(output, " ;; mask\n");
+//		}
+//
+//		if ((typeObj == parser.Type || typeObj == parser.TypeProperty) && propertyType == parser.str) {
+//			fprint(output, "	sub ");
+//			fprint(output, register.name);
+//			fprint(output, ", [heapstart]\n");
+//		}
+//	} else if (offset != 0) {
+//		fprint(output, "	add ");
+//		fprint(output, register.name);
+//		fprint(output, ", ");
+//		fprinti(output, offset);
+//		fprint(output, " ;; property offset\n");
+//	}
+//
+//	return register.name;
+//}
+//
+//func writeAssignment(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
+//	var valueRegister = getRegister(registers);
+//
+//	writeOperation(parser, tree, block, output, operation.right, registers, valueRegister, true, functions);
+//
+//	var sizeRegister = writeOperation(parser, tree, block, output, operation.left, registers, register, false, functions);
+//
+//	var comparisonRegister = getRegister(registers);
+//
+//	if (isOperator(operation.left.operator, "[")) {
+//		var listType = operation.left.operationType;
+//
+//		if (listType == (TypeObj)0) {
+//			printPosition(operation.operator.position);
+//			print(" list type is null\n");
+//			return register.name;
+//		}
+//
+//		var size = listType.size;
+//
+//		var movWord = "mov";
+//		if (listType.isGeneric) {
+//			fprint(output, "	not ");
+//			fprint(output, sizeRegister);
+//			fprint(output, " ;; inverse map\n");
+//
+//			fprint(output, "	and [");
+//			fprint(output, register.name);
+//			fprint(output, "], ");
+//			fprint(output, sizeRegister);
+//			fprint(output, " ;; mask\n");
+//
+//			movWord = "add";
+//
+//			var sizeReg = findRegister(registers, sizeRegister);
+//			sizeReg.used = false;
+//		} else {
+//			if (size != 8) {
+//				var mask = (1 << (8 * size)) - 1;
+//				var inverseMask = -mask - 1; //We do not have a bitwise not operation yet
+//
+//				fprint(output, "	and qword [");
+//				fprint(output, register.name);
+//				fprint(output, "], ");
+//				fprinti(output, inverseMask);
+//				fprint(output, " ;; mask\n");
+//
+//				movWord = "add";
+//			}
+//		}
+//
+//		fprint(output, "	cmp ");
+//		fprint(output, register.name);
+//		fprint(output, ", [heapstart]\n");
+//
+//		fprint(output, "	mov ");
+//		fprint(output, comparisonRegister.name);
+//		fprint(output, ", 0\n");
+//
+//		fprint(output, "	cmovge ");
+//		fprint(output, comparisonRegister.name);
+//		fprint(output, ", [heapstart]\n");
+//
+//		fprint(output, "	add ");
+//		fprint(output, comparisonRegister.name);
+//		fprint(output, ", 4096\n");
+//
+//		fprint(output, "	cmp ");
+//		fprint(output, register.name);
+//		fprint(output, ", ");
+//		fprint(output, comparisonRegister.name);
+//		fprint(output, "\n");
+//
+//		fprint(output, "	mov ");
+//		fprint(output, comparisonRegister.name);
+//		fprint(output, ", 0\n");
+//
+//		fprint(output, "	cmovl ");
+//		fprint(output, valueRegister.name);
+//		fprint(output, ", ");
+//		fprint(output, comparisonRegister.name);
+//		fprint(output, "\n");
+//
+//		fprint(output, "	");
+//		fprint(output, movWord);
+//		fprint(output, " [");
+//		fprint(output, register.name);
+//		fprint(output, "], ");
+//		fprint(output, valueRegister.name);
+//		fprint(output, " ;; assign to list\n");
+//	} else if (isOperator(operation.left.operator, ".")) {
+//		var propertyType = operation.left.operationType;
+//
+//		if (propertyType == (TypeObj)0) {
+//			printPosition(operation.operator.position);
+//			print(" type is null\n");
+//			return register.name;
+//		}
+//
+//		var size = propertyType.size;
+//
+//		var movWord = "mov";
+//		if (size != 8) {
+//			var mask = (1 << (8 * size)) - 1;
+//			var inverseMask = -mask - 1; //We do not have a bitwise not operation yet
+//
+//			fprint(output, "	and qword [");
+//			fprint(output, register.name);
+//			fprint(output, "], ");
+//			fprinti(output, inverseMask);
+//			fprint(output, " ;; mask\n");
+//
+//			movWord = "add";
+//		}
+//
+//		fprint(output, "	mov ");
+//		fprint(output, comparisonRegister.name);
+//		fprint(output, ", [heapstart]\n");
+//		fprint(output, "	add ");
+//		fprint(output, comparisonRegister.name);
+//		fprint(output, ", 4096\n");
+//
+//		fprint(output, "	cmp ");
+//		fprint(output, register.name);
+//		fprint(output, ", ");
+//		fprint(output, comparisonRegister.name);
+//		fprint(output, "\n");
+//
+//		fprint(output, "	mov ");
+//		fprint(output, comparisonRegister.name);
+//		fprint(output, ", 0\n");
+//
+//		fprint(output, "	cmovl ");
+//		fprint(output, valueRegister.name);
+//		fprint(output, ", ");
+//		fprint(output, comparisonRegister.name);
+//		fprint(output, "\n");
+//
+//		fprint(output, "	");
+//		fprint(output, movWord);
+//		fprint(output, " [");
+//		fprint(output, register.name);
+//		fprint(output, "], ");
+//		fprint(output, valueRegister.name);
+//		fprint(output, " ;; assign to property\n");
+//	} else if (operation.left.value != (Value)0) {
+//		fprint(output, "	mov [");
+//		fprint(output, register.name);
+//		fprint(output, "], ");
+//		fprint(output, valueRegister.name);
+//		fprint(output, " ;; assign to variable\n");
+//	} else {
+//		printPosition(operation.operator.position);
+//		print(" assignment of this kind is not yet supported\n");
+//	}
+//
+//	valueRegister.used = false;
+//	comparisonRegister.used = false;
+//	return register.name;
+//}
+//
+//func writeAnd(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
+//	var andId = parser.numAnds;
+//	parser.numAnds = parser.numAnds + 1;
+//
+//	fprint(output, "	mov ");
+//	fprint(output, register.name);
+//	fprint(output, ", 0\n");
+//
+//	writeJumpNotEqual(parser, tree, block, output, registers, operation.left, ".addr_and_", andId, functions);
+//
+//	writeOperation(parser, tree, block, output, operation.right, registers, register, true, functions);
+//
+//	writeAddress(output, ".addr_and_", andId);
+//
+//	return register.name;
+//}
+//
+//func writeOr(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
+//	var orId = parser.numOrs;
+//	parser.numOrs = parser.numOrs + 1;
+//
+//	fprint(output, "	mov ");
+//	fprint(output, register.name);
+//	fprint(output, ", 1\n");
+//
+//	writeJumpEqual(parser, tree, block, output, registers, operation.left, ".addr_or_", orId, functions);
+//
+//	writeOperation(parser, tree, block, output, operation.right, registers, register, true, functions);
+//
+//	writeAddress(output, ".addr_or_", orId);
+//
+//	return register.name;
+//}
+//
+//func writeListType(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register register, Array<FunctionDefinition> functions) -> str {
+//	writeOperation(parser, tree, block, output, operation.left, registers, register, true, functions);
+//
+//	var offset = findProperty(parser.Type.properties, "listOf").offset;
+//
+//	fprint(output, "	mov ");
+//	fprint(output, register.name);
+//	fprint(output, ", [");
+//	fprint(output, register.name);
+//	fprint(output, " + ");
+//	fprinti(output, offset);
+//	fprint(output, "] ;; get list type\n");
+//
+//	return register.name;
+//}
+//
+//func writeOperation(Parser parser, SyntaxTree tree, Block block, int output, Operation operation, Array<Register> registers, Register registerA, bool getValue, Array<FunctionDefinition> functions) -> str {
+//	if (operation == (Operation)0) {
+//		print("operation is null\n");
+//		return (str)0;
+//	}
+//
+//	if (registerA == (Register)0) {
+//		printPosition(operation.region.start);
+//		print(" register is null\n");
+//		return (str)0;
+//	}
+//
+//	if (operation.value != (Value)0) {
+//		return writeValue(parser, tree, block, output, operation.value, registers, registerA, getValue, functions);
+//	}
+//
+//	if (operation.sizeOf != (SizeOf)0) {
+//		return writeSizeOf(parser, tree, block, output, operation.sizeOf, registers, registerA, functions);
+//	}
+//
+//	if (operation.newOperation != (NewOperation)0) {
+//		return writeNewOperation(parser, tree, block, output, registers, operation.newOperation, registerA, functions);
+//	}
+//
+//	if (operation.operator == (Operator)0) {
+//		print("operator is null\n");
+//		return (str)0;
+//	}
+//
+//	if (isOperator(operation.operator, "(") && operation.left != (Operation)0) {
+//		return writeCall(parser, tree, block, output, operation, registers, registerA, functions);
+//	}
+//
+//	if (isOperator(operation.operator, "-") && operation.left == (Operation)0) {
+//		return writeNegative(parser, tree, block, output, operation, registers, registerA, functions);
+//	}
+//
+//	if (isOperator(operation.operator, "!") && operation.left == (Operation)0) {
+//		return writeLogicNot(parser, tree, block, output, operation, registers, registerA, functions);
+//	}
+//
+//	if (isOperator(operation.operator, "~") && operation.left == (Operation)0) {
+//		return writeBitwiseNot(parser, tree, block, output, operation, registers, registerA, functions);
+//	}
+//
+//	if (isOperator(operation.operator, "*")) {
+//		return writeMultiplication(parser, tree, block, output, operation, registers, registerA, functions);
+//	}
+//
+//	if (isOperator(operation.operator, "/")) {
+//		return writeDivision(parser, tree, block, output, operation, registers, registerA, functions);
+//	}
+//
+//	if (isOperator(operation.operator, "%")) {
+//		return writeModulo(parser, tree, block, output, operation, registers, registerA, functions);
+//	}
+//
+//	if (isOperator(operation.operator, "=")) {
+//		return writeAssignment(parser, tree, block, output, operation, registers, registerA, functions);
+//	}
+//
+//	if (isOperator(operation.operator, "(")) {
+//		return writeOperation(parser, tree, block, output, operation.right, registers, registerA, getValue, functions);
+//	}
+//
+//	if (isOperator(operation.operator, ".")) {
+//		var typeObj = operation.left.operationType;
+//		var addOffset = (typeObj != parser.Type && typeObj != parser.TypeProperty);
+//		return writeProperty(parser, tree, block, output, operation, registers, registerA, getValue, addOffset, functions);
+//	}
+//
+//	if (isOperator(operation.operator, "&&")) {
+//		return writeAnd(parser, tree, block, output, operation, registers, registerA, functions);
+//	}
+//
+//	if (isOperator(operation.operator, "||")) {
+//		return writeOr(parser, tree, block, output, operation, registers, registerA, functions);
+//	}
+//
+//	if (isOperator(operation.operator, "<<")) {
+//		return writeShift(parser, tree, block, output, "shl", operation, registers, registerA, functions);
+//	}
+//
+//	if (isOperator(operation.operator, ">>")) {
+//		return writeShift(parser, tree, block, output, "shr", operation, registers, registerA, functions);
+//	}
+//
+//	if (isOperator(operation.operator, "[") && operation.right == (Operation)0) {
+//		return writeListType(parser, tree, block, output, operation, registers, registerA, functions);
+//	}
+//
+//	if (isOperator(operation.operator, "<") &&
+//		isOperator(operation.end, ">")) {
+//		return writeOperation(parser, tree, block, output, operation.left, registers, registerA, true, functions);
+//	}
+//
+//	var registerB = getRegister(registers);
+//
+//	writeOperation(parser, tree, block, output, operation.left, registers, registerA, true, functions);
+//	writeOperation(parser, tree, block, output, operation.right, registers, registerB, true, functions);
+//
+//	var operationString = (str)0;
+//	if (isOperator(operation.operator, "==")) {
+//		return writeComparison(output, "cmove", registerA, registerB);
+//	} else if (isOperator(operation.operator, "!=")) {
+//		return writeComparison(output, "cmovne", registerA, registerB);
+//	} else if (isOperator(operation.operator, "<")) {
+//		return writeComparison(output, "cmovl", registerA, registerB);
+//	} else if (isOperator(operation.operator, ">")) {
+//		return writeComparison(output, "cmovg", registerA, registerB);
+//	} else if (isOperator(operation.operator, "<=")) {
+//		return writeComparison(output, "cmovle", registerA, registerB);
+//	} else if (isOperator(operation.operator, ">=")) {
+//		return writeComparison(output, "cmovge", registerA, registerB);
+//	} else if (isOperator(operation.operator, "[")) {
+//		var typeObj = operation.operationType;
+//
+//		if (typeObj == (TypeObj)0) {
+//			printPosition(operation.operator.position);
+//			print(" array type is null\n");
+//			return registerA.name;
+//		}
+//
+//		var addOffset = (typeObj != parser.TypeProperty && typeObj != parser.Type);
+//
+//		if (typeObj.isGeneric) {
+//			return writeGenericIndex(output, registers, registerA, registerB, getValue);
+//		}
+//
+//		return writeIndex(output, typeObj.size, registerA, registerB, getValue, addOffset);
+//	} else if (isOperator(operation.operator, "+")) {
+//		operationString = "add";
+//	} else if (isOperator(operation.operator, "-")) {
+//		operationString = "sub";
+//	} else if (isOperator(operation.operator, "&")) {
+//		operationString = "and";
+//	} else if (isOperator(operation.operator, "|")) {
+//		operationString = "or";
+//	} else {
+//		print("do not support operator '");
+//		print(operation.operator.name);
+//		print("' yet\n");
+//
+//		registerB.used = false;
+//		return (str)0;
+//	}
+//
+//	writeBinaryOperation(output, operationString, registerA.name, registerB.name);
+//	registerB.used = false;
+//
+//	return registerA.name;
+//}
+//
+//func writeVariable(Parser parser, SyntaxTree tree, Block block, int output, Variable variable, Array<Register> registers, Array<FunctionDefinition> functions) {
+//	if (!variable.isConstant) {
+//		var register = getRegister(registers);
+//		writeOperation(parser, tree, block, output, variable.definition.value, registers, register, true, functions);
+//		writePushData(output, register);
+//	}
+//}
+//
+//func evaluateConstant(Parser parser, Variable constant) {
+//	if (constant.isEvaluated) {
+//		return;
+//	}
+//
+//	constant.value = evaluateOperation(parser, constant.definition.value);
+//	constant.isEvaluated = true;
+//}
+//
+//func writeReturn(Parser parser, SyntaxTree tree, Block block, int output, Return returnStatement, Array<Register> registers, Array<FunctionDefinition> functions) {
+//	if (returnStatement.expression != (Operation)0) {
+//		var rax = findRegister(registers, "rax");
+//		rax.used = true;
+//
+//		writeOperation(parser, tree, block, output, returnStatement.expression, registers, rax, true, functions);
+//		rax.used = false;
+//	}
+//
+//	var numVariables = 0;
+//
+//	while (block.function == (FunctionDefinition)0) {
+//		var i = 0;
+//		while (i < block.variables.size) {
+//			if (block.variables.list[i].definition.region.start.index < returnStatement.region.start.index) {
+//				numVariables = numVariables + 1;
+//			} else {
+//				i = block.variables.size;
+//			}
+//
+//			i = i + 1;
+//		}
+//
+//		block = block.outer;
+//	}
+//
+//	var i = 0;
+//	while (i < block.variables.size) {
+//		if (block.variables.list[i].definition.region.start.index < returnStatement.region.start.index) {
+//			numVariables = numVariables + 1;
+//		} else {
+//			i = block.variables.size;
+//		}
+//
+//		i = i + 1;
+//	}
+//
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//
+//	if (numVariables != 0) {
+//		fprint(output, "	add rsp, ");
+//		fprinti(output, numVariables * 8);
+//		fprint(output, " ;; pop local variables\n");
+//	}
+//
+//	var basePointer = getRegister(registers);
+//	var baseValue = getRegister(registers);
+//
+//	fprint(output, "	lea ");
+//	fprint(output, basePointer.name);
+//	fprint(output, ", [basestack + ");
+//	fprinti(output, block.depth * 8);
+//	fprint(output, "]\n");
+//
+//	fprint(output, "	pop ");
+//	fprint(output, baseValue.name);
+//	fprint(output, "\n");
+//
+//	fprint(output, "	mov [");
+//	fprint(output, basePointer.name);
+//	fprint(output, "], ");
+//	fprint(output, baseValue.name);
+//	fprint(output, " ;; restore base pointer\n");
+//
+//	basePointer.used = false;
+//	baseValue.used = false;
+//
+//	if (block.function.parameters == (Array<Parameter>)0) {
+//		print("parameter list is null\n");
+//		return;
+//	}
+//
+//	if (block.function.generics == (Array<Generic>)0) {
+//		print("generic list is null\n");
+//		return;
+//	}
+//
+//	if (block.function.parameters.size != 0 || block.function.generics.size != 0) {
+//		fprint(output, "	add rsp, ");
+//		fprinti(output, (block.function.parameters.size + block.function.generics.size) * 8);
+//		fprint(output, " ;; pop parameters\n");
+//	}
+//
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//	fprint(output, "	ret\n\n");
+//}
+//
+//func writeBlock(Parser parser, SyntaxTree tree, Block outer, int output, Block block, Array<Register> registers, Array<FunctionDefinition> functions) {
+//	writeStatementArray(parser, tree, block, output, block.statements, registers, functions);
+//
+//	if (block.variables.size > 0) {
+//		fprint(output, "	add qword [datarsp], ");
+//		fprinti(output, block.variables.size * 8);
+//		fprint(output, " ;; pop local variables in block\n");
+//	}
+//}
+//
+//func writeIf(Parser parser, SyntaxTree tree, Block block, int output, If ifStatement, Array<Register> registers, Array<FunctionDefinition> functions) {
+//	writeJumpNotEqual(parser, tree, block, output, registers, ifStatement.condition, ".addr_if_", ifStatement.id, functions);
+//
+//	writeBlock(parser, tree, block, output, ifStatement.block, registers, functions);
+//
+//	if (ifStatement.elseIfs.size != 0 || ifStatement.elseObj != (Else)0) {
+//		writeJump(output, ".addr_if_end_", ifStatement.id);
+//	}
+//
+//	writeAddress(output, ".addr_if_", ifStatement.id);
+//	var i = 0;
+//	while (i < ifStatement.elseIfs.size) {
+//		var elseIf = ifStatement.elseIfs.list[i];
+//		writeJumpNotEqual(parser, tree, block, output, registers, elseIf.condition, ".addr_if_", elseIf.id, functions);
+//
+//		writeBlock(parser, tree, block, output, elseIf.block, registers, functions);
+//
+//		writeJump(output, ".addr_if_end_", ifStatement.id);
+//		writeAddress(output, ".addr_if_", elseIf.id);
+//		i = i + 1;
+//	}
+//
+//	if (ifStatement.elseObj != (Else)0) {
+//		writeBlock(parser, tree, block, output, ifStatement.elseObj.block, registers, functions);
+//	}
+//
+//	if (ifStatement.elseIfs.size != 0 || ifStatement.elseObj != (Else)0) {
+//		writeAddress(output, ".addr_if_end_", ifStatement.id);
+//	}
+//}
+//
+//func writeWhile(Parser parser, SyntaxTree tree, Block block, int output, While whileStatement, Array<Register> registers, Array<FunctionDefinition> functions) {
+//	writeAddress(output, ".addr_while_condition_", whileStatement.id);
+//
+//	writeJumpNotEqual(parser, tree, block, output, registers, whileStatement.condition, ".addr_while_end_", whileStatement.id, functions);
+//
+//	writeBlock(parser, tree, block, output, whileStatement.block, registers, functions);
+//
+//	writeJump(output, ".addr_while_condition_", whileStatement.id);
+//	writeAddress(output, ".addr_while_end_", whileStatement.id);
+//}
+//
+//func writeStatement(Parser parser, SyntaxTree tree, Block block, int output, Statement statement, Array<Register> registers, Array<FunctionDefinition> functions) {
+//	if (statement.expression != (Expression)0) {
+//		var register = getRegister(registers);
+//		writeOperation(parser, tree, block, output, statement.expression.operation, registers, register, true, functions);
+//		fprint(output, "\n");
+//
+//		register.used = false;
+//	} else if (statement.ifStatement != (If)0) {
+//		writeIf(parser, tree, block, output, statement.ifStatement, registers, functions);
+//	} else if (statement.whileStatement != (While)0) {
+//		writeWhile(parser, tree, block, output, statement.whileStatement, registers, functions);
+//	} else if (statement.variable != (Variable)0) {
+//		writeVariable(parser, tree, block, output, statement.variable, registers, functions);
+//	} else if (statement.returnStatement != (Return)0) {
+//		writeReturn(parser, tree, block, output, statement.returnStatement, registers, functions);
+//	}
+//}
+//
+//func writeStatementArray(Parser parser, SyntaxTree tree, Block block, int output, Array<Statement> statements, Array<Register> registers, Array<FunctionDefinition> functions) {
+//	var i = 0;
+//
+//	while (i < statements.size) {
+//		writeStatement(parser, tree, block, output, statements.list[i], registers, functions);
+//		i = i + 1;
+//	}
+//}
+//
+//func writeFunctionDefinition(Parser parser, SyntaxTree tree, int output, FunctionDefinition function, Array<Register> registers, Array<FunctionDefinition> functions, int id) {
+//	fprint(output, "addr_func_");
+//	fprint(output, function.name.name);
+//	fprint(output, "_");
+//	fprinti(output, id);
+//	fprint(output, ":\n");
+//
+//	var block = function.block;
+//
+//	var basePointer = getRegister(registers);
+//	var baseValue = getRegister(registers);
+//	var stackPointer = getRegister(registers);
+//
+//	fprint(output, "	lea ");
+//	fprint(output, basePointer.name);
+//	fprint(output, ", [basestack + ");
+//	fprinti(output, block.depth * 8);
+//	fprint(output, "]\n");
+//
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//
+//	fprint(output, "	mov ");
+//	fprint(output, baseValue.name);
+//	fprint(output, ", [");
+//	fprint(output, basePointer.name);
+//	fprint(output, "]\n");
+//
+//	fprint(output, "	push ");
+//	fprint(output, baseValue.name);
+//	fprint(output, "\n");
+//
+//	fprint(output, "	mov ");
+//	fprint(output, stackPointer.name);
+//	fprint(output, ", rsp\n");
+//
+//	fprint(output, "	xchg rsp, [datarsp]\n");
+//
+//	if (function.parameters.size != 0 || function.generics.size != 0) {
+//		fprint(output, "	add ");
+//		fprint(output, stackPointer.name);
+//		fprint(output, ", ");
+//		fprinti(output, (function.parameters.size + function.generics.size) * 8);
+//		fprint(output, "\n");
+//	}
+//
+//	fprint(output, "	mov [");
+//	fprint(output, basePointer.name);
+//	fprint(output, "], ");
+//	fprint(output, stackPointer.name);
+//	fprint(output, "\n\n");
+//
+//	basePointer.used = false;
+//	baseValue.used = false;
+//	stackPointer.used = false;
+//
+//	writeStatementArray(parser, tree, block, output, block.statements, registers, functions);
+//
+//	if (function.returnType == (ReturnType)0) {
+//		fprint(output, "	xchg rsp, [datarsp]\n");
+//
+//		if (block.variables.size != 0) {
+//			fprint(output, "	add rsp, ");
+//			fprinti(output, block.variables.size * 8);
+//			fprint(output, " ;; pop local variables\n");
+//		}
+//
+//		var basePointer = getRegister(registers);
+//		var baseValue = getRegister(registers);
+//
+//		fprint(output, "	lea ");
+//		fprint(output, basePointer.name);
+//		fprint(output, ", [basestack + ");
+//		fprinti(output, block.depth * 8);
+//		fprint(output, "]\n");
+//
+//		fprint(output, "	pop ");
+//		fprint(output, baseValue.name);
+//		fprint(output, "\n");
+//
+//		fprint(output, "	mov [");
+//		fprint(output, basePointer.name);
+//		fprint(output, "], ");
+//		fprint(output, baseValue.name);
+//		fprint(output, " ;; restore base pointer\n");
+//
+//		basePointer.used = false;
+//		baseValue.used = false;
+//
+//		if (function.parameters.size != 0 || function.generics.size != 0) {
+//			fprint(output, "	add rsp, ");
+//			fprinti(output, (function.parameters.size + function.generics.size) * 8);
+//			fprint(output, " ;; pop parameters\n");
+//		}
+//
+//		fprint(output, "	xchg rsp, [datarsp]\n");
+//		fprint(output, "	ret\n\n");
+//	}
+//}
+//
+func checkFiles(str fileName) -> Parser {
+	var parser = createParser();
+
+	parseFile(parser, fileName, (str)0);
+
+	var i = 0;
+	while (i < parser.files.size) {
+		var file = parser.files.get(i);
+		parseImports(parser, file);
+		i = i + 1;
+	}
+
+
+	i = 0;
+	while (i < parser.files.size) {
+		var fileName = parser.files.get(i).fileName;
+		bindNames(parser, fileName);
+		i = i + 1;
+	}
+
+//	var numImportedVars = 0;
+//	var files = 1;
+//	while (files < parser.files.size) {
+//		numImportedVars = numImportedVars + getNumVariables(parser.files.list[files].variables);
+//		files = files + 1;
+//	}
+//
+//	var tree = parser.files.list[0];
+//	var i = 0;
+//
+//	while (i < tree.variables.size) {
+//		var variable = tree.variables.list[i];
+//		variable.position = variable.position + numImportedVars;
+//		i = i + 1;
+//	}
+//
+//	i = 0;
+//	while (i < tree.blocks.size) {
+//		var block = tree.blocks.list[i];
+//		if (block.depth == 0) {
+//			var j = 0;
+//			while (j < block.variables.size) {
+//				var variable = block.variables.list[j];
+//				variable.position = variable.position + numImportedVars;
+//				j = j + 1;
+//			}
+//		}
+//		i = i + 1;
+//	}
+//
+	print("[FILE] parsed files\n");
+
+	i = 0;
+	while (i < parser.files.size) {
+		var tree = parser.files.get(i);
+		checkTypes(parser, tree);
+		i = i + 1;
+	}
+
+	print("[FILE] type checked files\n");
+
+	return parser;
+}
+
+func createChild(str name, str[] args) -> int {
+	var child_pid = fork();
+	if (child_pid < 0) {
+		print("[ERROR] could not generate child process to call '");
+		print(name);
+		print("'\n");
+		exit(1);
+	}
+
+	if (child_pid > 0) {
+		print("[CMD]");
+		var i = 0;
+		while (args[i] != (str)0) {
+			print(" ");
+			print(args[i]);
+			i = i + 1;
+		}
+		print(" \n");
+	} else {
+		var returnCode = execvp(name, args);
+		print("[ERROR] problem occurred when trying to call ");
+		print(name);
+		print(": error code: ");
+		printi(returnCode);
+		print(" \n");
+		exit(1);
+	}
+
+	return child_pid;
+}
+
+func CompileLinuxx86_nasm(str fileName, bool debug) {
+	var parser = checkFiles(fileName);
+
+	if (parser.hadError) {
+		exit(1);
+	}
+
+	var filePath = toPath(toString(fileName));
+
+	print("[FILE] checked file: '");
+	print(fileName);
+	print("'\n");
+
+	const O_WRONLY = 1;
+	const O_CREAT = 64;
+	const O_TRUNC = 512;
+
+	const ALLOW_ALL = 511;
+
+	filePath.extension = toString("asm");
+	var outputName = pathToString(filePath).list;
+	var output = open(outputName, O_WRONLY | O_CREAT | O_TRUNC, ALLOW_ALL);
+
+	var compiler = createCompiler(output);
+
+	var functions = listFunctions(parser);
+	var types = listTypes(parser);
+
+	compiler.writeHeader();
+
+	var i = parser.functions.size;
+	while (i < functions.size) {
+		//var function = functions.list[i];
+
+		//if (function.isCalled) {
+		//	var tree = findSyntaxTree(parser.files, function.region.file);
+
+		//	// have ids be local to the function
+		//	parser.numAnds = 0;
+		//	parser.numOrs = 0;
+
+		//	writeFunctionDefinition(parser, tree, output, function, registers, functions, i);
+		//}
+
+		//i = i + 1;
+	}
+
+	compiler.writeStart();
+
+	i = 1;
+	while (i < parser.files.size) {
+		var tree = parser.files.get(i);
+		//tree.writeFile(compiler);
+		i = i + 1;
+	}
+
+	//parser.files.get(0).writeFile(compiler);
+
+	compiler.writeFooter(parser.strings, types);
+
+	var nasmDebugArgs = new str[](8);
+	nasmDebugArgs[0] = "nasm";
+	nasmDebugArgs[1] = "-f";
+	nasmDebugArgs[2] = "elf64";
+	nasmDebugArgs[3] = "-F";
+	nasmDebugArgs[4] = "dwarf";
+	nasmDebugArgs[5] = "-g";
+	nasmDebugArgs[6] = outputName;
+	nasmDebugArgs[7] = (str)0;
+
+	var nasmArgs = new str[](5);
+	nasmArgs[0] = "nasm";
+	nasmArgs[1] = "-f";
+	nasmArgs[2] = "elf64";
+	nasmArgs[3] = outputName;
+	nasmArgs[4] = (str)0;
+
+	var nasm_pid = 0;
+	if (debug) {
+		nasm_pid = createChild("nasm", nasmDebugArgs);
+	} else {
+		nasm_pid = createChild("nasm", nasmArgs);
+	}
+
+	var nasmStatus = new int[](1); // pointer to int
+	if (wait4(nasm_pid, nasmStatus, 0) < 0) {
+		print("[ERROR] wait4 failed\n");
+		exit(1);
+	}
+	
+	if (WIFEXITED(nasmStatus[0])) {
+		var code = WIFEXITSTATUS(nasmStatus[0] & 127);
+		if (code > 0) {
+			print("[ERROR] in nasm, error code: ");
+			printi(code);
+			print(" \n");
+			exit(code);
+		}
+	}
+
+	filePath.extension = toString("o");
+	var objectName = pathToString(filePath).list;
+
+	filePath.extension = (String)0;
+	var executableName = pathToString(filePath).list;
+
+	var linkerArgs = new str[](5);
+	linkerArgs[0] = "ld";
+	linkerArgs[1] = "-o";
+	linkerArgs[2] = executableName;
+	linkerArgs[3] = objectName;
+	linkerArgs[4] = (str)0;
+
+	var linkerStatus = new int[](1); // pointer to int
+	var linker_pid = createChild("ld", linkerArgs);
+
+	if (wait4(linker_pid, linkerStatus, 0) < 0) {
+		print("[ERROR] wait4 failed\n");
+		exit(1);
+	}
+
+	if (WIFEXITED(linkerStatus[0])) {
+		var code = WIFEXITSTATUS(linkerStatus[0] & 127);
+		if (code > 0) {
+			print("[ERROR] in linker, error code: ");
+			printi(code);
+			print(" \n");
+			exit(code);
+		}
+	}
+}
+
+if (argc < 2) {
+	print("[ERROR] expected argument <filename>\n");
+	exit(1);
+}
+
+var debug = false;
+
+if (streq(argv[1], "-debug")) {
+	debug = true;
+}
+
+if (argc > 3) {
+	print("[ERROR] expected at max 3 arguments\n");
+	exit(1);
+}
+
+var fileName = argv[1];
+if (debug) {
+	fileName = argv[2];
+}
+
+CompileLinuxx86_nasm(fileName, debug);
