@@ -31,6 +31,83 @@ type Lexer {
 	int column;
 
 	Token current;
+
+	func consumeString(Lexer self) -> StringLiteral {
+		if (self.current.string != (StringLiteral)0) {
+			var value = self.current.string;
+			next(self);
+			return value;
+		}
+
+		return (StringLiteral)0;
+	}
+
+	func consumeKeyword(Lexer self, int keyword) -> Name {
+		if (self.current.name.keyword == keyword) {
+			var value = self.current.name;
+			next(self);
+			return value;
+		}
+
+		return (Name)0;
+	}
+
+	func consumeIdentifier(Lexer self) -> Name {
+		if (self.current.name.keyword == -1) {
+			var value = self.current.name;
+			next(self);
+			return value;
+		}
+
+		return (Name)0;
+	}
+
+	func consumeOperator(Lexer self, str operator) -> Operator {
+		if (isOperator(self.current.operator, operator)) {
+			var value = self.current.operator;
+			next(self);
+			return value;
+		}
+
+		return (Operator)0;
+	}
+
+	func consumePrecedence(Lexer self, int precedence) -> Operator {
+		if (self.current.operator.precedence == precedence) {
+			var value = self.current.operator;
+			next(self);
+			return value;
+		}
+
+		return (Operator)0;
+	}
+
+	func startRegion(Lexer self) -> Region {
+		var region = new Region();
+		region.file = self.file;
+
+		region.start = self.here();
+
+		return region;
+	}
+
+	func endRegion(Lexer self, Region region) {
+		region.end = self.here();
+	}
+
+	func here(Lexer self) -> Position {
+		return createPosition(self.file, self.buffer, self.index, self.line, self.column);
+	}
+
+	func returnTo(Lexer self, Position position) {
+		self.file = position.file;
+		self.buffer = position.buffer;
+		self.index = position.index - 1;
+		self.line = position.line;
+		self.column = position.column - 1;
+
+		next(self);
+	}
 }
 
 func readFile(str fileName) -> str {
@@ -59,10 +136,10 @@ func readFile(str fileName) -> str {
 		print(fileName);
 		print("'\n");
 
-		printi(-(int)buffer);
+		printi(-((int)buffer));
 		print("\n");
 
-		exit(-(int)buffer);
+		exit(-((int)buffer));
 	}
 
 	len = read(file, buffer, len);

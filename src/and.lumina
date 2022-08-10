@@ -1,0 +1,83 @@
+import "../std/collections.lumina"
+
+import "parser.lumina"
+import "lexer.lumina"
+import "type.lumina"
+import "position.lumina"
+import "operator.lumina"
+import "comparison.lumina"
+import "block.lumina"
+
+
+type OrPart {
+	Operator or;
+	Comparison value;
+}
+
+type Or {
+	Region region;
+
+	Comparison value;
+	Array<OrPart> parts;
+
+	func parseOr(Or self, Parser parser, Lexer lexer, Block block) -> Or {
+		self.region = lexer.startRegion();
+
+		self.value = new Comparison();
+		self.value.parseComparison(parser, lexer, block);
+
+		while (isOperator(lexer.current.operator, "||")) {
+			var part = new OrPart();
+			part.or = lexer.consumeOperator("||");
+			
+			part.value = new Comparison();
+			part.value.parseComparison(parser, lexer, block);
+
+			self.parts.push(part);
+		}
+
+		lexer.endRegion(self.region);
+
+		return self;
+	}
+
+	func bindOr(Or self, Parser parser) {
+		self.value.bindComparison(parser);
+
+		var i = 0;
+		while (i < self.parts.size) {
+			var part = self.parts.get(i);
+			part.value.bindComparison(parser);
+			i = i + 1;
+		}
+	}
+
+	func typeCheckOr(Or self, Parser parser) -> TypeObj {
+		var valueType = self.value.typeCheckComparison(parser);
+
+		if (self.parts.size == 0) {
+			return valueType;
+		}
+
+		if (!valueType.checkType(parser.bool, parser)) {
+			parser.error(self.value.region.start, " expected 'bool' in '||' operation\n");
+		}
+
+		var i = 0;
+		while (i < self.parts.size) {
+			var part = self.parts.get(i);
+			valueType = part.value.typeCheckComparison(parser);
+
+			if (!valueType.checkType(parser.bool, parser)) {
+				parser.error(part.value.region.start, " expected 'bool' in '||' operation\n");
+			}
+			i = i + 1;
+		}
+
+		return parser.bool;
+	}
+
+	func getTypeOr(Or self, Parser parser) -> TypeObj {
+		return self.value.getTypeComparison(parser);
+	}
+}

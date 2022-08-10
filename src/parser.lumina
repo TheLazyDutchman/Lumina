@@ -4,6 +4,7 @@ import "../std/string.lumina"
 import "../std/syscalls.lumina"
 import "../std/collections.lumina"
 
+import "assignment.lumina"
 import "block.lumina"
 import "type.lumina"
 import "function.lumina"
@@ -29,16 +30,26 @@ import "definition.lumina"
 type SyntaxTree {
 	str fileName;
 	Lexer lexer;
-	Array<Block> blocks;
+	Block block;
 	Array<Statement> statements;
 
-	Array<Definition> definitions;
-	Array<TypeObj> types;
-	Array<FunctionDefinition> functions;
-	Array<Variable> variables;
 	Array<Import> imports;
+	Array<SyntaxTree> importTrees;
 
-	SyntaxTree[] importTrees;
+	Parser parser;
+
+	func findDefinitionInTree(SyntaxTree self, str name) -> Definition {
+		var definition = findDefinition(self.parser.definitions, name);
+
+		var i = 0;
+		while (definition == (Definition)0 && i < self.importTrees.size) {
+			var tree = self.importTrees.get(i);
+			definition = findDefinition(tree.block.definitions, name);
+			i = i + 1;
+		}
+
+		return definition;
+	}
 }
 
 type Parser {
@@ -56,8 +67,8 @@ type Parser {
 	TypeObj Type;
 	TypeObj TypeProperty;
 
-	Array<FunctionDefinition> functions;
-	FunctionDefinition syscall;
+	Array<Function> functions;
+	Function syscall;
 
 	Array<Variable> variables;
 	Variable heapstart;
@@ -77,25 +88,31 @@ type Parser {
 	Array<str> strings;
 
 	bool hadError;
+
+	func error(Parser self, Position position, str message) {
+		printPosition(position);
+		print(message);
+
+		self.hadError = true;
+	}
 }
 
-func createSyntaxTree(str fileName, int numAnds, int numOrs) -> SyntaxTree {
+func createSyntaxTree(str fileName, Parser parser) -> SyntaxTree {
 	var tree = new SyntaxTree();
 
 	tree.fileName = fileName;
-	tree.blocks = createArray<Block>();
+	tree.block = createBlock((Block)0);
 	tree.lexer = createLexer(fileName);
 	next(tree.lexer);
 
 	tree.statements = createArray<Statement>();
+	tree.block.tree = tree;
 
-	tree.definitions = createArray<Definition>();
-	tree.types = createArray<TypeObj>();
-	tree.functions = createArray<FunctionDefinition>();
-	tree.variables = createArray<Variable>();
 	tree.imports = createArray<Import>();
 
-	tree.importTrees = (SyntaxTree[])0;
+	tree.importTrees = createArray<SyntaxTree>();
+
+	tree.parser = parser;
 
 	return tree;
 }
@@ -111,16 +128,16 @@ func findSyntaxTree(Array<SyntaxTree> list, str fileName) -> SyntaxTree {
 	return (SyntaxTree)0;
 }
 
-func getSyntaxTreeIndex(Array<SyntaxTree> list, SyntaxTree tree) -> int {
-	var i = 0;
-	while (i < list.size) {
-		if (list.list[i] == tree) {
-			return i;
-		}
-		i = i + 1;
-	}
-	return -1;
-}
+//func getSyntaxTreeIndex(Array<SyntaxTree> list, SyntaxTree tree) -> int {
+//	var i = 0;
+//	while (i < list.size) {
+//		if (list.list[i] == tree) {
+//			return i;
+//		}
+//		i = i + 1;
+//	}
+//	return -1;
+//}
 
 func createParser() -> Parser {
 	var parser = new Parser();
@@ -134,102 +151,113 @@ func createParser() -> Parser {
 	parser.types = createArray<TypeObj>();
 	parser.int = createTypeFromString("int", 8);
 	parser.char = createTypeFromString("char", 1);
-	parser.str = createListType(parser.types, "str", parser.char);
+	parser.str = createListType("str", parser.char);
 	parser.bool = createTypeFromString("bool", 1);
 	parser.any = createTypeFromString("any", 8);
 	parser.null = createTypeFromString("null", 8);
 
-	parser.int.nameId = addUniqueString(parser.strings, parser.int.name);
-	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.int));
-	addItem<TypeObj>(parser.types, parser.int);
-	parser.char.nameId = addUniqueString(parser.strings, parser.char.name);
-	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.char));
-	addItem<TypeObj>(parser.types, parser.char);
-	parser.str.nameId = addUniqueString(parser.strings, parser.str.name);
-	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.str));
-	parser.bool.nameId = addUniqueString(parser.strings, parser.bool.name);
-	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.bool));
-	addItem<TypeObj>(parser.types, parser.bool);
-	parser.any.nameId = addUniqueString(parser.strings, parser.any.name);
-	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.any));
-	addItem<TypeObj>(parser.types, parser.any);
-	parser.null.nameId = addUniqueString(parser.strings, parser.null.name);
-	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.null));
-	addItem<TypeObj>(parser.types, parser.null);
+	parser.int.nameId = addUniqueString(parser.strings, parser.int.name.name);
+	parser.str.nameId = addUniqueString(parser.strings, parser.str.name.name);
+	parser.char.nameId = addUniqueString(parser.strings, parser.char.name.name);
+	parser.bool.nameId = addUniqueString(parser.strings, parser.bool.name.name);
+	parser.any.nameId = addUniqueString(parser.strings, parser.any.name.name);
+	parser.null.nameId = addUniqueString(parser.strings, parser.null.name.name);
+
+	parser.definitions.push(createDefinitionFromType(parser.int));
+	parser.definitions.push(createDefinitionFromType(parser.char));
+	parser.definitions.push(createDefinitionFromType(parser.str));
+	parser.definitions.push(createDefinitionFromType(parser.bool));
+	parser.definitions.push(createDefinitionFromType(parser.any));
+	parser.definitions.push(createDefinitionFromType(parser.null));
+
+	parser.types.push(parser.int);
+	parser.types.push(parser.char);
+	parser.types.push(parser.bool);
+	parser.types.push(parser.any);
+	parser.types.push(parser.null);
 
 	parser.Type = createTypeFromString("Type", 8);
 	parser.TypeProperty = createTypeFromString("TypeProperty", 8);
 
-	addItem<Property>(parser.Type.properties, createPropertyFromString("name", parser.str, 0));
-	addItem<Property>(parser.Type.properties, createPropertyFromString("size", parser.int, 8));
-	addItem<Property>(parser.Type.properties, createPropertyFromString("objectSize", parser.int, 16));
-	addItem<Property>(parser.Type.properties, createPropertyFromString("properties", createListType(parser.types, (str)0, parser.TypeProperty), 24));
-	addItem<Property>(parser.Type.properties, createPropertyFromString("listOf", parser.Type, 32));
-	addItem<Property>(parser.Type.properties, createPropertyFromString("listType", parser.Type, 40));
+	parser.Type.properties.push(createPropertyFromString("name", parser.str, 0));
+	parser.Type.properties.push(createPropertyFromString("size", parser.int, 8));
+	parser.Type.properties.push(createPropertyFromString("objectSize", parser.int, 16));
+	parser.Type.properties.push(createPropertyFromString("properties", 
+		createListType((str)0, parser.TypeProperty), 
+		24));
+	parser.Type.properties.push(createPropertyFromString("listOf", parser.Type, 32));
+	parser.Type.properties.push(createPropertyFromString("listType", parser.Type, 40));
 
 	var i = 0;
 	while (i < parser.Type.properties.size) {
 		var property = parser.Type.properties.list[i];
-		property.nameId = addUniqueString(parser.strings, property.name);
+		property.nameId = addUniqueString(parser.strings, property.name.name);
 		i = i + 1;
 	}
 
-	addItem<Property>(parser.TypeProperty.properties, createPropertyFromString("name", parser.str, 0));
-	addItem<Property>(parser.TypeProperty.properties, createPropertyFromString("offset", parser.int, 8));
-	addItem<Property>(parser.TypeProperty.properties, createPropertyFromString("__type__", parser.Type, 16));
+	parser.TypeProperty.properties.push(createPropertyFromString("name", parser.str, 0));
+	parser.TypeProperty.properties.push(createPropertyFromString("offset", parser.int, 8));
+	parser.TypeProperty.properties.push(createPropertyFromString("__type__", parser.Type, 16));
+
 
 	i = 0;
 	while (i < parser.TypeProperty.properties.size) {
 		var property = parser.TypeProperty.properties.list[i];
-		property.nameId = addUniqueString(parser.strings, property.name);
+		property.nameId = addUniqueString(parser.strings, property.name.name);
 		i = i + 1;
 	}
 
-	parser.Type.nameId = addUniqueString(parser.strings, parser.Type.name);
+	parser.Type.nameId = addUniqueString(parser.strings, parser.Type.name.name);
 	parser.Type.objectSize = 48;
-	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.Type));
-	addItem<TypeObj>(parser.types, parser.Type);
-
-	parser.TypeProperty.nameId = addUniqueString(parser.strings, parser.TypeProperty.name);
+	parser.TypeProperty.nameId = addUniqueString(parser.strings, parser.TypeProperty.name.name);
 	parser.TypeProperty.objectSize = 24;
-	addItem<Definition>(parser.definitions, createDefinitionFromType(parser.TypeProperty));
-	addItem<TypeObj>(parser.types, parser.TypeProperty);
 
-	parser.functions = createArray<FunctionDefinition>();
+	parser.definitions.push(createDefinitionFromType(parser.Type));
+	parser.definitions.push(createDefinitionFromType(parser.TypeProperty));
+
+	parser.types.push(parser.Type);
+	parser.types.push(parser.TypeProperty);
+
+	parser.functions = createArray<Function>();
 	var syscallParameters = createArray<Parameter>();
 
 	i = 0;
 	while (i < 7) {
-		addItem<Parameter>(syscallParameters, createParameterFromString(parser.any, (str)0));
+		syscallParameters.push(createParameterFromString(parser.any, (str)0));
 		i = i + 1;
 	}
 
 	var syscallReturnType = createReturnTypeFromString(parser.any);
 
 	parser.syscall = createFunctionFromString("syscall", syscallParameters, syscallReturnType);
-	addItem<Definition>(parser.definitions, createDefinitionFromFunction(parser.syscall));
-	addItem<FunctionDefinition>(parser.functions, parser.syscall);
+
+	parser.definitions.push(createDefinitionFromFunction(parser.syscall));
+	parser.functions.push(parser.syscall);
 
 	parser.variables = createArray<Variable>();
 	parser.heapstart = createVariableFromString("heapstart", 0, 1, parser.int);
 	parser.argc = createVariableFromString("argc", 0, 2, parser.int);
-	parser.argv = createVariableFromString("argv", 0, 3, createListType(parser.types, (str)0, parser.str));
-	parser.envp = createVariableFromString("envp", 0, 4, createListType(parser.types, (str)0, parser.str));
-	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.heapstart));
-	addItem<Variable>(parser.variables, parser.heapstart);
-	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.argv));
-	addItem<Variable>(parser.variables, parser.argv);
-	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.argc));
-	addItem<Variable>(parser.variables, parser.argc);
-	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.envp));
-	addItem<Variable>(parser.variables, parser.envp);
+	parser.argv = createVariableFromString("argv", 0, 3, createListType((str)0, parser.str));
+	parser.envp = createVariableFromString("envp", 0, 4, createListType((str)0, parser.str));
+
+	parser.definitions.push(createDefinitionFromVariable(parser.heapstart));
+	parser.definitions.push(createDefinitionFromVariable(parser.argc));
+	parser.definitions.push(createDefinitionFromVariable(parser.argv));
+	parser.definitions.push(createDefinitionFromVariable(parser.envp));
+
+	parser.variables.push(parser.heapstart);
+	parser.variables.push(parser.argv);
+	parser.variables.push(parser.argc);
+	parser.variables.push(parser.envp);
 
 	parser.false = createConstantFromString("false", parser.bool, 0);
 	parser.true = createConstantFromString("true", parser.bool, 1);
-	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.false));
-	addItem<Variable>(parser.variables, parser.false);
-	addItem<Definition>(parser.definitions, createDefinitionFromVariable(parser.true));
-	addItem<Variable>(parser.variables, parser.true);
+
+	parser.definitions.push(createDefinitionFromVariable(parser.false));
+	parser.definitions.push(createDefinitionFromVariable(parser.true));
+
+	parser.variables.push(parser.false);
+	parser.variables.push(parser.true);
 
 	parser.numIfs = 0;
 	parser.numWhiles = 0;
@@ -241,666 +269,69 @@ func createParser() -> Parser {
 	return parser;
 }
 
-func printError(Parser parser, Position position, str message) {
-	printPosition(position);
-	print(message);
-	
-	parser.hadError = true;
-}
-
-func consumeOperator(Parser parser, SyntaxTree tree, str operator, bool ignoreError) -> Operator {
-	if (isOperator(tree.lexer.current.operator, operator)) {
-		var value = tree.lexer.current.operator;
-		next(tree.lexer);
-
-		return value;
-	}
-
-	if (!ignoreError) {
-		printError(parser, createPositionFromLexer(tree.lexer), " did not find operator: '");
-		print(operator);
-		print("'\n");
-	}
-
-	return (Operator)0;
-}
-
-func consumeKeyword(Parser parser, SyntaxTree tree, int keyword) -> Name {
-	if (isKeyword(tree.lexer.current.name, keyword)) {
-		var value = tree.lexer.current.name;
-		next(tree.lexer);
-		return value;
-	}
-
-	printError(parser, createPositionFromLexer(tree.lexer), " did not find keyword: '");
-	printi(keyword);
-	print("'\n");
-
-	return (Name)0;
-}
-
-func consumeIdentifier(Parser parser, SyntaxTree tree) -> Name {
-	if (isIdentifier(tree.lexer.current.name)) {
-		var value = tree.lexer.current.name;
-		next(tree.lexer);
-		return value;
-	}
-
-	printError(parser, createPositionFromLexer(tree.lexer), " did not find identifier\n");
-
-	return (Name)0;
-}
-
-func consumeString(Parser parser, SyntaxTree tree) -> StringLiteral {
-	if (isString(tree.lexer.current)) {
-		var value = tree.lexer.current.string;
-		next(tree.lexer);
-		return value;
-	}
-
-	printError(parser, createPositionFromLexer(tree.lexer), " did not find string\n");
-
-	return (StringLiteral)0;
-}
-
-func parseType(Parser parser, SyntaxTree tree) -> Operation {
-	var operation = parseUnary(parser, tree);
-
-	if (isOperator(tree.lexer.current.operator, "<")) {
-		var lesser = consumeOperator(parser, tree, "<", false);
-
-		var generics = parseType(parser, tree);
-
-		while (isOperator(tree.lexer.current.operator, ",")) {
-			var comma = consumeOperator(parser, tree, ",", false);
-
-			var right = parseType(parser, tree);
-
-			generics = createOperation(generics, comma, right, (Operator)0);
-		}
-
-		var greater = consumeOperator(parser, tree, ">", false);
-
-		operation = createOperation(operation, lesser, generics, greater);
-	}
-
-	while (isOperator(tree.lexer.current.operator, "[")) {
-		var left = consumeOperator(parser, tree, "[", false);
-		var right = consumeOperator(parser, tree, "]", false);
-
-		operation = createOperation(operation, left, (Operation)0, right);
-	}
-
-	return operation;
-}
-
-func parsePropertyDefinition(Parser parser, SyntaxTree tree) -> PropertyDefinition {
-	var propertyType = parseType(parser, tree);
-
-	var propertyName = consumeIdentifier(parser, tree);
-
-	var semicolon = consumeOperator(parser, tree, ";", false);
-
-	return createPropertyDefinition(propertyType, propertyName, semicolon);
-}
-
-func parseGenerics(Parser parser, SyntaxTree tree) -> GenericsDefinition {
-	var generics = createArray<GenericDefinition>();
-
-	if (!isOperator(tree.lexer.current.operator, "<")) {
-		return createGenericsDefinition((Operator)0, generics, (Operator)0);
-	}
-
-	var lesser = consumeOperator(parser, tree, "<", false);
-
-	var generic = consumeIdentifier(parser, tree);
-	addItem<GenericDefinition>(generics, createGenericDefinition((Operator)0, generic));
-
-	while (!isOperator(tree.lexer.current.operator, ">")) {
-		var comma = consumeOperator(parser, tree, ",", false);
-		generic = consumeIdentifier(parser, tree);
-		addItem<GenericDefinition>(generics, createGenericDefinition(comma, generic));
-	}
-
-	var greater = consumeOperator(parser, tree, ">", false);
-
-	return createGenericsDefinition(lesser, generics, greater);
-}
-
-func parseTypeDefinition(Parser parser, SyntaxTree tree) -> TypeDefinition {
-	var keyword = consumeKeyword(parser, tree, KEYWORD_type);
-
-	var typeName = consumeIdentifier(parser, tree);
-	
-	var generics = parseGenerics(parser, tree);
-
-	var lbrace = consumeOperator(parser, tree, "{", false);
-
-	var properties = createArray<PropertyDefinition>();
-	while (!isOperator(tree.lexer.current.operator, "}")) {
-		var property = parsePropertyDefinition(parser, tree);
-		addItem<PropertyDefinition>(properties, property);
-	}
-
-	var rbrace = consumeOperator(parser, tree, "}", false);
-
-	return createTypeDefinition(keyword, typeName, lbrace, generics, properties, rbrace);
-}
-
-func parseGroup(Parser parser, SyntaxTree tree) -> Operation {
-	var lparen = consumeOperator(parser, tree, "(", false);
-	var operation = parseExpression(parser, tree, PREC_expression);
-	var rparen = consumeOperator(parser, tree, ")", false);
-
-	if (tree.lexer.current.operator == (Operator)0 || isOperator(tree.lexer.current.operator, "(")) {
-		var value = parseExpression(parser, tree, PREC_index);
-
-		return createTypeCast(lparen, operation, rparen, value);
-	}
-
-	var group = createUnaryOperation(lparen, operation, rparen);
-	return group;
-}
-
-func parseNegative(Parser parser, SyntaxTree tree) -> Operation {
-	var operator = consumeOperator(parser, tree, "-", false);
-
-	var operation = parseUnary(parser, tree);
-	return createUnaryOperation(operator, operation, (Operator)0);
-}
-
-func parseLogicNot(Parser parser, SyntaxTree tree) -> Operation {
-	var operator = consumeOperator(parser, tree, "!", false);
-	var operation = parseExpression(parser, tree, operator.precedence);
-	return createUnaryOperation(operator, operation, (Operator)0);
-}
-
-func parseBitwiseNot(Parser parser, SyntaxTree tree) -> Operation {
-	var operator = consumeOperator(parser, tree, "~", false);
-	var operation = parseExpression(parser, tree, operator.precedence);
-	return createUnaryOperation(operator, operation, (Operator)0);
-}
-
-func parseSizeof(Parser parser, SyntaxTree tree) -> Operation {
-	var keyword = consumeKeyword(parser, tree, KEYWORD_sizeof);
-	var lparen = consumeOperator(parser, tree, "(", false);
-	var typeObj = parseType(parser, tree);
-	var rparen = consumeOperator(parser, tree, ")", false);
-
-	var sizeOf = createSizeOf(keyword, lparen, typeObj, rparen);
-	return createOperationFromSizeOf(sizeOf);
-}
-
-func parseNew(Parser parser, SyntaxTree tree) -> Operation {
-	var keyword = consumeKeyword(parser, tree, KEYWORD_new);
-	var typeObj = parseType(parser, tree);
-
-	var left = consumeOperator(parser, tree, "(", false);
-
-	var num = (Operation)0;
-	if (!isOperator(tree.lexer.current.operator, ")")) {
-		num = parseExpression(parser, tree, PREC_expression);
-	}
-
-	var right = consumeOperator(parser, tree, ")", false);
-
-	var newOperation = createNewOperation(keyword, typeObj, left, num, right);
-	return createOperationFromNew(newOperation);
-}
-
-func parseUnary(Parser parser, SyntaxTree tree) -> Operation {
-	var value = (Value)0;
-
-	if (isNumber(tree.lexer.current)) {
-		value = createValueFromNumber(tree.lexer.current.number);
-	} else if (isCharacter(tree.lexer.current)) {
-		value = createValueFromCharacter(tree.lexer.current.character);
-	} else if (isString(tree.lexer.current)) {
-		value = createValueFromString(tree.lexer.current.string);
-	} else if (isIdentifier(tree.lexer.current.name)) {
-		var identifier = createIdentifierFromName(tree.lexer.current.name);
-		value = createValueFromIdentifier(identifier);
-	}
-
-	if (value != (Value)0) {
-		next(tree.lexer);
-		return createOperationFromValue(value);
-	}
-
-	if (isKeyword(tree.lexer.current.name, KEYWORD_sizeof)) {
-		return parseSizeof(parser, tree);
-	}
-
-	if (isKeyword(tree.lexer.current.name, KEYWORD_new)) {
-		return parseNew(parser, tree);
-	}
-
-	if (isOperator(tree.lexer.current.operator, "-")) {
-		return parseNegative(parser, tree);
-	}
-
-	if (isOperator(tree.lexer.current.operator, "(")) {
-		return parseGroup(parser, tree);
-	}
-
-	if (isOperator(tree.lexer.current.operator, "!")) {
-		return parseLogicNot(parser, tree);
-	}
-
-	if (isOperator(tree.lexer.current.operator, "~")) {
-		return parseBitwiseNot(parser, tree);
-	}
-
-	if (tree.lexer.current.operator == (Operator)0) {
-		printError(parser, createPositionFromLexer(tree.lexer), " operator is null\n");
-	} else {
-		printError(parser, tree.lexer.current.operator.position, " '");
-		print(tree.lexer.current.operator.name);
-		print("', ");
-	}
-
-	print("do not recognise as unary\n");
-
-	next(tree.lexer);
-	return (Operation)0;
-}
-
-func parseIndex(Parser parser, SyntaxTree tree, Operation left) -> Operation {
-	var lbracket = consumeOperator(parser, tree, "[", false);
-
-	if (isOperator(tree.lexer.current.operator, "]")) {
-		var rbracket = consumeOperator(parser, tree, "]", false);
-		return createOperation(left, lbracket, (Operation)0, rbracket);
-	}
-
-	var index = parseExpression(parser, tree, PREC_expression);
-	var rbracket = consumeOperator(parser, tree, "]", false);
-
-	return createOperation(left, lbracket, index, rbracket);
-}
-
-func parseCall(Parser parser, SyntaxTree tree, Operation left) -> Operation {
-	var lparen = consumeOperator(parser, tree, "(", false);
-
-	if (isOperator(tree.lexer.current.operator, ")")) {
-		var rparen = consumeOperator(parser, tree, ")", false);
-		return createOperation(left, lparen, (Operation)0, rparen);
-	}
-
-	var args = parseExpression(parser, tree, PREC_expression);
-
-	while (isOperator(tree.lexer.current.operator, ",")) {
-		var comma = consumeOperator(parser, tree, ",", false);
-
-		var right = parseExpression(parser, tree, PREC_expression);
-
-		args = createOperation(args, comma, right, (Operator)0);
-	}
-
-	var rparen = consumeOperator(parser, tree, ")", false);
-
-	return createOperation(left, lparen, args, rparen);
-}
-
-func parseExpression(Parser parser, SyntaxTree tree, int precedence) -> Operation {
-	var operation = parseUnary(parser, tree);
-
-	if (operation == (Operation)0) {
-		print("left hand side is null\n");
-		return (Operation)0;
-	}
-
-	var operator = tree.lexer.current.operator;
-
-	while (operator != (Operator)0 && operator.precedence >= precedence) {
-		if (isOperator(operator, "[")) {
-			operation = parseIndex(parser, tree, operation);
-		} else if (isOperator(operator, "(")) {
-			operation = parseCall(parser, tree, operation);
-		} else {
-			next(tree.lexer);
-
-			var right = parseExpression(parser, tree, operator.precedence + 1);
-
-			if (right == (Operation)0) {
-				print("right hand side is null\n");
-				return (Operation)0;
-			}
-
-			if (isOperator(operator, "<") && 
-				isOperator(tree.lexer.current.operator, ">")) {
-				var greater = consumeOperator(parser, tree, ">", false);
-				operation = createOperation(operation, operator, right, greater); // TODO: this does not yet work for multiple generics
-			} else {
-				operation = createOperation(operation, operator, right, (Operator)0);
-			}
-		}
-
-		operator = tree.lexer.current.operator;
-	}
-
-	return operation;
-}
-
-func parseImport(Parser parser, SyntaxTree tree) -> Import {
-	var keyword = consumeKeyword(parser, tree, KEYWORD_import);
-
-	var fileName = consumeString(parser, tree);
-
-	return createImport(keyword, fileName);
-}
-
-func parseVariableDefinition(Parser parser, SyntaxTree tree) -> VariableDefinition {
-	var keyword = tree.lexer.current.name;
-	next(tree.lexer);
-
-	var name = consumeIdentifier(parser, tree);
-
-	var equalSign = consumeOperator(parser, tree, "=", false);
-	var value = parseExpression(parser, tree, PREC_expression);
-	var semicolon = consumeOperator(parser, tree, ";", false);
-
-	return createVariableDefinition(keyword, name, equalSign, value, semicolon);
-}
-
-func parserParameterArray(Parser parser, SyntaxTree tree) -> Array<Parameter> {
-	var list = createArray<Parameter>();
-
-	if (isOperator(tree.lexer.current.operator, ")")) {
-		return list;
-	}
-
-	var parameterType = parseType(parser, tree);
-	var name = consumeIdentifier(parser, tree);
-
-	while (isOperator(tree.lexer.current.operator, ",")) {
-		var comma = consumeOperator(parser, tree, ",", false);
-
-		var parameter = createParameter(parameterType, name, comma);
-		addItem<Parameter>(list, parameter);
-
-		parameterType = parseType(parser, tree);
-		name = consumeIdentifier(parser, tree);
-	}
-
-	var parameter = createParameter(parameterType, name, (Operator)0);
-	addItem<Parameter>(list, parameter);
-
-	return list;
-}
-
-func parseReturnType(Parser parser, SyntaxTree tree) -> ReturnType {
-	var rarrow = consumeOperator(parser, tree, "->", false);
-	var typeObj = parseType(parser, tree);
-
-	return createReturnType(rarrow, typeObj);
-}
-
-func parseBlock(Parser parser, SyntaxTree tree, Block outer, FunctionDefinition function, Array<Import> importList) -> Block {
-	var lbrace = consumeOperator(parser, tree, "{", false);
-
-	var statementList = createArray<Statement>();
-
-	var definitionList = createArray<Definition>();
-	var typeList = createArray<TypeObj>();
-	var functionList = createArray<FunctionDefinition>();
-	var variableList = createArray<Variable>();
-
-	var block = createBlock(lbrace, statementList, definitionList, typeList, functionList, variableList, outer, function);
-	addItem<Block>(tree.blocks, block);
-
-	if (block.function != (FunctionDefinition)0) {
-		block.depth = block.depth + 1;
-	}
-
-	while (!isOperator(tree.lexer.current.operator, "}") || tree.lexer.current.isEOF) {
-		var statement = parseStatement(parser, tree, block, definitionList, typeList, functionList, variableList, importList);
-		addItem<Statement>(statementList, statement);
-	}
-
-	var rbrace = consumeOperator(parser, tree, "}", false);
-
-	setEnd(block, rbrace);
-
-	return block;
-}
-
-func parseElseIf(Parser parser, SyntaxTree tree, Array<ElseIf> list, Name elseKeyword, Block outer, Array<Import> importList) {
-	var ifKeyword = consumeKeyword(parser, tree, KEYWORD_if);
-	var lparen = consumeOperator(parser, tree, "(", false);
-	var condition = parseExpression(parser, tree, PREC_expression);
-	var rparen = consumeOperator(parser, tree, ")", false);
-	var block = parseBlock(parser, tree, outer, (FunctionDefinition)0, importList);
-	var endPosition = block.region.end;
-
-	var elseIf = createElseIf(elseKeyword, ifKeyword, lparen, condition, rparen, block, endPosition, parser.numIfs);
-	parser.numIfs = parser.numIfs + 1;
-	addItem<ElseIf>(list, elseIf);
-}
-
-func parseElse(Parser parser, SyntaxTree tree, Name keyword, Block outer, Array<Import> importList) -> Else {
-	var block = parseBlock(parser, tree, outer, (FunctionDefinition)0, importList);
-	var endPosition = block.region.end;
-
-	return createElse(keyword, block, endPosition);
-}
-
-func parseIf(Parser parser, SyntaxTree tree, Block outer, Array<Import> importList) -> If {
-	var ifKeyword = consumeKeyword(parser, tree, KEYWORD_if);
-
-	var lparen = consumeOperator(parser, tree, "(", false);
-	var condition = parseExpression(parser, tree, PREC_expression);
-	var rparen = consumeOperator(parser, tree, ")", false);
-	var block = (Block)0;
-	var endPosition = (Position)0;
-
-	if (isOperator(tree.lexer.current.operator, "{")) {
-		block = parseBlock(parser, tree, outer, (FunctionDefinition)0, importList);
-		endPosition = block.region.end;
-	} else {
-		print("expected block after 'if'\n");
-	}
-
-	var elseIfs = createArray<ElseIf>();
-
-	while (isKeyword(tree.lexer.current.name, KEYWORD_else)) {
-		var elseKeyword = consumeKeyword(parser, tree, KEYWORD_else);
-
-		if (isKeyword(tree.lexer.current.name, KEYWORD_if)) {
-			parseElseIf(parser, tree, elseIfs, elseKeyword, outer, importList);
-		} else {
-			var elseObj = parseElse(parser, tree, elseKeyword, outer, importList);
-			var ifObj = createIf(ifKeyword, lparen, condition, rparen, block, elseIfs, elseObj, endPosition, parser.numIfs);
-			parser.numIfs = parser.numIfs + 1;
-			return ifObj;
-		}
-	}
-
-	var ifObj = createIf(ifKeyword, lparen, condition, rparen, block, elseIfs, (Else)0, endPosition, parser.numIfs);
-	parser.numIfs = parser.numIfs + 1;
-	return ifObj;
-}
-
-func parseWhile(Parser parser, SyntaxTree tree, Block outer, Array<Import> importList) -> While {
-	var keyword = consumeKeyword(parser, tree, KEYWORD_while);
-
-	var lparen = consumeOperator(parser, tree, "(", false);
-	var condition = parseExpression(parser, tree, PREC_expression);
-	var rparen = consumeOperator(parser, tree, ")", false);
-
-	var block = (Block)0;
-	var endPosition = (Position)0;
-
-	if (isOperator(tree.lexer.current.operator, "{")) {
-		block = parseBlock(parser, tree, outer, (FunctionDefinition)0, importList);
-		endPosition = block.region.end;
-	} else  {
-		print("expected block after while\n");
-	}
-
-	var whileObj = createWhile(keyword, lparen, condition, rparen, block, endPosition, parser.numWhiles);
-	parser.numWhiles = parser.numWhiles + 1;
-	return whileObj;
-}
-
-func parseFunctionDefinition(Parser parser, SyntaxTree tree, Block outer, Array<Import> importList) -> FunctionDefinition {
-	var outerIfs = parser.numIfs;
-	parser.numIfs = 0;
-	var outerWhiles = parser.numWhiles;
-	parser.numWhiles = 0;
-
-	var keyword = consumeKeyword(parser, tree, KEYWORD_func);
-	var name = consumeIdentifier(parser, tree);
-
-	var generics = parseGenerics(parser, tree);
-
-	var lparen = consumeOperator(parser, tree, "(", false);
-	var parameters = parserParameterArray(parser, tree);
-	var rparen = consumeOperator(parser, tree, ")", false);
-
-	var returnType = (ReturnType)0;
-	if (isOperator(tree.lexer.current.operator, "->")) {
-		returnType = parseReturnType(parser, tree);
-	}
-
-	var depth = 1;
-	if (outer != (Block)0) {
-		depth = outer.depth + 1;
-	}
-
-	var function = createFunctionDefinition(keyword, name, lparen, generics, parameters, rparen, returnType, depth);
-
-	var block = parseBlock(parser, tree, outer, function, importList);
-	function.block = block;
-
-	parser.numIfs = outerIfs;
-	parser.numWhiles = outerWhiles;
-
-	return function;
-}
-
-func parseReturn(Parser parser, SyntaxTree tree) -> Return {
-	var keyword = consumeKeyword(parser, tree, KEYWORD_return);
-
-	if (isOperator(tree.lexer.current.operator, ";")) {
-		var semicolon = consumeOperator(parser, tree, ";", false);
-
-		return createReturn(keyword, (Operation)0, semicolon);
-	}
-
-	var expression = parseExpression(parser, tree, PREC_expression);
-	var semicolon = consumeOperator(parser, tree, ";", false);
-
-	return createReturn(keyword, expression, semicolon);
-}
-
-func parseStatement(Parser parser, SyntaxTree tree, Block block, Array<Definition> definitionList, Array<TypeObj> typeList, Array<FunctionDefinition> functionList, Array<Variable> variableList, Array<Import> importList) -> Statement {
-	if (isKeyword(tree.lexer.current.name, KEYWORD_var)) {
-		var depth = 0;
-		if (block != (Block)0) {
-			depth = block.depth;
-		}
-
-		var size = 0;
-		if (depth == 0) {
-			size = size + getNumVariables(parser.variables) + 1;
-
-			var i = 1;
-			while (i < parser.files.size) {
-				var tree = parser.files.list[i];
-				size = size + getNumVariables(tree.variables);
-
-				i = i + 1;
-			}
-
-			size = size + getNumVariables(tree.variables);
-		}
-
-		if (block != (Block)0) {
-			size = size + getNumVariables(block.variables);
-
-			var outerBlock = block;
-			while (outerBlock.outer != (Block)0 && outerBlock.outer.depth == depth) {
-				outerBlock = outerBlock.outer;
-				size = size + getNumVariables(outerBlock.variables);
-			}
-
-			if (outerBlock.function != (FunctionDefinition)0) {
-				size = size + outerBlock.function.parameters.size + 1;
-				size = size + outerBlock.function.generics.size;
-			}
-		}
-
-		var variableDefinition = parseVariableDefinition(parser, tree);
-		var variable = createVariableFromDefinition(variableDefinition, depth, size);
-
-		addItem<Definition>(definitionList, createDefinitionFromVariable(variable));
-		addItem<Variable>(variableList, variable);
-
-		return createVariableStatement(variable);
-	} else if (isKeyword(tree.lexer.current.name, KEYWORD_const)) {
-		var constantDefinition = parseVariableDefinition(parser, tree);
-		var constant = createConstantFromDefinition(constantDefinition);
-
-		addItem<Definition>(definitionList, createDefinitionFromVariable(constant));
-		addItem<Variable>(variableList, constant);
-		
-		return createVariableStatement(constant);
-	} else if (isKeyword(tree.lexer.current.name, KEYWORD_func)) {
-		var function = parseFunctionDefinition(parser, tree, block, importList);
-
-		addItem<Definition>(definitionList, createDefinitionFromFunction(function));
-		addItem<FunctionDefinition>(functionList, function);
-
-		return createFunctionStatement(function);
-	} else if (isKeyword(tree.lexer.current.name, KEYWORD_if)) {
-		var ifStatement = parseIf(parser, tree, block, importList);
-
-		return createIfStatement(ifStatement);
-	} else if (isKeyword(tree.lexer.current.name, KEYWORD_while)) {
-		var whileStatement = parseWhile(parser, tree, block, importList);
-
-		return createWhileStatement(whileStatement);
-	} else if (isKeyword(tree.lexer.current.name, KEYWORD_type)) {
-		var typeDefinition = parseTypeDefinition(parser, tree);
-		var typeObj = createTypeFromDefinition(typeDefinition);
-		typeObj.nameId = addUniqueString(parser.strings, typeObj.name);
-
-		var i = 0;
-		while (i < typeObj.properties.size) {
-			var property = typeObj.properties.list[i];
-			property.nameId = addUniqueString(parser.strings, property.name);
-			i = i + 1;
-		}
-
-		addItem<Definition>(definitionList, createDefinitionFromType(typeObj));
-		addItem<TypeObj>(typeList, typeObj);
-
-		return createTypeStatement(typeObj);
-	} else if (isKeyword(tree.lexer.current.name, KEYWORD_import)) {
-		var importStatement = parseImport(parser, tree);
-
-		addItem<Import>(importList, importStatement);
-
-		return createImportStatement(importStatement);
-	} else if (isKeyword(tree.lexer.current.name, KEYWORD_return)) {
-		var returnStatement = parseReturn(parser, tree);
-
-		return createReturnStatement(returnStatement);
-	} else if (isOperator(tree.lexer.current.operator, "{")) {
-		var innerBlock = parseBlock(parser, tree, block, (FunctionDefinition)0, importList);
-
-		return createBlockStatement(innerBlock, innerBlock.region);
-	}
-
-	var operation = parseExpression(parser, tree, PREC_assignment);
-	var semicolon = consumeOperator(parser, tree, ";", false);
-	var expression = createExpression(operation, semicolon);
-
-	return createExpressionStatement(expression);
-}
-
-func parse(Parser parser, str fileName, str outerName) -> SyntaxTree {
+//func printError(Parser parser, Position position, str message) {
+//	printPosition(position);
+//	print(message);
+//	
+//	parser.hadError = true;
+//}
+//
+//func consumeOperator(Parser parser, SyntaxTree tree, str operator, bool ignoreError) -> Operator {
+//	if (isOperator(tree.lexer.current.operator, operator)) {
+//		var value = tree.lexer.current.operator;
+//		next(tree.lexer);
+//
+//		return value;
+//	}
+//
+//	if (!ignoreError) {
+//		printError(parser, createPositionFromLexer(tree.lexer), " did not find operator: '");
+//		print(operator);
+//		print("'\n");
+//	}
+//
+//	return (Operator)0;
+//}
+//
+//func consumeKeyword(Parser parser, SyntaxTree tree, int keyword) -> Name {
+//	if (isKeyword(tree.lexer.current.name, keyword)) {
+//		var value = tree.lexer.current.name;
+//		next(tree.lexer);
+//		return value;
+//	}
+//
+//	printError(parser, createPositionFromLexer(tree.lexer), " did not find keyword: '");
+//	printi(keyword);
+//	print("'\n");
+//
+//	return (Name)0;
+//}
+//
+//func consumeIdentifier(Parser parser, SyntaxTree tree) -> Name {
+//	if (isIdentifier(tree.lexer.current.name)) {
+//		var value = tree.lexer.current.name;
+//		next(tree.lexer);
+//		return value;
+//	}
+//
+//	printError(parser, createPositionFromLexer(tree.lexer), " did not find identifier\n");
+//
+//	return (Name)0;
+//}
+//
+//func consumeString(Parser parser, SyntaxTree tree) -> StringLiteral {
+//	if (isString(tree.lexer.current)) {
+//		var value = tree.lexer.current.string;
+//		next(tree.lexer);
+//		return value;
+//	}
+//
+//	printError(parser, createPositionFromLexer(tree.lexer), " did not find string\n");
+//
+//	return (StringLiteral)0;
+//}
+//
+func parseFile(Parser parser, str fileName, str outerName) -> SyntaxTree {
 	if (fileName == (str)0) {
 		print("parse function got no file name\n");
 		exit(1);
@@ -916,517 +347,265 @@ func parse(Parser parser, str fileName, str outerName) -> SyntaxTree {
 		return tree;
 	}
 
-	tree = createSyntaxTree(fileName, parser.numAnds, parser.numOrs);
+	tree = createSyntaxTree(fileName, parser);
 
 	while (!tree.lexer.current.isEOF) {
-		var statement = parseStatement(parser, tree, (Block)0, tree.definitions, tree.types, tree.functions, tree.variables, tree.imports);
-		addItem<Statement>(tree.statements, statement);
+		var statement = new Statement();
+		statement.parseStatement(parser, tree.lexer, tree.block, tree, 
+			tree.block.definitions,
+			tree.block.variables,
+			tree.block.types,
+			tree.block.functions,
+			tree.imports);
+		tree.statements.push(statement);
 	}
 
-	addItem<SyntaxTree>(parser.files, tree);
+	parser.files.push(tree);
 
 	return tree;
 }
 
 func parseImports(Parser parser, SyntaxTree tree) {
-	if (tree.importTrees != (SyntaxTree[])0) {
-		return;
-	}
-
-	tree.importTrees = new SyntaxTree[](tree.imports.size);
-
 	var i = 0;
 	while (i < tree.imports.size) {
-		var importObj = tree.imports.list[i];
+		var importObj = tree.imports.get(i);
 
-		var importTree = parse(parser, importObj.fileName.value, tree.fileName);
-		tree.importTrees[i] = importTree;
+		var importTree = parseFile(parser, importObj.fileName.value, tree.fileName);
+		tree.importTrees.push(importTree);
 		i = i + 1;
 	}
 }
 
-func findDefinitionInBlock(Block block, str name) -> Definition {
-	var definition = findDefinition(block.definitions, name);
-
-	if (definition == (Definition)0 && block.outer != (Block)0) {
-		return findDefinitionInBlock(block.outer, name);
-	}
-
-	return definition;
-}
-
-func findDefinitionInParser(Parser parser, SyntaxTree tree, Block block, str name) -> Definition {
-	var definition = (Definition)0;
-
-	if (block != (Block)0) {
-		definition = findDefinitionInBlock(block, name);
-	}
-
-	if (definition == (Definition)0) {
-		definition = findDefinition(tree.definitions, name);
-	}
-
-	if (definition == (Definition)0) {
-		definition = findDefinition(parser.definitions, name);
-	}
-
-	var i = 0;
-	while (i < tree.imports.size && definition == (Definition)0) {
-		definition = findDefinition(tree.importTrees[i].definitions, name);
-		i = i + 1;
-	}
-
-	return definition;
-}
-
-func findFunctionInParser(Parser parser, SyntaxTree tree, Block block, str name) -> FunctionDefinition {
-	var function = (FunctionDefinition)0;
-
-	if (block != (Block)0) {
-		function = findFunctionInBlock(block, name);
-	}
-
-	if (function == (FunctionDefinition)0) {
-		function = findFunction(parser.functions, name);
-	}
-
-	var i = 0;
-	while (i < tree.imports.size && function == (FunctionDefinition)0) {
-		function = findFunction(tree.importTrees[i].functions, name);
-		i = i + 1;
-	}
-
-	if (function == (FunctionDefinition)0) {
-		function = findFunction(tree.functions, name);
-	}
-
-	return function;
-}
-
-func findTypeInGenerics(Array<Generic> list, str name) -> TypeObj {
-	var i = 0;
-	while (i < list.size) {
-		if (streq(list.list[i].name, name)) {
-			return list.list[i].typeObj;
-		}
-		i = i + 1;
-	}
-	return (TypeObj)0;
-}
-
-func findTypeInBlock(Block block, str name) -> TypeObj {
-	var typeObj = findType(block.types, name);
-
-	if (typeObj == (TypeObj)0 && block.function != (FunctionDefinition)0) {
-		typeObj = findTypeInGenerics(block.function.generics, name);
-	}
-
-	if (typeObj == (TypeObj)0 && block.outer != (Block)0) {
-		return findTypeInBlock(block.outer, name);
-	}
-
-	return typeObj;
-}
-
-func findTypeInParser(Parser parser, SyntaxTree tree, Block block, str name) -> TypeObj {
-	var typeDef = (TypeObj)0;
-
-	if (block != (Block)0) {
-		typeDef = findTypeInBlock(block, name);
-	}
-
-	if (typeDef == (TypeObj)0) {
-		typeDef = findType(parser.types, name);
-	}
-
-	var i = 0;
-	while (i < tree.imports.size && typeDef == (TypeObj)0) {
-		typeDef = findType(tree.importTrees[i].types, name);
-		i = i + 1;
-	}
-
-	if (typeDef == (TypeObj)0) {
-		typeDef = findType(tree.types, name);
-	}
-
-	return typeDef;
-}
-
-func getTypeFromValue(Parser parser, SyntaxTree tree, Block block, Value value) -> TypeObj {
-	var definition = value.identifier.value;
-	if (definition.typeObj != (TypeObj)0) {
-		return definition.typeObj;
-	}
-
-	if (definition.variable != (Variable)0) {
-		return getTypeFromOperation(parser, tree, block, definition.variable.definition.value);
-	}
-
-	printError(parser, value.region.start, " value is not a type\n");
-	return (TypeObj)0;
-}
-
-func getTypeFromOperation(Parser parser, SyntaxTree tree, Block block, Operation operation) -> TypeObj {
-	if (operation == (Operation)0) {
-		print("operation is null in 'getTypeFromOperation'\n");
-		exit(1);
-	}
-
-	if (operation.value != (Value)0) {
-		return getTypeFromValue(parser, tree, block, operation.value);
-	}
-
-	if (isOperator(operation.operator, "[")) {
-		var typeObj = getTypeFromOperation(parser, tree, block, operation.left);
-
-		if (typeObj == (TypeObj)0) {
-			return (TypeObj)0;
-		}
-
-		if (block != (Block)0) {
-			return createListType(block.types, (str)0, typeObj);
-		} else {
-			return createListType(tree.types, (str)0, typeObj);
-		}
-	}
-
-	if (isOperator(operation.operator, "<")) {
-		var typeObj = getTypeFromOperation(parser, tree, block, operation.left);
-
-		if (typeObj == (TypeObj)0) {
-			return (TypeObj)0;
-		}
-
-		var generics = createArray<TypeObj>();
-		getTypeArrayFromOperation(parser, tree, block, generics, operation.right);
-
-		if (block != (Block)0) {
-			return getVariantType(block.types, typeObj, generics);
-		} else {
-			return getVariantType(tree.types, typeObj, generics);
-		}
-	}
-
-	printError(parser, operation.operator.position, " can not get type object from this operator\n");
-	return (TypeObj)0;
-}
-
-func createVariableFromParameter(Parser parser, SyntaxTree tree, Block block, Parameter parameter, int position) -> Variable {
-	var parameterType = parameter.typeObj;
-	if (parameterType == (TypeObj)0) {
-		parameterType = getTypeFromOperation(parser, tree, block, parameter.parameterType);
-	}
-
-	return createVariableFromString(parameter.name.name, block.depth, position, parameterType);
-}
-
-func findVariableInParameters(Parser parser, SyntaxTree tree, Block block, FunctionDefinition function, str name) -> Variable {
-	var i = 0;
-	while (i < function.parameters.size) {
-		if (streq(function.parameters.list[i].name.name, name)) {
-			return createVariableFromParameter(parser, tree, block, function.parameters.list[i], i + function.generics.size);
-		}
-		i = i + 1;
-	}
-
-	return (Variable)0;
-}
-
-func findVariableInBlock(Parser parser, SyntaxTree tree, Block block, str name) -> Variable {
-	var variable = findVariable(block.variables, name);
-
-	if (variable == (Variable)0 && block.function != (FunctionDefinition)0) {
-		variable = findVariableInParameters(parser, tree, block, block.function, name);
-	}
-
-	if (variable == (Variable)0 && block.outer != (Block)0) {
-		return findVariableInBlock(parser, tree, block.outer, name);
-	}
-
-	return variable;
-}
-
-func findVariableInParser(Parser parser, SyntaxTree tree, Block block, str name) -> Variable {
-	var variable = (Variable)0;
-
-	if (block != (Block)0) {
-		variable = findVariableInBlock(parser, tree, block, name);
-	}
-
-	if (variable == (Variable)0) {
-		variable = findVariable(parser.variables, name);
-	}
-
-	var i = 0;
-	while (i < tree.imports.size && variable == (Variable)0) {
-		variable = findVariable(tree.importTrees[i].variables, name);
-		i = i + 1;
-	}
-
-	if (variable == (Variable)0) {
-		variable = findVariable(tree.variables, name);
-	}
-
-	return variable;
-}
-
-func bindName(Parser parser, SyntaxTree tree, Name name, Block block) {
-	var function = findFunctionInParser(parser, tree, block, name.name);
-	if (function != (FunctionDefinition)0) {
-		name.definitionRegion = function.region;
-		return;
-	}
-
-	var typeDef = findTypeInParser(parser, tree, block, name.name);
-	if (typeDef != (TypeObj)0) {
-		if (typeDef.definition != (TypeDefinition)0) {
-			name.definitionRegion = typeDef.definition.region;
-		}
-		return;
-	}
-
-	var variable = findVariableInParser(parser, tree, block, name.name);
-	if (variable != (Variable)0) {
-		if (variable.definition != (VariableDefinition)0) {
-			name.definitionRegion = variable.definition.region;
-		}
-		return;
-	}
-
-	printError(parser, name.region.start, "could not find name: '");
-	print(name.name);
-	print("'\n");
-}
-
-func bindIdentifier(Parser parser, SyntaxTree tree, Block block, Identifier identifier) {
-	identifier.value = findDefinitionInParser(parser, tree, block, identifier.name);
-
-	if (identifier.value.function != (FunctionDefinition)0) {
-		identifier.value.function.isCalled = true;
-	}
-
-	if (identifier.value != (Definition)0) {
-		return;
-	}
-
-	var variable = findVariableInParser(parser, tree, block, identifier.name); // this is because findDefinitionInParser does not yet look for function parameters
-
-	if (variable != (Variable)0) {
-		identifier.value = createDefinitionFromVariable(variable);
-		return;
-	}
-
-	var typeObj = findTypeInParser(parser, tree, block, identifier.name); // this is because findDefinitionInParser does not yet look for function generics
-
-	if (typeObj != (TypeObj)0) {
-		identifier.value = createDefinitionFromType(typeObj);
-		return;
-	}
-
-	printError(parser, identifier.definition.region.start, " did not find value with name: '");
-	print(identifier.name);
-	print("'\n");
-}
-
-func bindTypeIdentifier(Parser parser, SyntaxTree tree, Block block, Array<Generic> generics, Identifier identifier) {
-	identifier.value = findDefinitionInParser(parser, tree, block, identifier.name);
-
-	if (identifier.value != (Definition)0) {
-		return;
-	}
-
-	var variable = findVariableInParser(parser, tree, block, identifier.name); // this is because findDefinitionInParser does not yet look for function parameters
-
-	if (variable != (Variable)0) {
-		identifier.value = createDefinitionFromVariable(variable);
-		return;
-	}
-
-	var generic = findGeneric(generics, identifier.name);
-
-	if (generic != (Generic)0) {
-		identifier.value = createDefinitionFromType(generic.typeObj);
-		return;
-	}
-
-	printError(parser, identifier.definition.region.start, " did not find value with name: '");
-	print(identifier.name);
-	print("'\n");
-}
-
-func bindNamesInOperation(Parser parser, SyntaxTree tree, Operation operation, Block block) {
-	if (operation.left != (Operation)0) {
-		bindNamesInOperation(parser, tree, operation.left, block);
-	}
-
-	if (operation.right != (Operation)0) {
-		if (operation.operator == (Operator)0 || !isOperator(operation.operator, ".")) {
-			bindNamesInOperation(parser, tree, operation.right, block);
-		}
-	}
-
-	if (operation.sizeOf != (SizeOf)0) {
-		bindNamesInOperation(parser, tree, operation.sizeOf.typeObj, block);
-	}
-
-	if (operation.castType != (Operation)0) {
-		bindNamesInOperation(parser, tree, operation.castType, block);
-	}
-
-	if (operation.newOperation != (NewOperation)0) {
-		bindNamesInOperation(parser, tree, operation.newOperation.typeObj, block);
-		
-		if (operation.newOperation.num != (Operation)0) {
-			bindNamesInOperation(parser, tree, operation.newOperation.num, block);
-		}
-	}
-
-	if (operation.value != (Value)0 && operation.value.identifier != (Identifier)0) {
-		bindIdentifier(parser, tree, block, operation.value.identifier);
-	}
-}
-
-func bindTypeNamesInOperation(Parser parser, SyntaxTree tree, Operation operation, Array<Generic> generics, Block block) {
-	if (operation.left != (Operation)0) {
-		bindTypeNamesInOperation(parser, tree, operation.left, generics, block);
-	}
-
-	if (operation.right != (Operation)0 && !isOperator(operation.operator, ".")) {
-		bindTypeNamesInOperation(parser, tree, operation.right, generics, block);
-	}
-
-	if (operation.value != (Value)0 && operation.value.identifier != (Identifier)0) {
-		bindTypeIdentifier(parser, tree, block, generics, operation.value.identifier);
-	}
-}
-
-func bindNamesInExpression(Parser parser, SyntaxTree tree, Expression expression, Block block) {
-	bindNamesInOperation(parser, tree, expression.operation, block);
-}
-
-func bindNamesInElseIf(Parser parser, SyntaxTree tree, ElseIf elseIf, Block block) {
-	if (elseIf.condition != (Operation)0) {
-		bindNamesInOperation(parser, tree, elseIf.condition, block);
-	}
-}
-
-func bindNamesInIf(Parser parser, SyntaxTree tree, If ifStatement, Block block) {
-	if (ifStatement.condition != (Operation)0) {
-		bindNamesInOperation(parser, tree, ifStatement.condition, block);
-	}
-
-	var i = 0;
-	while (i < ifStatement.elseIfs.size) {
-		bindNamesInElseIf(parser, tree, ifStatement.elseIfs.list[i], block);
-		i = i + 1;
-	}
-}
-
-func bindNamesInWhile(Parser parser, SyntaxTree tree, While whileStatement, Block block) {
-	if (whileStatement.condition != (Operation)0) {
-		bindNamesInOperation(parser, tree, whileStatement.condition, block);
-	}
-}
-
-func bindNamesInFunctionDefinition(Parser parser, SyntaxTree tree, FunctionDefinition function, Block block) {
-	var foundFunction = findFunctionInParser(parser, tree, block, function.name.name);
-	if (foundFunction != (FunctionDefinition)0 && foundFunction != function) {
-		printError(parser, function.name.region.start, " a function with this name already exists\n");
-	}
-
-	if (findVariableInParser(parser, tree, block, function.name.name) != (Variable)0) {
-		printError(parser, function.name.region.start, " a variable with this name already exists\n");
-	}
-
-	if (findTypeInParser(parser, tree, block, function.name.name) != (TypeObj)0) {
-		printError(parser, function.name.region.start, " a type with this name already exists\n");
-	}
-
-	var i = 0;
-	while (i < function.parameters.size) {
-		bindTypeNamesInOperation(parser, tree, function.parameters.list[i].parameterType, function.generics, block);
-		i = i + 1;
-	}
-
-	if (function.returnType != (ReturnType)0) {
-		bindTypeNamesInOperation(parser, tree, function.returnType.returnType, function.generics, block);
-		function.returnType.typeObj = getTypeFromOperation(parser, tree, block, function.returnType.returnType);
-	}
-}
-
-func bindNamesInTypeDefinition(Parser parser, SyntaxTree tree, TypeObj typeObj, Block block) {
-	var foundType = findTypeInParser(parser, tree, block, typeObj.name);
-	if (foundType != (TypeObj)0 && foundType != typeObj) {
-		printError(parser, typeObj.definition.name.region.start, " a type with this name already exists\n");
-	}
-
-	if (findVariableInParser(parser, tree, block, typeObj.name) != (Variable)0) {
-		printError(parser, typeObj.definition.name.region.start, " a variable with this name already exists\n");
-	}
-
-	if (findFunctionInParser(parser, tree, block, typeObj.name) != (FunctionDefinition)0) {
-		printError(parser, typeObj.definition.name.region.start, " a function with this name already exists\n");
-	}
-
-	var i = 0;
-	var sum = 0;
-	while (i < typeObj.properties.size) {
-		var property = typeObj.properties.list[i];
-		bindTypeNamesInOperation(parser, tree, property.definition.propertyType, typeObj.generics, block);
-
-		property.propertyType = getTypeFromOperation(parser, tree, block, property.definition.propertyType);
-
-		property.offset = sum;
-		sum = sum + property.propertyType.size;
-		i = i + 1;
-	}
-
-	typeObj.objectSize = sum;
-}
-
-func bindNamesInVariable(Parser parser, SyntaxTree tree, Variable variable, Block block) {
-	var foundVariable = findVariableInParser(parser, tree, block, variable.name);
-	if (foundVariable != (Variable)0 && foundVariable.depth == variable.depth && foundVariable != variable) {
-		printError(parser, variable.definition.name.region.start, " a variable with this name already exists\n");
-	}
-
-	if (findTypeInParser(parser, tree, block, variable.name) != (TypeObj)0) {
-		printError(parser, variable.definition.name.region.start, " a type with this name already exists\n");
-	}
-
-	if (findFunctionInParser(parser, tree, block, variable.name) != (FunctionDefinition)0) {
-		printError(parser, variable.definition.name.region.start, " a function with this name already exists\n");
-	}
-
-	bindNamesInOperation(parser, tree, variable.definition.value, block);
-}
-
-func bindNamesInReturn(Parser parser, SyntaxTree tree, Return returnStatement, Block block) {
-	if (returnStatement.expression != (Operation)0) {
-		bindNamesInOperation(parser, tree, returnStatement.expression, block);
-	}
-}
-
+//func findDefinitionInBlock(Block block, str name) -> Definition {
+//	var definition = findDefinition(block.definitions, name);
+//
+//	if (definition == (Definition)0 && block.outer != (Block)0) {
+//		return findDefinitionInBlock(block.outer, name);
+//	}
+//
+//	return definition;
+//}
+//
+//func findDefinitionInParser(Parser parser, SyntaxTree tree, Block block, str name) -> Definition {
+//	var definition = (Definition)0;
+//
+//	if (block != (Block)0) {
+//		definition = findDefinitionInBlock(block, name);
+//	}
+//
+//	if (definition == (Definition)0) {
+//		definition = findDefinition(tree.definitions, name);
+//	}
+//
+//	if (definition == (Definition)0) {
+//		definition = findDefinition(parser.definitions, name);
+//	}
+//
+//	var i = 0;
+//	while (i < tree.imports.size && definition == (Definition)0) {
+//		definition = findDefinition(tree.importTrees[i].definitions, name);
+//		i = i + 1;
+//	}
+//
+//	return definition;
+//}
+//
+//func findFunctionInParser(Parser parser, SyntaxTree tree, Block block, str name) -> FunctionDefinition {
+//	var function = (FunctionDefinition)0;
+//
+//	if (block != (Block)0) {
+//		function = findFunctionInBlock(block, name);
+//	}
+//
+//	if (function == (FunctionDefinition)0) {
+//		function = findFunction(parser.functions, name);
+//	}
+//
+//	var i = 0;
+//	while (i < tree.imports.size && function == (FunctionDefinition)0) {
+//		function = findFunction(tree.importTrees[i].functions, name);
+//		i = i + 1;
+//	}
+//
+//	if (function == (FunctionDefinition)0) {
+//		function = findFunction(tree.functions, name);
+//	}
+//
+//	return function;
+//}
+//
+//func findTypeInGenerics(Array<Generic> list, str name) -> TypeObj {
+//	var i = 0;
+//	while (i < list.size) {
+//		if (streq(list.list[i].name, name)) {
+//			return list.list[i].typeObj;
+//		}
+//		i = i + 1;
+//	}
+//	return (TypeObj)0;
+//}
+//
+//func findTypeInBlock(Block block, str name) -> TypeObj {
+//	var typeObj = findType(block.types, name);
+//
+//	if (typeObj == (TypeObj)0 && block.function != (FunctionDefinition)0) {
+//		typeObj = findTypeInGenerics(block.function.generics, name);
+//	}
+//
+//	if (typeObj == (TypeObj)0 && block.outer != (Block)0) {
+//		return findTypeInBlock(block.outer, name);
+//	}
+//
+//	return typeObj;
+//}
+//
+//func findTypeInParser(Parser parser, SyntaxTree tree, Block block, str name) -> TypeObj {
+//	var typeDef = (TypeObj)0;
+//
+//	if (block != (Block)0) {
+//		typeDef = findTypeInBlock(block, name);
+//	}
+//
+//	if (typeDef == (TypeObj)0) {
+//		typeDef = findType(parser.types, name);
+//	}
+//
+//	var i = 0;
+//	while (i < tree.imports.size && typeDef == (TypeObj)0) {
+//		typeDef = findType(tree.importTrees[i].types, name);
+//		i = i + 1;
+//	}
+//
+//	if (typeDef == (TypeObj)0) {
+//		typeDef = findType(tree.types, name);
+//	}
+//
+//	return typeDef;
+//}
+//
+//func getTypeFromValue(Parser parser, SyntaxTree tree, Block block, Value value) -> TypeObj {
+//	var definition = value.identifier.value;
+//	if (definition.typeObj != (TypeObj)0) {
+//		return definition.typeObj;
+//	}
+//
+//	if (definition.variable != (Variable)0) {
+//		return getTypeFromOperation(parser, tree, block, definition.variable.definition.value);
+//	}
+//
+//	printError(parser, value.region.start, " value is not a type\n");
+//	return (TypeObj)0;
+//}
+//
+//func getTypeFromOperation(Parser parser, SyntaxTree tree, Block block, Operation operation) -> TypeObj {
+//	if (operation == (Operation)0) {
+//		print("operation is null in 'getTypeFromOperation'\n");
+//		exit(1);
+//	}
+//
+//	if (operation.value != (Value)0) {
+//		return getTypeFromValue(parser, tree, block, operation.value);
+//	}
+//
+//	if (isOperator(operation.operator, "[")) {
+//		var typeObj = getTypeFromOperation(parser, tree, block, operation.left);
+//
+//		if (typeObj == (TypeObj)0) {
+//			return (TypeObj)0;
+//		}
+//
+//		if (block != (Block)0) {
+//			return createListType(block.types, (str)0, typeObj);
+//		} else {
+//			return createListType(tree.types, (str)0, typeObj);
+//		}
+//	}
+//
+//	if (isOperator(operation.operator, "<")) {
+//		var typeObj = getTypeFromOperation(parser, tree, block, operation.left);
+//
+//		if (typeObj == (TypeObj)0) {
+//			return (TypeObj)0;
+//		}
+//
+//		var generics = createArray<TypeObj>();
+//		getTypeArrayFromOperation(parser, tree, block, generics, operation.right);
+//
+//		if (block != (Block)0) {
+//			return getVariantType(block.types, typeObj, generics);
+//		} else {
+//			return getVariantType(tree.types, typeObj, generics);
+//		}
+//	}
+//
+//	printError(parser, operation.operator.position, " can not get type object from this operator\n");
+//	return (TypeObj)0;
+//}
+//
+//func createVariableFromParameter(Parser parser, SyntaxTree tree, Block block, Parameter parameter, int position) -> Variable {
+//	var parameterType = parameter.typeObj;
+//	if (parameterType == (TypeObj)0) {
+//		parameterType = getTypeFromOperation(parser, tree, block, parameter.parameterType);
+//	}
+//
+//	return createVariableFromString(parameter.name.name, block.depth, position, parameterType);
+//}
+//
+//func findVariableInParameters(Parser parser, SyntaxTree tree, Block block, FunctionDefinition function, str name) -> Variable {
+//	var i = 0;
+//	while (i < function.parameters.size) {
+//		if (streq(function.parameters.list[i].name.name, name)) {
+//			return createVariableFromParameter(parser, tree, block, function.parameters.list[i], i + function.generics.size);
+//		}
+//		i = i + 1;
+//	}
+//
+//	return (Variable)0;
+//}
+//
+//func findVariableInBlock(Parser parser, SyntaxTree tree, Block block, str name) -> Variable {
+//	var variable = findVariable(block.variables, name);
+//
+//	if (variable == (Variable)0 && block.function != (FunctionDefinition)0) {
+//		variable = findVariableInParameters(parser, tree, block, block.function, name);
+//	}
+//
+//	if (variable == (Variable)0 && block.outer != (Block)0) {
+//		return findVariableInBlock(parser, tree, block.outer, name);
+//	}
+//
+//	return variable;
+//}
+//
+//func findVariableInParser(Parser parser, SyntaxTree tree, Block block, str name) -> Variable {
+//	var variable = (Variable)0;
+//
+//	if (block != (Block)0) {
+//		variable = findVariableInBlock(parser, tree, block, name);
+//	}
+//
+//	if (variable == (Variable)0) {
+//		variable = findVariable(parser.variables, name);
+//	}
+//
+//	var i = 0;
+//	while (i < tree.imports.size && variable == (Variable)0) {
+//		variable = findVariable(tree.importTrees[i].variables, name);
+//		i = i + 1;
+//	}
+//
+//	if (variable == (Variable)0) {
+//		variable = findVariable(tree.variables, name);
+//	}
+//
+//	return variable;
+//}
+//
 func bindNamesInStatementArray(Parser parser, SyntaxTree tree, Array<Statement> list, Block block) {
 	var i = 0;
 	while (i < list.size) {
-		var statement = list.list[i];
-		if (statement.expression != (Expression)0) {
-			bindNamesInExpression(parser, tree, statement.expression, block);
-		} else if (statement.ifStatement != (If)0) {
-			bindNamesInIf(parser, tree, statement.ifStatement, block);
-		} else if (statement.whileStatement != (While)0) {
-			bindNamesInWhile(parser, tree, statement.whileStatement, block);
-		} else if (statement.variable != (Variable)0) {
-			bindNamesInVariable(parser, tree, statement.variable, block);
-		} else if (statement.function != (FunctionDefinition)0) {
-			bindNamesInFunctionDefinition(parser, tree, statement.function, block);
-		} else if (statement.typeStatement != (TypeObj)0) {
-			bindNamesInTypeDefinition(parser, tree, statement.typeStatement, block);
-		} else if (statement.returnStatement != (Return)0) {
-			bindNamesInReturn(parser, tree, statement.returnStatement, block);
-		}
-
+		var statement = list.get(i);
+		statement.bindStatement(parser);
 		i = i + 1;
 	}
 }
@@ -1450,735 +629,849 @@ func bindNames(Parser parser, str fileName) {
 	}
 
 	bindNamesInStatementArray(parser, tree, tree.statements, (Block)0);
-
-	i = 0;
-	while (i < tree.blocks.size) {
-		bindNamesInStatementArray(parser, tree, tree.blocks.list[i].statements, tree.blocks.list[i]);
-		i = i + 1;
-	}
 }
 
-func compareTypes(Parser parser, TypeObj a, TypeObj b) -> bool {
-	return a == b || b == parser.any || a == (TypeObj)0;
-}
-
-func checkTypesInTypeIdentifier(Parser parser, SyntaxTree tree, Block block, Identifier identifier, Array<Generic> generics) -> TypeObj {
-	var variable = findVariableInParser(parser, tree, block, identifier.name);
-
-	if (variable != (Variable)0) {
-		if (variable.variableType == (TypeObj)0) {
-			printError(parser, identifier.definition.region.start, " the type of variable '");
-			print(variable.name);
-			print("' is not defined\n");
-		}
-		return variable.variableType;
-	}
-
-	var typeObj = findTypeInParser(parser, tree, block, identifier.name);
-
-	if (typeObj == (TypeObj)0) {
-		typeObj = findTypeInGenerics(generics, identifier.name);
-	}
-
-	if (typeObj != (TypeObj)0) {
-		return parser.Type;
-	}
-
-	return (TypeObj)0;
-}
-
-func checkTypesInTypeOperation(Parser parser, SyntaxTree tree, Block block, Operation operation, Array<Generic> generics) -> TypeObj {
-	if (operation.value != (Value)0 && operation.value.identifier != (Identifier)0) {
-		return checkTypesInTypeIdentifier(parser, tree, block, operation.value.identifier, generics);
-	}
-
-	if (isOperator(operation.operator, "[") && operation.right == (Operation)0) {
-		return checkTypesInTypeOperation(parser, tree, block, operation.left, generics);
-	}
-
-	if (isOperator(operation.operator, "<") &&
-		isOperator(operation.end, ">")) {
-		return checkTypesInTypeOperation(parser, tree, block, operation.left, generics);
-	}
-
-	printError(parser, operation.region.start, " this operation is not supported when checking types of typeObj\n");
-	return (TypeObj)0;
-}
-
-func checkTypesInName(Parser parser, SyntaxTree tree, Block block, Name name) -> TypeObj {
-	var variable = findVariableInParser(parser, tree, block, name.name);
-
-	if (variable == (Variable)0) {
-		var typeObj = findTypeInParser(parser, tree, block, name.name);
-		if (typeObj != (TypeObj)0) {
-			return parser.Type;
-		}
-
-		return (TypeObj)0;
-	}
-
-	if (variable.variableType == (TypeObj)0) {
-		printError(parser, name.region.start, " the type of variable '");
-		print(variable.name);
-		print("' is not defined\n");
-	}
-
-	return variable.variableType;
-}
-
-func checkTypesInValue(Parser parser, SyntaxTree tree, Block block, Value value) -> TypeObj {
-	if (value.identifier != (Identifier)0) {
-		return checkTypesInName(parser, tree, block, value.identifier.definition);
-	}
-
-	if (value.number != (Number)0) {
-		return parser.int;
-	}
-
-	if (value.character != (Character)0) {
-		return parser.char;
-	}
-
-	if (value.string != (StringLiteral)0) {
-		value.string.id = addUniqueString(parser.strings, value.string.value);
-		return parser.str;
-	}
-
-	print("value object is in an invalid state\n");
-	return (TypeObj)0;
-}
-
-func checkTypesInSizeOf(Parser parser, SyntaxTree tree, Block block, SizeOf sizeOf) -> TypeObj {
-	var typeType = checkTypesInOperation(parser, tree, block, sizeOf.typeObj);
-	if (typeType != parser.Type) {
-		printError(parser, sizeOf.typeObj.region.start, " can not take size of something that is not a type\n");
-	}
-
-	if (getTypeFromOperation(parser, tree, block, sizeOf.typeObj) == (TypeObj)0) {
-		printError(parser, sizeOf.typeObj.region.start, " can not find type with this name\n");
-	}
-
-	return parser.int;
-}
-
-func checkTypesInNewOperation(Parser parser, SyntaxTree tree, Block block, NewOperation newOperation) -> TypeObj {
-	var typeType = checkTypesInOperation(parser, tree, block, newOperation.typeObj);
-	if (typeType != parser.Type) {
-		printError(parser, newOperation.typeObj.region.start, " can not create new object of something that is not a type\n");
-	}
-
-	var typeObj = getTypeFromOperation(parser, tree, block, newOperation.typeObj);
-	if (typeObj == (TypeObj)0) {
-		printError(parser, newOperation.typeObj.region.start, " can not find type with this name\n");
-		return (TypeObj)0;
-	}
-
-	if (typeObj.listType != (TypeObj)0) {
-		if (checkTypesInOperation(parser, tree, block, newOperation.num) != parser.int) {
-			printError(parser, newOperation.num.region.start, " can not allocate an array of unknown length\n");
-		}
-	} else {
-		if (!isOperator(newOperation.left, "(") ||
-			newOperation.num != (Operation)0 ||
-			!isOperator(newOperation.right, ")")) {
-			printError(parser, newOperation.typeObj.region.start, " expected 'new' operation to end with '()'\n");
-		}
-	}
-
-	return typeObj;
-}
-
-func getTypeArrayFromOperation(Parser parser, SyntaxTree tree, Block block, Array<TypeObj> list, Operation operation) {
-	if (isOperator(operation.operator, ",")) {
-		getTypeArrayFromOperation(parser, tree, block, list, operation.left);
-		var typeObj = getTypeFromOperation(parser, tree, block, operation.right);
-		addItem<TypeObj>(list, typeObj);
-		return;
-	}
-
-	var typeObj = getTypeFromOperation(parser, tree, block, operation);
-	addItem<TypeObj>(list, typeObj);
-}
-
-func getArgumentTypes(Parser parser, SyntaxTree tree, Block block, Array<TypeObj> list, Operation operation) {
-	if (isOperator(operation.operator, ",")) {
-		getArgumentTypes(parser, tree, block, list, operation.left);
-		var argumentType = checkTypesInOperation(parser, tree, block, operation.right);
-		addItem<TypeObj>(list, argumentType);
-		return;
-	}
-
-	var argumentType = checkTypesInOperation(parser, tree, block, operation);
-	addItem<TypeObj>(list, argumentType);
-}
-
-func checkTypesInFunctionCall(Parser parser, SyntaxTree tree, Block block, Operation call) -> TypeObj {
-	var functionName = (Identifier)0;
-
-	if (call.left.value == (Value)0 && isOperator(call.left.operator, "<")) {
-		functionName = call.left.left.value.identifier;
-	} else {
-		if (call.left.value == (Value)0) {
-			return (TypeObj)0;
-		}
-
-		functionName = call.left.value.identifier;
-	}
-
-	if (functionName == (Identifier)0) {
-		return (TypeObj)0;
-	}
-
-	var function = findFunctionInParser(parser, tree, block, functionName.name);
-
-	if (function == (FunctionDefinition)0) {
-		return (TypeObj)0;
-	}
-
-	if (isOperator(call.left.operator, "<")) {
-		var generics = createArray<TypeObj>();
-		getTypeArrayFromOperation(parser, tree, block, generics, call.left.right);
-
-		if (block != (Block)0) {
-			function = getVariantFunction(block.types, function, generics);
-		} else {
-			function = getVariantFunction(tree.types, function, generics);
-		}
-	}
-
-	var argumentList = createArray<TypeObj>();
-	if (call.right != (Operation)0) {
-		getArgumentTypes(parser, tree, block, argumentList, call.right);
-	}
-
-	var expectedList = createArray<TypeObj>();
-	var i = 0;
-	while (i < function.parameters.size) {
-		var parameter = function.parameters.list[i];
-		var expectedType = parameter.typeObj;
-
-		if (expectedType == (TypeObj)0 && parameter.parameterType != (Operation)0) {
-			expectedType = getTypeFromOperation(parser, tree, block, parameter.parameterType);
-		}
-
-		if (expectedType == (TypeObj)0) {
-			printError(parser, parameter.region.start, " type definition not found\n");
-		}
-
-		addItem<TypeObj>(expectedList, expectedType);
-		i = i + 1;
-	}
-
-	i = 0;
-	var j = 0;
-	var typesMatching = true;
-	while (i < expectedList.size) {
-		var expectedType = expectedList.list[i];
-		var argumentType = (TypeObj)0;
-		if (j > argumentList.size) {
-			i = expectedList.size;
-		} else {
-			argumentType = argumentList.list[j];
-		}
-
-		if (compareTypes(parser, argumentType, expectedType)) {
-			j = j + 1;
-		} else {
-			typesMatching = false;
-		}
-		i = i + 1;
-	}
-
-	if (expectedList.size != argumentList.size) {
-		typesMatching = false;
-	}
-
-	if (!typesMatching) {
-		printError(parser, call.operator.position, " arguments do not match\n");
-		print("[NOTE] expected: ");
-		printTypeArray(expectedList);
-		print(", got: ");
-		printTypeArray(argumentList);
-		print("\n");
-	}
-
-	if (function.returnType == (ReturnType)0) {
-		call.operationType = parser.null;
-		return parser.null;
-	}
-
-	var returnType = function.returnType.typeObj;
-	if (returnType == (TypeObj)0 && function.returnType.returnType != (Operation)0) {
-		returnType = getTypeFromOperation(parser, tree, block, function.returnType.returnType);
-	}
-
-	if (returnType == (TypeObj)0) {
-		printError(parser, function.returnType.region.start, " return type is null\n");
-	}
-
-	call.operationType = returnType;
-	return returnType;
-}
-
-func checkTypesInProperty(Parser parser, SyntaxTree tree, Block block, Operation operation) -> TypeObj {
-	if (!isVariable(operation.left)) {
-		printError(parser, operation.operator.position, " can not read a property from a value that is not a variable\n");
-		return (TypeObj)0;
-	}
-
-	var typeObj = checkTypesInOperation(parser, tree, block, operation.left);
-
-	if (typeObj == (TypeObj)0) {
-		printError(parser, operation.left.region.start, " type of struct is undefined\n");
-		return (TypeObj)0;
-	}
-
-	if (typeObj.properties.size == 0) {
-		printError(parser, operation.left.region.start, " cannot read property of immediate type\n");
-		return (TypeObj)0;
-	}
-
-	var rightValue = operation.right.value;
-	if (rightValue == (Value)0 || rightValue.identifier == (Identifier)0) {
-		printError(parser, operation.right.region.start, " expected an identifier after '.' operator\n");
-		return (TypeObj)0;
-	}
-
-	var property = findProperty(typeObj.properties, rightValue.identifier.name);
-	if (property == (Property)0) {
-		printError(parser, operation.right.region.start, " could not find property with name '");
-		print(rightValue.identifier.name);
-		print("'\n");
-		return (TypeObj)0;
-	}
-
-	var propertyType = property.propertyType;
-
-	if (propertyType == (TypeObj)0 && property.definition != (PropertyDefinition)0) {
-		propertyType = getTypeFromOperation(parser, tree, block, property.definition.propertyType);
-	}
-
-	if (propertyType == (TypeObj)0) {
-		printError(parser, operation.right.region.start, " property type is not defined\n");
-		return (TypeObj)0;
-	}
-
-	operation.operationType = propertyType;
-	return propertyType;
-}
-
-func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operation operation) -> TypeObj {
-	if (operation == (Operation)0) {
-		print("operation is null\n");
-		return (TypeObj)0;
-	}
-
-	if (operation.value != (Value)0) {
-		var valueType = checkTypesInValue(parser, tree, block, operation.value);
-		operation.operationType = valueType;
-		return valueType;
-	}
-
-	if (operation.sizeOf != (SizeOf)0) {
-		operation.operationType = parser.int;
-		return checkTypesInSizeOf(parser, tree, block, operation.sizeOf);
-	}
-
-	if (operation.newOperation != (NewOperation)0) {
-		operation.operationType = checkTypesInNewOperation(parser, tree, block, operation.newOperation);
-		return operation.operationType;
-	}
-
-	if (isOperator(operation.operator, "(") && operation.left != (Operation)0) {
-		return checkTypesInFunctionCall(parser, tree, block, operation);
-	}
-
-	if (isOperator(operation.operator, ".")) {
-		return checkTypesInProperty(parser, tree, block, operation);
-	}
-
-	if (isOperator(operation.operator, "-") && operation.left == (Operation)0) {
-		var rightType = checkTypesInOperation(parser, tree, block, operation.right);
-
-		if (rightType != parser.int) {
-			printError(parser, operation.right.region.start, " expected type 'int' for the unary '-' operation\n");
-		}
-
-		operation.operationType = parser.int;
-		return parser.int;
-	}
-
-	if (isOperator(operation.operator, "!") && operation.left == (Operation)0) {
-		var rightType = checkTypesInOperation(parser, tree, block, operation.right);
-
-		if (rightType != parser.bool) {
-			printError(parser, operation.right.region.start, " expected type 'bool' for the unary '!' operation\n");
-		}
-
-		operation.operationType = parser.bool;
-		return parser.bool;
-	}
-
-	if (isOperator(operation.operator, "~") && operation.left == (Operation)0) {
-		var rightType = checkTypesInOperation(parser, tree, block, operation.right);
-
-		if (rightType != parser.int) {
-			printError(parser, operation.right.region.start, " expected type 'int' for the unary '~' operation\n");
-		}
-
-		operation.operationType = parser.int;
-		return parser.int;
-	}
-
-	if (isOperator(operation.operator, "[") && operation.right == (Operation)0) {
-		var leftType = checkTypesInOperation(parser, tree, block, operation.left);
-
-		if (leftType != parser.Type) {
-			printError(parser, operation.left.region.start, " expected a 'Type' for this list operator '[]'\n");
-		}
-
-		operation.operationType = parser.Type;
-		return parser.Type;
-	}
-
-	if (isOperator(operation.operator, "<") &&
-		isOperator(operation.end, ">")) {
-		var leftType = checkTypesInOperation(parser, tree, block, operation.left);
-
-		if (leftType != parser.Type) {
-			printError(parser, operation.left.region.start, " expected a 'Type' for the generic '<>' operator\n");
-		}
-
-		operation.operationType = parser.Type;
-		return parser.Type;
-	}
-
-	var leftType = (TypeObj)0;
-	var rightType = (TypeObj)0;
-
-	if (operation.left != (Operation)0) {
-		leftType = checkTypesInOperation(parser, tree, block, operation.left);
-	}
-
-	if (operation.right != (Operation)0) {
-		rightType = checkTypesInOperation(parser, tree, block, operation.right);
-	}
-
-	if (((TypeObj)0 == leftType || rightType == (TypeObj)0) && !isOperator(operation.operator, "(")) {
-		return (TypeObj)0;
-	}
-
-	if (isOperator(operation.operator, "<") ||
-		isOperator(operation.operator, ">") ||
-		isOperator(operation.operator, "<=") ||
-		isOperator(operation.operator, ">=") ||
-		isOperator(operation.operator, "==") ||
-		isOperator(operation.operator, "!=")) {
-		if (leftType != rightType) {
-			printError(parser, operation.operator.position, " can not compare values of different types\n");
-			print("[NOTE] types where: '");
-			printType(leftType);
-			print("' and '");
-			printType(rightType);
-			print("'\n");
-		}
-		operation.operationType = parser.bool;
-		return parser.bool;
-	} else if (isOperator(operation.operator, "[")) {
-		if (!isVariable(operation.left)) {
-			printError(parser, operation.operator.position, " can not index from a value that is not a variable\n");
-			return (TypeObj)0;
-		}
-
-		if (leftType == (TypeObj)0) {
-			printError(parser, operation.operator.position, " type of list is null\n");
-			return (TypeObj)0;
-		}
-
-		if (rightType != parser.int) {
-			printError(parser, operation.right.region.start, " expected list index to be of type 'int'\n");
-			return (TypeObj)0;
-		}
-
-		operation.operationType = leftType.listType;
-		return leftType.listType;
-	} else if (isOperator(operation.operator, "+")) {
-		if (leftType == parser.int) {
-			if (rightType == parser.int) {
-				operation.operationType = parser.int;
-				return parser.int;
-			} else if (rightType == parser.char) {
-				operation.operationType = parser.char;
-				return parser.char;
-			} else {
-				printError(parser, operation.operator.position, " can not add values of type 'int' and '");
-				printType(rightType);
-				print("'\n");
-			}
-		} else if (leftType == parser.char) {
-			if (rightType == parser.int) {
-				operation.operationType = parser.char;
-				return parser.char;
-			} else {
-				printError(parser, operation.operator.position, " can not add values of type 'char' and '");
-				printType(rightType);
-				print("'\n");
-			}
-		} else {
-			printError(parser, operation.operator.position, " can not add values of type '");
-			printType(leftType);
-			print("' and '");
-			printType(rightType);
-			print("'\n");
-		}
-
-		return (TypeObj)0;
-	} else if (isOperator(operation.operator, "-")) {
-		if (leftType == parser.int) {
-			if (rightType == parser.int) {
-				operation.operationType = parser.int;
-				return parser.int;
-			} else {
-				printError(parser, operation.operator.position, " can not subtract value of type '");
-				printType(rightType);
-				print("' from 'int'\n");
-			}
-		} else if (leftType == parser.char) {
-			if (rightType == parser.int) {
-				operation.operationType = parser.char;
-				return parser.char;
-			} else if (rightType == parser.char) {
-				operation.operationType = parser.int;
-				return parser.int;
-			} else {
-				printError(parser, operation.operator.position, " can not subtract value of type '");
-				printType(rightType);
-				print("' from 'char'\n");
-			}
-		} else {
-			printError(parser, operation.operator.position, " can not subtract value of type '");
-			printType(rightType);
-			print("' from '");
-			printType(leftType);
-			print("'\n");
-		}
-
-		return (TypeObj)0;
-	} else if (isOperator(operation.operator, "*") ||
-			isOperator(operation.operator, "/") ||
-			isOperator(operation.operator, "%") ||
-			isOperator(operation.operator, "&") ||
-			isOperator(operation.operator, "|") ||
-			isOperator(operation.operator, "<<") ||
-			isOperator(operation.operator, ">>")) {
-		if (leftType != parser.int || rightType != parser.int) {
-			printError(parser, operation.operator.position, " can not perform operation: '");
-			print(operation.operator.name);
-			print("' on values of type: '");
-			printType(leftType);
-			print("', and '");
-			printType(rightType);
-			print("'\n");
-		}
-
-		operation.operationType = parser.int;
-		return parser.int;
-	} else if (isOperator(operation.operator, "(")) {
-		var typeObj = checkTypesInOperation(parser, tree, block, operation.right);
-
-		if (operation.castType != (Operation)0) {
-			var castType = getTypeFromOperation(parser, tree, block, operation.castType);
-
-			operation.operationType = castType;
-			return castType;
-		}
-
-		operation.operationType = typeObj;
-		return typeObj;
-	} else if (isOperator(operation.operator, "=")) {
-		if (!isVariable(operation.left)) {
-			printError(parser, operation.operator.position, " can not assign a value to a constant\n");
-			return (TypeObj)0;
-		}
-
-		if (leftType != rightType) {
-			printError(parser, operation.operator.position, " can not assign a value with a different type\n");
-			print("[NOTE] expected: '");
-			printType(leftType);
-			print("', got: '");
-			printType(rightType);
-			print("'\n");
-		}
-
-		return (TypeObj)0;
-	} else if (isOperator(operation.operator, "&&") ||
-			isOperator(operation.operator, "||")) {
-		if (leftType != parser.bool || rightType != parser.bool) {
-			printError(parser, operation.operator.position, " can not perform an 'and' or 'or' operation on values of type '");
-			printType(leftType);
-			print("' and '");
-			printType(rightType);
-			print("'\n");
-		}
-		operation.operationType = parser.bool;
-		return parser.bool;
-	} else {
-		printError(parser, operation.region.start, " do not support type checking for '");
-		print(operation.operator.name);
-		print("' operator yet\n");
-	}
-
-	return (TypeObj)0;
-}
-
-func checkTypesInExpression(Parser parser, SyntaxTree tree, Block block, Expression expression) {
-	checkTypesInOperation(parser, tree, block, expression.operation);
-}
-
-func checkTypesInIf(Parser parser, SyntaxTree tree, Block block, If ifStatement) {
-	var conditionType = checkTypesInOperation(parser, tree, block, ifStatement.condition);
-
-	if (!(compareTypes(parser, conditionType, parser.bool))) {
-		printError(parser, ifStatement.region.start, " expected if condition to be of type boolean\n");
-	}
-
-	var i = 0;
-	while (i < ifStatement.elseIfs.size) {
-		var conditionType = checkTypesInOperation(parser, tree, block, ifStatement.elseIfs.list[i].condition);
-
-		if (!(compareTypes(parser, conditionType, parser.bool))) {
-			printError(parser, ifStatement.elseIfs.list[i].region.start, " expected else if condition to be of type boolean\n");
-		}
-		i = i + 1;
-	}
-}
-
-func checkTypesInWhile(Parser parser, SyntaxTree tree, Block block, While whileStatement) {
-	var conditionType = checkTypesInOperation(parser, tree, block, whileStatement.condition);
-
-	if (!(compareTypes(parser, conditionType, parser.bool))) {
-		printError(parser, whileStatement.region.start, " expected while condition to be of type boolean\n");
-	}
-}
-
-func checkTypesInVariable(Parser parser, SyntaxTree tree, Block block, Variable variable) {
-	var variableType = checkTypesInOperation(parser, tree, block, variable.definition.value);
-
-	if (variableType == (TypeObj)0) {
-		printError(parser, variable.definition.value.region.start, " type is undefined\n");
-	}
-
-	variable.variableType = variableType;
-}
-
-func checkTypesInReturn(Parser parser, SyntaxTree tree, Block block, Return returnStatement) {
-	var returnType = parser.null;
-	if (returnStatement.expression != (Operation)0) {
-		returnType = checkTypesInOperation(parser, tree, block, returnStatement.expression);
-	}
-
-	var function = getBlockFunction(block);
-	if (function == (FunctionDefinition)0) {
-		printError(parser, returnStatement.region.start, " can not return from outside a function\n");
-		return;
-	}
-
-	if (function.returnType == (ReturnType)0) {
-		if (returnType != parser.null) {
-			printError(parser, returnStatement.expression.region.start, " can not return a value from a null function\n");
-		}
-		return;
-	}
-
-	var expectedType = getTypeFromOperation(parser, tree, block, function.returnType.returnType);
-
-	if (returnType != expectedType) {
-		if (returnType == parser.null) {
-			printError(parser, returnStatement.semicolon.position, "expected a return value\n");
-			return;
-		}
-
-		printError(parser, returnStatement.expression.region.start, " expected type '");
-		printType(expectedType);
-		print("', got '");
-		printType(returnType);
-		print("'\n");
-		return;
-	}
-}
-
-func checkTypesInTypeDefinition(Parser parser, SyntaxTree tree, Block block, TypeObj typeObj) {
-	var i = 0;
-	while (i < typeObj.properties.size) {
-		var property = typeObj.properties.list[i];
-		if (checkTypesInTypeOperation(parser, tree, block, property.definition.propertyType, typeObj.generics) != parser.Type) {
-			printError(parser, property.definition.region.start, " expected property type te be a type\n");
-		}
-
-		property.propertyType = getTypeFromOperation(parser, tree, block, property.definition.propertyType);
-		i = i + 1;
-	}
-}
-
-func checkTypesInFunctionDefinition(Parser parser, SyntaxTree tree, Block block, FunctionDefinition function) {
-	var i = 0;
-	while (i < function.parameters.size) {
-		var parameter = function.parameters.list[i];
-		if (checkTypesInTypeOperation(parser, tree, block, parameter.parameterType, function.generics) != parser.Type) {
-			printError(parser, parameter.region.start, " expected parameter type to be a type\n");
-		}
-
-		parameter.typeObj = getTypeFromOperation(parser, tree, block, parameter.parameterType);
-		i = i + 1;
-	}
-}
-
-func checkTypesInStatementArray(Parser parser, SyntaxTree tree, Block block, Array<Statement> list) {
-	var i = 0;
-	while (i < list.size) {
-		var statement = list.list[i];
-		if (statement.expression != (Expression)0) {
-			checkTypesInExpression(parser, tree, block, statement.expression);
-		} else if (statement.ifStatement != (If)0) {
-			checkTypesInIf(parser, tree, block, statement.ifStatement);
-		} else if (statement.whileStatement != (While)0) {
-			checkTypesInWhile(parser, tree, block, statement.whileStatement);
-		} else if (statement.variable != (Variable)0) {
-			checkTypesInVariable(parser, tree, block, statement.variable);
-		} else if (statement.returnStatement != (Return)0) {
-			checkTypesInReturn(parser, tree, block, statement.returnStatement);
-		} else if (statement.typeStatement != (TypeObj)0) {
-			checkTypesInTypeDefinition(parser, tree, block, statement.typeStatement);
-		} else if (statement.function != (FunctionDefinition)0) {
-			checkTypesInFunctionDefinition(parser, tree, block, statement.function);
-		}
-
-		i = i + 1;
-	}
-}
-
+//func compareTypes(Parser parser, TypeObj a, TypeObj b) -> bool {
+//	return a == b || b == parser.any || a == (TypeObj)0;
+//}
+//
+//func checkTypesInTypeIdentifier(Parser parser, SyntaxTree tree, Block block, Identifier identifier, Array<Generic> generics) -> TypeObj {
+//	var variable = findVariableInParser(parser, tree, block, identifier.name);
+//
+//	if (variable != (Variable)0) {
+//		if (variable.variableType == (TypeObj)0) {
+//			printError(parser, identifier.definition.region.start, " the type of variable '");
+//			print(variable.name);
+//			print("' is not defined\n");
+//		}
+//		return variable.variableType;
+//	}
+//
+//	var typeObj = findTypeInParser(parser, tree, block, identifier.name);
+//
+//	if (typeObj == (TypeObj)0) {
+//		typeObj = findTypeInGenerics(generics, identifier.name);
+//	}
+//
+//	if (typeObj != (TypeObj)0) {
+//		return parser.Type;
+//	}
+//
+//	return (TypeObj)0;
+//}
+//
+//func checkTypesInTypeOperation(Parser parser, SyntaxTree tree, Block block, Operation operation, Array<Generic> generics) -> TypeObj {
+//	if (operation.value != (Value)0 && operation.value.identifier != (Identifier)0) {
+//		return checkTypesInTypeIdentifier(parser, tree, block, operation.value.identifier, generics);
+//	}
+//
+//	if (isOperator(operation.operator, "[") && operation.right == (Operation)0) {
+//		return checkTypesInTypeOperation(parser, tree, block, operation.left, generics);
+//	}
+//
+//	if (isOperator(operation.operator, "<") &&
+//		isOperator(operation.end, ">")) {
+//		return checkTypesInTypeOperation(parser, tree, block, operation.left, generics);
+//	}
+//
+//	printError(parser, operation.region.start, " this operation is not supported when checking types of typeObj\n");
+//	return (TypeObj)0;
+//}
+//
+//func checkTypesInName(Parser parser, SyntaxTree tree, Block block, Name name) -> TypeObj {
+//	var variable = findVariableInParser(parser, tree, block, name.name);
+//
+//	if (variable == (Variable)0) {
+//		var typeObj = findTypeInParser(parser, tree, block, name.name);
+//		if (typeObj != (TypeObj)0) {
+//			return parser.Type;
+//		}
+//
+//		return (TypeObj)0;
+//	}
+//
+//	if (variable.variableType == (TypeObj)0) {
+//		printError(parser, name.region.start, " the type of variable '");
+//		print(variable.name);
+//		print("' is not defined\n");
+//	}
+//
+//	return variable.variableType;
+//}
+//
+//func checkTypesInValue(Parser parser, SyntaxTree tree, Block block, Value value) -> TypeObj {
+//	if (value.identifier != (Identifier)0) {
+//		return checkTypesInName(parser, tree, block, value.identifier.definition);
+//	}
+//
+//	if (value.number != (Number)0) {
+//		return parser.int;
+//	}
+//
+//	if (value.character != (Character)0) {
+//		return parser.char;
+//	}
+//
+//	if (value.string != (StringLiteral)0) {
+//		value.string.id = addUniqueString(parser.strings, value.string.value);
+//		return parser.str;
+//	}
+//
+//	print("value object is in an invalid state\n");
+//	return (TypeObj)0;
+//}
+//
+//func checkTypesInSizeOf(Parser parser, SyntaxTree tree, Block block, SizeOf sizeOf) -> TypeObj {
+//	var typeType = checkTypesInOperation(parser, tree, block, sizeOf.typeObj);
+//	if (typeType != parser.Type) {
+//		printError(parser, sizeOf.typeObj.region.start, " can not take size of something that is not a type\n");
+//	}
+//
+//	if (getTypeFromOperation(parser, tree, block, sizeOf.typeObj) == (TypeObj)0) {
+//		printError(parser, sizeOf.typeObj.region.start, " can not find type with this name\n");
+//	}
+//
+//	return parser.int;
+//}
+//
+//func checkTypesInNewOperation(Parser parser, SyntaxTree tree, Block block, NewOperation newOperation) -> TypeObj {
+//	var typeType = checkTypesInOperation(parser, tree, block, newOperation.typeObj);
+//	if (typeType != parser.Type) {
+//		printError(parser, newOperation.typeObj.region.start, " can not create new object of something that is not a type\n");
+//	}
+//
+//	var typeObj = getTypeFromOperation(parser, tree, block, newOperation.typeObj);
+//	if (typeObj == (TypeObj)0) {
+//		printError(parser, newOperation.typeObj.region.start, " can not find type with this name\n");
+//		return (TypeObj)0;
+//	}
+//
+//	if (typeObj.listType != (TypeObj)0) {
+//		if (checkTypesInOperation(parser, tree, block, newOperation.num) != parser.int) {
+//			printError(parser, newOperation.num.region.start, " can not allocate an array of unknown length\n");
+//		}
+//	} else {
+//		if (!isOperator(newOperation.left, "(") ||
+//			newOperation.num != (Operation)0 ||
+//			!isOperator(newOperation.right, ")")) {
+//			printError(parser, newOperation.typeObj.region.start, " expected 'new' operation to end with '()'\n");
+//		}
+//	}
+//
+//	return typeObj;
+//}
+//
+//func getTypeArrayFromOperation(Parser parser, SyntaxTree tree, Block block, Array<TypeObj> list, Operation operation) {
+//	if (isOperator(operation.operator, ",")) {
+//		getTypeArrayFromOperation(parser, tree, block, list, operation.left);
+//		var typeObj = getTypeFromOperation(parser, tree, block, operation.right);
+//		list.push(typeObj);
+//		return;
+//	}
+//
+//	var typeObj = getTypeFromOperation(parser, tree, block, operation);
+//	list.push(typeObj);
+//}
+//
+//func getArgumentTypes(Parser parser, SyntaxTree tree, Block block, Array<TypeObj> list, Operation operation) {
+//	if (isOperator(operation.operator, ",")) {
+//		getArgumentTypes(parser, tree, block, list, operation.left);
+//		var argumentType = checkTypesInOperation(parser, tree, block, operation.right);
+//		list.push(argumentType);
+//		return;
+//	}
+//
+//	var argumentType = checkTypesInOperation(parser, tree, block, operation);
+//	list.push(argumentType);
+//}
+//
+//func checkTypesInFunctionCall(Parser parser, SyntaxTree tree, Block block, Operation call) -> TypeObj {
+//	var functionName = (Identifier)0;
+//
+//	if (call.left.value == (Value)0 && isOperator(call.left.operator, "<")) {
+//		functionName = call.left.left.value.identifier;
+//	} else {
+//		if (call.left.value == (Value)0) {
+//			return (TypeObj)0;
+//		}
+//
+//		functionName = call.left.value.identifier;
+//	}
+//
+//	if (functionName == (Identifier)0) {
+//		return (TypeObj)0;
+//	}
+//
+//	var function = findFunctionInParser(parser, tree, block, functionName.name);
+//
+//	if (function == (FunctionDefinition)0) {
+//		return (TypeObj)0;
+//	}
+//
+//	if (isOperator(call.left.operator, "<")) {
+//		var generics = createArray<TypeObj>();
+//		getTypeArrayFromOperation(parser, tree, block, generics, call.left.right);
+//
+//		if (block != (Block)0) {
+//			function = getVariantFunction(block.types, function, generics);
+//		} else {
+//			function = getVariantFunction(tree.types, function, generics);
+//		}
+//	}
+//
+//	var argumentList = createArray<TypeObj>();
+//	if (call.right != (Operation)0) {
+//		getArgumentTypes(parser, tree, block, argumentList, call.right);
+//	}
+//
+//	var expectedList = createArray<TypeObj>();
+//	var i = 0;
+//	while (i < function.parameters.size) {
+//		var parameter = function.parameters.list[i];
+//		var expectedType = parameter.typeObj;
+//
+//		if (expectedType == (TypeObj)0 && parameter.parameterType != (Operation)0) {
+//			expectedType = getTypeFromOperation(parser, tree, block, parameter.parameterType);
+//		}
+//
+//		if (expectedType == (TypeObj)0) {
+//			printError(parser, parameter.region.start, " type definition not found\n");
+//		}
+//
+//		expectedList.push(expectedType);
+//		i = i + 1;
+//	}
+//
+//	i = 0;
+//	var j = 0;
+//	var typesMatching = true;
+//	while (i < expectedList.size) {
+//		var expectedType = expectedList.list[i];
+//		var argumentType = (TypeObj)0;
+//		if (j > argumentList.size) {
+//			i = expectedList.size;
+//		} else {
+//			argumentType = argumentList.list[j];
+//		}
+//
+//		if (compareTypes(parser, argumentType, expectedType)) {
+//			j = j + 1;
+//		} else {
+//			typesMatching = false;
+//		}
+//		i = i + 1;
+//	}
+//
+//	if (expectedList.size != argumentList.size) {
+//		typesMatching = false;
+//	}
+//
+//	if (!typesMatching) {
+//		printError(parser, call.operator.position, " arguments do not match\n");
+//		print("[NOTE] expected: ");
+//		printTypeArray(expectedList);
+//		print(", got: ");
+//		printTypeArray(argumentList);
+//		print("\n");
+//	}
+//
+//	if (function.returnType == (ReturnType)0) {
+//		call.operationType = parser.null;
+//		return parser.null;
+//	}
+//
+//	var returnType = function.returnType.typeObj;
+//	if (returnType == (TypeObj)0 && function.returnType.returnType != (Operation)0) {
+//		returnType = getTypeFromOperation(parser, tree, block, function.returnType.returnType);
+//	}
+//
+//	if (returnType == (TypeObj)0) {
+//		printError(parser, function.returnType.region.start, " return type is null\n");
+//	}
+//
+//	call.operationType = returnType;
+//	return returnType;
+//}
+//
+//func checkTypesInMethod(Parser parser, SyntaxTree tree, Block block, TypeObj typeObj, Operation operation) -> TypeObj {
+//	var methodName = operation.left.value.identifier;
+//	if (methodName == (Identifier)0) {
+//		printError(parser, operation.region.start, "expected method name\n");
+//		return (TypeObj)0;
+//	}
+//
+//	var method = findFunction(typeObj.methods, methodName.name);
+//
+//	if (method == (FunctionDefinition)0) {
+//		printError(parser, operation.region.start, "type '");
+//		printType(typeObj);
+//		print("' does not have a method named '");
+//		print(methodName.name);
+//		print("'\n");
+//		
+//		return (TypeObj)0;
+//	}
+//
+//	method.isCalled = true;
+//
+//	var generics = createArray<TypeObj>();
+//	var i = 0;
+//	while (i < typeObj.generics.size) {
+//		var generic = typeObj.generics.get(i);
+//		generics.push(generic.typeObj);
+//		i = i + 1;
+//	}
+//	
+//	if (block != (Block)0) {
+//		method = getVariantFunction(block.types, method, generics);
+//	} else {
+//		method = getVariantFunction(tree.types, method, generics);
+//	}
+//
+//	var arguments = createArray<TypeObj>();
+//	arguments.push(typeObj);
+//	if (operation.right != (Operation)0) {
+//		getArgumentTypes(parser, tree, block, arguments, operation.right);
+//	}
+//
+//	var expectedList = createArray<TypeObj>();
+//	i = 0;
+//	while (i < method.parameters.size) {
+//		var parameter = method.parameters.list[i];
+//		var expectedType = parameter.typeObj;
+//
+//		if (expectedType == (TypeObj)0 && parameter.parameterType != (Operation)0) {
+//			expectedType = getTypeFromOperation(parser, tree, block, parameter.parameterType);
+//		}
+//
+//		if (expectedType == (TypeObj)0) {
+//			printError(parser, parameter.region.start, " type definition not found\n");
+//		}
+//
+//		expectedList.push(expectedType);
+//		i = i + 1;
+//	}
+//
+//	i = 0;
+//	var j = 0;
+//	var typesMatching = true;
+//	while (i < expectedList.size) {
+//		var expectedType = expectedList.list[i];
+//		var argumentType = (TypeObj)0;
+//		if (j > arguments.size) {
+//			i = expectedList.size;
+//		} else {
+//			argumentType = arguments.list[j];
+//		}
+//
+//		if (compareTypes(parser, argumentType, expectedType)) {
+//			j = j + 1;
+//		} else {
+//			typesMatching = false;
+//		}
+//		i = i + 1;
+//	}
+//
+//	if (expectedList.size != arguments.size) {
+//		typesMatching = false;
+//	}
+//
+//	if (!typesMatching) {
+//		printError(parser, operation.operator.position, " arguments do not match\n");
+//		print("[NOTE] expected: ");
+//		printTypeArray(expectedList);
+//		print(", got: ");
+//		printTypeArray(arguments);
+//		print("\n");
+//	}
+//
+//	if (method.returnType == (ReturnType)0) {
+//		operation.operationType = parser.null;
+//		return parser.null;
+//	}
+//
+//	var returnType = method.returnType.typeObj;
+//	operation.operationType = returnType;
+//	return returnType;
+//}
+//
+//func checkTypesInProperty(Parser parser, SyntaxTree tree, Block block, Operation operation) -> TypeObj {
+//	if (!isVariable(operation.left)) {
+//		printError(parser, operation.operator.position, " can not read a property from a value that is not a variable\n");
+//		return (TypeObj)0;
+//	}
+//
+//	var typeObj = checkTypesInOperation(parser, tree, block, operation.left);
+//
+//	if (typeObj == (TypeObj)0) {
+//		printError(parser, operation.left.region.start, " type of struct is undefined\n");
+//		return (TypeObj)0;
+//	}
+//
+//	if (typeObj.properties.size == 0) {
+//		printError(parser, operation.left.region.start, " cannot read property of immediate type\n");
+//		return (TypeObj)0;
+//	}
+//
+//	if (isOperator(operation.right.operator, "(")) {
+//		var methodType = checkTypesInMethod(parser, tree, block, typeObj, operation.right);
+//		operation.operationType = methodType;
+//		return methodType;
+//	}
+//
+//	var rightValue = operation.right.value;
+//	if (rightValue == (Value)0 || rightValue.identifier == (Identifier)0) {
+//		printError(parser, operation.right.region.start, " expected an identifier after '.' operator\n");
+//		return (TypeObj)0;
+//	}
+//
+//	var property = findProperty(typeObj.properties, rightValue.identifier.name);
+//	if (property == (Property)0) {
+//		printError(parser, operation.right.region.start, " could not find property with name '");
+//		print(rightValue.identifier.name);
+//		print("'\n");
+//		return (TypeObj)0;
+//	}
+//
+//	var propertyType = property.propertyType;
+//
+//	if (propertyType == (TypeObj)0 && property.definition != (PropertyDefinition)0) {
+//		propertyType = getTypeFromOperation(parser, tree, block, property.definition.propertyType);
+//	}
+//
+//	if (propertyType == (TypeObj)0) {
+//		printError(parser, operation.right.region.start, " property type is not defined\n");
+//		return (TypeObj)0;
+//	}
+//
+//	operation.operationType = propertyType;
+//	return propertyType;
+//}
+//
+//func checkTypesInOperation(Parser parser, SyntaxTree tree, Block block, Operation operation) -> TypeObj {
+//	if (operation == (Operation)0) {
+//		print("operation is null\n");
+//		return (TypeObj)0;
+//	}
+//
+//	if (operation.value != (Value)0) {
+//		var valueType = checkTypesInValue(parser, tree, block, operation.value);
+//		operation.operationType = valueType;
+//		return valueType;
+//	}
+//
+//	if (operation.sizeOf != (SizeOf)0) {
+//		operation.operationType = parser.int;
+//		return checkTypesInSizeOf(parser, tree, block, operation.sizeOf);
+//	}
+//
+//	if (operation.newOperation != (NewOperation)0) {
+//		operation.operationType = checkTypesInNewOperation(parser, tree, block, operation.newOperation);
+//		return operation.operationType;
+//	}
+//
+//	if (isOperator(operation.operator, "(") && operation.left != (Operation)0) {
+//		return checkTypesInFunctionCall(parser, tree, block, operation);
+//	}
+//
+//	if (isOperator(operation.operator, ".")) {
+//		return checkTypesInProperty(parser, tree, block, operation);
+//	}
+//
+//	if (isOperator(operation.operator, "-") && operation.left == (Operation)0) {
+//		var rightType = checkTypesInOperation(parser, tree, block, operation.right);
+//
+//		if (rightType != parser.int) {
+//			printError(parser, operation.right.region.start, " expected type 'int' for the unary '-' operation\n");
+//		}
+//
+//		operation.operationType = parser.int;
+//		return parser.int;
+//	}
+//
+//	if (isOperator(operation.operator, "!") && operation.left == (Operation)0) {
+//		var rightType = checkTypesInOperation(parser, tree, block, operation.right);
+//
+//		if (rightType != parser.bool) {
+//			printError(parser, operation.right.region.start, " expected type 'bool' for the unary '!' operation\n");
+//		}
+//
+//		operation.operationType = parser.bool;
+//		return parser.bool;
+//	}
+//
+//	if (isOperator(operation.operator, "~") && operation.left == (Operation)0) {
+//		var rightType = checkTypesInOperation(parser, tree, block, operation.right);
+//
+//		if (rightType != parser.int) {
+//			printError(parser, operation.right.region.start, " expected type 'int' for the unary '~' operation\n");
+//		}
+//
+//		operation.operationType = parser.int;
+//		return parser.int;
+//	}
+//
+//	if (isOperator(operation.operator, "[") && operation.right == (Operation)0) {
+//		var leftType = checkTypesInOperation(parser, tree, block, operation.left);
+//
+//		if (leftType != parser.Type) {
+//			printError(parser, operation.left.region.start, " expected a 'Type' for this list operator '[]'\n");
+//		}
+//
+//		operation.operationType = parser.Type;
+//		return parser.Type;
+//	}
+//
+//	if (isOperator(operation.operator, "<") &&
+//		isOperator(operation.end, ">")) {
+//		var leftType = checkTypesInOperation(parser, tree, block, operation.left);
+//
+//		if (leftType != parser.Type) {
+//			printError(parser, operation.left.region.start, " expected a 'Type' for the generic '<>' operator\n");
+//		}
+//
+//		operation.operationType = parser.Type;
+//		return parser.Type;
+//	}
+//
+//	var leftType = (TypeObj)0;
+//	var rightType = (TypeObj)0;
+//
+//	if (operation.left != (Operation)0) {
+//		leftType = checkTypesInOperation(parser, tree, block, operation.left);
+//	}
+//
+//	if (operation.right != (Operation)0) {
+//		rightType = checkTypesInOperation(parser, tree, block, operation.right);
+//	}
+//
+//	if (((TypeObj)0 == leftType || rightType == (TypeObj)0) && !isOperator(operation.operator, "(")) {
+//		return (TypeObj)0;
+//	}
+//
+//	if (isOperator(operation.operator, "<") ||
+//		isOperator(operation.operator, ">") ||
+//		isOperator(operation.operator, "<=") ||
+//		isOperator(operation.operator, ">=") ||
+//		isOperator(operation.operator, "==") ||
+//		isOperator(operation.operator, "!=")) {
+//		if (leftType != rightType) {
+//			printError(parser, operation.operator.position, " can not compare values of different types\n");
+//			print("[NOTE] types where: '");
+//			printType(leftType);
+//			print("' and '");
+//			printType(rightType);
+//			print("'\n");
+//		}
+//		operation.operationType = parser.bool;
+//		return parser.bool;
+//	} else if (isOperator(operation.operator, "[")) {
+//		if (!isVariable(operation.left)) {
+//			printError(parser, operation.operator.position, " can not index from a value that is not a variable\n");
+//			return (TypeObj)0;
+//		}
+//
+//		if (leftType == (TypeObj)0) {
+//			printError(parser, operation.operator.position, " type of list is null\n");
+//			return (TypeObj)0;
+//		}
+//
+//		if (rightType != parser.int) {
+//			printError(parser, operation.right.region.start, " expected list index to be of type 'int'\n");
+//			return (TypeObj)0;
+//		}
+//
+//		operation.operationType = leftType.listType;
+//		return leftType.listType;
+//	} else if (isOperator(operation.operator, "+")) {
+//		if (leftType == parser.int) {
+//			if (rightType == parser.int) {
+//				operation.operationType = parser.int;
+//				return parser.int;
+//			} else if (rightType == parser.char) {
+//				operation.operationType = parser.char;
+//				return parser.char;
+//			} else {
+//				printError(parser, operation.operator.position, " can not add values of type 'int' and '");
+//				printType(rightType);
+//				print("'\n");
+//			}
+//		} else if (leftType == parser.char) {
+//			if (rightType == parser.int) {
+//				operation.operationType = parser.char;
+//				return parser.char;
+//			} else {
+//				printError(parser, operation.operator.position, " can not add values of type 'char' and '");
+//				printType(rightType);
+//				print("'\n");
+//			}
+//		} else {
+//			printError(parser, operation.operator.position, " can not add values of type '");
+//			printType(leftType);
+//			print("' and '");
+//			printType(rightType);
+//			print("'\n");
+//		}
+//
+//		return (TypeObj)0;
+//	} else if (isOperator(operation.operator, "-")) {
+//		if (leftType == parser.int) {
+//			if (rightType == parser.int) {
+//				operation.operationType = parser.int;
+//				return parser.int;
+//			} else {
+//				printError(parser, operation.operator.position, " can not subtract value of type '");
+//				printType(rightType);
+//				print("' from 'int'\n");
+//			}
+//		} else if (leftType == parser.char) {
+//			if (rightType == parser.int) {
+//				operation.operationType = parser.char;
+//				return parser.char;
+//			} else if (rightType == parser.char) {
+//				operation.operationType = parser.int;
+//				return parser.int;
+//			} else {
+//				printError(parser, operation.operator.position, " can not subtract value of type '");
+//				printType(rightType);
+//				print("' from 'char'\n");
+//			}
+//		} else {
+//			printError(parser, operation.operator.position, " can not subtract value of type '");
+//			printType(rightType);
+//			print("' from '");
+//			printType(leftType);
+//			print("'\n");
+//		}
+//
+//		return (TypeObj)0;
+//	} else if (isOperator(operation.operator, "*") ||
+//			isOperator(operation.operator, "/") ||
+//			isOperator(operation.operator, "%") ||
+//			isOperator(operation.operator, "&") ||
+//			isOperator(operation.operator, "|") ||
+//			isOperator(operation.operator, "<<") ||
+//			isOperator(operation.operator, ">>")) {
+//		if (leftType != parser.int || rightType != parser.int) {
+//			printError(parser, operation.operator.position, " can not perform operation: '");
+//			print(operation.operator.name);
+//			print("' on values of type: '");
+//			printType(leftType);
+//			print("', and '");
+//			printType(rightType);
+//			print("'\n");
+//		}
+//
+//		operation.operationType = parser.int;
+//		return parser.int;
+//	} else if (isOperator(operation.operator, "(")) {
+//		var typeObj = checkTypesInOperation(parser, tree, block, operation.right);
+//
+//		if (operation.castType != (Operation)0) {
+//			var castType = getTypeFromOperation(parser, tree, block, operation.castType);
+//
+//			operation.operationType = castType;
+//			return castType;
+//		}
+//
+//		operation.operationType = typeObj;
+//		return typeObj;
+//	} else if (isOperator(operation.operator, "=")) {
+//		if (!isVariable(operation.left)) {
+//			printError(parser, operation.operator.position, " can not assign a value to a constant\n");
+//			return (TypeObj)0;
+//		}
+//
+//		if (leftType != rightType) {
+//			printError(parser, operation.operator.position, " can not assign a value with a different type\n");
+//			print("[NOTE] expected: '");
+//			printType(leftType);
+//			print("', got: '");
+//			printType(rightType);
+//			print("'\n");
+//		}
+//
+//		return (TypeObj)0;
+//	} else if (isOperator(operation.operator, "&&") ||
+//			isOperator(operation.operator, "||")) {
+//		if (leftType != parser.bool || rightType != parser.bool) {
+//			printError(parser, operation.operator.position, " can not perform an 'and' or 'or' operation on values of type '");
+//			printType(leftType);
+//			print("' and '");
+//			printType(rightType);
+//			print("'\n");
+//		}
+//		operation.operationType = parser.bool;
+//		return parser.bool;
+//	} else {
+//		printError(parser, operation.region.start, " do not support type checking for '");
+//		print(operation.operator.name);
+//		print("' operator yet\n");
+//	}
+//
+//	return (TypeObj)0;
+//}
+//
+//func checkTypesInExpression(Parser parser, SyntaxTree tree, Block block, Expression expression) {
+//	checkTypesInOperation(parser, tree, block, expression.operation);
+//}
+//
+//func checkTypesInIf(Parser parser, SyntaxTree tree, Block block, If ifStatement) {
+//	var conditionType = checkTypesInOperation(parser, tree, block, ifStatement.condition);
+//
+//	if (!(compareTypes(parser, conditionType, parser.bool))) {
+//		printError(parser, ifStatement.region.start, " expected if condition to be of type boolean\n");
+//	}
+//
+//	var i = 0;
+//	while (i < ifStatement.elseIfs.size) {
+//		var conditionType = checkTypesInOperation(parser, tree, block, ifStatement.elseIfs.list[i].condition);
+//
+//		if (!(compareTypes(parser, conditionType, parser.bool))) {
+//			printError(parser, ifStatement.elseIfs.list[i].region.start, " expected else if condition to be of type boolean\n");
+//		}
+//		i = i + 1;
+//	}
+//}
+//
+//func checkTypesInWhile(Parser parser, SyntaxTree tree, Block block, While whileStatement) {
+//	var conditionType = checkTypesInOperation(parser, tree, block, whileStatement.condition);
+//
+//	if (!(compareTypes(parser, conditionType, parser.bool))) {
+//		printError(parser, whileStatement.region.start, " expected while condition to be of type boolean\n");
+//	}
+//}
+//
+//func checkTypesInVariable(Parser parser, SyntaxTree tree, Block block, Variable variable) {
+//	var variableType = checkTypesInOperation(parser, tree, block, variable.definition.value);
+//
+//	if (variableType == (TypeObj)0) {
+//		printError(parser, variable.definition.value.region.start, " type is undefined\n");
+//	}
+//
+//	variable.variableType = variableType;
+//}
+//
+//func checkTypesInReturn(Parser parser, SyntaxTree tree, Block block, Return returnStatement) {
+//	var returnType = parser.null;
+//	if (returnStatement.expression != (Operation)0) {
+//		returnType = checkTypesInOperation(parser, tree, block, returnStatement.expression);
+//	}
+//
+//	var function = getBlockFunction(block);
+//	if (function == (FunctionDefinition)0) {
+//		printError(parser, returnStatement.region.start, " can not return from outside a function\n");
+//		return;
+//	}
+//
+//	if (function.returnType == (ReturnType)0) {
+//		if (returnType != parser.null) {
+//			printError(parser, returnStatement.expression.region.start, " can not return a value from a null function\n");
+//		}
+//		return;
+//	}
+//
+//	var expectedType = getTypeFromOperation(parser, tree, block, function.returnType.returnType);
+//
+//	if (returnType != expectedType) {
+//		if (returnType == parser.null) {
+//			printError(parser, returnStatement.semicolon.position, "expected a return value\n");
+//			return;
+//		}
+//
+//		printError(parser, returnStatement.expression.region.start, " expected type '");
+//		printType(expectedType);
+//		print("', got '");
+//		printType(returnType);
+//		print("'\n");
+//		return;
+//	}
+//}
+//
+//func checkTypesInTypeDefinition(Parser parser, SyntaxTree tree, Block block, TypeObj typeObj) {
+//	var i = 0;
+//	while (i < typeObj.properties.size) {
+//		var property = typeObj.properties.list[i];
+//		if (checkTypesInTypeOperation(parser, tree, block, property.definition.propertyType, typeObj.generics) != parser.Type) {
+//			printError(parser, property.definition.region.start, " expected property type te be a type\n");
+//		}
+//
+//		property.propertyType = getTypeFromOperation(parser, tree, block, property.definition.propertyType);
+//		i = i + 1;
+//	}
+//
+//	i = 0;
+//	while (i < typeObj.methods.size) {
+//		var method = typeObj.methods.get(i);
+//		checkTypesInFunctionDefinition(parser, tree, block, method);
+//		i = i + 1;
+//	}
+//}
+//
+//func checkTypesInFunctionDefinition(Parser parser, SyntaxTree tree, Block block, FunctionDefinition function) {
+//	var i = 0;
+//	while (i < function.parameters.size) {
+//		var parameter = function.parameters.list[i];
+//		if (checkTypesInTypeOperation(parser, tree, block, parameter.parameterType, function.generics) != parser.Type) {
+//			printError(parser, parameter.region.start, " expected parameter type to be a type\n");
+//		}
+//
+//		parameter.typeObj = getTypeFromOperation(parser, tree, block, parameter.parameterType);
+//		i = i + 1;
+//	}
+//}
+//
+//func checkTypesInStatementArray(Parser parser, SyntaxTree tree, Block block, Array<Statement> list) {
+//	var i = 0;
+//	while (i < list.size) {
+//		var statement = list.list[i];
+//		if (statement.expression != (Expression)0) {
+//			checkTypesInExpression(parser, tree, block, statement.expression);
+//		} else if (statement.ifStatement != (If)0) {
+//			checkTypesInIf(parser, tree, block, statement.ifStatement);
+//		} else if (statement.whileStatement != (While)0) {
+//			checkTypesInWhile(parser, tree, block, statement.whileStatement);
+//		} else if (statement.variable != (Variable)0) {
+//			checkTypesInVariable(parser, tree, block, statement.variable);
+//		} else if (statement.returnStatement != (Return)0) {
+//			checkTypesInReturn(parser, tree, block, statement.returnStatement);
+//		} else if (statement.typeStatement != (TypeObj)0) {
+//			checkTypesInTypeDefinition(parser, tree, block, statement.typeStatement);
+//		} else if (statement.function != (FunctionDefinition)0) {
+//			checkTypesInFunctionDefinition(parser, tree, block, statement.function);
+//		}
+//
+//		i = i + 1;
+//	}
+//}
+//
 func checkTypes(Parser parser, SyntaxTree tree) {
 	if (tree == (SyntaxTree)0) {
 		print("syntax tree is null\n");
 		return;
 	}
 
-	checkTypesInStatementArray(parser, tree, (Block)0, tree.statements);
-
 	var i = 0;
-	while (i < tree.blocks.size) {
-		var block = tree.blocks.list[i];
-		checkTypesInStatementArray(parser, tree, block, block.statements);
+	while (i < tree.statements.size) {
+		var statement = tree.statements.get(i);
+		statement.typeCheckStatement(parser);
 		i = i + 1;
 	}
 }
 
-func listFunctions(Parser parser) -> Array<FunctionDefinition> {
-	var list = createArray<FunctionDefinition>();
+func listFunctions(Parser parser) -> Array<Function> {
+	var list = createArray<Function>();
 
-	extendArray<FunctionDefinition>(list, parser.functions);
+	list.extend(parser.functions);
 
 	var i = 0;
+	while (i < parser.types.size) {
+		var typeObj = parser.types.get(i);
+//		list.extend(typeObj.methods);
+		i = i + 1;
+	}
+
+	i = 0;
 	while (i < parser.files.size) {
 		var tree = parser.files.list[i];
 
@@ -2187,20 +1480,28 @@ func listFunctions(Parser parser) -> Array<FunctionDefinition> {
 			return list;
 		}
 
-		extendArray<FunctionDefinition>(list, tree.functions);
+//		list.extend(tree.functions);
 
-		var j = 0;
-		while (j < tree.blocks.size) {
-			var block = tree.blocks.list[j];
+//		var j = 0;
+//		while (j < tree.blocks.size) {
+//			var block = tree.blocks.list[j];
+//
+//			if (block == (Block)0) {
+//				print("block is null in 'listFunctions'\n");
+//				return list;
+//			}
+//
+////			list.extend(block.functions);
+//			j = j + 1;
+//		}
+//
+//		j = 0;
+//		while (j < tree.types.size) {
+//			var typeObj = tree.types.get(j);
+////			list.extend(typeObj.methods);
+//			j = j + 1;
+//		}
 
-			if (block == (Block)0) {
-				print("block is null in 'listFunctions'\n");
-				return list;
-			}
-
-			extendArray<FunctionDefinition>(list, block.functions);
-			j = j + 1;
-		}
 		i = i + 1;
 	}
 
@@ -2210,7 +1511,7 @@ func listFunctions(Parser parser) -> Array<FunctionDefinition> {
 func listTypes(Parser parser) -> Array<TypeObj> {
 	var list = createArray<TypeObj>();
 
-	extendArray<TypeObj>(list, parser.types);
+	list.extend(parser.types);
 
 	var i = 0;
 	while (i < parser.files.size) {
@@ -2221,20 +1522,20 @@ func listTypes(Parser parser) -> Array<TypeObj> {
 			return list;
 		}
 
-		extendArray<TypeObj>(list, tree.types);
-
-		var j = 0;
-		while (j < tree.blocks.size) {
-			var block = tree.blocks.list[j];
-
-			if (block == (Block)0) {
-				print("block is null in 'listTypes'\n");
-				return list;
-			}
-
-			extendArray<TypeObj>(list, block.types);
-			j = j + 1;
-		}
+//		list.extend(tree.types);
+//
+//		var j = 0;
+//		while (j < tree.blocks.size) {
+//			var block = tree.blocks.list[j];
+//
+//			if (block == (Block)0) {
+//				print("block is null in 'listTypes'\n");
+//				return list;
+//			}
+//
+//			list.extend(block.types);
+//			j = j + 1;
+//		}
 		i = i + 1;
 	}
 

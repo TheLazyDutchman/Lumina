@@ -1,10 +1,12 @@
 import "../std/collections.lumina"
 
+import "parser.lumina"
+import "lexer.lumina"
 import "position.lumina"
+import "condition.lumina"
 import "name.lumina"
-import "operation.lumina"
+import "expression.lumina"
 import "operator.lumina"
-import "whitespace.lumina"
 import "block.lumina"
 
 
@@ -13,6 +15,24 @@ type Else {
 
 	Name keyword;
 	Block block;
+
+	func parseElse(Else self, Parser parser, Lexer lexer, SyntaxTree tree, Block block, Name elseKeyword) -> Else {
+		self.region = lexer.startRegion();
+
+		self.keyword = elseKeyword;
+		self.block = createBlock(block); self.block.parseBlock(parser, lexer, tree);
+
+		lexer.endRegion(self.region);
+		return self;
+	}
+
+	func bindElse(Else self, Parser parser) {
+		self.block.bindBlock(parser);
+	}
+
+	func typeCheckElse(Else self, Parser parser) {
+		self.block.typeCheckBlock(parser);
+	}
 }
 
 type ElseIf {
@@ -20,75 +40,124 @@ type ElseIf {
 
 	Name elseKeyword;
 	Name ifKeyword;
-	Operator lparen;
-	Operation condition;
-	Operator rparen;
+	Condition condition;
 	Block block;
 
 	int id;
+
+	func parseElseIf(ElseIf self, Parser parser, Lexer lexer, SyntaxTree tree, Block block, Name elseKeyword) -> ElseIf {
+		self.region = lexer.startRegion();
+
+		self.elseKeyword = elseKeyword;
+		self.ifKeyword = lexer.consumeKeyword(KEYWORD_if);
+
+		self.condition = new Condition();
+		self.condition.parseCondition(parser, lexer, block);
+
+		self.block = createBlock(block);
+		self.block.parseBlock(parser, lexer, tree);
+
+		lexer.endRegion(self.region);
+		return self;
+	}
+
+	func bindElseIf(ElseIf self, Parser parser) {
+		self.condition.bindCondition(parser);
+		self.block.bindBlock(parser);
+	}
+
+	func typeCheckElseIf(ElseIf self, Parser parser) {
+		self.condition.typeCheckCondition(parser);
+		self.block.typeCheckBlock(parser);
+	}
 }
 
 type If {
 	Region region;
 	Name keyword;
-	Operator lparen;
-	Operation condition;
-	Operator rparen;
+	Condition condition;
 	Block block;
 	Array<ElseIf> elseIfs;
 	Else elseObj;
 
 	int id;
-}
 
-func createElse(Name keyword, Block block, Position end) -> Else {
-	var elseStatement = new Else();
+	bool hasReturned;
 
-	elseStatement.region = createRegion(keyword.region.start, end);
+	func parseIf(If self, Parser parser, SyntaxTree tree, Lexer lexer, Block block) -> If {
+		self.hasReturned = true;
+		self.region = lexer.startRegion();
 
-	elseStatement.keyword = keyword;
-	elseStatement.block = block;
+		self.keyword = lexer.consumeKeyword(KEYWORD_if);
 
-	return elseStatement;
-}
+		self.condition = new Condition();
+		self.condition.parseCondition(parser, lexer, block);
 
-func createElseIf(Name elseKeyword, Name ifKeyword, Operator lparen, Operation condition, Operator rparen, Block block, Position end, int id) -> ElseIf {
-	var elseIf = new ElseIf();
+		self.block = createBlock(block);
+		self.block.parseBlock(parser, lexer, tree);
 
-	elseIf.region = createRegion(elseKeyword.region.start, end);
+		if (!self.block.hasReturned) {
+			self.hasReturned = false;
+		}
 
-	elseIf.elseKeyword = elseKeyword;
-	elseIf.ifKeyword = ifKeyword;
-	elseIf.lparen = lparen;
-	elseIf.condition = condition;
-	elseIf.rparen = rparen;
-	elseIf.block = block;
+		self.elseIfs = createArray<ElseIf>();
 
-	elseIf.id = id;
+		var elseKeyword = lexer.consumeKeyword(KEYWORD_else);
+		while (elseKeyword != (Name)0) {
+			if (isKeyword(lexer.current.name, KEYWORD_if)) {
+				var elseIf = new ElseIf();
+				elseIf.parseElseIf(parser, lexer, tree, block, elseKeyword);
 
-	return elseIf;
-}
+				self.elseIfs.push(elseIf);
 
-func createIf(Name keyword, Operator lparen, Operation condition, Operator rparen, Block block, Array<ElseIf> elseIfs, Else elseObj, Position end, int id) -> If {
-	var ifStatement = new If();
+				if (!elseIf.block.hasReturned) {
+					self.hasReturned = false;
+				}
+			} else {
+				self.elseObj = new Else();
+				self.elseObj.parseElse(parser, lexer, tree, block, elseKeyword);
+			}
 
-	if (elseObj != (Else)0) {
-		ifStatement.region = createRegion(keyword.region.start, end);
-	} else if (elseIfs.size > 0) {
-		ifStatement.region = createRegion(keyword.region.start, elseIfs.list[elseIfs.size - 1].region.end);
-	} else {
-		ifStatement.region = createRegion(keyword.region.start, end);
+			elseKeyword = lexer.consumeKeyword(KEYWORD_else);
+		}
+
+		if (self.elseObj == (Else)0 || !self.elseObj.block.hasReturned) {
+			self.hasReturned = false;
+		}
+
+		lexer.endRegion(self.region);
+		return self;
 	}
 
-	ifStatement.keyword = keyword;
-	ifStatement.lparen = lparen;
-	ifStatement.condition = condition;
-	ifStatement.rparen = rparen;
-	ifStatement.block = block;
-	ifStatement.elseIfs = elseIfs;
-	ifStatement.elseObj = elseObj;
+	func bindIf(If self, Parser parser) {
+		self.condition.bindCondition(parser);
+		self.block.bindBlock(parser);
 
-	ifStatement.id = id;
+		var i = 0;
+		while (i < self.elseIfs.size) {
+			var elseIf = self.elseIfs.get(i);
+			elseIf.bindElseIf(parser);
+			i = i + 1;
+		}
 
-	return ifStatement;
+		if (self.elseObj != (Else)0) {
+			self.elseObj.bindElse(parser);
+		}
+	}
+
+	func typeCheckIf(If self, Parser parser) {
+		self.condition.typeCheckCondition(parser);
+		self.block.typeCheckBlock(parser);
+
+		var i = 0;
+		while (i < self.elseIfs.size) {
+			var elseIf = self.elseIfs.get(i);
+			elseIf.typeCheckElseIf(parser);
+			i = i + 1;
+		}
+
+		if (self.elseObj != (Else)0) {
+			self.elseObj.typeCheckElse(parser);
+		}
+	}
 }

@@ -1,0 +1,283 @@
+import "../std/io.lumina"
+
+import "parser.lumina"
+import "lexer.lumina"
+import "type.lumina"
+import "position.lumina"
+import "name.lumina"
+import "index.lumina"
+import "operator.lumina"
+import "term.lumina"
+import "identifier.lumina"
+import "block.lumina"
+
+
+type New {
+	Region region;
+
+	Name keyword;
+	Identifier objectType;
+	Operator lparen;
+	Term value;
+	Operator rparen;
+
+	func parseNew(New self, Parser parser, Lexer lexer, Block block) -> New {
+		self.region = lexer.startRegion();
+
+		self.keyword = lexer.consumeKeyword(KEYWORD_new);
+
+		self.objectType = new Identifier();
+		self.objectType.parseIdentifier(parser, lexer, block);
+		
+		self.lparen = lexer.consumeOperator("(");
+		if (self.lparen == (Operator)0) {
+			parser.error(lexer.here(), " expected '(' in 'new' operation\n");
+		}
+
+		if (!isOperator(lexer.current.operator, ")")) {
+			self.value = new Term();
+			self.value.parseTerm(parser, lexer, block);
+		}
+
+		self.rparen = lexer.consumeOperator(")");
+		if (self.rparen == (Operator)0) {
+			parser.error(lexer.here(), " expected ')' after 'new' operation\n");
+		}
+
+		lexer.endRegion(self.region);
+
+		return self;
+	}
+
+	func bindNew(New self, Parser parser) {
+		self.objectType.bindIdentifier(parser, false);
+
+		if (self.value != (Term)0) {
+			self.value.bindTerm(parser);
+		}
+	}
+
+	func typeCheckNew(New self, Parser parser) -> TypeObj {
+		var objectType = self.objectType.typeCheckIdentifier(parser);
+		if (!objectType.checkType(parser.Type, parser)) {
+			parser.error(self.objectType.region.start, " expected type\n");
+			return (TypeObj)0;
+		}
+
+		var typeObj = self.objectType.definition.typeObj;
+
+		if (typeObj.listType != (TypeObj)0) {
+			if (self.value == (Term)0) {
+				parser.error(self.rparen.position, " expected list size when creating new list object\n");
+			} else {
+				var sizeType = self.value.typeCheckTerm(parser);
+				if (!sizeType.checkType(parser.int, parser)) {
+					parser.error(self.value.region.start, " expected list size to be of type 'int'\n");
+				}
+			}
+		} else if (self.value != (Term)0) {
+			parser.error(self.value.region.start, " did not expect size when creating an object that is not a list\n");
+		}
+
+		return typeObj;
+	}
+}
+
+type Sizeof {
+	Region region;
+
+	Name keyword;
+	Operator lparen;
+	Identifier value;
+	Operator rparen;
+
+	func parseSizeof(Sizeof self, Parser parser, Lexer lexer, Block block) -> Sizeof {
+		self.region = lexer.startRegion();
+
+		self.keyword = lexer.consumeKeyword(KEYWORD_sizeof);
+
+		self.lparen = lexer.consumeOperator("(");
+		if (self.lparen == (Operator)0) {
+			parser.error(lexer.here(), " expected '(' in 'sizeof' operation\n");
+		}
+
+		self.value = new Identifier();
+		self.value.parseIdentifier(parser, lexer, block);
+
+		self.rparen = lexer.consumeOperator(")");
+		if (self.rparen == (Operator)0) {
+			parser.error(lexer.here(), " expected ')' after 'sizeof' operation\n");
+		}
+
+		lexer.endRegion(self.region);
+		return self;
+	}
+
+	func bindSizeof(Sizeof self, Parser parser) {
+		self.value.bindIdentifier(parser, false);
+	}
+
+	func typeCheckSizeof(Sizeof self, Parser parser) -> TypeObj {
+		if (self.value.definition.typeObj == (TypeObj)0) {
+			parser.error(self.value.region.start, " expected 'sizeof' to take a type as argument\n");
+		}
+
+		return parser.int;
+	}
+}
+
+type TypeCast {
+	Operator lparen;
+	Identifier value;
+	Operator rparen;
+
+	func parseTypeCast(TypeCast self, Parser parser, Lexer lexer, Block block) -> bool {
+		self.lparen = lexer.consumeOperator("(");
+
+		if (lexer.current.name == (Name)0) {
+			return false;
+		}
+
+		self.value = new Identifier();
+		self.value.parseIdentifier(parser, lexer, block);
+
+		self.rparen = lexer.consumeOperator(")");
+		if (self.rparen == (Operator)0) {
+			return false;
+		}
+
+		if (lexer.current.operator != (Operator)0 &&
+			!isOperator(lexer.current.operator, "(")) {
+			return false;
+		}
+
+		return true;
+	}
+
+	func bindTypeCast(TypeCast self, Parser parser) {
+		self.value.bindIdentifier(parser, false);
+	}
+
+	func typeCheckTypeCast(TypeCast self, Parser parser) -> TypeObj {
+		var typeObj = self.value.typeCheckIdentifier(parser);
+		if (!typeObj.checkType(parser.Type, parser)) {
+			parser.error(self.value.region.start, " expected value of type cast to be a type\n");
+		}
+
+		return self.value.definition.typeObj;
+	}
+}
+
+type Unary {
+	Region region;
+
+	TypeCast typeCast;
+	New newOperation;
+	Sizeof sizeOperation;
+
+	Operator operator;
+	Unary unary;
+	Index index;
+
+	func parseUnary(Unary self, Parser parser, Lexer lexer, Block block) -> Unary {
+		if (isKeyword(lexer.current.name, KEYWORD_new)) {
+			self.newOperation = new New();
+			self.newOperation.parseNew(parser, lexer, block);
+			self.region = self.newOperation.region;
+			return self;
+		}
+
+		if (isKeyword(lexer.current.name, KEYWORD_sizeof)) {
+			self.sizeOperation = new Sizeof();
+			self.sizeOperation.parseSizeof(parser, lexer, block);
+			self.region = self.sizeOperation.region;
+			return self;
+		}
+
+		self.region = lexer.startRegion();
+		
+		if (isOperator(lexer.current.operator, "-")) {
+			self.operator = lexer.consumeOperator("-");
+		} else if (isOperator(lexer.current.operator, "!")) {
+			self.operator = lexer.consumeOperator("!");
+		} else if (isOperator(lexer.current.operator, "~")) {
+			self.operator = lexer.consumeOperator("~");
+		} else if (isOperator(lexer.current.operator, "(")) {
+			self.typeCast = new TypeCast();
+			if (!self.typeCast.parseTypeCast(parser, lexer, block)) {
+				lexer.returnTo(self.region.start);
+				self.typeCast = (TypeCast)0;
+			}
+		}
+
+		if (self.operator == (Operator)0 && self.typeCast == (TypeCast)0) {
+			self.index = new Index();
+			self.index.parseIndex(parser, lexer, block);
+		} else {
+			self.unary = new Unary();
+			self.unary.parseUnary(parser, lexer, block);
+		}
+
+		lexer.endRegion(self.region);
+
+		return self;
+	}
+
+	func bindUnary(Unary self, Parser parser) {
+		if (self.typeCast != (TypeCast)0) {
+			self.typeCast.bindTypeCast(parser);
+		}
+
+		if (self.newOperation != (New)0) {
+			self.newOperation.bindNew(parser);
+		}
+
+		if (self.sizeOperation != (Sizeof)0) {
+			self.sizeOperation.bindSizeof(parser);
+		}
+
+		if (self.unary != (Unary)0) {
+			self.unary.bindUnary(parser);
+		}
+
+		if (self.index != (Index)0) {
+			self.index.bindIndex(parser);
+		}
+	}
+
+	func typeCheckUnary(Unary self, Parser parser) -> TypeObj {
+		if (self.typeCast != (TypeCast)0) {
+			self.unary.typeCheckUnary(parser);
+			return self.typeCast.typeCheckTypeCast(parser);
+		}
+
+		if (self.newOperation != (New)0) {
+			return self.newOperation.typeCheckNew(parser);
+		}
+
+		if (self.sizeOperation != (Sizeof)0) {
+			return self.sizeOperation.typeCheckSizeof(parser);
+		}
+
+		if (self.unary != (Unary)0) {
+			var unaryType = self.unary.typeCheckUnary(parser);
+
+			return unaryType;
+		}
+
+		if (self.index != (Index)0) {
+			return self.index.typeCheckIndex(parser);
+		}
+
+		return (TypeObj)0;
+	}
+
+	func getTypeUnary(Unary self, Parser parser) -> TypeObj {
+		if (self.index != (Index)0) {
+			return self.index.getTypeIndex(parser);
+		}
+
+		parser.error(self.region.start, " can not get type from this value\n");
+		return (TypeObj)0;
+	}
+}

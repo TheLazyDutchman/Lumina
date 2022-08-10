@@ -1,6 +1,6 @@
 import "syscalls.lumina"
-import "collections.lumina"
 import "string.lumina"
+import "collections.lumina"
 import "environment.lumina"
 
 func fprintn(int fd, str string, int length) -> int {
@@ -51,11 +51,11 @@ func execvp(str fileName, str[] args) -> int {
 		code = getcwd(cwd, cwdLength);
 	}
 
-	addItem<String>(paths, toString(cwd));
+	paths.push(toString(cwd));
 
 	var i = 0;
 	while (i < paths.size) {
-		var path = getItem<String>(paths, i);
+		var path = paths.get(i);
 		var dir_fd = open(path.list, 2162688, 0);
 
 		if (dir_fd < 0) {
@@ -70,11 +70,11 @@ func execvp(str fileName, str[] args) -> int {
 
 		var file_fd = openat(dir_fd, fileName, 2097152, 0);
 		if (file_fd > 0) {
-			if (getItem<char>(path, path.size - 1) != '/') {
-				addItem<char>(path, '/');
+			if (path.get(path.size - 1) != '/') {
+				path.push('/');
 			}
 
-			extendArray<char>(path, toString(fileName));
+			path.extend(toString(fileName));
 
 			return execve(path.list, args, (str[])0);
 		}

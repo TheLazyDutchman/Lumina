@@ -1,104 +1,171 @@
+import "../std/collections.lumina"
+import "../std/io.lumina"
+
+import "parser.lumina"
+import "lexer.lumina"
 import "position.lumina"
-import "expression.lumina"
+import "assignment.lumina"
 import "if.lumina"
 import "while.lumina"
 import "import.lumina"
 import "variable.lumina"
 import "function.lumina"
+import "name.lumina"
 import "type.lumina"
 import "block.lumina"
+import "operator.lumina"
+import "definition.lumina"
 
 
 type Statement {
 	Region region;
-	Expression expression;
+
+	Assignment assignment;
 	If ifStatement;
 	While whileStatement;
 	Import importStatement;
 	Variable variable;
-	FunctionDefinition function;
+	Function function;
 	TypeObj typeStatement;
 	Return returnStatement;
 	Block blockStatement;
-}
 
-func createExpressionStatement(Expression expression) -> Statement {
-	var statement = new Statement();
+	bool hasReturned;
 
-	statement.region = expression.region;
-	statement.expression = expression;
+	func parseStatement(Statement self, Parser parser, Lexer lexer, Block block, SyntaxTree tree,
+		Array<Definition> definitions,
+		Array<Variable> variables,
+		Array<TypeObj> types,
+		Array<Function> functions,
+		Array<Import> imports) -> Statement {
 
-	return statement;
-}
+		self.region = lexer.startRegion();
 
-func createIfStatement(If ifStatement) -> Statement {
-	var statement = new Statement();
+		if (isKeyword(lexer.current.name, KEYWORD_if)) {
+			self.ifStatement = new If();
+			self.ifStatement.parseIf(parser, tree, lexer, block);
+			if (self.ifStatement.hasReturned) {
+				self.hasReturned = true;
+			}
+		} else if (isKeyword(lexer.current.name, KEYWORD_while)) {
+			self.whileStatement = new While();
+			self.whileStatement.parseWhile(parser, tree, lexer, block);
+			if (self.whileStatement.hasReturned) {
+				self.hasReturned = true;
+			}
+		} else if (isKeyword(lexer.current.name, KEYWORD_import)) {
+			self.importStatement = new Import();
+			self.importStatement.parseImport(parser, lexer);
+			imports.push(self.importStatement);
+		} else if (isKeyword(lexer.current.name, KEYWORD_var)) {
+			var depth = 0;
+			if (block != (Block)0) {
+				depth = block.depth;
+			}
 
-	statement.region = ifStatement.region;
-	statement.ifStatement = ifStatement;
+			var position = 0;
+			if (depth == 0) {
+				position = position + getNumVariables(parser.variables) + 1;
 
-	return statement;
-}
+				var i = 1;
+				while (i < parser.files.size) {
+					var tree = parser.files.get(i);
+					position = position + getNumVariables(tree.block.variables);
 
-func createWhileStatement(While whileStatement) -> Statement {
-	var statement = new Statement();
+					i = i + 1;
+				}
+			}
 
-	statement.region = whileStatement.region;
-	statement.whileStatement = whileStatement;
+			if (block != (Block)0) {
+				position = position + getNumVariables(block.variables);
 
-	return statement;
-}
+				var outerBlock = block;
+				while (outerBlock.outer != (Block)0 && outerBlock.outer.depth == depth) {
+					outerBlock = outerBlock.outer;
+					position = position + getNumVariables(outerBlock.variables);
+				}
 
-func createImportStatement(Import importStatement) -> Statement {
-	var statement = new Statement();
+				if (outerBlock.function != (Function)0) {
+					position = position + outerBlock.function.generics.size;
+					position = position + outerBlock.function.parameters.size + 1;
+				}
+			}
 
-	statement.region = importStatement.region;
-	statement.importStatement = importStatement;
+			self.variable = new Variable();
+			self.variable.parseVariable(parser, lexer, block, depth, position);
+			variables.push(self.variable);
+			definitions.push(createDefinitionFromVariable(self.variable));
+		} else if (isKeyword(lexer.current.name, KEYWORD_const)) {
+			self.variable = new Variable();
+			self.variable.parseVariable(parser, lexer, block, 0, 0);
+			variables.push(self.variable);
+			definitions.push(createDefinitionFromVariable(self.variable));
+		} else if (isKeyword(lexer.current.name, KEYWORD_func)) {
+			self.function = new Function();
+			self.function.parseFunction(parser, tree, lexer, block);
+			functions.push(self.function);
+			definitions.push(createDefinitionFromFunction(self.function));
+		} else if (isKeyword(lexer.current.name, KEYWORD_type)) {
+			self.typeStatement = new TypeObj();
+			self.typeStatement.parseType(parser, tree, lexer, block);
+			types.push(self.typeStatement);
+			definitions.push(createDefinitionFromType(self.typeStatement));
+		} else if (isKeyword(lexer.current.name, KEYWORD_return)) {
+			self.returnStatement = new Return();
+			self.returnStatement.parseReturn(parser, lexer, block);
+			self.hasReturned = true;
+		} else if (isOperator(lexer.current.operator, "{")) {
+			self.blockStatement = createBlock(block);
+			self.blockStatement.parseBlock(parser, lexer, tree);
+			if (self.blockStatement.hasReturned) {
+				self.hasReturned = true;
+			}
+		} else {
+			self.assignment = new Assignment();
+			self.assignment.parseAssignment(parser, lexer, block);
+		}
 
-	return statement;
-}
+		lexer.endRegion(self.region);
+		return self;
+	}
 
-func createVariableStatement(Variable variable) -> Statement {
-	var statement = new Statement();
+	func bindStatement(Statement self, Parser parser) {
+		if (self.assignment != (Assignment)0) {
+			self.assignment.bindAssignment(parser);
+		} else if (self.ifStatement != (If)0) {
+			self.ifStatement.bindIf(parser);
+		} else if (self.whileStatement != (While)0) {
+			self.whileStatement.bindWhile(parser);
+		} else if (self.variable != (Variable)0) {
+			self.variable.bindVariable(parser);
+		} else if (self.function != (Function)0) {
+			self.function.bindFunction(parser);
+		} else if (self.typeStatement != (TypeObj)0) {
+			self.typeStatement.bindType(parser);
+		} else if (self.returnStatement != (Return)0) {
+			self.returnStatement.bindReturn(parser);
+		} else if (self.blockStatement != (Block)0) {
+			self.blockStatement.bindBlock(parser);
+		}
+	}
 
-	statement.region = variable.definition.region;
-	statement.variable = variable;
-
-	return statement;
-}
-
-func createFunctionStatement(FunctionDefinition function) -> Statement {
-	var statement = new Statement();
-
-	statement.region = function.region;
-	statement.function = function;
-
-	return statement;
-}
-
-func createReturnStatement(Return returnStatement) -> Statement {
-	var statement = new Statement();
-
-	statement.region = returnStatement.region;
-	statement.returnStatement = returnStatement;
-
-	return statement;
-}
-
-func createTypeStatement(TypeObj typeStatement) -> Statement {
-	var statement = new Statement();
-
-	statement.region = typeStatement.definition.region;
-	statement.typeStatement = typeStatement;
-
-	return statement;
-}
-
-func createBlockStatement(Block block, Region region) -> Statement {
-	var statement = new Statement();
-
-	statement.region = region;
-	statement.blockStatement = block;
-
-	return statement;
+	func typeCheckStatement(Statement self, Parser parser) {
+		if (self.assignment != (Assignment)0) {
+			self.assignment.typeCheckAssignment(parser);
+		} else if (self.ifStatement != (If)0) {
+			self.ifStatement.typeCheckIf(parser);
+		} else if (self.whileStatement != (While)0) {
+			self.whileStatement.typeCheckWhile(parser);
+		} else if (self.variable != (Variable)0) {
+			self.variable.typeCheckVariable(parser);
+		} else if (self.function != (Function)0) {
+			self.function.typeCheckFunction(parser);
+		} else if (self.typeStatement != (TypeObj)0) {
+			self.typeStatement.typeCheckType(parser);
+		} else if (self.returnStatement != (Return)0) {
+			self.returnStatement.typeCheckReturn(parser);
+		} else if (self.blockStatement != (Block)0) {
+			self.blockStatement.typeCheckBlock(parser);
+		}
+	}
 }

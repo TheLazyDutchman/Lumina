@@ -1,73 +1,124 @@
 import "../std/string.lumina"
 import "../std/collections.lumina"
+import "../std/io.lumina"
 
+import "parser.lumina"
+import "lexer.lumina"
 import "position.lumina"
 import "name.lumina"
-import "operation.lumina"
+import "expression.lumina"
 import "operator.lumina"
 import "type.lumina"
+import "function.lumina"
+import "definition.lumina"
+import "block.lumina"
 import "whitespace.lumina"
 
 
 type Variable {
-	str name;
-	VariableDefinition definition;
-
-	int depth;
-	int position;
-
-	TypeObj variableType;
-	
-	bool isConstant;
-	bool isEvaluated;
-	int value;
-}
-
-type VariableDefinition {
 	Region region;
 
 	Name keyword;
 	Name name;
 	Operator equalSign;
-	Operation value;
+	Expression value;
 	Operator semicolon;
 
 	TypeObj variableType;
+	Block block;
+
+	int position;
+	int depth;
+
+	int constantValue;
+	bool isConstant;
+	bool isEvaluated;
+
+	bool isChecked;
+
+	func parseVariable(Variable self, Parser parser, Lexer lexer, Block block, int depth, int position) -> Variable {
+		self.block = block;
+		self.depth = depth;
+		self.position = position;
+		self.isChecked = false;
+
+		self.region = lexer.startRegion();
+
+		self.keyword = lexer.consumeKeyword(KEYWORD_var);
+		if (self.keyword == (Name)0) {
+			self.keyword = lexer.consumeKeyword(KEYWORD_const);
+		}
+
+		self.name = lexer.consumeIdentifier();
+		if (self.name == (Name)0) {
+			parser.error(lexer.here(), " expected variable name\n");
+		}
+
+		self.equalSign = lexer.consumeOperator("=");
+		if (self.equalSign == (Operator)0) {
+			parser.error(lexer.here(), " expected '=' in variable definition\n");
+		}
+
+		self.value = new Expression();
+		self.value.parseExpression(parser, lexer, block);
+
+		self.semicolon = lexer.consumeOperator(";");
+		if (self.semicolon == (Operator)0) {
+			parser.error(lexer.here(), " expected ';' after variable definition\n");
+		}
+
+		lexer.endRegion(self.region);
+		return self;
+	}
+
+	func bindVariable(Variable self, Parser parser) {
+		var definition = self.block.findDefinitionInBlock(self.name.name);
+		if (definition.variable != self) {
+			parser.error(self.region.start, " a variable with this name already exists\n");
+			print("[NOTE] the other is defined here: ");
+			printPosition(definition.variable.region.start);
+			print("\n");
+		}
+
+		if (definition.typeObj != (TypeObj)0) {
+			parser.error(self.region.start, " a type with this name already exists\n");
+			print("[NOTE] the other is defined here: ");
+			printPosition(definition.typeObj.region.start);
+			print("\n");
+		}
+
+		if (definition.function != (Function)0) {
+			parser.error(self.region.start, " a function with this name already exists\n");
+			print("[NOTE] the other is defined here: ");
+			printPosition(definition.function.region.start);
+			print("\n");
+		}
+
+		self.value.bindExpression(parser);
+	}
+
+	func typeCheckVariable(Variable self, Parser parser) {
+		self.isChecked = true;
+		self.variableType = self.value.typeCheckExpression(parser);
+	}
+
+	func getTypeVariable(Variable self, Parser parser) -> TypeObj {
+		return self.value.getTypeExpression(parser);
+	}
 }
-
-func createVariableDefinition(Name keyword, Name name, Operator equalSign, Operation value, Operator semicolon) -> VariableDefinition {
-	var variable = new VariableDefinition();
-
-	variable.region = createRegion(keyword.region.start, semicolon.position);
-
-	variable.keyword = keyword;
-	variable.name = name;
-	variable.equalSign = equalSign;
-	variable.value = value;
-	variable.semicolon = semicolon;
-
-	return variable;
-}
-
 func createVariableFromString(str name, int depth, int position, TypeObj variableType) -> Variable {
 	var variable = new Variable();
 
-	variable.name = name;
+	variable.name = createNameFromString(name);
 
 	variable.depth = depth;
 	variable.position = position;
 
+	variable.isChecked = true;
+
 	variable.variableType = variableType;
 
-	variable.value = 0;
-
-	return variable;
-}
-
-func createVariableFromDefinition(VariableDefinition definition, int depth, int position) -> Variable {
-	var variable = createVariableFromString(definition.name.name, depth, position, definition.variableType);
-
-	variable.definition = definition;
+	variable.constantValue = 0;
 
 	return variable;
 }
@@ -77,16 +128,7 @@ func createConstantFromString(str name, TypeObj constantType, int value) -> Vari
 
 	constant.isConstant = true;
 	constant.isEvaluated = true;
-	constant.value = value;
-
-	return constant;
-}
-
-func createConstantFromDefinition(VariableDefinition definition) -> Variable {
-	var constant = createVariableFromString(definition.name.name, 0, 0, definition.variableType);
-
-	constant.isConstant = true;
-	constant.definition = definition;
+	constant.constantValue = value;
 
 	return constant;
 }
@@ -94,7 +136,7 @@ func createConstantFromDefinition(VariableDefinition definition) -> Variable {
 func findVariable(Array<Variable> list, str name) -> Variable {
 	var i = 0;
 	while (i < list.size) {
-		if (streq(list.list[i].name, name)) {
+		if (streq(list.list[i].name.name, name)) {
 			return list.list[i];
 		}
 		i = i + 1;

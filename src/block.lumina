@@ -1,5 +1,8 @@
 import "../std/collections.lumina"
+import "../std/io.lumina"
 
+import "parser.lumina"
+import "lexer.lumina"
 import "position.lumina"
 import "operator.lumina"
 import "statement.lumina"
@@ -19,63 +22,111 @@ type Block {
 
 	Array<Definition> definitions;
 	Array<TypeObj> types;
-	Array<FunctionDefinition> functions;
+	Array<Function> functions;
 	Array<Variable> variables;
 	Operator rbrace;
 	int depth;
 
 	Block outer;
-	FunctionDefinition function;
-}
+	SyntaxTree tree;
+	Function function;
 
-func createBlock(Operator lbrace, Array<Statement> statements, Array<Definition> definitions, Array<TypeObj> types, Array<FunctionDefinition> functions, Array<Variable> variables, Block outer, FunctionDefinition function) -> Block {
-	var block = new Block();
+	bool hasReturned;
 
-	block.lbrace = lbrace;
-	block.statements = statements;
+	func parseBlock(Block self, Parser parser, Lexer lexer, SyntaxTree tree) -> Block {
+		self.tree = tree;
+		self.region = lexer.startRegion();
 
-	block.definitions = definitions;
-	block.types = types;
-	block.functions = functions;
-	block.variables = variables;
+		self.lbrace = lexer.consumeOperator("{");
+		if (self.lbrace == (Operator)0) {
+			parser.error(self.region.start, " expected '{' before block\n");
+		}
 
-	block.outer = outer;
+		self.statements = createArray<Statement>();
 
-	if (outer != (Block)0) {
-		block.depth = outer.depth;
-	} else {
-		block.depth = 0;
+		while (!isOperator(lexer.current.operator, "}") && !lexer.current.isEOF) {
+			var statement = new Statement();
+			statement.parseStatement(parser, lexer, self, tree,
+				self.definitions,
+				self.variables,
+				self.types,
+				self.functions,
+				tree.imports);
+			self.statements.push(statement);
+			if (statement.hasReturned) {
+				self.hasReturned = true;
+			}
+		}
+
+		self.rbrace = lexer.consumeOperator("}");
+		if (self.rbrace == (Operator)0) {
+			parser.error(lexer.here(), " expected '}' after block\n");
+		}
+
+		lexer.endRegion(self.region);
+		return self;
 	}
 
-	block.function = function;
+	func bindBlock(Block self, Parser parser) {
+		var i = 0;
+		while (i < self.statements.size) {
+			var statement = self.statements.get(i);
+			statement.bindStatement(parser);
+			i = i + 1;
+		}
+	}
+
+	func typeCheckBlock(Block self, Parser parser) {
+		var i = 0;
+		while (i < self.statements.size) {
+			var statement = self.statements.get(i);
+			statement.typeCheckStatement(parser);
+			i = i + 1;
+		}
+	}
+
+	func findDefinitionInBlock(Block self, str name) -> Definition {
+		var definition = findDefinition(self.definitions, name);
+
+		if (definition != (Definition)0) {
+			return definition;
+		}
+
+		if (self.outer != (Block)0) {
+			return self.outer.findDefinitionInBlock(name);
+		}
+
+		return self.tree.findDefinitionInTree(name);
+	}
+}
+
+func createBlock(Block outer) -> Block {
+	var block = new Block();
+
+	block.definitions = createArray<Definition>();
+	block.types = createArray<TypeObj>();
+	block.functions = createArray<Function>();
+	block.variables = createArray<Variable>();
+
+	block.outer = outer;
+	block.depth = outer.depth;
+	block.function = outer.function;
 
 	return block;
 }
 
-func setEnd(Block block, Operator rbrace) {
-	block.region = createRegion(block.lbrace.position, rbrace.position);
-
-	block.rbrace = rbrace;
-
-	if (block.function != (FunctionDefinition)0) {
-		block.function.region = createRegion(
-			block.function.keyword.region.start,
-			block.region.end);
-	}
-}
-
-func findFunctionInBlock(Block block, str name) -> FunctionDefinition {
+func findFunctionInBlock(Block block, str name) -> Function {
 	var function = findFunction(block.functions, name);
 
-	if (function == (FunctionDefinition)0 && block.outer != (Block)0) {
+	if (function == (Function)0 && block.outer != (Block)0) {
 		return findFunctionInBlock(block.outer, name);
 	}
 
 	return function;
 }
 
-func getBlockFunction(Block block) -> FunctionDefinition {
-	if (block.function != (FunctionDefinition)0) {
+func getBlockFunction(Block block) -> Function {
+	if (block.function != (Function)0) {
 	return block.function;
 	}
 

@@ -1,0 +1,64 @@
+import "../std/io.lumina"
+
+import "parser.lumina"
+import "lexer.lumina"
+import "block.lumina"
+import "position.lumina"
+import "expression.lumina"
+import "operator.lumina"
+
+
+type Assignment {
+	Region region;
+
+	Expression target;
+	Operator equalSign;
+	Expression value;
+	Operator semicolon;
+
+
+	func parseAssignment(Assignment self, Parser parser, Lexer lexer, Block block) -> Assignment {
+		self.region = lexer.startRegion();
+
+		self.target = new Expression();
+		self.target.parseExpression(parser, lexer, block);
+
+		self.equalSign = lexer.consumeOperator("=");
+		if (self.equalSign != (Operator)0) {
+			self.value = new Expression();
+			self.value.parseExpression(parser, lexer, block);
+		}
+
+		self.semicolon = lexer.consumeOperator(";");
+		if (self.semicolon == (Operator)0) {
+			parser.error(lexer.here(), " expected ';' after expression\n");
+		}
+
+		lexer.endRegion(self.region);
+
+		return self;
+	}
+
+	func bindAssignment(Assignment self, Parser parser) {
+		self.target.bindExpression(parser);
+
+		if (self.value != (Expression)0) {
+			self.value.bindExpression(parser);
+		}
+	}
+
+	func typeCheckAssignment(Assignment self, Parser parser) {
+		var targetType = self.target.typeCheckExpression(parser);
+		if (self.value != (Expression)0) {
+			var valueType = self.value.typeCheckExpression(parser);
+			if (!targetType.checkType(valueType, parser)) {
+				parser.error(self.value.region.start, " can not assign value with different type\n");
+				print("[NOTE] expected: ");
+				targetType.printType();
+				print(", got: ");
+				valueType.printType();
+				print("\n");
+			}
+		}
+	}
+}

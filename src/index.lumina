@@ -1,0 +1,153 @@
+import "../std/collections.lumina"
+import "../std/io.lumina"
+
+import "parser.lumina"
+import "lexer.lumina"
+import "type.lumina"
+import "position.lumina"
+import "operator.lumina"
+import "term.lumina"
+import "call.lumina"
+import "block.lumina"
+
+
+type PropertyPart {
+	Operator operator;
+	Call property;
+
+	func typeCheckPropertyPart(PropertyPart self, TypeObj objectType, Parser parser) -> TypeObj {
+		if (objectType == (TypeObj)0) { return (TypeObj)0; }
+
+		var identifier = self.property.value.identifier;
+		if (!objectType.isChecked) {
+			objectType.typeCheckType(parser);
+		}
+
+		if (self.property.lparen == (Operator)0) {
+			var property = objectType.findProperty(identifier.name);
+			return property.typeObj;
+		} else {
+			return self.property.typeCheckCall(parser, objectType);
+		}
+	}
+}
+
+type ListPart {
+	Operator left;
+	Term index;
+	Operator right;
+
+	func typeCheckListPart(ListPart self, TypeObj objectType, Parser parser) -> TypeObj {
+		var indexType = self.index.typeCheckTerm(parser);
+		if (!indexType.checkType(parser.int, parser)) {
+			parser.error(self.index.region.start, " expected type of index to be 'int'\n");
+		}
+
+		if (objectType.listType == (TypeObj)0) {
+			parser.error(self.left.position, " can not get index of value that is not a list\n");
+		}
+
+		return objectType.listType;
+	}
+}
+
+type IndexPart {
+	PropertyPart propertyPart;
+	ListPart indexPart;
+}
+
+type Index {
+	Region region;
+
+	Call value;
+	Array<IndexPart> parts;
+
+	func parseIndex(Index self, Parser parser, Lexer lexer, Block block) -> Index {
+		self.region = lexer.startRegion();
+
+		self.value = new Call();
+		self.value.parseCall(parser, lexer, block);
+
+		self.parts = createArray<IndexPart>();
+
+		while (lexer.current.operator.precedence == PREC_index) {
+			var part = new IndexPart();
+
+			if (isOperator(lexer.current.operator, ".")) {
+				part.propertyPart = new PropertyPart();
+				part.propertyPart.operator = lexer.consumeOperator(".");
+
+				part.propertyPart.property = new Call();
+				part.propertyPart.property.parseCall(parser, lexer, block);
+			} else if (isOperator(lexer.current.operator, "[")) {
+				part.indexPart = new ListPart();
+				part.indexPart.left = lexer.consumeOperator("[");
+
+				part.indexPart.index = new Term();
+				part.indexPart.index.parseTerm(parser, lexer, block);
+
+				part.indexPart.right = lexer.consumeOperator("]");
+
+				if (part.indexPart.right == (Operator)0) {
+					parser.error(lexer.here(), " expected ']' after list index\n");
+				}
+			} else {
+				parser.error(lexer.here(), " did not expect operator: '");
+				print(lexer.current.operator.name);
+				print("', in precedence index\n");
+			}
+
+			self.parts.push(part);
+		}
+
+		lexer.endRegion(self.region);
+
+		return self;
+	}
+
+	func bindIndex(Index self, Parser parser) {
+		self.value.bindCall(parser, false);
+
+		var i = 0;
+		while (i < self.parts.size) {
+			var part = self.parts.get(i);
+			if (part.indexPart != (ListPart)0) {
+				part.indexPart.index.bindTerm(parser);
+			} else {
+				part.propertyPart.property.bindCall(parser, true);
+			}
+			i = i + 1;
+		}
+	}
+
+	func typeCheckIndex(Index self, Parser parser) -> TypeObj {
+		var objectType = self.value.typeCheckCall(parser, (TypeObj)0);
+
+		if (objectType == (TypeObj)0) {
+			return objectType;
+		}
+
+		var i = 0;
+		while (i < self.parts.size) {
+			var part = self.parts.get(i);
+			if (part.indexPart != (ListPart)0) {
+				objectType = part.indexPart.typeCheckListPart(objectType, parser);
+			} else {
+				objectType = part.propertyPart.typeCheckPropertyPart(objectType, parser);
+			}
+			i = i + 1;
+		}
+
+		return objectType;
+	}
+
+	func getTypeIndex(Index self, Parser parser) -> TypeObj {
+		var typeObj = self.value.getTypeCall(parser);
+
+		if (self.parts.size > 0) {
+			parser.error(self.value.region.end, " do not yet support getting type from property or list\n");
+		}
+
+		return typeObj;
+	}
+}

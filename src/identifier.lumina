@@ -1,30 +1,390 @@
 import "../std/io.lumina"
+import "../std/collections.lumina"
 
+import "parser.lumina"
+import "lexer.lumina"
+import "block.lumina"
+import "index.lumina"
 import "name.lumina"
-import "whitespace.lumina"
+import "variable.lumina"
+import "type.lumina"
+import "function.lumina"
+import "operator.lumina"
 import "position.lumina"
 import "definition.lumina"
 
 
-type Identifier {
-	str name;
-	Name definition;
-
-	Definition value;
+type GenericPart {
+	Operator comma;
+	Index value;
 }
 
-func createIdentifierFromName(Name name) -> Identifier {
-	if (isIdentifier(name) != true) {
-		printPosition(name.region.start);
-		print(" expected an identifier\n");
-		return (Identifier)0;
+type GenericDefinitionPart {
+	Operator comma;
+	Name value;
+}
+
+type TypeListPart {
+	Operator lbracket;
+	Operator rbracket;
+}
+
+type GenericArray {
+	Region region;
+
+	Operator left;
+
+	Index value;
+	Array<GenericPart> generics;
+
+	Operator right;
+
+	func parseGenericArray(GenericArray self, Parser parser, Lexer lexer, Block block, Position returnPosition) -> bool {
+		self.region = lexer.startRegion();
+
+		self.left = lexer.consumeOperator("<");
+
+		self.value = new Index();
+		self.value.parseIndex(parser, lexer, block);
+
+		var hadComma = false;
+		self.generics = createArray<GenericPart>();
+
+		while (isOperator(lexer.current.operator, ",")) {
+			hadComma = true;
+
+			var part = new GenericPart();
+			part.comma = lexer.consumeOperator(",");
+
+			part.value = new Index();
+			part.value.parseIndex(parser, lexer, block);
+
+			self.generics.push(part);
+		}
+
+		self.right = lexer.consumeOperator(">");
+		if (self.right == (Operator)0) {
+			if (!hadComma) {
+				lexer.returnTo(returnPosition);
+				return false;
+			}
+			parser.error(lexer.here(), " expected '>' after generics\n");
+		}
+
+		lexer.endRegion(self.region);
+		return true;
 	}
 
+	func bindGenericArray(GenericArray self, Parser parser) {
+		self.value.bindIndex(parser);
+
+		var i = 0;
+		while (i < self.generics.size) {
+			var part = self.generics.get(i);
+			part.value.bindIndex(parser);
+			i = i + 1;
+		}
+	}
+
+	func typeCheckGenericArray(GenericArray self, Parser parser) -> Array<TypeObj> {
+		var types = createArray<TypeObj>();
+
+		var typeObj = self.value.typeCheckIndex(parser); 
+		if (!typeObj.checkType(parser.Type, parser)) {
+			parser.error(self.value.region.start, " expected generic to be a type\n");
+		}
+
+		types.push(self.value.getTypeIndex(parser));
+
+		var i = 0;
+		while (i < self.generics.size) {
+			var part = self.generics.get(i);
+
+			typeObj = part.value.typeCheckIndex(parser);
+			if (!typeObj.checkType(parser.Type, parser)) {
+				parser.error(part.value.region.start, " expected generic to be a type\n");
+			}
+
+			types.push(part.value.getTypeIndex(parser));
+			i = i + 1;
+		}
+
+		return types;
+	}
+}
+
+type GenericDefinitionArray {
+	Region region;
+
+	Operator left;
+
+	Name value;
+	Array<GenericDefinitionPart> parts;
+
+	Operator right;
+
+	func parseGenericDefinitionArray(GenericDefinitionArray self, Parser parser, Lexer lexer) {
+		self.region = lexer.startRegion();
+		
+		self.left = lexer.consumeOperator("<");
+
+		self.value = lexer.consumeIdentifier();
+		if (self.value == (Name)0) {
+			parser.error(lexer.here(), " expected generic name\n");
+		}
+
+		self.parts = createArray<GenericDefinitionPart>();
+
+		while (isOperator(lexer.current.operator, ",")) {
+			var part = new GenericDefinitionPart();
+			part.comma = lexer.consumeOperator(",");
+
+			part.value = lexer.consumeIdentifier();
+			self.parts.push(part);
+		}
+
+		self.right = lexer.consumeOperator(">");
+		if (self.right == (Operator)0) {
+			parser.error(lexer.here(), " expected '>' after generics definition\n");
+		}
+
+		lexer.endRegion(self.region);
+	}
+
+	func addTypes(GenericDefinitionArray self, Array<TypeObj> types, Array<Definition> definitions) {
+		var typeObj = createTypeFromString(self.value.name, 8);
+		types.push(typeObj);
+		definitions.push(createDefinitionFromType(typeObj));
+
+
+		var i = 0;
+		while (i < self.parts.size) {
+			var part = self.parts.get(i);
+			typeObj = createTypeFromString(part.value.name, 8);
+			types.push(typeObj);
+			definitions.push(createDefinitionFromType(typeObj));
+			i = i + 1;
+		}
+	}
+}
+
+type Identifier {
+	Region region;
+	str name;
+	Name value;
+
+	GenericArray generics;
+	Array<TypeListPart> lists;
+
+	Definition definition;
+	Block block;
+	bool isChecked;
+
+	TypeObj typeObj;
+
+	func parseIdentifier(Identifier self, Parser parser, Lexer lexer, Block block) -> Identifier {
+		self.block = block;
+		self.isChecked = false;
+
+		self.region = lexer.startRegion();
+
+		self.value = lexer.consumeIdentifier();
+		if (self.value == (Name)0) {
+			parser.error(lexer.here(), " expected identifier\n");
+		}
+		self.name = self.value.name;
+		
+		if (isOperator(lexer.current.operator, "<")) {
+			self.generics = new GenericArray();
+			if (!self.generics.parseGenericArray(parser, lexer, block, lexer.here())) {
+				self.generics = (GenericArray)0;
+			}
+		}
+
+		self.lists = createArray<TypeListPart>();
+		var endLists = false;
+		while (!endLists && isOperator(lexer.current.operator, "[")) {
+			var returnPosition = lexer.here();
+			var listPart = new TypeListPart();
+			listPart.lbracket = lexer.consumeOperator("[");
+			listPart.rbracket = lexer.consumeOperator("]");
+
+			if (listPart.rbracket == (Operator)0) {
+				if (isOperator(lexer.current.operator, "[")) {
+					parser.error(lexer.here(), " did not expect consecutive '[' operators\n");
+				} else {
+					lexer.returnTo(returnPosition);
+				}
+				endLists = true;
+			} else {
+				self.lists.push(listPart);
+			}
+		}
+
+		lexer.endRegion(self.region);
+		return self;
+	}
+
+	func bindIdentifier(Identifier self, Parser parser, bool isProperty) {
+		self.definition = self.block.findDefinitionInBlock(self.name);
+
+		if (self.definition == (Definition)0 && !isProperty) {
+			parser.error(self.region.start, " can not find name: ");
+			print(self.name);
+			print("\n");
+		}
+
+		if (self.generics != (GenericArray)0) {
+			if (self.definition.variable != (Variable)0) {
+				parser.error(self.generics.region.start, " can not get generic of variable\n");
+			}
+
+			self.generics.bindGenericArray(parser);
+		}
+
+		if (isProperty) { return; }
+
+		if (self.definition.variable != (Variable)0 && self.definition.variable.region.end.index > self.region.start.index) {
+			parser.error(self.region.start, " can not use variable before definition\n");
+		}
+
+		var typeObj = self.definition.typeObj;
+		if (typeObj != (TypeObj)0) {
+			if (typeObj.generics == (Array<TypeObj>)0) {
+				if (self.generics != (GenericArray)0) {
+					parser.error(self.generics.region.start, " can not get generic of a non-generic type\n");
+				}
+			} else if (self.generics == (GenericArray)0) {
+				parser.error(self.region.end, " expected generics for a generic type\n");
+			} else if (typeObj.generics.size != self.generics.generics.size + 1) {
+				parser.error(self.generics.region.start, " expected ");
+				printi(typeObj.generics.size);
+				print(" generics, got ");
+				printi(self.generics.generics.size + 1);
+				print(" instead\n");
+			}
+		}
+
+		var function = self.definition.function;
+		if (function != (Function)0) {
+			if (function.generics == (Array<TypeObj>)0) {
+				if (self.generics != (GenericArray)0) {
+					parser.error(self.generics.region.start, " can not get generic of a non-generic type\n");
+				}
+			} else if (self.generics == (GenericArray)0) {
+				parser.error(self.region.end, " expected generics for a generic type\n");
+			} else if (function.generics.size != self.generics.generics.size + 1) {
+				parser.error(self.generics.region.start, " expected ");
+				printi(function.generics.size);
+				print(" generics, got ");
+				printi(self.generics.generics.size + 1);
+				print(" instead\n");
+			}
+		}
+	}
+
+	func typeCheckIdentifier(Identifier self, Parser parser) -> TypeObj {
+		if (self.isChecked) { return self.typeObj; }
+		self.isChecked = true;
+
+		if (self.definition.variable != (Variable)0 && !self.definition.variable.isChecked) {
+			self.definition.variable.typeCheckVariable(parser);
+		}
+
+		if (self.definition.function != (Function)0 && !self.definition.function.isChecked) {
+			self.definition.function.typeCheckFunction(parser);
+		}
+
+		if (self.definition.typeObj != (TypeObj)0 && !self.definition.typeObj.isChecked && self.generics != (GenericArray)0) {
+			self.definition.typeObj.typeCheckType(parser);
+		}
+
+		if (self.generics != (GenericArray)0) {
+			var generics = self.generics.typeCheckGenericArray(parser);
+
+			self.definition = self.definition.getVariantDefinition(generics);
+		}
+
+		if (self.definition.typeObj != (TypeObj)0) {
+			var i = 0;
+			while (i < self.lists.size) {
+				self.definition = self.definition.createListDefinition();
+				i = i + 1;
+			}
+
+			self.typeObj = parser.Type;
+			return parser.Type;
+		} else if (self.definition != (Definition)0 && self.lists.size != 0) {
+			parser.error(self.region.start, " can not get list of value that is not a type\n");
+		}
+
+		if (self.definition.variable != (Variable)0) {
+			self.typeObj = self.definition.variable.variableType;
+
+			if (self.typeObj == (TypeObj)0) {
+				parser.error(self.region.start, " variable type is undefined\n");
+			} else if (self.typeObj.checkType(parser.Type, parser)) {
+				self.definition.typeObj = self.getTypeIdentifier(parser);
+			}
+
+			return self.typeObj;
+		}
+
+		return (TypeObj)0;
+	}
+
+	func getTypeIdentifier(Identifier self, Parser parser) -> TypeObj {
+		self.typeCheckIdentifier(parser);
+
+		if (self.definition.variable != (Variable)0) {
+			return self.definition.variable.getTypeVariable(parser);
+		}
+
+		return self.definition.typeObj;
+	}
+}
+
+type IdentifierDefinition {
+	Region region;
+	str name;
+	Name value;
+
+	GenericDefinitionArray generics;
+
+	func parseIdentifierDefinition(IdentifierDefinition self, Parser parser, Lexer lexer) {
+		self.region = lexer.startRegion();
+
+		self.value = lexer.consumeIdentifier();
+		if (self.value == (Name)0) {
+			parser.error(lexer.here(), " expected identifier\n");
+		}
+		self.name = self.value.name;
+
+		if (isOperator(lexer.current.operator, "<")) {
+			self.generics = new GenericDefinitionArray();
+			self.generics.parseGenericDefinitionArray(parser, lexer);
+		}
+
+		lexer.endRegion(self.region);
+	}
+}
+
+func createIdentifierFromString(str value) -> Identifier {
 	var identifier = new Identifier();
+	identifier.name = value;
+	return identifier;
+}
 
-	identifier.name = name.name;
-	identifier.definition = name;
-	identifier.value = (Definition)0;
+func createIdentifierDefinitionFromString(str value) -> IdentifierDefinition {
+	var identifier = new IdentifierDefinition();
+	identifier.name = value;
+	return identifier;
+}
 
+func createIdentifierFromDefinition(IdentifierDefinition value) -> Identifier {
+	var identifier = new Identifier();
+	identifier.name = value.name;
+
+	//TODO: deal with generics
 	return identifier;
 }

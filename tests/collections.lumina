@@ -1,6 +1,6 @@
+import "../std/io.lumina"
 import "../std/string.lumina"
 import "../std/collections.lumina"
-import "../std/io.lumina"
 
 
 type Cat {
@@ -30,8 +30,8 @@ func findCat(Array<Cat> cats, str name) -> Cat {
 
 var cats = createArray<Cat>();
 
-addItem<Cat>(cats, createCat("james", 3));
-addItem<Cat>(cats, createCat("jennifer", 2));
+cats.push(createCat("james", 3));
+cats.push(createCat("jennifer", 2));
 
 var james = findCat(cats, "james");
 print("james` age is: ");
@@ -41,13 +41,13 @@ print("\n");
 print(getItem<Cat>(cats, 0).name);
 print("\n");
 
-addItem<Cat>(cats, createCat("fireclaw", 4));
-addItem<Cat>(cats, createCat("nya", 2));
-addItem<Cat>(cats, createCat("miauw", 1));
-addItem<Cat>(cats, createCat("purr", 3));
-addItem<Cat>(cats, createCat("tabby", 2));
-addItem<Cat>(cats, createCat("spot", 4));
-addItem<Cat>(cats, createCat("siamese", 5));
+cats.push(createCat("fireclaw", 4));
+cats.push(createCat("nya", 2));
+cats.push(createCat("miauw", 1));
+cats.push(createCat("purr", 3));
+cats.push(createCat("tabby", 2));
+cats.push(createCat("spot", 4));
+cats.push(createCat("siamese", 5));
 
 var i = 0;
 while (i < cats.size) {

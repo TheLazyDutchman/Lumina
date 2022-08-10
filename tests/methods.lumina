@@ -1,0 +1,50 @@
+import "../std/io.lumina"
+
+
+type Cat {
+	str name;
+
+	func purr(Cat self) {
+		print(self.name);
+		print(" purred\n");
+	}
+}
+
+var firestar = new Cat();
+firestar.name = "Firestar";
+
+firestar.purr();
+
+type User {
+	str name;
+
+	func say(User self, str value) {
+		print(self.name);
+		print(": ");
+		print(value);
+		print("\n");
+	}
+}
+
+var hammingBird = new User();
+hammingBird.name = "HammingBird";
+
+hammingBird.say("Hello, World");
+hammingBird.say(firestar.name);
+
+type Vector<T> {
+	T x;
+	T y;
+
+	func getX(Vector<T> self) -> T {
+		return self.x;
+	}
+}
+
+var vec = new Vector<int>();
+vec.x = 10;
+vec.y = 15;
+
+print("vector x = ");
+printi(vec.getX());
+print("\n");

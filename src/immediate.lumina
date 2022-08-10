@@ -68,7 +68,7 @@ func createNumber(Position start, Position end, WhiteSpace space) -> Number {
 func findString(Array<str> array, str string) -> int {
 	var i = 0;
 	while (i < array.size) {
-		if (streq(getItem<str>(array, i), string)) {
+		if (streq(array.get(i), string)) {
 			return i;
 		}
 		i = i + 1;
@@ -82,7 +82,7 @@ func addUniqueString(Array<str> array, str string) -> int {
 		return index;
 	}
 
-	addItem<str>(array, string);
+	array.push(string);
 
 	return array.size - 1;
 }

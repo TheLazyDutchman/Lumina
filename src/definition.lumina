@@ -1,5 +1,6 @@
 import "../std/string.lumina"
 import "../std/collections.lumina"
+import "../std/io.lumina"
 
 import "name.lumina"
 import "position.lumina"
@@ -14,15 +15,40 @@ type Definition {
 
 	TypeObj typeObj;
 	Variable variable;
-	FunctionDefinition function;
+	Function function;
 
-	TypeObj valueType;
+	Definition listDefinition;
+
+	func createListDefinition(Definition self) -> Definition {
+		if (self.typeObj == (TypeObj)0) {
+			return (Definition)0;
+		}
+
+		if (self.listDefinition == (Definition)0) {
+			self.listDefinition = createDefinitionFromType(createListType((str)0, self.typeObj));
+		}
+
+		return self.listDefinition;
+	}
+
+	func getVariantDefinition(Definition self, Array<TypeObj> generics) -> Definition {
+		if (self.typeObj != (TypeObj)0) {
+			var newType = self.typeObj.getVariantType(generics);
+			return createDefinitionFromType(newType);
+		}
+
+		if (self.function != (Function)0) {
+			return createDefinitionFromFunction(self.function.getVariantFunction(generics));
+		}
+
+		return (Definition)0;
+	}
 }
 
 func createDefinitionFromType(TypeObj typeObj) -> Definition {
 	var definition = new Definition();
 
-	definition.name = typeObj.name;
+	definition.name = typeObj.name.name;
 	definition.typeObj = typeObj;
 
 	return definition;
@@ -31,13 +57,13 @@ func createDefinitionFromType(TypeObj typeObj) -> Definition {
 func createDefinitionFromVariable(Variable variable) -> Definition {
 	var definition = new Definition();
 
-	definition.name = variable.name;
+	definition.name = variable.name.name;
 	definition.variable = variable;
 
 	return definition;
 }
 
-func createDefinitionFromFunction(FunctionDefinition function) -> Definition {
+func createDefinitionFromFunction(Function function) -> Definition {
 	var definition = new Definition();
 
 	definition.name = function.name.name;
@@ -49,8 +75,8 @@ func createDefinitionFromFunction(FunctionDefinition function) -> Definition {
 func findDefinition(Array<Definition> list, str name) -> Definition {
 	var i = 0;
 	while (i < list.size) {
-		if (streq(list.list[i].name, name)) {
-			return list.list[i];
+		if (streq(list.get(i).name, name)) {
+			return list.get(i);
 		}
 		i = i + 1;
 	}

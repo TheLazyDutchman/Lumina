@@ -1,7 +1,83 @@
+import "../std/io.lumina"
+
+
 type Array<T> {
 	int size;
 	int maxSize;
 	T[] list;
+
+	func push(Array<T> self, T item) -> Array<T> {
+		if (self.maxSize == 0) {
+			self.maxSize = 8;
+			self.list = new T[](self.maxSize);
+		}
+
+		if (self.size + 1 == self.maxSize) {
+			self.maxSize = self.maxSize * 2;
+			
+			var newList = new T[](self.maxSize);
+			var i = 0;
+			while (i < self.size) {
+				newList[i] = self.get(i);
+				i = i + 1;
+			}
+
+			self.list = newList;
+		}
+
+		self.set(self.size, item);
+		self.size = self.size + 1;
+
+		return self;
+	}
+
+	func pop(Array<T> self) -> T {
+		self.size = self.size - 1;
+		var item = self.get(self.size);
+		self.set(self.size, (T)0);
+		return item;
+	}
+
+	func extend(Array<T> self, Array<T> other) {
+		var newSize = self.size + other.size;
+		if (newSize + 1 > self.maxSize) {
+			if (self.maxSize == 0) {
+				self.maxSize = 8;
+			}
+
+			while(newSize + 1 > self.maxSize) {
+				self.maxSize = self.maxSize * 2;
+			}
+
+			var newList = new T[](self.maxSize);
+
+			var i = 0;
+			while (i < self.size) {
+				newList[i] = self.get(i);
+				i = i + 1;
+			}
+
+			self.list = newList;
+		}
+
+		var i = 0;
+		while (i < other.size) {
+			self.set(self.size + i, other.get(i));
+			i = i + 1;
+		}
+
+		self.size = newSize;
+	}
+
+	func get(Array<T> self, int index) -> T {
+		if (self.list == (T[])0) { return (T)0; }
+		return self.list[index];
+	}
+
+	func set(Array<T> self, int index, T item) {
+		if (self.list == (T[])0) { return; }
+		self.list[index] = item;
+	}
 }
 
 func createArray<T>() -> Array<T> {
@@ -12,52 +88,4 @@ func createArray<T>() -> Array<T> {
 	array.list = (T[])0;
 
 	return array;
-}
-
-func addItem<T>(Array<T> array, T item) {
-	if (array.size == array.maxSize) {
-		var newSize = array.maxSize * 2;
-		if (newSize == 0) {
-			newSize = 8;
-		}
-
-		var newList = new T[](newSize);
-		var i = 0;
-		while (i < array.maxSize) {
-			newList[i] = array.list[i];
-			i = i + 1;
-		}
-
-		array.list = newList;
-		array.maxSize = newSize;
-	}
-
-	array.list[array.size] = item;
-	array.size = array.size + 1;
-}
-
-func popItem<T>(Array<T> array) -> T {
-	array.size = array.size - 1;
-
-	return getItem<T>(array, array.size);
-}
-
-func extendArray<T>(Array<T> destination, Array<T> source) {
-	if (source == (Array<T>)0) {
-		return;
-	}
-
-	var i = 0;
-	while (i < source.size) {
-		addItem<T>(destination, getItem<T>(source, i));
-		i = i + 1;
-	}
-}
-
-func getItem<T>(Array<T> array, int index) -> T {
-	return array.list[index];
-}
-
-func setItem<T>(Array<T> array, int index, T item) {
-	array.list[index] = item;
 }

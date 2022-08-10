@@ -1,21 +1,93 @@
-import "position.lumina"
-import "operation.lumina"
-import "operator.lumina"
-import "whitespace.lumina"
+import "../std/collections.lumina"
 
+import "parser.lumina"
+import "lexer.lumina"
+import "block.lumina"
+import "type.lumina"
+import "position.lumina"
+import "operator.lumina"
+import "and.lumina"
+
+
+type AndPart {
+	Operator and;
+	Or value;
+}
 
 type Expression {
 	Region region;
-	Operation operation;
-	Operator semicolon;
-}
 
-func createExpression(Operation operation, Operator semicolon) -> Expression {
-	var expression = new Expression();
+	Or value;
+	Array<AndPart> parts;
 
-	expression.region = createRegion(operation.region.start, semicolon.position);
-	expression.operation = operation;
-	expression.semicolon = semicolon;
+	TypeObj typeObj;
 
-	return expression;
+	func parseExpression(Expression self, Parser parser, Lexer lexer, Block block) -> Expression {
+		self.region = lexer.startRegion();
+
+		self.value = new Or();
+		self.value.parseOr(parser, lexer, block);
+
+		self.parts = createArray<AndPart>();
+
+		while (isOperator(lexer.current.operator, "&&")) {
+			var part = new AndPart();
+			part.and = lexer.consumeOperator("&&");
+
+			part.value = new Or();
+			part.value.parseOr(parser, lexer, block);
+
+			self.parts.push(part);
+		}
+
+		lexer.endRegion(self.region);
+
+		return self;
+	}
+
+	func bindExpression(Expression self, Parser parser) {
+		self.value.bindOr(parser);
+
+		var i = 0;
+		while (i < self.parts.size) {
+			var part = self.parts.get(i);
+			part.value.bindOr(parser);
+			i = i + 1;
+		}
+	}
+
+	func typeCheckExpression(Expression self, Parser parser) -> TypeObj {
+		if (self.typeObj != (TypeObj)0) {
+			return self.typeObj;
+		}
+
+		var valueType = self.value.typeCheckOr(parser);
+
+		if (self.parts.size == 0) {
+			self.typeObj = valueType;
+			return valueType;
+		}
+
+		if (!valueType.checkType(parser.bool, parser)) {
+			parser.error(self.value.region.start, " expected 'bool' in '&&' operation\n");
+		}
+
+		var i = 0;
+		while (i < self.parts.size) {
+			var part = self.parts.get(i);
+			valueType = part.value.typeCheckOr(parser);
+
+			if (!valueType.checkType(parser.bool, parser)) {
+				parser.error(part.value.region.start, " expected 'bool' in '&&' operation\n");
+			}
+			i = i + 1;
+		}
+
+		self.typeObj = parser.bool;
+		return parser.bool;
+	}
+
+	func getTypeExpression(Expression self, Parser parser) -> TypeObj {
+		return self.value.getTypeOr(parser);
+	}
 }

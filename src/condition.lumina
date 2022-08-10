@@ -1,0 +1,46 @@
+import "parser.lumina"
+import "lexer.lumina"
+import "block.lumina"
+import "operator.lumina"
+import "expression.lumina"
+import "position.lumina"
+
+
+type Condition {
+	Region region;
+
+	Operator lparen;
+	Expression value;
+	Operator rparen;
+
+	func parseCondition(Condition self, Parser parser, Lexer lexer, Block block) -> Condition {
+		self.region = lexer.startRegion();
+
+		self.lparen = lexer.consumeOperator("(");
+		if (self.lparen == (Operator)0) {
+			parser.error(lexer.here(), " expected '(' before condition\n");
+		}
+
+		self.value = new Expression();
+		self.value.parseExpression(parser, lexer, block);
+
+		self.rparen = lexer.consumeOperator(")");
+		if (self.rparen == (Operator)0) {
+			parser.error(lexer.here(), " expected ')' after condition\n");
+		}
+
+		lexer.endRegion(self.region);
+		return self;
+	}
+
+	func bindCondition(Condition self, Parser parser) {
+		self.value.bindExpression(parser);
+	}
+
+	func typeCheckCondition(Condition self, Parser parser) {
+		var conditionType = self.value.typeCheckExpression(parser);  
+		if (!conditionType.checkType(parser.bool, parser)) {
+			parser.error(self.region.start, " expected condition to be of type 'bool'\n");
+		}
+	}
+}

@@ -1,0 +1,69 @@
+import "../std/io.lumina"
+
+import "parser.lumina"
+import "lexer.lumina"
+import "type.lumina"
+import "block.lumina"
+import "position.lumina"
+import "term.lumina"
+import "operator.lumina"
+
+
+type Comparison {
+	Region region;
+
+	Term left;
+	Operator comparator;
+	Term right;
+
+
+	func parseComparison(Comparison self, Parser parser, Lexer lexer, Block block) -> Comparison {
+		self.region = lexer.startRegion();
+
+		self.left = new Term();
+		self.left.parseTerm(parser, lexer, block);
+
+		self.comparator = lexer.consumePrecedence(PREC_comparison);
+		if (self.comparator != (Operator)0) {
+			self.right = new Term();
+			self.right.parseTerm(parser, lexer, block);
+		}
+
+		lexer.endRegion(self.region);
+
+		return self;
+	}
+
+	func bindComparison(Comparison self, Parser parser) {
+		self.left.bindTerm(parser);
+
+		if (self.right != (Term)0) {
+			self.right.bindTerm(parser);
+		}
+	}
+
+	func typeCheckComparison(Comparison self, Parser parser) -> TypeObj {
+		var leftType = self.left.typeCheckTerm(parser);
+
+		if (self.right == (Term)0) {
+			return leftType;
+		}
+
+		var rightType = self.right.typeCheckTerm(parser);
+
+		if (!leftType.checkType(rightType, parser)) {
+			parser.error(self.comparator.position, " cannot compare values of different types\n");
+			print("[NOTE] got: ");
+			leftType.printType();
+			print(", and: ");
+			rightType.printType();
+			print("\n");
+		}
+
+		return parser.bool;
+	}
+
+	func getTypeComparison(Comparison self, Parser parser) -> TypeObj {
+		return self.left.getTypeTerm(parser);
+	}
+}

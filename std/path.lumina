@@ -11,8 +11,8 @@ type Path {
 
 
 func _is_outer(String s) -> bool {
-	if (getItem<char>(s, 0) != '.') { return false; }
-	if (getItem<char>(s, 1) != '.') { return false; }
+	if (s.get(0) != '.') { return false; }
+	if (s.get(1) != '.') { return false; }
 	return true;
 }
 
@@ -27,12 +27,12 @@ func setFileName(Path path, String filename) {
 	var nameStrings = createArray<String>();
 	var i = 0;
 	while (i < nameParts.size - 1) {
-		addItem<String>(nameStrings, getItem<String>(nameParts, i));
+		nameStrings.push(nameParts.get(i));
 		i = i + 1;
 	}
 
 	path.name = join(nameStrings, ".");
-	path.extension = getItem<String>(nameParts, nameParts.size - 1);
+	path.extension = nameParts.get(nameParts.size - 1);
 }
 
 func toPath(String value) -> Path {
@@ -41,12 +41,12 @@ func toPath(String value) -> Path {
 
 	var i = 0;
 	while (i < parts.size - 1) {
-		var part = getItem<String>(parts, i);
+		var part = parts.get(i);
 
-		if (_is_outer(part) && folders.size != 0 && !_is_outer(getItem<String>(folders, folders.size - 1))) {
-			popItem<String>(folders);
+		if (_is_outer(part) && folders.size != 0 && !_is_outer(folders.get(folders.size - 1))) {
+			folders.pop();
 		} else if (!streq(part.list, ".")) {
-			addItem<String>(folders, part);
+			folders.push(part);
 		}
 
 		i = i + 1;
@@ -55,7 +55,7 @@ func toPath(String value) -> Path {
 	var path = new Path();
 	path.folders = folders;
 
-	setFileName(path, getItem<String>(parts, parts.size - 1));
+	setFileName(path, parts.get(parts.size - 1));
 
 	return path;
 }
@@ -66,18 +66,18 @@ func toLocalPath(String path, String file) -> Path {
 
 	var i = 0;
 	while (i < parts.size - 1) {
-		var part = getItem<String>(parts, i);
+		var part = parts.get(i);
 
-		if (_is_outer(part) && outerPath.folders.size != 0 && !_is_outer(getItem<String>(outerPath.folders, outerPath.folders.size - 1))) {
-			popItem<String>(outerPath.folders);
+		if (_is_outer(part) && outerPath.folders.size != 0 && !_is_outer(outerPath.folders.get(outerPath.folders.size - 1))) {
+			outerPath.folders.pop();
 		} else if (!streq(part.list, ".")) {
-			addItem<String>(outerPath.folders, part);
+			outerPath.folders.push(part);
 		}
 
 		i = i + 1;
 	}
 
-	setFileName(outerPath, getItem<String>(parts, parts.size - 1));
+	setFileName(outerPath, parts.get(parts.size - 1));
 
 	return outerPath;
 }
@@ -86,16 +86,15 @@ func pathToString(Path path) -> String {
 	var string = join(path.folders, "/");
 
 	if (path.folders.size == 0) {
-		addItem<char>(string, '.');
+		string.push('.');
 	}
 
-	addItem<char>(string, '/');
-
-	extendArray<char>(string, path.name);
+	string.push('/');
+	string.extend(path.name);
 
 	if (path.extension != (String)0) {
-		addItem<char>(string, '.');
-		extendArray<char>(string, path.extension);
+		string.push('.');
+		string.extend(path.extension);
 	}
 
 	return string;

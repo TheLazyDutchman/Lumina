@@ -1,63 +1,123 @@
 import "../std/io.lumina"
 
+import "parser.lumina"
+import "lexer.lumina"
+import "type.lumina"
 import "identifier.lumina"
 import "name.lumina"
 import "position.lumina"
 import "immediate.lumina"
 import "whitespace.lumina"
 import "definition.lumina"
+import "operator.lumina"
+import "expression.lumina"
+import "block.lumina"
 
+
+type Group {
+	Region region;
+
+	Operator lparen;
+	Expression value;
+	Operator rparen;
+
+	func parseGroup(Group self, Parser parser, Lexer lexer, Block block) -> Group {
+		self.region = lexer.startRegion();
+
+		self.lparen = lexer.consumeOperator("(");
+
+		self.value = new Expression();
+		self.value.parseExpression(parser, lexer, block);
+
+		self.rparen = lexer.consumeOperator(")");
+		if (self.rparen == (Operator)0) {
+			parser.error(lexer.here(), " expected ')' after group\n");
+		}
+
+		return self;
+	}
+
+	func bindGroup(Group self, Parser parser) {
+		self.value.bindExpression(parser);
+	}
+}
 
 type Value {
 	Region region;
+
 	Identifier identifier;
+
 	Number number;
 	Character character;
 	StringLiteral string;
-}
 
-func createValueFromIdentifier(Identifier identifier) -> Value {
-	var value = new Value();
+	Group group;
 
-	value.region = identifier.definition.region;
-	value.identifier = identifier;
-	return value;
-}
 
-func createValueFromNumber(Number number) -> Value {
-	if (number == (Number)0) {
-		print("expected number to not be null when creating value\n");
+	func parseValue(Value self, Parser parser, Lexer lexer, Block block) -> Value {
+		if (isIdentifier(lexer.current.name)) {
+			self.identifier = new Identifier();
+			self.identifier.parseIdentifier(parser, lexer, block);
+
+			self.region = self.identifier.region;
+		} else if (isNumber(lexer.current)) {
+			self.number = lexer.current.number;
+			self.region = lexer.current.number.region;
+			next(lexer);
+		} else if (isCharacter(lexer.current)) {
+			self.character = lexer.current.character;
+			self.region = lexer.current.character.region;
+			next(lexer);
+		} else if (isString(lexer.current)) {
+			self.string = lexer.current.string;
+			self.region = lexer.current.string.region;
+			next(lexer);
+		} else if (isOperator(lexer.current.operator, "(")) {
+			self.group = new Group();
+			self.group.parseGroup(parser, lexer, block);
+			self.region = self.group.region;
+		} else {
+			parser.error(lexer.here(), " expected an immediate value or name\n");
+		}
+
+		return self;
 	}
 
-	var value = new Value();
-
-	value.region = number.region;
-	value.number = number;
-	return value;
-}
-
-func createValueFromCharacter(Character character) -> Value {
-	if (character == (Character)0) {
-		print("expected character to not be null when creating value\n");
+	func bindValue(Value self, Parser parser, bool isProperty) {
+		if (self.identifier != (Identifier)0) {
+			self.identifier.bindIdentifier(parser, isProperty);
+		} else if (self.group != (Group)0) {
+			self.group.bindGroup(parser);
+		}
 	}
 
-	var value = new Value();
+	func typeCheckValue(Value self, Parser parser) -> TypeObj {
+		if (self.identifier != (Identifier)0) {
+			return self.identifier.typeCheckIdentifier(parser);
+		} 
 
-	value.region = character.region;
-	value.character = character;
-	return value;
-}
+		if (self.number != (Number)0) {
+			return parser.int;
+		} 
 
-func createValueFromString(StringLiteral string) -> Value {
-	if (string == (StringLiteral)0) {
-		print("expected string to not be null when creating value\n");
+		if (self.character != (Character)0) {
+			return parser.char;
+		} 
+
+		if (self.string != (StringLiteral)0) {
+			return parser.str;
+		}
+
+		return self.group.value.typeCheckExpression(parser);
 	}
 
-	var value = new Value();
-
-	value.region = string.region;
-	value.string = string;
-	return value;
+	func getTypeValue(Value self, Parser parser) -> TypeObj {
+		if (self.identifier != (Identifier)0) {
+			return self.identifier.getTypeIdentifier(parser);
+		}
+		parser.error(self.region.start, " can not get type from this value\n");
+		return (TypeObj)0;
+	}
 }
 
 func isName(Value value) -> bool {
