@@ -12,6 +12,14 @@ const DATASTACKSIZE = 40960;
 type Register {
 	str name;
 	bool used;
+
+	func use(Register self) {
+		self.used = true;
+	}
+
+	func free(Register self) {
+		self.used = false;
+	}
 }
 
 type Compiler {
@@ -99,8 +107,27 @@ type Compiler {
 		self.writeOutput("\n");
 	}
 
+	func swapStacks(Compiler self) {
+		self.writeOutput("	xchg rsp, [datarsp]\n");
+	}
+
 	func writeRegister(Compiler self, Register register) {
 		self.writeOutput(register.name);
+	}
+
+	func writeUnaryOperation(Compiler self, str value, Register register) {
+		self.writeOutput("	");
+		self.writeOutput(value);
+		self.writeOutput(" ");
+		self.writeRegister(register);
+		self.writeOutput("\n");
+	}
+
+	func writePush(Compiler self, Register register) {
+		self.swapStacks();
+		self.writeUnaryOperation("push", register);
+		self.swapStacks();
+		register.free();
 	}
 
 	func writeMov(Compiler self, Register register) {
@@ -128,18 +155,298 @@ type Compiler {
 		self.writeOutput(" ;; string literal\n");
 	}
 
+	func writeFindBlockBuiltin(Compiler self) {
+		self.writeOutput("__find_block__:\n");
+
+		self.writeOutput("	;; finds the first memory block after a given pointer\n");
+		self.writeOutput("	;; or null if there are none\n\n");
+		self.swapStacks();
+		self.writeOutput("	pop rbx ;; pointer\n");
+		self.swapStacks();
+
+		self.writeOutput("	mov rcx, [lastblock]\n");
+		self.writeOutput("	mov rax, 0\n");
+
+		self.writeOutput(".loop_condition:\n");
+		self.writeOutput("	cmp rcx, rbx\n");
+		self.writeOutput("	jl .loop_end\n");
+
+		self.writeOutput("	mov rax, rcx\n");
+		self.writeOutput("	mov rcx, [rcx] ;; last block\n");
+		self.writeOutput("	jmp .loop_condition\n");
+		self.writeOutput(".loop_end:\n");
+
+		self.writeOutput("	ret\n\n");
+	}
+
+	func writeGetBlockBuiltin(Compiler self) {
+		self.writeOutput("__get_block__:\n");
+		self.swapStacks();
+		self.writeOutput("	pop rbx ;; size\n");
+		self.writeOutput("	add rbx, 24 ;; block header\n");
+		self.swapStacks();
+
+		self.writeOutput("	mov rax, [lastblock]\n");
+		self.writeOutput("	mov r8, 0\n");
+		self.writeOutput("	mov rcx, 1\n");
+
+		self.writeOutput(".loop_condition:\n");
+		self.writeOutput("	cmp rcx, 0\n");
+		self.writeOutput("	je .loop_end\n");
+
+		self.writeOutput("	cmp [rax + 16], rbx\n");
+		self.writeOutput("	cmovl rax, [rax]\n");
+		self.writeOutput("	cmovge rcx, r8\n");
+
+		self.writeOutput("	cmp rax, 0\n");
+		self.writeOutput("	cmove rcx, r8\n");
+
+		self.writeOutput("	jmp .loop_condition\n");
+
+		self.writeOutput(".loop_end:\n");
+
+		self.writeOutput("	ret\n\n");
+	}
+
+	func writeCreateBlockBuiltin(Compiler self) {
+		self.writeOutput("__create_block__:\n");
+		self.swapStacks();
+		self.writeOutput("	pop rbx ;; size\n");
+		self.writeOutput("	pop rcx ;; pointer\n");
+
+		self.writeOutput("	;; store values\n");
+		self.writeOutput("	push rbx\n");
+		self.writeOutput("	push rcx\n");
+		self.writeOutput("	;; push arguments\n");
+		self.writeOutput("	push rcx\n");
+		self.swapStacks();
+
+		self.writeOutput("	call __find_block__\n");
+
+		self.swapStacks();
+		self.writeOutput("	pop rcx ;; pointer\n");
+		self.writeOutput("	pop rbx ;; size\n");
+		self.swapStacks();
+
+		self.writeOutput("	;; set block before this one\n");
+		self.writeOutput("	cmp rax, 0\n");
+		self.writeOutput("	cmove r8, [lastblock]\n");
+		self.writeOutput("	cmovg r8, [rax]\n");
+
+		self.writeOutput("	mov r9, r8\n");
+		self.writeOutput("	add r9, [r8 + 16] ;; size\n");
+		self.writeOutput("	cmp r9, rcx\n");
+		self.writeOutput("	jne .joined_before\n");
+
+		self.writeOutput("	add [r8 + 16], rbx\n");
+		self.writeOutput("	mov rax, r8\n");
+		self.writeOutput("	ret\n");
+		self.writeOutput(".joined_before:\n");
+
+		self.writeOutput("	mov r9, rcx\n");
+		self.writeOutput("	add r9, rbx\n");
+		self.writeOutput("	cmp r9, rax\n");
+		self.writeOutput("	jne .joined_after\n");
+
+		self.writeOutput("	add rbx, [rax + 16]\n");
+		self.writeOutput("	mov [rcx + 16], rbx\n");
+		self.writeOutput("	mov rax, [rax + 8]\n");
+		self.writeOutput(".joined_after:\n");
+
+		self.writeOutput("	mov [rcx], r8\n");
+		self.writeOutput("	mov [rcx + 8], rax\n");
+
+		self.writeOutput("	mov r9, r8\n");
+		self.writeOutput("	cmp r8, 0\n");
+		self.writeOutput("	cmovg r9, [heapstart]\n");
+		self.writeOutput("	cmovg r8, rcx\n");
+		self.writeOutput("	add r9, 8\n");
+		self.writeOutput("	mov [r9], r8\n");
+
+		self.writeOutput("	cmp rax, 0\n");
+		self.writeOutput("	cmove rax, [lastblock]\n");
+		self.writeOutput("	mov [rax], rcx\n");
+
+		self.writeOutput("	mov rax, rcx\n");
+		self.writeOutput("	ret\n\n");
+	}
+
+	func writeExpandHeapBuiltin(Compiler self) {
+		self.writeOutput("__expand_heap__:\n");
+		self.swapStacks();
+		self.writeOutput("	pop rbx ;; size\n");
+		self.swapStacks();
+
+		self.writeOutput("	mov r8, 4096\n");
+		self.writeOutput(".loop_condition:\n");
+		self.writeOutput("	cmp r8, rbx\n");
+		self.writeOutput("	jg .loop_end\n");
+
+		self.writeOutput("	add r8, 4096\n");
+		self.writeOutput("	jmp .loop_condition\n");
+		self.writeOutput(".loop_end:\n");
+
+		self.writeOutput("	mov rbx, [heapend]\n");
+
+		self.writeOutput("	mov rax, 12 ;; sysbrk\n");
+		self.writeOutput("	mov rdi, rbx\n");
+		self.writeOutput("	add rdi, r8\n");
+		self.writeOutput("	mov [heapend], rdi\n");
+		self.writeOutput("	syscall\n");
+
+		self.writeOutput("	sub rbx, 8\n");
+		self.writeOutput("	mov r9, [lastblock]\n");
+		self.writeOutput("	mov [rbx], r9\n");
+		self.writeOutput("	mov [rbx + 16], r8\n");
+		self.writeOutput("	mov [lastblock], rbx\n");
+
+		self.writeOutput("	ret\n\n");
+	}
+
+	func writeAllocateBuiltin(Compiler self) {
+		self.writeOutput("__allocate__:\n");
+		self.swapStacks();
+		self.writeOutput("	pop rbx ;; size\n");
+		self.writeOutput("	push rbx\n");
+		self.writeOutput("	push rbx\n");
+		self.swapStacks();
+
+		self.writeOutput("	call __get_block__\n");
+
+		self.writeOutput("	cmp rax, 0\n");
+		self.writeOutput("	jg .setup\n");
+
+		self.swapStacks();
+		self.writeOutput("	push rbx\n");
+		self.writeOutput("	push rbx\n");
+		self.swapStacks();
+
+		self.writeOutput("	call __expand_heap__\n");
+		self.writeOutput("	call __get_block__\n");
+
+		self.writeOutput(".setup:\n");
+
+		self.swapStacks();
+		self.writeOutput("	pop rbx\n");
+		self.swapStacks();
+
+		self.writeOutput("	sub [rax + 16], rbx\n");
+		self.writeOutput("	add rax, [rax + 16] ;; block size\n");
+		self.writeOutput("	mov r8, rax\n");
+
+		self.writeOutput("	mov rcx, rax\n");
+
+		self.writeOutput(".init_condition:\n");
+		self.writeOutput("	cmp rcx, r8\n");
+		self.writeOutput("	jg .return\n");
+		self.writeOutput("	mov qword [rcx], 0 ;; zero-initialize allocated memory\n");
+		self.writeOutput("	add rcx, 8\n");
+		self.writeOutput("	jmp .init_condition\n");
+
+		self.writeOutput(".return:\n");
+
+		self.writeOutput("	sub rax, [heapstart]\n");
+
+		self.writeOutput("	ret\n\n");
+	}
+
+	func writeNewBuiltin(Compiler self) {
+		self.writeOutput("__new__:\n");
+		self.swapStacks();
+		self.writeOutput("	pop rax ;; type\n");
+		self.swapStacks();
+
+		self.writeOutput("	mov rbx, [rax + 16] ;; size\n");
+		self.writeOutput("	add rbx, 16 ;; header size\n");
+
+		self.swapStacks();
+		self.writeOutput("	push rax ;; type\n");
+
+		self.writeOutput("	push rbx\n");
+		self.swapStacks();
+
+		self.writeOutput("	call __allocate__\n");
+
+		self.swapStacks();
+		self.writeOutput("	pop rbx ;; type\n");
+		self.swapStacks();
+
+		self.writeOutput("	mov rcx, rax\n");
+		self.writeOutput("	add rcx, [heapstart]\n");
+		self.writeOutput("	add rax, 16\n");
+
+		self.writeOutput("	mov [rcx + 8], rbx\n");
+
+		self.writeOutput("	ret\n\n");
+	}
+
+	func writeNewListBuiltin(Compiler self) {
+		self.writeOutput("__new_list__:\n");
+		self.swapStacks();
+		self.writeOutput("	pop rax ;; size\n");
+		self.writeOutput("	pop rbx ;; type\n");
+		self.writeOutput("	push rax\n");
+		self.swapStacks();
+
+		self.writeOutput("	mov rcx, [rbx + 16] ;; item size\n");
+		self.writeOutput("	mul rcx\n");
+
+		self.swapStacks();
+		self.writeOutput("	push rbx ;; type\n");
+		self.swapStacks();
+
+		self.writeOutput("	mov rbx, rax\n");
+		self.writeOutput("	add rbx, 24 ;; header size\n");
+
+		self.swapStacks();
+		self.writeOutput("	push rbx ;; size\n");
+		self.swapStacks();
+
+		self.writeOutput("	call __allocate__\n");
+
+		self.swapStacks();
+		self.writeOutput("	pop rbx ;; type\n");
+		self.writeOutput("	pop rcx ;; size\n");
+		self.swapStacks();
+
+		self.writeOutput("	mov r8, rax\n");
+		self.writeOutput("	add r8, [heapstart]\n");
+		self.writeOutput("	add rax, 24\n");
+
+		self.writeOutput("	mov [r8 + 8], rcx\n");
+		self.writeOutput("	mov [r8 + 16], rbx\n");
+
+		self.writeOutput("	ret\n\n");
+	}
+
+	func writeSyscallBuiltin(Compiler self) {
+		self.writeOutput("	;; -- syscall builtin --\n");
+		self.writeOutput("func_syscall0:\n");
+		self.swapStacks();
+		self.writeOutput("	pop r9\n");
+		self.writeOutput("	pop r8\n");
+		self.writeOutput("	pop r10\n");
+		self.writeOutput("	pop rdx\n");
+		self.writeOutput("	pop rsi\n");
+		self.writeOutput("	pop rdi\n");
+		self.writeOutput("	pop rax\n");
+		self.swapStacks();
+		self.writeOutput("	syscall\n");
+		self.writeOutput("	ret\n\n");
+	}
+
 	func writeHeader(Compiler self) {
 		self.writeOutput("section .text\n");
 		self.writeOutput("global _start\n");
 
-		//self.writeFindBlockBuiltin();
-		//self.writeGetBlockBuiltin();
-		//self.writeCreateBlockBuiltin();
-		//self.writeExpandHeapBuiltin();
-		//self.writeAllocateBuiltin();
-		//self.writeNewBuiltin();
-		//self.writeNewListBuiltin();
-		//self.writeSyscallBuiltin();
+		self.writeFindBlockBuiltin();
+		self.writeGetBlockBuiltin();
+		self.writeCreateBlockBuiltin();
+		self.writeExpandHeapBuiltin();
+		self.writeAllocateBuiltin();
+		self.writeNewBuiltin();
+		self.writeNewListBuiltin();
+		self.writeSyscallBuiltin();
 	}
 
 	func writeStart(Compiler self) {

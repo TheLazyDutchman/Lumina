@@ -242,7 +242,7 @@ func createParser() -> Parser {
 
 	var syscallReturnType = createReturnTypeFromString(parser.any);
 
-	parser.syscall = createFunctionFromString("syscall", syscallParameters, syscallReturnType);
+	parser.syscall = createFunctionFromString("syscall", 0, syscallParameters, syscallReturnType);
 
 	parser.definitions.push(createDefinitionFromFunction(parser.syscall));
 	parser.functions.push(parser.syscall);

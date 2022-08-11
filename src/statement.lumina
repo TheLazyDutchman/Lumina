@@ -184,5 +184,6 @@ type Statement {
 		} else if (self.blockStatement != (Block)0) {
 			self.blockStatement.writeBlock(compiler);
 		}
+		compiler.writeOutput("\n");
 	}
 }

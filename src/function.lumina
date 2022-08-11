@@ -142,10 +142,13 @@ type Function {
 	Array<TypeObj> generics;
 
 	bool isChecked;
+	
+	int id;
 
 	func parseFunction(Function self, Parser parser, SyntaxTree tree, Lexer lexer, Block block) -> Function {
 		self.outerBlock = createBlock(block);
 		self.isChecked = false;
+		self.id = -1;
 
 		self.region = lexer.startRegion();
 
@@ -258,6 +261,23 @@ type Function {
 		}
 
 		self.block.typeCheckBlock(parser);
+	}
+
+	func writeFunctionCall(Function self, Compiler compiler) -> Register {
+		if (self.generics.size > 0) {
+			print("can't call generic function yet\n");
+			return (Register)0;
+		}
+
+		var rax = compiler.findRegister("rax");
+		rax.use();
+
+		compiler.writeOutput("	call func_");
+		compiler.writeOutput(self.name.name);
+		compiler.writeInt(self.id);
+		compiler.writeOutput("\n");
+
+		return rax;
 	}
 
 	func getVariantFunction(Function self, Array<TypeObj> generics) -> Function {
@@ -467,10 +487,11 @@ func createReturnTypeFromString(TypeObj typeObj) -> ReturnType {
 	return returnType;
 }
 
-func createFunctionFromString(str value, Array<Parameter> parameters, ReturnType returnType) -> Function {
+func createFunctionFromString(str value, int id, Array<Parameter> parameters, ReturnType returnType) -> Function {
 	var function = new Function();
 
 	function.name = createIdentifierDefinitionFromString(value);
+	function.id = id;
 	function.parameters = parameters;
 	function.returnType = returnType;
 

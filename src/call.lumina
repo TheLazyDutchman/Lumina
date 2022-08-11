@@ -180,8 +180,24 @@ type Call {
 			return self.value.writeValue(compiler, getPointer);
 		}
 
-		print("can't write function call yet\n");
-		return (Register)0;
+		var function = self.value.identifier.definition.function;
+		if (function == (Function)0) {
+			print("function not found\n");
+			return (Register)0;
+		}
+
+		if (self.arguments.value != (Expression)0) {
+			compiler.writePush(self.arguments.value.writeExpression(compiler, false));
+
+			var i = 0;
+			while (i < self.arguments.parts.size) {
+				var part = self.arguments.parts.get(i).value;
+				compiler.writePush(part.writeExpression(compiler, false));
+				i = i + 1;
+			}
+		}
+
+		return function.writeFunctionCall(compiler);
 	}
 
 	func getTypeCall(Call self, Parser parser) -> TypeObj {
